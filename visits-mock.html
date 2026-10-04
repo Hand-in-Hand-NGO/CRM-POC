@@ -366,8 +366,8 @@
             background-color: #becfd8ff !important;
         }
 
-        /* NOTE: ".dropdown-men" is a typo in the live page, so the status dropdown gets no min-width */
-        .status-filter .dropdown-men,
+        /* fixed: the live page has ".dropdown-men" (typo), so the status table never got this width */
+        .status-filter .dropdown-menu,
         .responsibleTeam-filter .dropdown-menu,
         .components-filter .dropdown-menu {
             min-width: 1000px;
@@ -594,6 +594,100 @@
             transform: rotate(-45deg);
         }
 
+        /* =====================================================================
+           (C) NEW: compact filters layout
+           ===================================================================== */
+        #search-form .filters-row {
+            margin-right: -8px;
+            margin-left: -8px;
+        }
+
+        #search-form .filters-row>[class*="col-"] {
+            padding-right: 8px;
+            padding-left: 8px;
+        }
+
+        #search-form .filter-item {
+            margin-bottom: 15px;
+        }
+
+        #search-form .filter-item .control-label {
+            display: block;
+            float: none;
+            width: auto;
+            text-align: right;
+            padding-top: 0;
+            margin-bottom: 5px;
+        }
+
+        /* field + its buttons on one line, buttons right next to the field */
+        #search-form .filter-inline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #search-form .filter-inline>.filter-field {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        #search-form .filter-inline>.btn-group {
+            flex: 0 0 auto;
+            float: none !important;
+            display: flex;
+            white-space: nowrap;
+        }
+
+        #search-form .filter-inline>.btn-group>.btn {
+            float: none;
+            margin: 0 2px !important;
+            padding: 6px 9px;
+            font-size: 12px;
+        }
+
+        /* pickers: same height as the other inputs, grow when chips wrap */
+        #search-form #selectedStatusBtn,
+        #search-form #selectedResponsibleTeamBtn,
+        #search-form #selectedComponentsBtn {
+            height: auto;
+            min-height: 34px;
+            padding: 6px 12px;
+            line-height: 20px;
+        }
+
+        #search-form .selected-status,
+        #search-form .selected-responsible-team,
+        #search-form .selected-component {
+            display: inline-block;
+            margin: 1px 0;
+        }
+
+        /* keep the 1000px picker tables on screen */
+        #search-form .status-filter .dropdown-menu,
+        #search-form .responsibleTeam-filter .dropdown-menu,
+        #search-form .components-filter .dropdown-menu {
+            min-width: 0;
+            width: 1000px;
+            max-width: calc(100vw - 90px);
+        }
+
+        @media (min-width: 1200px) {
+
+            /* left-most column (RTL): open the table towards the right */
+            #search-form .filter-col-end .dropdown-menu {
+                right: auto !important;
+                left: 0 !important;
+            }
+        }
+
+        /* multi-select tabs: hide the checkboxes like Bootstrap does for data-toggle="buttons" */
+        .orderCategory input[type=checkbox] {
+            position: absolute;
+            clip: rect(0, 0, 0, 0);
+            pointer-events: none;
+        }
+
         @media print {
 
             .main-header,
@@ -660,179 +754,168 @@
                 <div id="collapseTwo" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingTwo">
                     <div class="panel-body">
                         <form class="form-horizontal" id="search-form" autocomplete="off" onsubmit="return false;">
-                            <div class="form-group">
-                                <div class="col-md-8 col-sm-12">
-                                    <div class="box-body">
+                            <div class="box-body">
 
-                                        <!-- Case Name / Order Code -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="caseNameOrCode" class="control-label">اسم الحالة / كود الطلب</label>
-                                                <div class="row">
-                                                    <div class="col-lg-8 col-md-9 col-sm-12">
-                                                        <input type="text" name="caseNameOrCode" id="caseNameOrCode" class="form-control" placeholder="ابحث بالاسم أو الكود" />
-                                                    </div>
-                                                    <div>
-                                                        <div class="btn-group" data-id="caseNameOrCode" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-filter pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary copy-filter pointer" title="نسخ"><i class="fa fa-copy"></i> نسخ</button>
-                                                            <button type="button" class="btn btn-md btn-success paste-filter pointer" title="لصق"><i class="fa fa-paste"></i> لصق</button>
-                                                        </div>
-                                                    </div>
+                                <!-- ===== Row 1: text / lists ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Case Name / Order Code -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="caseNameOrCode" class="control-label">اسم الحالة / كود الطلب</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="text" name="caseNameOrCode" id="caseNameOrCode" class="form-control" placeholder="ابحث بالاسم أو الكود" />
+                                                </div>
+                                                <div class="btn-group" data-id="caseNameOrCode">
+                                                    <button type="button" class="btn btn-md btn-danger remove-filter pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary copy-filter pointer" title="نسخ"><i class="fa fa-copy"></i> نسخ</button>
+                                                    <button type="button" class="btn btn-md btn-success paste-filter pointer" title="لصق"><i class="fa fa-paste"></i> لصق</button>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div class="form-group">
-                                            <!-- City -->
-                                            <div class="col-lg-6 col-md-6 col-sm-12">
-                                                <label for="city" class="control-label">المحافظة</label>
-                                                <select id="city" name="city[]" multiple class="form-control"></select>
-                                            </div>
+                                    <!-- City -->
+                                    <div class="col-lg-4 col-md-3 col-sm-6">
+                                        <div class="filter-item">
+                                            <label for="city" class="control-label">المحافظة</label>
+                                            <select id="city" name="city[]" multiple class="form-control"></select>
                                         </div>
+                                    </div>
 
-                                        <div class="form-group">
-                                            <!-- Amputation Level -->
-                                            <div class="col-lg-6 col-md-6 col-sm-12">
-                                                <label for="amputationLevel" class="control-label">مستوى البتر</label>
-                                                <select id="amputationLevel" name="amputationLevel[]" multiple class="form-control"></select>
-                                            </div>
+                                    <!-- Amputation Level -->
+                                    <div class="col-lg-4 col-md-3 col-sm-6">
+                                        <div class="filter-item">
+                                            <label for="amputationLevel" class="control-label">مستوى البتر</label>
+                                            <select id="amputationLevel" name="amputationLevel[]" multiple class="form-control"></select>
                                         </div>
+                                    </div>
 
-                                        <!-- Responsible Team -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="responsibleTeam" class="control-label">الفريق المسؤول</label>
-                                                <div class="dropdown responsibleTeam-filter">
-                                                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedResponsibleTeamBtn">اختر الفريق المسؤول</button>
-                                                    <div class="dropdown-menu" id="responsibleTeamDropdown"></div>
-                                                </div>
-                                                <input type="hidden" id="selectedResponsibleTeamIds" name="responsibleTeam_ids">
+                                </div>
+
+                                <!-- ===== Row 2: table-dropdown pickers ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Responsible Team -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="responsibleTeam" class="control-label">الفريق المسؤول</label>
+                                            <div class="dropdown responsibleTeam-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedResponsibleTeamBtn">اختر الفريق المسؤول</button>
+                                                <div class="dropdown-menu" id="responsibleTeamDropdown"></div>
                                             </div>
+                                            <input type="hidden" id="selectedResponsibleTeamIds" name="responsibleTeam_ids">
                                         </div>
+                                    </div>
 
-                                        <!-- Components -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="components" class="control-label">المكونات</label>
-                                                <div class="dropdown components-filter">
-                                                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedComponentsBtn">المكونات</button>
-                                                    <div class="dropdown-menu" id="componentsDropdown"></div>
-                                                </div>
-                                                <input type="hidden" id="selectedComponentsIds" name="components_ids">
+                                    <!-- Components -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="components" class="control-label">المكونات</label>
+                                            <div class="dropdown components-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedComponentsBtn">المكونات</button>
+                                                <div class="dropdown-menu" id="componentsDropdown"></div>
                                             </div>
+                                            <input type="hidden" id="selectedComponentsIds" name="components_ids">
                                         </div>
+                                    </div>
 
-                                        <!-- Engineering Assessment -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="engineeringAssessment" class="control-label">التقييم الهندسى</label>
-                                                <div class="dropdown status-filter">
-                                                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedStatusBtn">اختر حالة</button>
-                                                    <div class="dropdown-menu" id="statusDropdown"></div>
-                                                </div>
-                                                <input type="hidden" id="selectedStatusIds" name="status_ids">
+                                    <!-- Engineering Assessment -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12 filter-col-end">
+                                        <div class="filter-item">
+                                            <label for="engineeringAssessment" class="control-label">التقييم الهندسى</label>
+                                            <div class="dropdown status-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedStatusBtn">اختر حالة</button>
+                                                <div class="dropdown-menu" id="statusDropdown"></div>
                                             </div>
+                                            <input type="hidden" id="selectedStatusIds" name="status_ids">
                                         </div>
+                                    </div>
 
-                                        <!-- Assessment Date -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="assessmentDatePeriod" class="control-label">تاريخ التقييم الهندسى</label>
-                                                <div class="row">
-                                                    <div class="col-lg-8 col-md-9 col-sm-12">
-                                                        <div class="input-group">
-                                                            <input type="text" id="assessmentDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
-                                                            <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
-                                                        </div>
-                                                        <input type="hidden" name="assessmentDateFrom" id="assessmentDateFrom">
-                                                        <input type="hidden" name="assessmentDateTo" id="assessmentDateTo">
+                                </div>
+
+                                <!-- ===== Row 3: dates / numbers ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Assessment Date -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="assessmentDatePeriod" class="control-label">تاريخ التقييم الهندسى</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <div class="input-group">
+                                                        <input type="text" id="assessmentDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                        <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
                                                     </div>
-                                                    <div>
-                                                        <div class="btn-group" data-targetDate="assessmentDatePeriod" data-targetDateFrom="assessmentDateFrom" data-targetDateTo="assessmentDateTo" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
-                                                            <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
-                                                        </div>
-                                                    </div>
+                                                    <input type="hidden" name="assessmentDateFrom" id="assessmentDateFrom">
+                                                    <input type="hidden" name="assessmentDateTo" id="assessmentDateTo">
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Visit Date -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <label for="visitDatePeriod" class="control-label">تاريخ حجز الزيارة</label>
-                                                <div class="row">
-                                                    <div class="col-lg-8 col-md-9 col-sm-12">
-                                                        <div class="input-group">
-                                                            <input type="text" id="visitDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
-                                                            <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
-                                                        </div>
-                                                        <input type="hidden" name="visitDateFrom" id="visitDateFrom">
-                                                        <input type="hidden" name="visitDateTo" id="visitDateTo">
-                                                    </div>
-                                                    <div>
-                                                        <div class="btn-group" data-targetDate="visitDatePeriod" data-targetDateFrom="visitDateFrom" data-targetDateTo="visitDateTo" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
-                                                            <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
-                                                        </div>
-                                                    </div>
+                                                <div class="btn-group" data-targetDate="assessmentDatePeriod" data-targetDateFrom="assessmentDateFrom" data-targetDateTo="assessmentDateTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                    <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <!-- Number Of Days -->
-                                        <div class="form-group">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-12">
-                                                        <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                    <!-- Visit Date -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="visitDatePeriod" class="control-label">تاريخ حجز الزيارة</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <div class="input-group">
+                                                        <input type="text" id="visitDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                        <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
                                                     </div>
+                                                    <input type="hidden" name="visitDateFrom" id="visitDateFrom">
+                                                    <input type="hidden" name="visitDateTo" id="visitDateTo">
                                                 </div>
-                                                <div class="row">
-                                                    <div class="col-sm-5">
-                                                        <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
-                                                    </div>
-                                                    <div class="col-sm-5">
-                                                        <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
-                                                    </div>
-                                                    <div class="col-sm-2 text-left no-padding">
-                                                        <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
-                                                            <button type="button" class="btn btn-md btn-danger remove-date"><i class="fa fa-times"></i></button>
-                                                        </div>
-                                                    </div>
+                                                <div class="btn-group" data-targetDate="visitDatePeriod" data-targetDateFrom="visitDateFrom" data-targetDateTo="visitDateTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                    <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <!-- Order Type / Is Attend -->
-                                        <div class="form-group">
-                                            <div class="col-lg-6 col-md-6 col-sm-12">
-                                                <div class="box-content">
-                                                    <label for="searchOrderType" class="control-label">نوع الطلب</label>
-                                                    <div class="btn-group btn-group-justified" id="searchOrderType" data-toggle="buttons">
-                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="searchOrderType" checked="checked"> الكل</label>
-                                                        <label class="btn btn-default btn-on"><input type="radio" value="New" name="searchOrderType"> طلب جديد</label>
-                                                        <label class="btn btn-default btn-off"><input type="radio" value="Maintenance" name="searchOrderType"> طلب صيانة</label>
-                                                    </div>
+                                    <!-- Number Of Days -->
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
                                                 </div>
-                                            </div>
-                                            <div class="col-lg-6 col-md-6 col-sm-12">
-                                                <div class="box-content">
-                                                    <label for="isAttend" class="control-label">هل حضر</label>
-                                                    <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
-                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isAttend" checked="checked"> الكل</label>
-                                                        <label class="btn btn-default btn-on"><input type="radio" value="1" name="isAttend"> حضر</label>
-                                                        <label class="btn btn-default btn-off"><input type="radio" value="0" name="isAttend"> لم يحضر</label>
-                                                    </div>
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
+                                                </div>
+                                                <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date" title="مسح"><i class="fa fa-times"></i></button>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
+                                </div>
+
+                                <!-- ===== Row 4: Is Attend (replaces نوع الطلب) ===== -->
+                                <div class="row filters-row">
+                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                        <div class="filter-item box-content">
+                                            <label for="isAttend" class="control-label">هل حضر</label>
+                                            <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
+                                                <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isAttend" checked="checked"> الكل</label>
+                                                <label class="btn btn-default btn-on"><input type="radio" value="1" name="isAttend"> حضر</label>
+                                                <label class="btn btn-default btn-off"><input type="radio" value="0" name="isAttend"> لم يحضر</label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
                             </div>
                             <div class="box-footer">
                                 <div class="form-group">
@@ -846,21 +929,22 @@
                                         </div>
                                     </div>
                                     <div class="col-md-8">
-                                        <div class="btn-group orderCategory" data-toggle="buttons">
+                                        <!-- multi-select: checkboxes, handled by our own click handler (no data-toggle) -->
+                                        <div class="btn-group orderCategory">
                                             <label class="btn btn-lg btn-default active">
-                                                <input type="radio" name="category" value="all" checked> الكل
+                                                <input type="checkbox" name="category[]" value="all" checked> الكل
                                             </label>
                                             <label class="btn btn-lg btn-default" data-active-class="btn-primary">
-                                                <input type="radio" name="category" value="mdm-new"> التقييم الطبي و القياسات
+                                                <input type="checkbox" name="category[]" value="mdm-new"> التقييم الطبي و القياسات
                                             </label>
                                             <label class="btn btn-lg btn-default" data-active-class="btn-primary">
-                                                <input type="radio" name="category" value="fitting-new"> تسليم طرف جديد
+                                                <input type="checkbox" name="category[]" value="fitting-new"> تسليم طرف جديد
                                             </label>
                                             <label class="btn btn-lg btn-default" data-active-class="btn-danger">
-                                                <input type="radio" name="category" value="mdm-maintenance"> تقييم الصيانة
+                                                <input type="checkbox" name="category[]" value="mdm-maintenance"> تقييم الصيانة
                                             </label>
                                             <label class="btn btn-lg btn-default" data-active-class="btn-danger">
-                                                <input type="radio" name="category" value="fitting-maintenance"> تسليم الصيانة
+                                                <input type="checkbox" name="category[]" value="fitting-maintenance"> تسليم الصيانة
                                             </label>
                                         </div>
                                     </div>
@@ -1239,6 +1323,7 @@
             var allExcept = cities.indexOf('allExcept') !== -1;
             var cityList = cities.filter(function (c) { return c !== 'allExcept' && c !== 'blank'; });
             var wantBlankCity = cities.indexOf('blank') !== -1;
+            var categories = f['category[]'] || [];
 
             return ROWS.filter(function (r) {
                 if (q && r.name.toLowerCase().indexOf(q) === -1 && r.code.toLowerCase().indexOf(q) === -1) return false;
@@ -1247,9 +1332,9 @@
                     if (allExcept ? inList : !inList) return false;
                 }
                 if (levels.length && levels.indexOf(r.level) === -1) return false;
-                if (f.searchOrderType && f.searchOrderType !== '-1' && r.type !== f.searchOrderType.toLowerCase()) return false;
                 if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
-                if (f.category && f.category !== 'all' && currentStage(r) !== CATEGORY_STAGE[f.category]) return false;
+                if (categories.length && categories.indexOf('all') === -1 &&
+                    !categories.some(function (c) { return currentStage(r) === CATEGORY_STAGE[c]; })) return false;
                 if (dFrom && (r.days === null || r.days <= +dFrom)) return false;
                 if (dTo && (r.days === null || r.days >= +dTo)) return false;
                 if (teams.length && !r.team.some(function (t) { return teams.indexOf(t.id) !== -1; })) return false;
@@ -1356,7 +1441,7 @@
         var drp_v2;
 
         $(document).ready(function () {
-            $("[type='checkbox']").iCheck({
+            $("[type='checkbox']").not('.orderCategory input').iCheck({
                 checkboxClass: 'icheckbox_flat-green'
             });
 
@@ -1452,9 +1537,6 @@
                 oTable.fnDraw();
             });
 
-            $('.orderCategory input').on('change', function () {
-                oTable.fnDraw();
-            });
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
@@ -1514,7 +1596,7 @@
             function updateCategoryButtons() {
                 $('.orderCategory label').each(function () {
                     var activeClass = $(this).data('active-class');
-                    var value = $(this).find('input[type=radio]').val();
+                    var value = $(this).find('input').val();
 
                     $(this).removeClass('btn-primary btn-danger');
 
@@ -1532,8 +1614,31 @@
             }
 
             updateCategoryButtons();
-            $('.orderCategory input[type=radio]').on('change', function () {
-                setTimeout(updateCategoryButtons, 0);
+
+            // Multi-select tabs:
+            //  - "الكل" clears every other tab
+            //  - any other tab toggles on/off and turns "الكل" off
+            //  - nothing selected => back to "الكل"
+            $(document).on('click', '.orderCategory label', function (e) {
+                e.preventDefault();
+                var $group = $(this).closest('.orderCategory');
+                var $input = $(this).find('input');
+                var $all = $group.find('input[value="all"]');
+                var $others = $group.find('input').not($all);
+
+                if ($input.val() === 'all') {
+                    $others.prop('checked', false);
+                    $all.prop('checked', true);
+                } else {
+                    $input.prop('checked', !$input.prop('checked'));
+                    $all.prop('checked', $others.filter(':checked').length === 0);
+                }
+
+                $group.find('label').each(function () {
+                    $(this).toggleClass('active', $(this).find('input').prop('checked'));
+                });
+                updateCategoryButtons();
+                oTable.fnDraw();
             });
 
             // ---------------------------------------- table paging (DataTables stand-in) ----------------------------------------
@@ -1882,7 +1987,6 @@
 
             var value = '';
             var $form = $("#search-form");
-            $("#searchOrderType").find('.btn-all').click();
             $("#isAttend").find('.btn-all').click();
             $form.find('input:not(:checkbox):not(:radio)').val('');
             $form.find('input:checkbox, input:radio').prop('checked', false);
