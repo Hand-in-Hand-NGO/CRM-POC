@@ -494,6 +494,17 @@
             padding-bottom: 3px;
         }
 
+        /* records count shown at the top too, next to "عرض 20" */
+        .table-toolbar .toolbar-start {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .table-toolbar .page-info {
+            color: #333;
+        }
+
         .titleInfo {
             white-space: nowrap;
             color: gray;
@@ -987,14 +998,17 @@
 
                                 <!-- DataTables-like toolbar (length + TableTools) -->
                                 <div class="table-toolbar">
-                                    <label>عرض
-                                        <select id="pageSize">
-                                            <option value="20">20</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                            <option value="-1">الكل</option>
-                                        </select>
-                                    </label>
+                                    <div class="toolbar-start">
+                                        <label>عرض
+                                            <select id="pageSize">
+                                                <option value="20">20</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                                <option value="-1">الكل</option>
+                                            </select>
+                                        </label>
+                                        <span class="page-info" id="pageInfoTop"></span>
+                                    </div>
                                     <div class="btn-group">
                                         <button type="button" class="btn btn-default btn-sm" id="printBtn"><span class="glyphicon glyphicon-print"></span> طباعة</button>
                                         <button type="button" class="btn btn-default btn-sm" id="excelBtn"><span class="glyphicon glyphicon-export"></span> اكسيل</button>
@@ -1273,8 +1287,7 @@
             {
                 title: 'بيانات الحالة', render: function (r) {
                     return '<table class="info-table">' +
-                        (r.code !== '-' ? '<tr class="case-row"><td class="info" colspan="2">' + caseValue(r.code) + '</td></tr>' : '') +
-                        '<tr class="case-row"><td class="info" colspan="2">' + caseValue(r.name) + '</td></tr>' +
+                        '<tr class="case-row"><td class="titleInfo">الاسم:</td><td class="info">' + caseValue(r.name) + '</td></tr>' +
                         '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
                 }
@@ -1391,7 +1404,7 @@
             }
             $('.popover').remove();
 
-            $('#pageInfo').text(total ? ('عرض ' + (start + 1) + ' إلي ' + Math.min(start + size, total) + ' من ' + total + ' سجل') : '');
+            $('#pageInfo, #pageInfoTop').text(total ? ('عرض ' + (start + 1) + ' إلي ' + Math.min(start + size, total) + ' من ' + total + ' سجل') : '');
             function li(label, page, disabled, active) {
                 return '<li class="' + (disabled ? 'disabled' : '') + (active ? ' active' : '') + '"><a data-page="' + page + '">' + label + '</a></li>';
             }
