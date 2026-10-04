@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>فلاتر الزيارات</title>
+
+    <!-- ============================================================
+         PREVIEW ONLY: الملفات دى موجودة أصلاً فى صفحة النظام،
+         وموجودة هنا بس عشان تقدر تفتح الملف وتشوف الشكل.
+         ============================================================ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/3.4.0/css/bootstrap-rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            background: #fff;
+            padding: 20px;
+        }
+
+        .box-content {
+            padding: 10px;
+            background-color: #f6f6f6;
+            border-radius: 10px !important;
+            border: 1px solid #d7dbe0;
+        }
+
+        .btn-default.btn-all.active { background-color: #B7B7B7; color: white; }
+        .btn-default.btn-on.active { background-color: #5BB75B; color: white; }
+        .btn-default.btn-off.active { background-color: #DA4F49; color: white; }
+
+        #selectedStatusBtn,
+        #selectedResponsibleTeamBtn,
+        #selectedComponentsBtn {
+            background: white;
+            border: 1px solid #e0e2e8;
+            width: 100%;
+            color: #a9a9a9;
+            white-space: normal;
+            border-radius: 8px;
+            text-align: right;
+        }
+
+        .status-filter .dropdown-menu,
+        .responsibleTeam-filter .dropdown-menu,
+        .components-filter .dropdown-menu {
+            min-width: 1000px;
+            overflow: auto;
+            background: #f4f4f4;
+        }
+
+        #statusDropdown,
+        #responsibleTeamDropdown,
+        #componentsDropdown {
+            padding: 10px !important;
+            right: 0px !important;
+            border: 1px solid #e5e5e5;
+        }
+    </style>
+    <!-- ===================== END PREVIEW ONLY ===================== -->
+
+
+    <!-- ============================================================
+         START: (1) الـ CSS الجديد
+         حطه فى آخر الـ <style> بتاع صفحة الزيارات (بعد الـ .single-cal-view)
+         ============================================================ -->
+    <style>
+        /* ---------- Compact filters layout ---------- */
+        #search-form .filters-row {
+            margin-right: -8px;
+            margin-left: -8px;
+        }
+
+        #search-form .filters-row > [class*="col-"] {
+            padding-right: 8px;
+            padding-left: 8px;
+        }
+
+        #search-form .filter-item {
+            margin-bottom: 14px;
+        }
+
+        #search-form .filter-item > .control-label {
+            display: block;
+            float: none;
+            width: auto;
+            text-align: right;
+            padding-top: 0;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #444;
+        }
+
+        /* field + its action buttons on the same line, buttons right next to it */
+        #search-form .filter-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #search-form .filter-inline > .filter-field {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        #search-form .filter-inline > .btn-group {
+            flex: 0 0 auto;
+            float: none !important;
+            display: flex;
+            white-space: nowrap;
+        }
+
+        #search-form .filter-inline > .btn-group > .btn {
+            float: none;
+            margin: 0 2px !important;
+            padding: 6px 9px;
+            border-radius: 6px !important;
+        }
+
+        /* days range: two inputs + clear button */
+        #search-form .filter-range .filter-field {
+            flex: 1 1 0;
+        }
+
+        /* dropdown-table triggers: same height as normal inputs, grow with selected chips */
+        #search-form #selectedStatusBtn,
+        #search-form #selectedResponsibleTeamBtn,
+        #search-form #selectedComponentsBtn {
+            height: auto;
+            min-height: 34px;
+            padding: 5px 10px;
+            line-height: 22px;
+            border-color: #d2d6de;
+            border-radius: 4px;
+        }
+
+        #search-form .selected-status,
+        #search-form .selected-responsible-team,
+        #search-form .selected-component {
+            display: inline-block;
+            margin: 1px 0;
+        }
+
+        /* keep the 1000px tables inside the screen */
+        #search-form .status-filter .dropdown-menu,
+        #search-form .responsibleTeam-filter .dropdown-menu,
+        #search-form .components-filter .dropdown-menu {
+            min-width: 0;
+            width: 1000px;
+            max-width: calc(100vw - 40px);
+        }
+
+        /* last column (left side in RTL): open the table toward the right */
+        @media (min-width: 1200px) {
+            #search-form .filter-col-end .dropdown-menu {
+                right: auto !important;
+                left: 0 !important;
+            }
+        }
+
+        /* toggle groups */
+        #search-form .box-content {
+            padding: 8px 10px;
+        }
+
+        #search-form .box-content .control-label {
+            display: block;
+            float: none;
+            text-align: right;
+            padding-top: 0;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        #search-form .box-content .btn {
+            padding: 5px 8px;
+        }
+
+        #search-form .box-footer {
+            padding-top: 6px;
+        }
+
+        @media (max-width: 767px) {
+            #search-form .filter-inline {
+                flex-wrap: wrap;
+            }
+
+            #search-form .filter-inline > .filter-field {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+    <!-- ===================== END (1) CSS ===================== -->
+</head>
+
+<body>
+
+<!-- ============================================================
+     START: (2) الـ HTML الجديد
+     استبدل بيه الـ <form class="form-horizontal" id="search-form" ...> بالكامل
+     (من <form id="search-form"> لحد </form> بتاعها، قبل <form id="list-form">)
+     كل الـ id و name و class و data-* زى ما هى عشان الـ JavaScript يفضل شغال.
+     ============================================================ -->
+<form class="form-horizontal" id="search-form" autocomplete="off">
+    <div class="box-body">
+
+        <!-- ===== Row 1: text / select filters ===== -->
+        <div class="row filters-row">
+
+            <!-- Case Name / Order Code -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="caseNameOrCode" class="control-label">
+                        اسم الحالة / كود الطلب
+                    </label>
+                    <div class="filter-inline">
+                        <div class="filter-field">
+                            <input type="text"
+                                name="caseNameOrCode"
+                                id="caseNameOrCode"
+                                class="form-control"
+                                placeholder="ابحث بالاسم أو الكود" />
+                        </div>
+                        <div class="btn-group" data-id="caseNameOrCode">
+                            <button type="button" class="btn btn-sm btn-danger remove-filter pointer" title="مسح">
+                                <i class="fa fa-times"></i> مسح
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary copy-filter pointer" title="نسخ">
+                                <i class="fa fa-copy"></i> نسخ
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success paste-filter pointer" title="لصق">
+                                <i class="fa fa-paste"></i> لصق
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- City -->
+            <div class="col-lg-4 col-md-3 col-sm-6">
+                <div class="filter-item">
+                    <label for="city" class="control-label">
+                        المحافظة
+                    </label>
+                    <select id="city" name="city[]" multiple class="form-control">
+                    </select>
+                </div>
+            </div>
+
+            <!-- Amputation Level -->
+            <div class="col-lg-4 col-md-3 col-sm-6">
+                <div class="filter-item">
+                    <label for="amputationLevel" class="control-label">
+                        مستوى البتر
+                    </label>
+                    <select id="amputationLevel" name="amputationLevel[]" multiple class="form-control">
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Row 2: table-dropdown filters ===== -->
+        <div class="row filters-row">
+
+            <!-- Responsible Team -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="responsibleTeam" class="control-label">
+                        الفريق المسؤول
+                    </label>
+                    <div class="dropdown responsibleTeam-filter">
+                        <button class="btn btn-default dropdown-toggle"
+                            type="button"
+                            data-toggle="dropdown"
+                            id="selectedResponsibleTeamBtn">
+                            اختر الفريق المسؤول
+                        </button>
+                        <div class="dropdown-menu" id="responsibleTeamDropdown">
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedResponsibleTeamIds" name="responsibleTeam_ids">
+                </div>
+            </div>
+
+            <!-- Components -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="components" class="control-label">
+                        المكونات
+                    </label>
+                    <div class="dropdown components-filter">
+                        <button class="btn btn-default dropdown-toggle"
+                            type="button"
+                            data-toggle="dropdown"
+                            id="selectedComponentsBtn">
+                            المكونات
+                        </button>
+                        <div class="dropdown-menu" id="componentsDropdown">
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedComponentsIds" name="components_ids">
+                </div>
+            </div>
+
+            <!-- Engineering Assessment -->
+            <div class="col-lg-4 col-md-6 col-sm-12 filter-col-end">
+                <div class="filter-item">
+                    <label for="engineeringAssessment" class="control-label">
+                        التقييم الهندسى
+                    </label>
+                    <div class="dropdown status-filter">
+                        <button class="btn btn-default dropdown-toggle"
+                            type="button"
+                            data-toggle="dropdown"
+                            id="selectedStatusBtn">
+                            اختر حالة
+                        </button>
+                        <div class="dropdown-menu" id="statusDropdown">
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedStatusIds" name="status_ids">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Row 3: dates / numbers ===== -->
+        <div class="row filters-row">
+
+            <!-- Assessment Date -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="assessmentDatePeriod" class="control-label">
+                        تاريخ التقييم الهندسى
+                    </label>
+                    <div class="filter-inline">
+                        <div class="filter-field">
+                            <div class="input-group">
+                                <input type="text"
+                                    id="assessmentDatePeriod"
+                                    class="form-control"
+                                    value=""
+                                    placeholder="اختر الفترة" />
+                                <span class="input-group-addon">
+                                    <span class="glyphicon-calendar pointer glyphicon"></span>
+                                </span>
+                            </div>
+                            <input type="hidden" name="assessmentDateFrom" id="assessmentDateFrom">
+                            <input type="hidden" name="assessmentDateTo" id="assessmentDateTo">
+                        </div>
+                        <div class="btn-group"
+                            data-targetDate="assessmentDatePeriod"
+                            data-targetDateFrom="assessmentDateFrom"
+                            data-targetDateTo="assessmentDateTo">
+                            <button type="button" class="btn btn-sm btn-danger remove-date-period pointer" title="مسح">
+                                <i class="fa fa-times"></i> مسح
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary today-date-period pointer" title="اليوم">
+                                <i class="fa fa-calendar-o"></i> اليوم
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success week-date-period pointer" title="هذا الاسبوع">
+                                <i class="fa fa-calendar-o"></i> هذا الاسبوع
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visit Date -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="visitDatePeriod" class="control-label">
+                        تاريخ حجز الزيارة
+                    </label>
+                    <div class="filter-inline">
+                        <div class="filter-field">
+                            <div class="input-group">
+                                <input type="text"
+                                    id="visitDatePeriod"
+                                    class="form-control"
+                                    value=""
+                                    placeholder="اختر الفترة" />
+                                <span class="input-group-addon">
+                                    <span class="glyphicon-calendar pointer glyphicon"></span>
+                                </span>
+                            </div>
+                            <input type="hidden" name="visitDateFrom" id="visitDateFrom">
+                            <input type="hidden" name="visitDateTo" id="visitDateTo">
+                        </div>
+                        <div class="btn-group"
+                            data-targetDate="visitDatePeriod"
+                            data-targetDateFrom="visitDateFrom"
+                            data-targetDateTo="visitDateTo">
+                            <button type="button" class="btn btn-sm btn-danger remove-date-period pointer" title="مسح">
+                                <i class="fa fa-times"></i> مسح
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary today-date-period pointer" title="اليوم">
+                                <i class="fa fa-calendar-o"></i> اليوم
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success week-date-period pointer" title="هذا الاسبوع">
+                                <i class="fa fa-calendar-o"></i> هذا الاسبوع
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Number Of Days Between Measurement Taken And Ready For Delivery -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item">
+                    <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">
+                        عدد الأيام بين أخذ المقاس وجاهزية التسليم
+                    </label>
+                    <div class="filter-inline filter-range">
+                        <div class="filter-field">
+                            <input type="number"
+                                min="0"
+                                step="1"
+                                name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom"
+                                id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom"
+                                class="form-control"
+                                value=""
+                                placeholder="أكثر من" />
+                        </div>
+                        <div class="filter-field">
+                            <input type="number"
+                                min="0"
+                                step="1"
+                                name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo"
+                                id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo"
+                                class="form-control"
+                                value=""
+                                placeholder="أقل من" />
+                        </div>
+                        <div class="btn-group"
+                            data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom"
+                            data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
+                            <button type="button" class="btn btn-sm btn-danger remove-date" title="مسح">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== Row 4: toggles ===== -->
+        <div class="row filters-row">
+
+            <!-- Order Type -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item box-content">
+                    <label for="searchOrderType" class="control-label">
+                        نوع الطلب
+                    </label>
+                    <div class="btn-group btn-group-justified" id="searchOrderType" data-toggle="buttons">
+                        <label class="btn btn-default btn-all active">
+                            <input type="radio" value="-1" name="searchOrderType" checked="checked">
+                            الكل
+                        </label>
+                        <label class="btn btn-default btn-on">
+                            <input type="radio" value="New" name="searchOrderType">
+                            طلب جديد
+                        </label>
+                        <label class="btn btn-default btn-off">
+                            <input type="radio" value="Maintenance" name="searchOrderType">
+                            طلب صيانة
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Is Attend -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="filter-item box-content">
+                    <label for="isAttend" class="control-label">
+                        هل حضر
+                    </label>
+                    <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
+                        <label class="btn btn-default btn-all active">
+                            <input type="radio" value="-1" name="isAttend" checked="checked">
+                            الكل
+                        </label>
+                        <label class="btn btn-default btn-on">
+                            <input type="radio" value="1" name="isAttend">
+                            حضر
+                        </label>
+                        <label class="btn btn-default btn-off">
+                            <input type="radio" value="0" name="isAttend">
+                            لم يحضر
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="box-footer">
+        <div class="form-group">
+            <div class="col-md-4 col-sm-12 pull-left">
+                <div class="btn-group" style="float: left;">
+                    <img id="add-loading" style="display: none" src="https://cms.handinhand-eg.com/img/loading.gif">
+                    <button type="button" id="search-icon" class="btn btn-flat btn-success"><span
+                            class="glyphicon glyphicon-search"></span> بحث</button>
+                    <button class="btn btn-flat btn-default" type="button" id="collapse-btn"
+                        data-toggle="collapse" data-target="#collapseExample" aria-expanded="false"
+                        aria-controls="collapseExample">
+                        <span class="glyphicon glyphicon glyphicon-th text-primary"></span> تفاصيل الجدول
+                    </button>
+                    <button type="button" id="bulk-download-manager-btn" class="btn btn-flat btn-warning"><i
+                            class="fa fa-folder-open"></i> إدارة الملفات</button>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="btn-group orderCategory" data-toggle="buttons">
+                </div>
+            </div>
+        </div>
+    </div><!-- /.box-footer -->
+</form>
+<!-- ===================== END (2) HTML ===================== -->
+
+<!-- PREVIEW ONLY -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+
+</html>
