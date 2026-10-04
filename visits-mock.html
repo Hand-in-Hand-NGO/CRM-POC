@@ -1789,7 +1789,7 @@
             // Multi-select tabs:
             //  - "الكل" clears every other tab
             //  - any other tab toggles on/off and turns "الكل" off
-            //  - nothing selected => back to "الكل"
+            //  - nothing selected (or all four selected) => back to "الكل"
             $(document).on('click', '.orderCategory label', function (e) {
                 e.preventDefault();
                 var $group = $(this).closest('.orderCategory');
@@ -1802,7 +1802,14 @@
                     $all.prop('checked', true);
                 } else {
                     $input.prop('checked', !$input.prop('checked'));
-                    $all.prop('checked', $others.filter(':checked').length === 0);
+                    var n = $others.filter(':checked').length;
+                    if (n === 0 || n === $others.length) {
+                        // nothing selected, or every stage selected => same as "الكل"
+                        $others.prop('checked', false);
+                        $all.prop('checked', true);
+                    } else {
+                        $all.prop('checked', false);
+                    }
                 }
 
                 $group.find('label').each(function () {
@@ -1903,6 +1910,10 @@
                 if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(fromDate); drp.setEndDate(toDate); }
                 if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(fromDate); drp_v2.setEndDate(toDate); }
             });
+
+            // default: visits booked today
+            $('#visitDatePeriod').closest('.filter-item').find('.today-date-period').click();
+            oTable.fnDraw();
 
             $(document).on('click', '.copy-filter', async function () {
                 var field = $(this);
