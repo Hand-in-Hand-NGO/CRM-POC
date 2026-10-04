@@ -460,34 +460,38 @@
             background-color: #fbe8e8 !important;
         }
 
-        .CaseCode,
-        .CaseInfo {
-            cursor: pointer;
-            transition: all .3s ease;
+        /* NEW: value + [🔍 search] [نسخ copy] buttons (code / name) */
+        .case-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
         }
 
-        .CaseCode:hover,
-        .CaseInfo:hover {
-            color: #020304;
-            transform: scale(1.1);
-            background: #ddd;
+        .case-value .case-text {
+            margin-left: 3px;
         }
 
-        .CaseCode.loading,
-        .CaseInfo.loading {
-            background: linear-gradient(90deg, #ececec 25%, #ffffff 50%, #ececec 75%);
-            background-size: 200% 100%;
-            animation: loading 1s linear infinite;
+        .case-value .btn-xs {
+            padding: 0 5px;
+            font-size: 11px;
+            line-height: 18px;
+            border-radius: 3px !important;
         }
 
-        @keyframes loading {
-            from {
-                background-position: 200% 0;
-            }
+        .case-value .case-search {
+            background: #fff;
+            border-color: #ccc;
+            color: #333;
+        }
 
-            to {
-                background-position: -200% 0;
-            }
+        .case-value .case-copy.copied {
+            background-color: #31c860;
+            border-color: #2db457;
+        }
+
+        .info-table .case-row td {
+            padding-bottom: 3px;
         }
 
         .titleInfo {
@@ -1251,15 +1255,26 @@
             };
         }
         function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
+        // value followed by [🔍] (search by it) and [نسخ] (copy it)
+        function caseValue(value) {
+            if (!value || value === '-') return value || '-';
+            var v = String(value).replace(/"/g, '&quot;');
+            return '<span class="case-value"><span class="case-text">' + value + '</span>' +
+                '<button type="button" class="btn btn-xs case-search" data-value="' + v + '" title="بحث بهذه القيمة"><i class="fa fa-search"></i></button>' +
+                '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + v + '" title="نسخ">نسخ</button>' +
+                '</span>';
+        }
         function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
 
         var COLUMNS = [
             { title: 'نوع الطلب', render: function (r) { return r.type === 'new' ? 'طلب جديد' : 'طلب صيانة'; } },
             { title: 'تاريخ تقديم الطلب', render: function (r) { return r.submitDate; } },
-            { title: 'كود الحالة', render: function (r) { return r.code; } },
+            { title: 'كود الحالة', render: function (r) { return caseValue(r.code); } },
             {
                 title: 'بيانات الحالة', render: function (r) {
-                    return '<table class="info-table"><tr><td class="titleInfo">الاسم:</td><td class="info CaseName">' + r.name + '</td></tr>' +
+                    return '<table class="info-table">' +
+                        (r.code !== '-' ? '<tr class="case-row"><td class="info" colspan="2">' + caseValue(r.code) + '</td></tr>' : '') +
+                        '<tr class="case-row"><td class="info" colspan="2">' + caseValue(r.name) + '</td></tr>' +
                         '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
                 }
@@ -1963,48 +1978,33 @@
             updateComponentsSelected();
         });
 
-        // ===================== click case code / name => copy & search (copied as-is) =====================
-        var hidePopover;
-
-        $(document).on('mouseenter', '.CaseCode, .CaseInfo', function () {
-            clearTimeout(hidePopover);
-            $(this).popover({
-                html: true,
-                trigger: 'manual',
-                placement: 'top',
-                container: 'body',
-                content: `اضغط للنسخ والبحث بهذه القيمة`
-            }).popover('show');
-        });
-
-        $(document).on('mouseleave', '.CaseCode, .CaseInfo', function () {
-            $(this).popover('hide').popover('destroy');
-        });
-
-        $(document).on('click', '.CaseCode, .CaseInfo', async function () {
-            var $this = $(this);
-            $this.addClass('loading');
-
-            var value = '';
+        // ===================== case code / name buttons: 🔍 search by value, نسخ copy =====================
+        // (replaces the old "click the cell to copy & search" + its hover popover)
+        $(document).on('click', '.case-search', function (e) {
+            e.stopPropagation();
+            var value = $(this).data('value');
             var $form = $("#search-form");
+
+            // reset every filter, then search by this value only
             $("#isAttend").find('.btn-all').click();
             $form.find('input:not(:checkbox):not(:radio)').val('');
             $form.find('input:checkbox, input:radio').prop('checked', false);
             $form.find('select').val(null).trigger('change');
             $form.find('textarea').val('');
+            $('#clearStatusSelection, #clearResponsibleTeamSelection, #clearComponentsSelection').click();
+            $('.remove-date-period').click();
 
-            if ($this.hasClass('CaseCode')) {
-                value = $.trim($this.text());
-                $("#caseNameOrCode").val(value);
-            } else if ($this.hasClass('CaseInfo')) {
-                value = $.trim($this.find('.CaseName').text());
-                $("#caseNameOrCode").val(value);
-            }
+            $("#caseNameOrCode").val(value);
+            $(".orderCategory [value='all']").parent().click(); // redraws the table
+        });
 
-            $(".orderCategory [value='all']").parent().click();
-
+        $(document).on('click', '.case-copy', async function (e) {
+            e.stopPropagation();
+            var $btn = $(this);
             try {
-                await navigator.clipboard.writeText(value);
+                await navigator.clipboard.writeText(String($btn.data('value')));
+                $btn.addClass('copied').text('تم');
+                setTimeout(function () { $btn.removeClass('copied').text('نسخ'); }, 1200);
             } catch (err) {
                 console.error('Copy failed:', err);
             }
