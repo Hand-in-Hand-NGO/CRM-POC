@@ -11,14 +11,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/skins/flat/green.css">
 
+    <!-- =====================================================================
+         (A) Mock shell + AdminLTE / theme defaults the live page inherits
+         ===================================================================== -->
     <style>
-        /* =========================================================
-           Layout shell (header + right sidebar) — mirrors the CMS
-           ========================================================= */
         body {
             background: #fff;
-            font-size: 12px;
             color: #333;
             margin: 0;
         }
@@ -28,7 +28,7 @@
             top: 0;
             right: 0;
             left: 0;
-            height: 36px;
+            height: 50px;
             z-index: 1030;
             background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(235, 246, 237, 1) 17%, rgba(255, 249, 228, 1) 34%, rgba(249, 231, 222, 1) 47%, rgba(248, 242, 228, 1) 57%, rgba(217, 234, 244, 1) 64%, rgba(233, 239, 236, 1) 74%, rgba(186, 234, 230, 1) 100%);
             box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1);
@@ -40,26 +40,21 @@
 
         .main-header a {
             color: #535252;
-            margin: 0 8px;
+            margin: 0 10px;
             text-decoration: none;
         }
 
-        .main-header .user-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
         .main-header .user-chip i {
-            font-size: 18px;
+            font-size: 22px;
+            vertical-align: middle;
         }
 
         .main-sidebar {
             position: fixed;
-            top: 36px;
+            top: 50px;
             right: 0;
             bottom: 0;
-            width: 32px;
+            width: 50px;
             background: #222d32;
             z-index: 1020;
             padding-top: 6px;
@@ -69,8 +64,7 @@
         .main-sidebar a {
             display: block;
             color: #b8c7ce;
-            padding: 7px 0;
-            font-size: 12px;
+            padding: 10px 0;
         }
 
         .main-sidebar a.active,
@@ -81,10 +75,10 @@
 
         .stats-toggle {
             position: fixed;
-            top: 40px;
+            top: 55px;
             left: 0;
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             background: #0093e9;
             color: #fff;
             border: 0;
@@ -92,73 +86,236 @@
         }
 
         .content-wrapper {
-            margin-top: 36px;
-            margin-right: 32px;
-            padding: 12px 8px;
+            margin-top: 50px;
+            margin-right: 50px;
+            padding: 15px;
+            background-color: white;
         }
 
-        /* =========================================================
-           Panel
-           ========================================================= */
+        /* AdminLTE defaults */
+        .form-control {
+            border-radius: 0;
+            box-shadow: none;
+            border-color: #d2d6de;
+        }
+
+        .input-group .input-group-addon {
+            border-radius: 0;
+            border-color: #d2d6de;
+            background-color: #fff;
+        }
+
+        .btn {
+            border-radius: 3px;
+            box-shadow: none;
+            border: 1px solid transparent;
+        }
+
+        .btn-flat {
+            border-radius: 0;
+            border-width: 1px;
+        }
+
+        .btn-default {
+            background-color: #f4f4f4;
+            color: #444;
+            border-color: #ddd;
+        }
+
+        .box-footer {
+            border-top: 1px solid #f4f4f4;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .box-body {
+            padding: 10px;
+        }
+
+        .well {
+            background: #f5f5f5;
+        }
+
+        .text-yellow {
+            color: #f39c12 !important;
+        }
+
+        /* theme button palette (dist/css/arabic/style.css) */
+        .btn-primary {
+            background-color: #0093e9;
+            border-color: #0084d2;
+            color: #fff;
+        }
+
+        .btn-success {
+            background-color: #31c860;
+            border-color: #2db457;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: #f96a74;
+            border-color: #f85561;
+            color: #fff;
+        }
+
+        .btn-warning {
+            background-color: #ff6a00;
+            border-color: #e65f00;
+            color: #fff;
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover,
+        .btn-danger:hover,
+        .btn-warning:hover {
+            color: #fff;
+            filter: brightness(0.95);
+        }
+
         .panel-primary {
-            border: 0;
-            box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12) !important;
+            border-style: inherit;
         }
 
-        .panel-primary > .panel-heading {
+        .panel-primary>.panel-heading {
             color: #535252 !important;
             background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(235, 246, 237, 1) 17%, rgba(255, 249, 228, 1) 34%, rgba(249, 231, 222, 1) 47%, rgba(248, 242, 228, 1) 57%, rgba(217, 234, 244, 1) 64%, rgba(233, 239, 236, 1) 74%, rgba(186, 234, 230, 1) 100%);
-            border: 0 !important;
-            padding: 5px 15px;
+            border: 0px !important;
         }
 
-        .panel-title {
-            font-size: 12px;
+        .alert,
+        .panel {
+            box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important;
+        }
+
+        .modal-header-primary {
+            padding: 9px 15px;
+            background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(255, 249, 228, 1) 34%, rgba(186, 234, 230, 1) 100%);
+        }
+
+        .modal-header-primary .close {
+            float: left;
+        }
+
+        .modal-title {
+            color: #535252 !important;
+        }
+
+        /* mock-only helpers */
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 8px;
+        }
+
+        .table-toolbar label {
+            font-weight: normal;
+            margin: 0;
+        }
+
+        .table-toolbar select {
+            width: 70px;
+        }
+
+        .pager-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pager-bar .pagination {
+            margin: 0;
+        }
+
+        .pager-bar .pagination>li>a {
             cursor: pointer;
         }
 
-        /* =========================================================
-           Filters — copied from the original page
-           ========================================================= */
-        .control-label {
-            font-weight: bold;
+        #orders-table td {
+            vertical-align: top;
         }
 
-        .form-control {
-            height: 30px;
-            font-size: 12px;
-            padding: 4px 8px;
+        .info-table td {
+            padding: 0 2px;
+            border: 0 !important;
+            background: transparent !important;
         }
 
-        .btn-md {
-            padding: 3px 8px;
-            font-size: 11px;
+        .add-assessment {
+            color: #0093e9;
+            font-size: 18px;
+            cursor: pointer;
         }
 
-        .orderCategory .btn,
-        .remove-filter,
-        .copy-filter,
-        .paste-filter,
-        .today-date-period,
-        .week-date-period,
-        .remove-date-period,
-        .remove-date,
-        #search-icon,
-        #bulk-download-manager-btn,
-        #collapse-btn {
-            margin: 0px 5px;
-            border-radius: 10px !important;
+        .assess-label {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #ccd;
+            white-space: nowrap;
         }
 
-        .box-content {
-            padding: 10px;
-            background-color: #f6f6f6;
-            border-radius: 10px !important;
-            border: 1px solid #d7dbe0;
+        .assess-label small {
+            display: block;
+            color: #777;
         }
 
-        .no-padding {
-            padding: 0px !important;
+        .empty-row td {
+            text-align: center;
+            padding: 30px !important;
+            color: #888;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #333;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            z-index: 2000;
+            display: none;
+        }
+
+        .assessment-options .btn {
+            margin: 3px;
+        }
+    </style>
+
+    <!-- =====================================================================
+         (B) Copied as-is from the live page (layout <style> + page <style>)
+         ===================================================================== -->
+    <style>
+        .btn-group>.btn.active:hover {
+            color: white;
+        }
+
+        .select2-selection__rendered {
+            direction: rtl;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f96a741f !important;
+        }
+
+        thead>tr>th {
+            text-align: center;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #67B9EC !important;
+        }
+
+        .select2-container--default .select2-results__option[aria-selected="true"] {
+            background-color: #ddd !important;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #67B9EC !important;
         }
 
         .btn-default.btn-all.active {
@@ -176,50 +333,46 @@
             color: white;
         }
 
-        .btn-group-justified .btn {
-            font-size: 11px;
-            padding: 3px 6px;
+        /* تحسين شكل الـ Select2 ليتناسب مع الـ Modern Skin */
+        .select2-container--default .select2-selection--multiple {
+            border-radius: 8px !important;
+            border: 1px solid #d2d6de !important;
+            padding: 5px !important;
         }
 
-        .btn-group-justified input[type=radio] {
-            display: none;
+        #orders-table tr th {
+            white-space: nowrap;
         }
 
-        #selectedStatusBtn,
-        #selectedResponsibleTeamBtn,
-        #selectedComponentsBtn {
-            background: white;
-            border: 1px solid #e0e2e8;
-            width: 100%;
-            color: #a9a9a9;
-            white-space: normal;
-            height: 30px;
-            border-radius: 8px;
-            text-align: right;
-            font-size: 12px;
+        #orders-table tbody tr:hover {
+            background-color: transparent !important;
         }
 
-        #selectedStatusBtn.has-value,
-        #selectedResponsibleTeamBtn.has-value,
-        #selectedComponentsBtn.has-value {
-            height: auto;
-            min-height: 30px;
+        /* Danger row */
+        #orders-table tbody tr.danger-row {
+            background-color: #f2dede !important;
         }
 
-        .status-filter .dropdown-menu,
+        /* Primary row */
+        #orders-table tbody tr.primary-row {
+            background-color: #d9edf7 !important;
+        }
+
+        #orders-table tbody tr.danger-row:hover {
+            background-color: #dbc6c6ff !important;
+        }
+
+        #orders-table tbody tr.primary-row:hover {
+            background-color: #becfd8ff !important;
+        }
+
+        /* NOTE: ".dropdown-men" is a typo in the live page, so the status dropdown gets no min-width */
+        .status-filter .dropdown-men,
         .responsibleTeam-filter .dropdown-menu,
         .components-filter .dropdown-menu {
             min-width: 1000px;
             overflow: auto;
             background: #f4f4f4;
-        }
-
-        #statusDropdown,
-        #responsibleTeamDropdown,
-        #componentsDropdown {
-            padding: 10px !important;
-            right: 0px !important;
-            border: 1px solid #e5e5e5;
         }
 
         .status-table {
@@ -243,125 +396,60 @@
             border: 1px solid gray !important;
         }
 
-        .status-table td:empty {
-            cursor: default;
+        .status-table td:hover {
+            background: #fff0 !important;
+            color: black !important;
         }
 
-        .status-table th:nth-child(odd),
-        .status-table td:nth-child(odd) {
+        .status-table td.selected {
+            background: #31c860;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .status-table th:nth-child(1),
+        .status-table th:nth-child(3),
+        .status-table td:nth-child(1),
+        .status-table td:nth-child(3) {
             background: #c3e0f9;
         }
 
-        .status-table th:nth-child(even),
-        .status-table td:nth-child(even) {
+        .status-table td:nth-child(1).selected,
+        .status-table td:nth-child(3).selected {
+            background: #0093e9;
+        }
+
+        .status-table th:nth-child(2),
+        .status-table th:nth-child(4),
+        .status-table td:nth-child(2),
+        .status-table td:nth-child(4) {
             background: #ffbec2;
         }
 
-        .status-table td.selected:nth-child(odd) {
-            background: #0093e9;
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .status-table td.selected:nth-child(even) {
+        .status-table td:nth-child(2).selected,
+        .status-table td:nth-child(4).selected {
             background: #f96a74;
-            color: #fff;
-            font-weight: bold;
         }
 
-        .selected-chip {
-            display: inline-block;
-            background: #e6f1fb !important;
-            border-radius: 15px;
-            color: #0093e9;
-            font-size: 11px;
-            border: 1px solid #0093e9;
-            padding: 1px 8px;
-            margin: 1px;
+        #selectedStatusBtn,
+        #selectedResponsibleTeamBtn,
+        #selectedComponentsBtn {
+            background: white;
+            border: 1px solid #e0e2e8;
+            width: 100%;
+            color: #a9a9a9;
+            white-space: normal;
+            height: 50px;
+            border-radius: 8px;
+            text-align: right;
         }
 
-        .selected-chip .chip-x {
-            cursor: pointer;
-            margin-right: 4px;
-        }
-
-        .select2-container--default .select2-selection--multiple {
-            border-radius: 8px !important;
-            border: 1px solid #d2d6de !important;
-            min-height: 30px;
-        }
-
-        .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background-color: #67B9EC !important;
-        }
-
-        .daterangepicker .applyBtn,
-        .daterangepicker .cancelBtn {
-            display: none !important;
-        }
-
-        /* category tabs */
-        .orderCategory .btn {
-            font-size: 13px;
-            padding: 5px 10px;
-        }
-
-        .orderCategory .btn.active {
-            background: #e6e6e6;
-            box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-        }
-
-        .orderCategory input {
-            display: none;
-        }
-
-        /* =========================================================
-           Table
-           ========================================================= */
-        .table-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 0 8px;
-        }
-
-        .table-toolbar select {
-            width: 60px;
-            display: inline-block;
-            height: 24px;
-            padding: 0 4px;
-        }
-
-        #orders-table {
-            font-size: 11px;
-            margin-bottom: 8px;
-        }
-
-        #orders-table tr th {
-            white-space: nowrap;
-            text-align: center;
-            vertical-align: middle;
-            background: #fff;
-        }
-
-        #orders-table td {
-            vertical-align: top;
-        }
-
-        #orders-table tbody tr.primary-row {
-            background-color: #d9edf7 !important;
-        }
-
-        #orders-table tbody tr.danger-row {
-            background-color: #f2dede !important;
-        }
-
-        #orders-table tbody tr.primary-row:hover {
-            background-color: #becfd8 !important;
-        }
-
-        #orders-table tbody tr.danger-row:hover {
-            background-color: #dbc6c6 !important;
+        #statusDropdown,
+        #responsibleTeamDropdown,
+        #componentsDropdown {
+            padding: 10px !important;
+            right: 0px !important;
+            border: 1px solid #e5e5e5;
         }
 
         td.NewOrder {
@@ -381,13 +469,25 @@
         .CaseCode:hover,
         .CaseInfo:hover {
             color: #020304;
-            background: #ddd !important;
+            transform: scale(1.1);
+            background: #ddd;
         }
 
-        .info-table td {
-            padding: 0 2px;
-            border: 0 !important;
-            background: transparent !important;
+        .CaseCode.loading,
+        .CaseInfo.loading {
+            background: linear-gradient(90deg, #ececec 25%, #ffffff 50%, #ececec 75%);
+            background-size: 200% 100%;
+            animation: loading 1s linear infinite;
+        }
+
+        @keyframes loading {
+            from {
+                background-position: 200% 0;
+            }
+
+            to {
+                background-position: -200% 0;
+            }
         }
 
         .titleInfo {
@@ -402,71 +502,96 @@
             text-align: right !important;
         }
 
-        .add-assessment {
+        .box-content {
+            padding: 10px;
+            background-color: #f6f6f6;
+            border-radius: 10px !important;
+            border: 1px solid #d7dbe0;
+        }
+
+        .no-padding {
+            padding: 0px !important;
+        }
+
+        .orderCategory .btn,
+        .remove-filter,
+        .copy-filter,
+        .paste-filter,
+        .today-date-period,
+        .week-date-period,
+        .remove-date-period,
+        .remove-date,
+        #search-icon,
+        #bulk-download-manager-btn,
+        #collapse-btn {
+            margin: 0px 5px;
+            border-radius: 10px !important;
+        }
+
+        .selected-status,
+        .selected-responsible-team,
+        .selected-component {
+            background: #e6f1fb !important;
+            border-radius: 15px;
             color: #0093e9;
-            font-size: 16px;
+            font-size: 12px;
+            border: 1px solid #0093e9;
+        }
+
+        .daterangepicker .cancelBtn,
+        .daterangepicker .applyBtn {
+            display: none !important;
+        }
+
+        .daterangepicker {
+            width: 278px !important;
+        }
+
+        .daterangepicker .drp-calendar.left {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .daterangepicker .drp-calendar.right {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            pointer-events: none;
+        }
+
+        .daterangepicker .drp-calendar.right .calendar-table {
+            visibility: hidden;
+        }
+
+        .daterangepicker .drp-calendar.right th.next {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            position: absolute;
+            right: 8px;
+            top: 8px;
+        }
+
+        .daterangepicker .drp-calendar.right th.month {
+            visibility: hidden;
+        }
+
+        .single-cal-view .drp-calendar.right {
+            display: none !important;
+        }
+
+        .single-cal-view .drp-calendar.left thead tr:first-child th:last-child {
             cursor: pointer;
         }
 
-        .assess-label {
+        .single-cal-view .drp-calendar.left thead tr:first-child th:last-child::after {
+            content: '';
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 8px;
-            background: #fff;
-            border: 1px solid #ccd;
-            white-space: nowrap;
-        }
-
-        .assess-label small {
-            display: block;
-            color: #777;
-        }
-
-        .pager-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pager-bar .pagination {
-            margin: 0;
-        }
-
-        .pager-bar .pagination > li > a {
-            padding: 3px 9px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-
-        .empty-row td {
-            text-align: center;
-            padding: 30px !important;
-            color: #888;
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #333;
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 6px;
-            z-index: 2000;
-            display: none;
-        }
-
-        .modal-header-primary {
-            padding: 9px 15px;
-            background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(255, 249, 228, 1) 34%, rgba(186, 234, 230, 1) 100%);
-        }
-
-        .modal-header-primary .close {
-            float: left;
-        }
-
-        .assessment-options .btn {
-            margin: 3px;
+            border: solid black;
+            border-width: 0 2px 2px 0;
+            border-radius: 0;
+            padding: 3px;
+            transform: rotate(-45deg);
         }
 
         @media print {
@@ -474,7 +599,6 @@
             .main-header,
             .main-sidebar,
             .stats-toggle,
-            #new_order .panel-heading,
             #search-form,
             .table-toolbar,
             .pager-bar,
@@ -501,7 +625,7 @@
             <a href="#"><i class="fa fa-calendar"></i></a>
             <a href="#"><i class="fa fa-sun-o" style="color:#f0ad4e"></i></a>
             <a href="#">EN</a>
-            <a href="#" class="user-chip"><span>يوسف محمد</span> <i class="fa fa-user-circle"></i></a>
+            <a href="#" class="user-chip"><i class="fa fa-user-circle"></i> يوسف محمد</a>
         </div>
     </header>
 
@@ -518,25 +642,23 @@
         <a href="#" title="القسم النفسى"><i class="fa fa-user-md"></i></a>
         <a href="#" title="القسم الهندسى" class="active"><i class="fa fa-briefcase"></i></a>
         <a href="#" title="المتابعات"><i class="fa fa-calendar"></i></a>
-        <a href="#" title="الإعدادات"><i class="fa fa-cog"></i></a>
+        <a href="#" title="إعدادات نظام الحالات"><i class="fa fa-cog"></i></a>
         <a href="#" title="السجلات"><i class="fa fa-history"></i></a>
     </aside>
 
     <button class="stats-toggle" title="الإحصائيات"><i class="fa fa-chevron-right"></i></button>
 
-    <!-- ===================== Content ===================== -->
+    <!-- ===================== Content (same markup as the live page) ===================== -->
     <div class="content-wrapper">
-        <div class="panel-group" id="new_order">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <h4 class="panel-title" data-toggle="collapse" data-target="#collapseTwo">
+        <div class="panel-group" id="new_order" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-primary flat">
+                <div class="panel-heading" role="tab" id="headingTwo">
+                    <h4 class="panel-title" role="button" data-parent="#new_order" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                         <i class="fa fa-fw fa-search"></i>
                     </h4>
                 </div>
-                <div id="collapseTwo" class="panel-collapse collapse in">
+                <div id="collapseTwo" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingTwo">
                     <div class="panel-body">
-
-                        <!-- ===================== FILTERS (same structure as the CMS) ===================== -->
                         <form class="form-horizontal" id="search-form" autocomplete="off" onsubmit="return false;">
                             <div class="form-group">
                                 <div class="col-md-8 col-sm-12">
@@ -552,9 +674,9 @@
                                                     </div>
                                                     <div>
                                                         <div class="btn-group" data-id="caseNameOrCode" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-filter" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary copy-filter" title="نسخ"><i class="fa fa-copy"></i> نسخ</button>
-                                                            <button type="button" class="btn btn-md btn-success paste-filter" title="لصق"><i class="fa fa-paste"></i> لصق</button>
+                                                            <button type="button" class="btn btn-md btn-danger remove-filter pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                            <button type="button" class="btn btn-md btn-primary copy-filter pointer" title="نسخ"><i class="fa fa-copy"></i> نسخ</button>
+                                                            <button type="button" class="btn btn-md btn-success paste-filter pointer" title="لصق"><i class="fa fa-paste"></i> لصق</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -580,33 +702,36 @@
                                         <!-- Responsible Team -->
                                         <div class="form-group">
                                             <div class="col-sm-12">
-                                                <label class="control-label">الفريق المسؤول</label>
+                                                <label for="responsibleTeam" class="control-label">الفريق المسؤول</label>
                                                 <div class="dropdown responsibleTeam-filter">
                                                     <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedResponsibleTeamBtn">اختر الفريق المسؤول</button>
                                                     <div class="dropdown-menu" id="responsibleTeamDropdown"></div>
                                                 </div>
+                                                <input type="hidden" id="selectedResponsibleTeamIds" name="responsibleTeam_ids">
                                             </div>
                                         </div>
 
                                         <!-- Components -->
                                         <div class="form-group">
                                             <div class="col-sm-12">
-                                                <label class="control-label">المكونات</label>
+                                                <label for="components" class="control-label">المكونات</label>
                                                 <div class="dropdown components-filter">
                                                     <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedComponentsBtn">المكونات</button>
                                                     <div class="dropdown-menu" id="componentsDropdown"></div>
                                                 </div>
+                                                <input type="hidden" id="selectedComponentsIds" name="components_ids">
                                             </div>
                                         </div>
 
                                         <!-- Engineering Assessment -->
                                         <div class="form-group">
                                             <div class="col-sm-12">
-                                                <label class="control-label">التقييم الهندسى</label>
+                                                <label for="engineeringAssessment" class="control-label">التقييم الهندسى</label>
                                                 <div class="dropdown status-filter">
                                                     <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedStatusBtn">اختر حالة</button>
                                                     <div class="dropdown-menu" id="statusDropdown"></div>
                                                 </div>
+                                                <input type="hidden" id="selectedStatusIds" name="status_ids">
                                             </div>
                                         </div>
 
@@ -617,15 +742,17 @@
                                                 <div class="row">
                                                     <div class="col-lg-8 col-md-9 col-sm-12">
                                                         <div class="input-group">
-                                                            <input type="text" id="assessmentDatePeriod" class="form-control" placeholder="اختر الفترة" />
-                                                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                                                            <input type="text" id="assessmentDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                            <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
                                                         </div>
+                                                        <input type="hidden" name="assessmentDateFrom" id="assessmentDateFrom">
+                                                        <input type="hidden" name="assessmentDateTo" id="assessmentDateTo">
                                                     </div>
                                                     <div>
-                                                        <div class="btn-group" data-target="assessment" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-date-period" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary today-date-period" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
-                                                            <button type="button" class="btn btn-md btn-success week-date-period" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
+                                                        <div class="btn-group" data-targetDate="assessmentDatePeriod" data-targetDateFrom="assessmentDateFrom" data-targetDateTo="assessmentDateTo" style="float: left;">
+                                                            <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                            <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                            <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -639,38 +766,42 @@
                                                 <div class="row">
                                                     <div class="col-lg-8 col-md-9 col-sm-12">
                                                         <div class="input-group">
-                                                            <input type="text" id="visitDatePeriod" class="form-control" placeholder="اختر الفترة" />
-                                                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                                                            <input type="text" id="visitDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                            <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
                                                         </div>
+                                                        <input type="hidden" name="visitDateFrom" id="visitDateFrom">
+                                                        <input type="hidden" name="visitDateTo" id="visitDateTo">
                                                     </div>
                                                     <div>
-                                                        <div class="btn-group" data-target="visit" style="float: left;">
-                                                            <button type="button" class="btn btn-md btn-danger remove-date-period" title="مسح"><i class="fa fa-times"></i> مسح</button>
-                                                            <button type="button" class="btn btn-md btn-primary today-date-period" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
-                                                            <button type="button" class="btn btn-md btn-success week-date-period" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
+                                                        <div class="btn-group" data-targetDate="visitDatePeriod" data-targetDateFrom="visitDateFrom" data-targetDateTo="visitDateTo" style="float: left;">
+                                                            <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                            <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                            <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Days between measurement and ready -->
+                                        <!-- Number Of Days -->
                                         <div class="form-group">
                                             <div class="col-sm-12">
                                                 <div class="row">
                                                     <div class="col-sm-12">
-                                                        <label for="daysFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                                        <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
                                                     </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-sm-5">
-                                                        <input type="number" min="0" step="1" id="daysFrom" class="form-control" placeholder="أكثر من" />
+                                                        <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
                                                     </div>
                                                     <div class="col-sm-5">
-                                                        <input type="number" min="0" step="1" id="daysTo" class="form-control" placeholder="أقل من" />
+                                                        <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
                                                     </div>
                                                     <div class="col-sm-2 text-left no-padding">
-                                                        <button type="button" class="btn btn-md btn-danger remove-date" id="clearDays"><i class="fa fa-times"></i></button>
+                                                        <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
+                                                            <button type="button" class="btn btn-md btn-danger remove-date"><i class="fa fa-times"></i></button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -680,19 +811,19 @@
                                         <div class="form-group">
                                             <div class="col-lg-6 col-md-6 col-sm-12">
                                                 <div class="box-content">
-                                                    <label class="control-label">نوع الطلب</label>
+                                                    <label for="searchOrderType" class="control-label">نوع الطلب</label>
                                                     <div class="btn-group btn-group-justified" id="searchOrderType" data-toggle="buttons">
-                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="searchOrderType" checked> الكل</label>
-                                                        <label class="btn btn-default btn-on"><input type="radio" value="new" name="searchOrderType"> طلب جديد</label>
-                                                        <label class="btn btn-default btn-off"><input type="radio" value="maintenance" name="searchOrderType"> طلب صيانة</label>
+                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="searchOrderType" checked="checked"> الكل</label>
+                                                        <label class="btn btn-default btn-on"><input type="radio" value="New" name="searchOrderType"> طلب جديد</label>
+                                                        <label class="btn btn-default btn-off"><input type="radio" value="Maintenance" name="searchOrderType"> طلب صيانة</label>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-lg-6 col-md-6 col-sm-12">
                                                 <div class="box-content">
-                                                    <label class="control-label">هل حضر</label>
+                                                    <label for="isAttend" class="control-label">هل حضر</label>
                                                     <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
-                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isAttend" checked> الكل</label>
+                                                        <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isAttend" checked="checked"> الكل</label>
                                                         <label class="btn btn-default btn-on"><input type="radio" value="1" name="isAttend"> حضر</label>
                                                         <label class="btn btn-default btn-off"><input type="radio" value="0" name="isAttend"> لم يحضر</label>
                                                     </div>
@@ -703,65 +834,100 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="box-footer" style="border-top:1px solid #f4f4f4; padding-top:10px;">
+                            <div class="box-footer">
                                 <div class="form-group">
                                     <div class="col-md-4 col-sm-12 pull-left">
                                         <div class="btn-group" style="float: left;">
-                                            <button type="button" id="search-icon" class="btn btn-sm btn-success"><span class="glyphicon glyphicon-search"></span> بحث</button>
-                                            <button type="button" id="collapse-btn" class="btn btn-sm btn-default" data-toggle="collapse" data-target="#collapseExample"><span class="glyphicon glyphicon-th text-primary"></span> تفاصيل الجدول</button>
-                                            <button type="button" id="bulk-download-manager-btn" class="btn btn-sm btn-warning"><i class="fa fa-folder-open"></i> إدارة الملفات</button>
+                                            <button type="button" id="search-icon" class="btn btn-flat btn-success"><span class="glyphicon glyphicon-search"></span> بحث</button>
+                                            <button class="btn btn-flat btn-default" type="button" id="collapse-btn" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                                <span class="glyphicon glyphicon glyphicon-th text-primary"></span> تفاصيل الجدول
+                                            </button>
+                                            <button type="button" id="bulk-download-manager-btn" class="btn btn-flat btn-warning"><i class="fa fa-folder-open"></i> إدارة الملفات</button>
                                         </div>
                                     </div>
                                     <div class="col-md-8">
                                         <div class="btn-group orderCategory" data-toggle="buttons">
-                                            <label class="btn btn-default active"><input type="radio" name="orderCategory" value="all" checked> الكل</label>
-                                            <label class="btn btn-default"><input type="radio" name="orderCategory" value="new_mdm"> التقييم الطبي و القياسات</label>
-                                            <label class="btn btn-default"><input type="radio" name="orderCategory" value="new_fitting"> تسليم طرف جديد</label>
-                                            <label class="btn btn-default"><input type="radio" name="orderCategory" value="maintenance_mdm"> تقييم الصيانة</label>
-                                            <label class="btn btn-default"><input type="radio" name="orderCategory" value="maintenance_fitting"> تسليم الصيانة</label>
+                                            <label class="btn btn-lg btn-default active">
+                                                <input type="radio" name="category" value="all" checked> الكل
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-primary">
+                                                <input type="radio" name="category" value="mdm-new"> التقييم الطبي و القياسات
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-primary">
+                                                <input type="radio" name="category" value="fitting-new"> تسليم طرف جديد
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-danger">
+                                                <input type="radio" name="category" value="mdm-maintenance"> تقييم الصيانة
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-danger">
+                                                <input type="radio" name="category" value="fitting-maintenance"> تسليم الصيانة
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div><!-- /.box-footer -->
                         </form>
 
-                        <!-- ===================== TABLE ===================== -->
-                        <div id="list-form" style="overflow-x:auto;">
-                            <div class="collapse col-lg-8 pull-left well" id="collapseExample" style="margin-top:10px;">
-                                <div class="row" id="columnToggles"></div>
-                            </div>
-                            <div class="clearfix"></div>
-
-                            <div class="table-toolbar">
-                                <div>
-                                    عرض
-                                    <select id="pageSize" class="form-control">
-                                        <option value="20">20</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                        <option value="-1">الكل</option>
-                                    </select>
+                        <form class="form-horizontal col-sm-12" id="list-form" autocomplete="off" style="overflow-x: auto;" onsubmit="return false;">
+                            <div class="box-body">
+                                <div class="form-group">
+                                    <div class="collapse col-lg-8 pull-left well" id="collapseExample">
+                                        <div class="text-right">
+                                            <span class="col-lg-4 text-yellow text-bold"><input id="toggle" type="checkbox" autocomplete="off"> اختيار الكل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> نوع الطلب</span>
+                                            <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ تقديم الطلب</span>
+                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> كود الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين أخذ المقاس وجاهزية التسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> هل حضر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حضور تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ التأجيل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-default" id="printBtn"><span class="glyphicon glyphicon-print"></span> طباعة</button>
-                                    <button type="button" class="btn btn-xs btn-default" id="excelBtn"><span class="glyphicon glyphicon-export"></span> اكسيل</button>
+
+                                <!-- DataTables-like toolbar (length + TableTools) -->
+                                <div class="table-toolbar">
+                                    <label>عرض
+                                        <select id="pageSize">
+                                            <option value="20">20</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                            <option value="-1">الكل</option>
+                                        </select>
+                                    </label>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-default btn-sm" id="printBtn"><span class="glyphicon glyphicon-print"></span> طباعة</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="excelBtn"><span class="glyphicon glyphicon-export"></span> اكسيل</button>
+                                    </div>
+                                </div>
+
+                                <table id="orders-table" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered table-hover" style="text-align: center;">
+                                    <thead>
+                                        <tr id="headRow"></tr>
+                                    </thead>
+                                    <tbody id="bodyRows"></tbody>
+                                </table>
+
+                                <div class="pager-bar">
+                                    <div id="pageInfo"></div>
+                                    <ul class="pagination" id="pagination"></ul>
                                 </div>
                             </div>
-
-                            <table id="orders-table" class="table table-bordered" style="text-align:center;">
-                                <thead>
-                                    <tr id="headRow"></tr>
-                                </thead>
-                                <tbody id="bodyRows"></tbody>
-                            </table>
-
-                            <div class="pager-bar">
-                                <div id="pageInfo"></div>
-                                <ul class="pagination" id="pagination"></ul>
-                            </div>
-                        </div>
-
+                        </form>
                     </div>
                 </div>
             </div>
@@ -794,8 +960,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="modalSave"><span class="glyphicon glyphicon-floppy-disk"></span> حفظ</button>
-                    <button type="button" class="btn btn-danger" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> إلغاء</button>
+                    <button type="button" class="btn btn-flat btn-success" id="modalSave"><span class="glyphicon glyphicon-floppy-disk"></span> حفظ</button>
+                    <button type="button" class="btn btn-flat btn-danger" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> إلغاء</button>
                 </div>
             </div>
         </div>
@@ -808,78 +974,99 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/icheck.min.js"></script>
 
     <script>
         // =====================================================================
-        // Lookup data (same values as the CMS page)
+        // MOCK DATA (stands in for the server)
         // =====================================================================
-        var TODAY = moment('2026-10-04');
+
+        // Same lookups the server renders into the live page
+        var STATUS_DATA = {
+            "التقييم الطبى والقياسات": [
+                { "id": "new_mdm_1", "name": "تم أخد مقاس" }, { "id": "new_mdm_22", "name": "مؤجل" }, { "id": "new_mdm_18", "name": "خارج المعايير" },
+                { "id": "new_mdm_19", "name": "عدم رغبة الحالة" }, { "id": "new_mdm_20", "name": "عدم إحتياج الحالة" }
+            ],
+            "تسليم طرف جديد": [
+                { "id": "new_fitting_3", "name": "تم التسليم" }, { "id": "new_fitting_22", "name": "مؤجل" },
+                { "id": "new_fitting_4", "name": "إعادة تصنيع (تلف فى الطرف وقت التسليم)" },
+                { "id": "new_fitting_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "new_fitting_36", "name": "تعديل في التصميم (نفس المقاس السابق) " },
+                { "id": "new_fitting_5", "name": "رفض الإستلام" }, { "id": "new_fitting_2", "name": "مستبعد (الطرف غير مناسب ولا يوجد حل)" }
+            ],
+            "تقييم الصيانة": [
+                { "id": "maintenance_mdm_37", "name": "توفير قطع غيار" }, { "id": "maintenance_mdm_15", "name": "تم نهاية الصيانة" },
+                { "id": "maintenance_mdm_22", "name": "مؤجل" }, { "id": "maintenance_mdm_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "maintenance_mdm_36", "name": "تعديل في التصميم (نفس المقاس السابق) " }, { "id": "maintenance_mdm_32", "name": "توفير قطع غيار" },
+                { "id": "maintenance_mdm_9", "name": "تصنيع قطع غيار" }, { "id": "maintenance_mdm_34", "name": "مستبعد من الصيانة" },
+                { "id": "maintenance_mdm_35", "name": "استرداد الطرف" }
+            ],
+            "تسليم صيانة": [
+                { "id": "maintenance_fitting_37", "name": "توفير قطع غيار" }, { "id": "maintenance_fitting_3", "name": "تم التسليم" },
+                { "id": "maintenance_fitting_22", "name": "مؤجل" }, { "id": "maintenance_fitting_4", "name": "إعادة تصنيع (تلف فى الطرف وقت التسليم)" },
+                { "id": "maintenance_fitting_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "maintenance_fitting_36", "name": "تعديل في التصميم (نفس المقاس السابق) " }, { "id": "maintenance_fitting_32", "name": "توفير قطع غيار" },
+                { "id": "maintenance_fitting_9", "name": "تصنيع قطع غيار" }, { "id": "maintenance_fitting_34", "name": "مستبعد من الصيانة" }
+            ]
+        };
+
+        var TEAM_DATA = {
+            "مهندس / علاج طبيعى": [
+                { "id": "engineer-154", "name": "همام" }, { "id": "engineer-188", "name": "سامح" }, { "id": "engineer-229", "name": "كيرلس" },
+                { "id": "engineer-230", "name": "سلمى" }, { "id": "engineer-272", "name": "عبد المقصود" }, { "id": "engineer-274", "name": "blank" },
+                { "id": "engineer-288", "name": "youssef mostafa" }, { "id": "engineer-287", "name": "eslam ahmed" }, { "id": "engineer-291", "name": "اسلام رجب" },
+                { "id": "engineer-292", "name": "اسلام عاصم" }, { "id": "engineer-293", "name": "يحيى الغايش" }, { "id": "engineer-308", "name": "اشرف محمد" },
+                { "id": "engineer-307", "name": "محمود مغربي" }, { "id": "engineer-306", "name": "اسلام جمال" }, { "id": "engineer-305", "name": "هنا جوهر" },
+                { "id": "engineer-234", "name": "م/ محمد حطب (CEO)" }
+            ],
+            "فنى أطراف/تجميع": [
+                { "id": "technical-157", "name": "محمد أشرف" }, { "id": "assembly_technician-160", "name": "يسري عبد العزيز" }, { "id": "technical-16", "name": "عمرو" },
+                { "id": "technical-17", "name": "عبدالله" }, { "id": "technical-275", "name": "blank1" }, { "id": "assembly_technician-310", "name": "شعبان" },
+                { "id": "assembly_technician-309", "name": "جمعة" }
+            ]
+        };
+
+        var COMPONENTS_DATA = {
+            "الاكسسوارات": [
+                { "id": "33", "name": "جوانتى سيليكون" }, { "id": "34", "name": "تريكو" }, { "id": "32", "name": "بطانة" }, { "id": "31", "name": "سكوتش" },
+                { "id": "28", "name": "شاوما" }, { "id": "29", "name": "شراب شاوما" }, { "id": "30", "name": "ركبة قماش" }, { "id": "27", "name": "شراب تريكو" },
+                { "id": "23", "name": "بطانة" }, { "id": "26", "name": "سوفت سوكيت TPU" }, { "id": "24", "name": "شراب قطن" }, { "id": "25", "name": "شراب جيل" },
+                { "id": "22", "name": "حزام" }, { "id": "60", "name": "سكوتش" }
+            ],
+            "المكونات": [
+                { "id": "35", "name": "ذراع " }, { "id": "36", "name": "كف تصنيع داخلي" }, { "id": "37", "name": "جوانتي تجميل" }, { "id": "38", "name": "سوكيت  PP" },
+                { "id": "40", "name": "صمام" }, { "id": "41", "name": "شوكة" }, { "id": "42", "name": "Shuttle Lock  " }, { "id": "43", "name": "مسمار Shuttle Lock" },
+                { "id": "45", "name": "ركبة " }, { "id": "46", "name": "عمود ركبة متحركة" }, { "id": "47", "name": "ماسورة" }, { "id": "48", "name": "قدم" },
+                { "id": "49", "name": "مشط قدم" }, { "id": "52", "name": "مسمار قدم" }, { "id": "53", "name": "محور قدم" }, { "id": "54", "name": "كاوتشة مفصل قدم متحرك" },
+                { "id": "55", "name": "مفصل حوض " }, { "id": "56", "name": "مفصلات رجل مقلوبة" }, { "id": "58", "name": "جلبة تطويل" }, { "id": "57", "name": "دعامة ركبة" }
+            ],
+            "قطع الغيار": [],
+            "الخامات": [
+                { "id": "63", "name": "pp" }, { "id": "64", "name": "PLA" }, { "id": "65", "name": "PP Pellets" }, { "id": "66", "name": "TPU 95A" }, { "id": "67", "name": "TPU 87A" },
+                { "id": "68", "name": "TPU 65A" }, { "id": "69", "name": "PETG" }, { "id": "70", "name": "ASA" }, { "id": "71", "name": "ABS" }, { "id": "72", "name": "PC" }
+            ]
+        };
+
+        // Stage => { title, items:[{id, name}] } built from STATUS_DATA ("new_mdm_1" -> stage "new_mdm", id 1)
+        var STAGES = {};
+        Object.keys(STATUS_DATA).forEach(function (title) {
+            STATUS_DATA[title].forEach(function (it) {
+                var m = it.id.match(/^(new_mdm|new_fitting|maintenance_mdm|maintenance_fitting)_(\d+)$/);
+                STAGES[m[1]] = STAGES[m[1]] || { title: title, items: [] };
+                STAGES[m[1]].items.push({ id: +m[2], name: it.name });
+            });
+        });
+        function statusName(stage, id) {
+            var it = STAGES[stage].items.filter(function (x) { return x.id == id; })[0];
+            return it ? it.name : '';
+        }
 
         var CITIES = ['القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'المنوفية', 'الشرقية', 'الغربية', 'القليوبية', 'أسيوط', 'سوهاج', 'المنيا', 'بني سويف', 'الفيوم', 'قنا', 'أسوان'];
         var AMPUTATION_LEVELS = ['تحت الركبة', 'فوق الركبة', 'تحت الكوع', 'فوق الكوع', 'مفصل الركبة', 'مفصل الحوض', 'القدم الجزئي', 'الرسغ'];
-        var SIDES = ['أيمن', 'أيسر'];
-        var CAUSES = ['حادث', 'مرضي', 'سكر', 'خلقي', 'ورم'];
-        var FIRST = ['محمود', 'السيد', 'أحمد', 'محمد', 'مصطفى', 'إبراهيم', 'علي', 'حسن', 'خالد', 'عمر', 'فاطمة', 'منى', 'سارة', 'هدى', 'ياسمين', 'كريم', 'طارق', 'نادية', 'رشا', 'عبدالله'];
-        var MIDDLE = ['أحمد', 'محمد', 'إبراهيم', 'صالح', 'عبدالرحمن', 'حسين', 'سعيد', 'فتحي', 'جمال', 'رمضان'];
-        var LAST = ['سليمان', 'صالح', 'عبدالعزيز', 'الشافعي', 'منصور', 'النجار', 'حسانين', 'عوض', 'شلبي', 'زكي'];
-        var FUNDING = ['-', '-', '-', 'متبرع فردي', 'مؤسسة مصر الخير', 'بنك الطعام'];
 
-        var STATUS_GROUPS = {
-            new_mdm: {
-                title: 'التقييم الطبى والقياسات',
-                items: [{ id: 1, name: 'تم أخد مقاس' }, { id: 22, name: 'مؤجل' }, { id: 18, name: 'خارج المعايير' }, { id: 19, name: 'عدم رغبة الحالة' }, { id: 20, name: 'عدم إحتياج الحالة' }]
-            },
-            new_fitting: {
-                title: 'تسليم طرف جديد',
-                items: [{ id: 3, name: 'تم التسليم' }, { id: 22, name: 'مؤجل' }, { id: 4, name: 'إعادة تصنيع (تلف فى الطرف وقت التسليم)' }, { id: 7, name: 'تم أخذ مقاس جديد (تعديل فى المقاس السابق)' }, { id: 36, name: 'تعديل في التصميم (نفس المقاس السابق)' }, { id: 5, name: 'رفض الإستلام' }, { id: 2, name: 'مستبعد (الطرف غير مناسب ولا يوجد حل)' }]
-            },
-            maintenance_mdm: {
-                title: 'تقييم الصيانة',
-                items: [{ id: 37, name: 'توفير قطع غيار' }, { id: 15, name: 'تم نهاية الصيانة' }, { id: 22, name: 'مؤجل' }, { id: 7, name: 'تم أخذ مقاس جديد (تعديل فى المقاس السابق)' }, { id: 36, name: 'تعديل في التصميم (نفس المقاس السابق)' }, { id: 9, name: 'تصنيع قطع غيار' }, { id: 34, name: 'مستبعد من الصيانة' }, { id: 35, name: 'استرداد الطرف' }]
-            },
-            maintenance_fitting: {
-                title: 'تسليم صيانة',
-                items: [{ id: 37, name: 'توفير قطع غيار' }, { id: 3, name: 'تم التسليم' }, { id: 22, name: 'مؤجل' }, { id: 4, name: 'إعادة تصنيع (تلف فى الطرف وقت التسليم)' }, { id: 7, name: 'تم أخذ مقاس جديد (تعديل فى المقاس السابق)' }, { id: 36, name: 'تعديل في التصميم (نفس المقاس السابق)' }, { id: 9, name: 'تصنيع قطع غيار' }, { id: 34, name: 'مستبعد من الصيانة' }]
-            }
-        };
+        // Mock data is generated relative to the real "today" so اليوم / هذا الاسبوع always hit rows
+        var TODAY = moment().startOf('day');
 
-        var TEAM_GROUPS = {
-            'مهندس / علاج طبيعى': [
-                { id: 'engineer-154', name: 'همام' }, { id: 'engineer-188', name: 'سامح' }, { id: 'engineer-229', name: 'كيرلس' }, { id: 'engineer-230', name: 'سلمى' },
-                { id: 'engineer-272', name: 'عبد المقصود' }, { id: 'engineer-288', name: 'youssef mostafa' }, { id: 'engineer-287', name: 'eslam ahmed' }, { id: 'engineer-291', name: 'اسلام رجب' },
-                { id: 'engineer-292', name: 'اسلام عاصم' }, { id: 'engineer-293', name: 'يحيى الغايش' }, { id: 'engineer-308', name: 'اشرف محمد' }, { id: 'engineer-307', name: 'محمود مغربي' },
-                { id: 'engineer-306', name: 'اسلام جمال' }, { id: 'engineer-305', name: 'هنا جوهر' }
-            ],
-            'فنى أطراف/تجميع': [
-                { id: 'technical-157', name: 'محمد أشرف' }, { id: 'assembly_technician-160', name: 'يسري عبد العزيز' }, { id: 'technical-16', name: 'عمرو' },
-                { id: 'technical-17', name: 'عبدالله' }, { id: 'assembly_technician-310', name: 'شعبان' }, { id: 'assembly_technician-309', name: 'جمعة' }
-            ]
-        };
-
-        var COMPONENT_GROUPS = {
-            'الاكسسوارات': [
-                { id: '33', name: 'جوانتى سيليكون' }, { id: '34', name: 'تريكو' }, { id: '32', name: 'بطانة' }, { id: '31', name: 'سكوتش' }, { id: '28', name: 'شاوما' },
-                { id: '29', name: 'شراب شاوما' }, { id: '30', name: 'ركبة قماش' }, { id: '27', name: 'شراب تريكو' }, { id: '26', name: 'سوفت سوكيت TPU' },
-                { id: '24', name: 'شراب قطن' }, { id: '25', name: 'شراب جيل' }, { id: '22', name: 'حزام' }
-            ],
-            'المكونات': [
-                { id: '35', name: 'ذراع' }, { id: '36', name: 'كف تصنيع داخلي' }, { id: '37', name: 'جوانتي تجميل' }, { id: '38', name: 'سوكيت PP' }, { id: '40', name: 'صمام' },
-                { id: '41', name: 'شوكة' }, { id: '42', name: 'Shuttle Lock' }, { id: '45', name: 'ركبة' }, { id: '47', name: 'ماسورة' }, { id: '48', name: 'قدم' },
-                { id: '55', name: 'مفصل حوض' }, { id: '58', name: 'جلبة تطويل' }
-            ],
-            'قطع الغيار': [],
-            'الخامات': [
-                { id: '63', name: 'pp' }, { id: '64', name: 'PLA' }, { id: '66', name: 'TPU 95A' }, { id: '67', name: 'TPU 87A' }, { id: '69', name: 'PETG' }, { id: '71', name: 'ABS' }
-            ]
-        };
-
-        var ALL_TEAM = [].concat(TEAM_GROUPS['مهندس / علاج طبيعى'], TEAM_GROUPS['فنى أطراف/تجميع']);
-        var ACCESSORIES = COMPONENT_GROUPS['الاكسسوارات'];
-        var COMPONENTS = COMPONENT_GROUPS['المكونات'];
-
-        // =====================================================================
-        // Mock rows (seeded so the data is the same on every reload)
-        // =====================================================================
         var seed = 7;
         function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
         function pick(arr) { return arr[Math.floor(rnd() * arr.length)]; }
@@ -892,10 +1079,11 @@
             return out;
         }
         function dateAround(daysBack, span) { return TODAY.clone().subtract(daysBack - Math.floor(rnd() * span), 'days').format('YYYY-MM-DD'); }
-        function statusName(group, id) {
-            var it = STATUS_GROUPS[group].items.filter(function (x) { return x.id == id; })[0];
-            return it ? it.name : '';
-        }
+
+        var ALL_TEAM = [].concat(TEAM_DATA['مهندس / علاج طبيعى'], TEAM_DATA['فنى أطراف/تجميع']);
+        var FIRST = ['محمود', 'السيد', 'أحمد', 'محمد', 'مصطفى', 'إبراهيم', 'علي', 'حسن', 'خالد', 'عمر', 'فاطمة', 'منى', 'سارة', 'هدى', 'ياسمين', 'كريم', 'طارق', 'نادية', 'رشا', 'عبدالله'];
+        var MIDDLE = ['أحمد', 'محمد', 'إبراهيم', 'صالح', 'عبدالرحمن', 'حسين', 'سعيد', 'فتحي', 'جمال', 'رمضان'];
+        var LAST = ['سليمان', 'صالح', 'عبدالعزيز', 'الشافعي', 'منصور', 'النجار', 'حسانين', 'عوض', 'شلبي', 'زكي'];
 
         var ROWS = [];
         for (var i = 0; i < 64; i++) {
@@ -908,19 +1096,19 @@
                 code: rnd() < 0.3 ? '-' : (pick(['BK', 'AK', 'BE', 'AE']) + String(Math.floor(rnd() * 90) + 10) + String(Math.floor(rnd() * 900) + 100)),
                 name: pick(FIRST) + ' ' + pick(MIDDLE) + ' ' + pick(MIDDLE) + ' ' + pick(LAST),
                 city: pick(CITIES),
-                nid: String(2) + String(Math.floor(rnd() * 9e12 + 1e12)).slice(0, 13),
-                funding: pick(FUNDING),
+                nid: '2' + String(Math.floor(rnd() * 9e12 + 1e12)).slice(0, 13),
+                funding: pick(['-', '-', '-', 'متبرع فردي', 'مؤسسة مصر الخير', 'بنك الطعام']),
                 level: pick(AMPUTATION_LEVELS),
-                side: pick(SIDES),
+                side: pick(['أيمن', 'أيسر']),
                 amputationDate: surgery,
-                cause: pick(CAUSES),
+                cause: pick(['حادث', 'مرضي', 'سكر', 'خلقي', 'ورم']),
                 surgeryDate: surgery,
                 visitDate: dateAround(3, 10),
                 days: null,
                 attended: rnd() < 0.35 ? null : (rnd() < 0.75 ? 1 : 0),
                 hasLimb: type === 'maintenance' ? 'نعم' : (rnd() < 0.2 ? 'نعم' : '-'),
-                accessories: pickSome(ACCESSORIES, 2),
-                components: pickSome(COMPONENTS, 3),
+                accessories: pickSome(COMPONENTS_DATA['الاكسسوارات'], 2),
+                components: pickSome(COMPONENTS_DATA['المكونات'], 3),
                 spareParts: [],
                 videos: Math.floor(rnd() * 4),
                 assessments: {},
@@ -929,42 +1117,31 @@
                 team: pickSome(ALL_TEAM, 2)
             };
 
-            // assessment progress
             var r = rnd();
             if (type === 'new') {
                 if (r > 0.45) {
-                    row.assessments.new_mdm = { id: pick([1, 1, 1, 22, 18]), date: dateAround(30, 20), notes: '' };
+                    row.assessments.new_mdm = { id: pick([1, 1, 1, 22, 18]), date: dateAround(30, 31) };
                     if (row.assessments.new_mdm.id == 1 && r > 0.7) {
-                        row.assessments.new_fitting = { id: pick([3, 3, 22, 4, 7]), date: dateAround(5, 8), notes: '' };
+                        row.assessments.new_fitting = { id: pick([3, 3, 22, 4, 7]), date: dateAround(5, 8) };
                         row.days = Math.floor(rnd() * 25) + 3;
                     }
                 }
-            } else {
-                if (r > 0.45) {
-                    row.assessments.maintenance_mdm = { id: pick([15, 37, 22, 9]), date: dateAround(25, 20), notes: '' };
-                    if (r > 0.75) {
-                        row.assessments.maintenance_fitting = { id: pick([3, 3, 22]), date: dateAround(5, 8), notes: '' };
-                        row.days = Math.floor(rnd() * 15) + 1;
-                    }
+            } else if (r > 0.45) {
+                row.assessments.maintenance_mdm = { id: pick([15, 37, 22, 9]), date: dateAround(25, 26) };
+                if (r > 0.75) {
+                    row.assessments.maintenance_fitting = { id: pick([3, 3, 22]), date: dateAround(5, 8) };
+                    row.days = Math.floor(rnd() * 15) + 1;
                 }
             }
-            var anyPostponed = Object.keys(row.assessments).some(function (k) { return row.assessments[k].id == 22; });
-            if (anyPostponed) row.postponeDate = TODAY.clone().add(Math.floor(rnd() * 20) + 2, 'days').format('YYYY-MM-DD');
+            if (Object.keys(row.assessments).some(function (k) { return row.assessments[k].id == 22; })) {
+                row.postponeDate = TODAY.clone().add(Math.floor(rnd() * 20) + 2, 'days').format('YYYY-MM-DD');
+            }
             ROWS.push(row);
         }
 
-        // Which stage is the row currently waiting on
-        // Final statuses close the stage (no more ➕)
-        var FINAL = {
-            new_mdm: [18, 19, 20],
-            new_fitting: [3, 5, 2],
-            maintenance_mdm: [34, 35],
-            maintenance_fitting: [3, 34]
-        };
-        function isFinal(row, stage) {
-            var a = row.assessments[stage];
-            return a && FINAL[stage].indexOf(+a.id) !== -1;
-        }
+        // Final statuses close a stage (no more ➕)
+        var FINAL = { new_mdm: [18, 19, 20], new_fitting: [3, 5, 2], maintenance_mdm: [34, 35], maintenance_fitting: [3, 34] };
+        function isFinal(row, stage) { var a = row.assessments[stage]; return a && FINAL[stage].indexOf(+a.id) !== -1; }
         function currentStage(row) {
             if (row.type === 'new') {
                 if (isFinal(row, 'new_mdm') || isFinal(row, 'new_fitting')) return 'done';
@@ -975,32 +1152,29 @@
             if (!row.assessments.maintenance_mdm || row.assessments.maintenance_mdm.id == 22) return 'maintenance_mdm';
             return 'maintenance_fitting';
         }
+        var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
 
         // =====================================================================
-        // Columns (same order as the CMS; hidden = the "تاريخ الحضور" columns)
+        // Columns — same 25 columns / order as the live DataTable
         // =====================================================================
         function assessmentCell(stage) {
             return function (row) {
                 if (row.type !== stage.split('_')[0]) return '-';
-                var a = row.assessments[stage];
-                var canAdd = currentStage(row) === stage;
-                var html = '';
+                var a = row.assessments[stage], html = '';
                 if (a) html += '<span class="assess-label">' + statusName(stage, a.id) + '<small>' + a.date + '</small></span><br>';
-                if (canAdd) html += '<i class="fa fa-plus-square add-assessment" data-id="' + row.id + '" data-stage="' + stage + '" title="إضافة تقييم"></i>';
+                if (currentStage(row) === stage) html += '<i class="fa fa-plus-square add-assessment" data-id="' + row.id + '" data-stage="' + stage + '" title="إضافة تقييم"></i>';
                 return html || '-';
             };
         }
-        function attendDate(stage) {
-            return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; };
-        }
+        function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
         function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
 
         var COLUMNS = [
             { title: 'نوع الطلب', render: function (r) { return r.type === 'new' ? 'طلب جديد' : 'طلب صيانة'; } },
             { title: 'تاريخ تقديم الطلب', render: function (r) { return r.submitDate; } },
-            { title: 'كود الحالة', cls: 'CaseCode', render: function (r) { return r.code; } },
+            { title: 'كود الحالة', render: function (r) { return r.code; } },
             {
-                title: 'بيانات الحالة', cls: 'CaseInfo', render: function (r) {
+                title: 'بيانات الحالة', render: function (r) {
                     return '<table class="info-table"><tr><td class="titleInfo">الاسم:</td><td class="info CaseName">' + r.name + '</td></tr>' +
                         '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
@@ -1018,347 +1192,737 @@
             },
             { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
             { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
-            { title: 'هل حضر', render: function (r) { return r.attended === null ? '-' : (r.attended ? '<span class="text-success">حضر</span>' : '<span class="text-danger">لم يحضر</span>'); } },
+            { title: 'هل حضر', render: function (r) { return r.attended === null ? '-' : (r.attended ? 'حضر' : 'لم يحضر'); } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
             { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
             { title: 'المكونات', render: function (r) { return list(r.components); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
             { title: 'الفيديوهات', render: function (r) { return r.videos ? '<i class="fa fa-video-camera text-primary"></i> ' + r.videos : '-'; } },
             { title: 'التقييم الطبي و القياسات', render: assessmentCell('new_mdm') },
-            { title: 'تاريخ الحضور', hidden: true, noToggle: true, render: attendDate('new_mdm') },
+            { title: 'تاريخ الحضور', render: attendDate('new_mdm') },
             { title: 'تسليم طرف جديد', render: assessmentCell('new_fitting') },
-            { title: 'تاريخ الحضور', hidden: true, noToggle: true, render: attendDate('new_fitting') },
+            { title: 'تاريخ الحضور', render: attendDate('new_fitting') },
             { title: 'تقييم الصيانة', render: assessmentCell('maintenance_mdm') },
-            { title: 'تاريخ الحضور', hidden: true, noToggle: true, render: attendDate('maintenance_mdm') },
+            { title: 'تاريخ الحضور', render: attendDate('maintenance_mdm') },
             { title: 'تسليم الصيانة', render: assessmentCell('maintenance_fitting') },
-            { title: 'تاريخ حضور تسليم الصيانة', hidden: true, render: attendDate('maintenance_fitting') },
+            { title: 'تاريخ الحضور', render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
             { title: 'تاريخ التأجيل', render: function (r) { return r.postponeDate || '-'; } },
-            { title: 'الفريق المسؤول', render: function (r) { return list(r.team).replace(/^-$/, ''); } }
+            { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } }
         ];
-
-        // restore column visibility
-        try {
-            var savedCols = JSON.parse(localStorage.getItem('mock_visits_columns') || 'null');
-            if (savedCols) COLUMNS.forEach(function (c, idx) { if (!c.noToggle) c.hidden = savedCols.indexOf(idx) === -1; });
-        } catch (e) { }
+        // aoColumnDefs in the live page hide 15, 17, 19, 21 by default
+        [15, 17, 19, 21].forEach(function (c) { COLUMNS[c].hidden = true; });
 
         // =====================================================================
-        // Filter state
+        // Mock "oTable": reads the serialized search form like the server does
         // =====================================================================
-        var state = {
-            page: 1,
-            pageSize: 20,
-            assessment: { from: '', to: '' },
-            visit: { from: '', to: '' },
-            statuses: [],   // e.g. "new_mdm_1"
-            teams: [],
-            components: []
-        };
+        var tableState = { page: 1, pageSize: 20 };
 
-        function toast(msg) {
-            $('#toast').text(msg).stop(true, true).fadeIn(150).delay(1400).fadeOut(300);
+        function formValues() {
+            var out = {};
+            $('#search-form').serializeArray().forEach(function (f) {
+                if (/\[\]$/.test(f.name)) (out[f.name] = out[f.name] || []).push(f.value);
+                else out[f.name] = f.value;
+            });
+            return out;
         }
 
-        function inRange(date, range) {
-            if (!range.from) return true;
-            if (!date) return false;
-            return date >= range.from && date <= range.to;
-        }
+        function csv(v) { return v ? v.split(',').filter(Boolean) : []; }
 
         function filteredRows() {
-            var q = $.trim($('#caseNameOrCode').val()).toLowerCase();
-            var cities = $('#city').val() || [];
-            var levels = $('#amputationLevel').val() || [];
-            var orderType = $('input[name=searchOrderType]:checked').val();
-            var attend = $('input[name=isAttend]:checked').val();
-            var category = $('input[name=orderCategory]:checked').val();
-            var dFrom = $('#daysFrom').val(), dTo = $('#daysTo').val();
+            var f = formValues();
+            var q = $.trim(f.caseNameOrCode || '').toLowerCase();
+            var cities = f['city[]'] || [];
+            var levels = f['amputationLevel[]'] || [];
+            var teams = csv(f.responsibleTeam_ids), comps = csv(f.components_ids), statuses = csv(f.status_ids);
+            var dFrom = f.numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom, dTo = f.numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo;
+            var allExcept = cities.indexOf('allExcept') !== -1;
+            var cityList = cities.filter(function (c) { return c !== 'allExcept' && c !== 'blank'; });
+            var wantBlankCity = cities.indexOf('blank') !== -1;
 
             return ROWS.filter(function (r) {
                 if (q && r.name.toLowerCase().indexOf(q) === -1 && r.code.toLowerCase().indexOf(q) === -1) return false;
-                if (cities.length && cities.indexOf(r.city) === -1) return false;
+                if (cities.length) {
+                    var inList = cityList.indexOf(r.city) !== -1 || (wantBlankCity && !r.city);
+                    if (allExcept ? inList : !inList) return false;
+                }
                 if (levels.length && levels.indexOf(r.level) === -1) return false;
-                if (orderType !== '-1' && r.type !== orderType) return false;
-                if (attend !== '-1' && String(r.attended) !== attend) return false;
-                if (category !== 'all' && currentStage(r) !== category) return false;
-                if (dFrom !== '' && (r.days === null || r.days <= +dFrom)) return false;
-                if (dTo !== '' && (r.days === null || r.days >= +dTo)) return false;
-                if (state.teams.length && !r.team.some(function (t) { return state.teams.indexOf(t.id) !== -1; })) return false;
-                if (state.components.length && !r.accessories.concat(r.components).some(function (c) { return state.components.indexOf(c.id) !== -1; })) return false;
-                if (state.statuses.length) {
-                    var hit = Object.keys(r.assessments).some(function (k) { return state.statuses.indexOf(k + '_' + r.assessments[k].id) !== -1; });
-                    if (!hit) return false;
-                }
-                if (state.assessment.from) {
-                    var anyDate = Object.keys(r.assessments).some(function (k) { return inRange(r.assessments[k].date, state.assessment); });
-                    if (!anyDate) return false;
-                }
-                if (!inRange(r.visitDate, state.visit)) return false;
+                if (f.searchOrderType && f.searchOrderType !== '-1' && r.type !== f.searchOrderType.toLowerCase()) return false;
+                if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
+                if (f.category && f.category !== 'all' && currentStage(r) !== CATEGORY_STAGE[f.category]) return false;
+                if (dFrom && (r.days === null || r.days <= +dFrom)) return false;
+                if (dTo && (r.days === null || r.days >= +dTo)) return false;
+                if (teams.length && !r.team.some(function (t) { return teams.indexOf(t.id) !== -1; })) return false;
+                if (comps.length && !r.accessories.concat(r.components).some(function (c) { return comps.indexOf(c.id) !== -1; })) return false;
+                if (statuses.length && !Object.keys(r.assessments).some(function (k) { return statuses.indexOf(k + '_' + r.assessments[k].id) !== -1; })) return false;
+                if (f.assessmentDateFrom && !Object.keys(r.assessments).some(function (k) {
+                    var d = r.assessments[k].date; return d >= f.assessmentDateFrom && d <= f.assessmentDateTo;
+                })) return false;
+                if (f.visitDateFrom && !(r.visitDate >= f.visitDateFrom && r.visitDate <= f.visitDateTo)) return false;
                 return true;
             });
         }
 
-        // =====================================================================
-        // Rendering
-        // =====================================================================
-        function renderHead() {
-            $('#headRow').html(COLUMNS.map(function (c) {
-                return c.hidden ? '' : '<th>' + c.title + '</th>';
-            }).join(''));
-        }
+        function renderTable() {
+            $('#headRow').html(COLUMNS.map(function (c) { return c.hidden ? '' : '<th>' + c.title + '</th>'; }).join(''));
 
-        function renderColumnToggles() {
-            var html = '<div class="col-lg-4 text-warning"><label><input type="checkbox" id="toggleAll"> اختيار الكل</label></div>';
-            COLUMNS.forEach(function (c, idx) {
-                if (c.noToggle) return;
-                html += '<div class="col-lg-4"><label style="font-weight:normal"><input type="checkbox" class="toggle-vis" data-column="' + idx + '"' + (c.hidden ? '' : ' checked') + '> ' + c.title + '</label></div>';
-            });
-            $('#columnToggles').html(html);
-            $('#toggleAll').prop('checked', $('.toggle-vis:not(:checked)').length === 0);
-        }
-
-        function renderBody() {
-            var rows = filteredRows();
-            var total = rows.length;
-            var size = state.pageSize === -1 ? total || 1 : state.pageSize;
+            var rows = filteredRows(), total = rows.length;
+            var size = tableState.pageSize === -1 ? (total || 1) : tableState.pageSize;
             var pages = Math.max(1, Math.ceil(total / size));
-            if (state.page > pages) state.page = pages;
-            var start = (state.page - 1) * size;
+            if (tableState.page > pages) tableState.page = pages;
+            var start = (tableState.page - 1) * size;
             var pageRows = rows.slice(start, start + size);
-            var visibleCount = COLUMNS.filter(function (c) { return !c.hidden; }).length;
+            var visible = COLUMNS.filter(function (c) { return !c.hidden; }).length;
 
             if (!pageRows.length) {
-                $('#bodyRows').html('<tr class="empty-row"><td colspan="' + visibleCount + '">لم يتم العثور علي أي نتائج</td></tr>');
+                $('#bodyRows').html('<tr class="empty-row"><td colspan="' + visible + '">لم يتم العثور علي أي نتائج</td></tr>');
             } else {
                 $('#bodyRows').html(pageRows.map(function (r) {
-                    var rowCls = r.type === 'new' ? 'primary-row' : 'danger-row';
-                    var orderCls = r.type === 'new' ? 'NewOrder' : 'MaintenanceOrder';
-                    return '<tr class="' + rowCls + '" data-id="' + r.id + '">' + COLUMNS.map(function (c) {
-                        if (c.hidden) return '';
-                        var cls = c.cls ? c.cls + ' ' + orderCls : '';
-                        return '<td class="' + cls + '">' + c.render(r) + '</td>';
-                    }).join('') + '</tr>';
+                    return '<tr id="' + r.id + '" class="' + (r.type === 'new' ? 'primary-row' : 'danger-row') + '" type="' + r.type + '">' +
+                        COLUMNS.map(function (c) { return c.hidden ? '' : '<td>' + c.render(r) + '</td>'; }).join('') + '</tr>';
                 }).join(''));
+
+                // fnDrawCallback: classes go on visible cells 2 and 3 (same as live)
+                $('#bodyRows tr').each(function () {
+                    var t = $(this).attr('type') === 'new' ? 'NewOrder' : 'MaintenanceOrder';
+                    $(this).find('td').eq(2).addClass('CaseCode ' + t);
+                    $(this).find('td').eq(3).addClass('CaseInfo ' + t);
+                });
             }
+            $('.popover').remove();
 
             $('#pageInfo').text(total ? ('عرض ' + (start + 1) + ' إلي ' + Math.min(start + size, total) + ' من ' + total + ' سجل') : '');
-
-            var p = '';
             function li(label, page, disabled, active) {
                 return '<li class="' + (disabled ? 'disabled' : '') + (active ? ' active' : '') + '"><a data-page="' + page + '">' + label + '</a></li>';
             }
-            p += li('الأول', 1, state.page === 1);
-            p += li('السابق', state.page - 1, state.page === 1);
-            for (var i = 1; i <= pages; i++) p += li(i, i, false, i === state.page);
-            p += li('التالي', state.page + 1, state.page === pages);
-            p += li('الأخير', pages, state.page === pages);
+            var p = li('الأول', 1, tableState.page === 1) + li('السابق', tableState.page - 1, tableState.page === 1);
+            for (var i = 1; i <= pages; i++) p += li(i, i, false, i === tableState.page);
+            p += li('التالي', tableState.page + 1, tableState.page === pages) + li('الأخير', pages, tableState.page === pages);
             $('#pagination').html(p);
         }
 
-        function render() {
-            renderHead();
-            renderBody();
-        }
-
-        // =====================================================================
-        // Table-dropdown filters (status / team / components)
-        // =====================================================================
-        function buildPickerTable(container, groups, cellClass, clearId) {
-            var headers = Object.keys(groups);
-            var maxRows = Math.max.apply(null, headers.map(function (h) { return groups[h].length; }));
-            var html = '<div class="text-left" style="margin-bottom:10px;"><button type="button" class="btn btn-xs btn-danger" id="' + clearId + '"><i class="glyphicon glyphicon-remove"></i> إزالة التحديد</button></div>';
-            html += '<table class="table table-bordered status-table"><thead><tr>' + headers.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
-            for (var i = 0; i < maxRows; i++) {
-                html += '<tr>' + headers.map(function (h) {
-                    var it = groups[h][i];
-                    return it ? '<td class="' + cellClass + '" data-id="' + it.id + '" data-name="' + it.name + '">' + it.name + '</td>' : '<td></td>';
-                }).join('') + '</tr>';
+        // API compatible with the bits of oTable the live page uses
+        var oTable = {
+            fnDraw: function (resetPaging) {
+                if (resetPaging !== false) tableState.page = 1;
+                $('#search-icon').button('loading');
+                setTimeout(function () {           // fake server round-trip
+                    renderTable();
+                    $('#search-icon').button('reset');
+                }, 250);
+            },
+            fnSetColumnVis: function (iCol, visible, redraw) {
+                COLUMNS[parseInt(iCol)].hidden = !visible;
+                renderTable();
             }
-            $(container).html(html + '</tbody></table>');
+        };
+
+        function toast(msg) { $('#toast').text(msg).stop(true, true).fadeIn(150).delay(1400).fadeOut(300); }
+
+        // vanilla-datetimerange-picker shim: same constructor signature as the live page,
+        // backed by bootstrap-daterangepicker (same .drp-calendar DOM, so the same CSS applies)
+        function DateRangePicker(id, options, callback) {
+            $('#' + id).daterangepicker(options, callback);
+            return $('#' + id).data('daterangepicker');
         }
 
-        function setupPicker(opts) {
-            // opts: key (state array), container, button, placeholder, cellClass, clearId, groups
-            buildPickerTable(opts.container, opts.groups, opts.cellClass, opts.clearId);
-            var names = {};
+        // Fake select2 "ajax" so the dropdowns load/search like the real autocomplete endpoints
+        function localTransport(list) {
+            return function (params, success) {
+                var term = (params.data.term || '').toLowerCase();
+                success(list.filter(function (x) { return x.toLowerCase().indexOf(term) !== -1; }).map(function (x) { return { id: x, text: x }; }));
+            };
+        }
 
-            function refresh() {
-                $(opts.container + ' .' + opts.cellClass).each(function () {
-                    $(this).toggleClass('selected', state[opts.key].indexOf(String($(this).data('id'))) !== -1);
-                });
-                var $btn = $(opts.button);
-                if (state[opts.key].length) {
-                    $btn.addClass('has-value').html(state[opts.key].map(function (id) {
-                        return '<span class="selected-chip">' + names[id] + ' <span class="chip-x" data-key="' + opts.key + '" data-id="' + id + '">&times;</span></span>';
-                    }).join(' '));
-                } else {
-                    $btn.removeClass('has-value').text(opts.placeholder);
+        // =====================================================================
+        // LIVE PAGE SCRIPTS (copied; server calls replaced with the mock above)
+        // =====================================================================
+        function prependFixedOptions(data) {
+            data.unshift({ id: 'blank', text: 'الفارغ' });
+            data.unshift({ id: 'allExcept', text: 'الكل ماعدا' });
+            return data;
+        }
+
+        function setupSingleCalendar(picker) {
+            let $container = $(picker.container);
+            $container.addClass('single-cal-view');
+            $container.off('click.singlecal');
+            $container.on('click.singlecal', '.drp-calendar.left thead tr:first-child th:last-child', function () {
+                $container.find('.drp-calendar.right th.next').click();
+            });
+        }
+
+        var drp;
+        var drp_v2;
+
+        $(document).ready(function () {
+            $("[type='checkbox']").iCheck({
+                checkboxClass: 'icheckbox_flat-green'
+            });
+
+            drp = new DateRangePicker('assessmentDatePeriod', {
+                timePicker: false,
+                opens: 'left',
+                autoUpdateInput: false,
+                autoApply: true,
+                locale: { format: "YYYY-MM-DD", applyLabel: 'تم', cancelLabel: 'إلغاء' }
+            }, function (start, end) {
+                let dateFrom = start.format('YYYY-MM-DD');
+                let dateTo = end.format('YYYY-MM-DD');
+                $('#assessmentDateFrom').val(dateFrom);
+                $('#assessmentDateTo').val(dateTo);
+                setTimeout(function () {
+                    $('#assessmentDatePeriod').val('من ' + dateFrom + ' إلى ' + dateTo);
+                    setupSingleCalendar(drp);
+                }, 0);
+            });
+
+            $('#assessmentDatePeriod').val('');
+            $('#assessmentDateFrom').val('');
+            $('#assessmentDateTo').val('');
+
+            $("#assessmentDatePeriod").change(function () {
+                if ($(this).val() === '') {
+                    $('#assessmentDateFrom').val('');
+                    $('#assessmentDateTo').val('');
                 }
-            }
-            opts.refresh = refresh;
-
-            $(document).on('click', opts.container + ' .' + opts.cellClass, function (e) {
-                e.stopPropagation();
-                var id = String($(this).data('id'));
-                names[id] = $(this).data('name');
-                var idx = state[opts.key].indexOf(id);
-                if (idx === -1) state[opts.key].push(id); else state[opts.key].splice(idx, 1);
-                refresh();
-            });
-            $(document).on('click', '#' + opts.clearId, function (e) {
-                e.stopPropagation();
-                state[opts.key] = [];
-                refresh();
-            });
-            return opts;
-        }
-
-        // status groups need the "<stage>_<id>" ids
-        var statusGroupsForPicker = {};
-        Object.keys(STATUS_GROUPS).forEach(function (k) {
-            statusGroupsForPicker[STATUS_GROUPS[k].title] = STATUS_GROUPS[k].items.map(function (it) { return { id: k + '_' + it.id, name: it.name }; });
-        });
-
-        var pickers = [
-            setupPicker({ key: 'statuses', container: '#statusDropdown', button: '#selectedStatusBtn', placeholder: 'اختر حالة', cellClass: 'status-cell', clearId: 'clearStatusSelection', groups: statusGroupsForPicker }),
-            setupPicker({ key: 'teams', container: '#responsibleTeamDropdown', button: '#selectedResponsibleTeamBtn', placeholder: 'اختر الفريق المسؤول', cellClass: 'responsibleTeam-cell', clearId: 'clearResponsibleTeamSelection', groups: TEAM_GROUPS }),
-            setupPicker({ key: 'components', container: '#componentsDropdown', button: '#selectedComponentsBtn', placeholder: 'المكونات', cellClass: 'components-cell', clearId: 'clearComponentsSelection', groups: COMPONENT_GROUPS })
-        ];
-
-        // remove a chip from the trigger button without opening the dropdown
-        $(document).on('click', '.chip-x', function (e) {
-            e.stopPropagation();
-            var key = $(this).data('key'), id = String($(this).data('id'));
-            state[key].splice(state[key].indexOf(id), 1);
-            pickers.forEach(function (p) { if (p.key === key) p.refresh(); });
-        });
-
-        $(document).on('click', '.dropdown-menu', function (e) { e.stopPropagation(); });
-
-        // =====================================================================
-        // Wiring
-        // =====================================================================
-        $(function () {
-            $('#city').select2({ width: '100%', placeholder: 'اختر المحافظة', allowClear: true, dir: 'rtl', data: CITIES.map(function (c) { return { id: c, text: c }; }) });
-            $('#amputationLevel').select2({ width: '100%', placeholder: 'اختر مستوى البتر', allowClear: true, dir: 'rtl', data: AMPUTATION_LEVELS.map(function (c) { return { id: c, text: c }; }) });
-
-            // date ranges
-            ['assessment', 'visit'].forEach(function (key) {
-                var $input = $('#' + key + 'DatePeriod');
-                $input.daterangepicker({
-                    autoUpdateInput: false,
-                    autoApply: true,
-                    opens: 'left',
-                    locale: { format: 'YYYY-MM-DD' }
-                }, function (start, end) {
-                    setRange(key, start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-                });
-                $input.next('.input-group-addon').on('click', function () { $input.focus(); });
             });
 
-            function setRange(key, from, to) {
-                state[key] = { from: from, to: to };
-                $('#' + key + 'DatePeriod').val(from ? ('من ' + from + ' إلى ' + to) : '');
-                if (from) {
-                    var drp = $('#' + key + 'DatePeriod').data('daterangepicker');
-                    drp.setStartDate(from);
-                    drp.setEndDate(to);
+            drp_v2 = new DateRangePicker('visitDatePeriod', {
+                timePicker: false,
+                opens: 'left',
+                autoUpdateInput: false,
+                autoApply: true,
+                locale: { format: "YYYY-MM-DD", applyLabel: 'تم', cancelLabel: 'إلغاء' }
+            }, function (start, end) {
+                let dateFrom = start.format('YYYY-MM-DD');
+                let dateTo = end.format('YYYY-MM-DD');
+                $('#visitDateFrom').val(dateFrom);
+                $('#visitDateTo').val(dateTo);
+                setTimeout(function () {
+                    $('#visitDatePeriod').val('من ' + dateFrom + ' إلى ' + dateTo);
+                    setupSingleCalendar(drp_v2);
+                }, 0);
+            });
+
+            $('#visitDatePeriod').val('');
+            $('#visitDateFrom').val('');
+            $('#visitDateTo').val('');
+
+            $("#visitDatePeriod").change(function () {
+                if ($(this).val() === '') {
+                    $('#visitDateFrom').val('');
+                    $('#visitDateTo').val('');
                 }
+            });
+
+            // ---------------------------------------- amputationLevel ----------------------------------------
+            $("#amputationLevel").select2({
+                width: '100%',
+                placeholder: "اختر مستوى البتر",
+                allowClear: true,
+                ajax: {
+                    transport: localTransport(AMPUTATION_LEVELS),
+                    processResults: function (response) { return { results: response }; }
+                },
+                "language": {
+                    noResults: function () { return "لا يوجد بيانات متطابقة"; },
+                    "searching": function () { return "جاري البحث..."; }
+                }
+            });
+            // ---------------------------------------- city ----------------------------------------
+            $("#city").select2({
+                width: '100%',
+                placeholder: "اختر المحافظة",
+                allowClear: true,
+                ajax: {
+                    transport: localTransport(CITIES),
+                    processResults: function (response) {
+                        response = prependFixedOptions(response);
+                        return { results: response };
+                    }
+                },
+                "language": {
+                    noResults: function () { return "لا يوجد بيانات متطابقة"; },
+                    "searching": function () { return "جاري البحث..."; }
+                }
+            });
+
+            $("#search-icon").click(function () {
+                oTable.fnDraw();
+            });
+
+            $('.orderCategory input').on('change', function () {
+                oTable.fnDraw();
+            });
+
+            // ---------------------------------------- column visibility ----------------------------------------
+            var userID = "184";
+            var storageKey = "engineering_table_columns_" + userID;
+
+            var saved = null;
+            try { saved = localStorage.getItem(storageKey); } catch (e) { }
+            if (saved) {
+                var columns = JSON.parse(saved);
+                $(".toggle-vis").each(function () {
+                    var iCol = $(this).attr('data-column');
+                    if (columns.indexOf(parseInt(iCol)) !== -1) {
+                        $(this).iCheck('check');
+                        COLUMNS[iCol].hidden = false;
+                    } else {
+                        $(this).iCheck('uncheck');
+                        COLUMNS[iCol].hidden = true;
+                    }
+                });
             }
 
-            $('.remove-date-period').on('click', function () { setRange($(this).closest('.btn-group').data('target'), '', ''); });
-            $('.today-date-period').on('click', function () {
-                var t = TODAY.format('YYYY-MM-DD');
-                setRange($(this).closest('.btn-group').data('target'), t, t);
-            });
-            $('.week-date-period').on('click', function () {
-                var first = TODAY.clone().subtract(TODAY.day(), 'days'); // Sunday
-                setRange($(this).closest('.btn-group').data('target'), first.format('YYYY-MM-DD'), first.clone().add(4, 'days').format('YYYY-MM-DD'));
-            });
-            $('#clearDays').on('click', function () { $('#daysFrom, #daysTo').val(''); });
+            if ($(".toggle-vis:checked").length === $(".toggle-vis").length) {
+                $('#toggle').iCheck('check');
+            } else {
+                $('#toggle').iCheck('uncheck');
+            }
 
-            // text filter buttons
-            $('.remove-filter').on('click', function () { $('#caseNameOrCode').val(''); });
-            $('.copy-filter').on('click', function () {
-                var v = $('#caseNameOrCode').val();
-                (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { toast('تم النسخ'); }, function () { toast('تعذر النسخ'); });
+            $(document).on('click', '.dropdown-menu', function (e) {
+                e.stopPropagation();
             });
-            $('.paste-filter').on('click', function () {
-                if (!navigator.clipboard || !navigator.clipboard.readText) return toast('المتصفح لا يسمح باللصق');
-                navigator.clipboard.readText().then(function (t) { $('#caseNameOrCode').val(t); }, function () { toast('تعذر اللصق'); });
+
+            $('#toggle').on('ifChecked', function () {
+                $('.toggle-vis').iCheck('check');
+                saveColumns();
             });
-            $('#caseNameOrCode').on('keydown', function (e) { if (e.key === 'Enter') { state.page = 1; render(); } });
 
-            // search + instant category tabs (like the CMS)
-            $('#search-icon').on('click', function () { state.page = 1; render(); });
-            $('input[name=orderCategory]').on('change', function () { state.page = 1; render(); });
+            $('#toggle').on('ifUnchecked', function () {
+                $('.toggle-vis').iCheck('uncheck');
+                saveColumns();
+            });
 
-            // paging
-            $('#pageSize').on('change', function () { state.pageSize = +$(this).val(); state.page = 1; render(); });
+            function saveColumns() {
+                var visibleColumns = [];
+                $(".toggle-vis:checked").each(function () {
+                    visibleColumns.push(parseInt($(this).attr('data-column')));
+                });
+                try { localStorage.setItem(storageKey, JSON.stringify(visibleColumns)); } catch (e) { }
+            }
+
+            $('.toggle-vis').on('ifChanged', function () {
+                var $this = $(this);
+                oTable.fnSetColumnVis(parseInt($this.attr('data-column')), $this.is(':checked'), false);
+                saveColumns();
+            });
+
+            // ---------------------------------------- category buttons ----------------------------------------
+            function updateCategoryButtons() {
+                $('.orderCategory label').each(function () {
+                    var activeClass = $(this).data('active-class');
+                    var value = $(this).find('input[type=radio]').val();
+
+                    $(this).removeClass('btn-primary btn-danger');
+
+                    if ($(this).hasClass('active')) {
+                        if (value !== 'all') {
+                            $(this).removeClass('btn-default');
+                        }
+                        if (activeClass) {
+                            $(this).addClass(activeClass);
+                        }
+                    } else {
+                        $(this).addClass('btn-default');
+                    }
+                });
+            }
+
+            updateCategoryButtons();
+            $('.orderCategory input[type=radio]').on('change', function () {
+                setTimeout(updateCategoryButtons, 0);
+            });
+
+            // ---------------------------------------- table paging (DataTables stand-in) ----------------------------------------
+            $('#pageSize').select2({ minimumResultsForSearch: -1, width: '70px' }).on('change', function () {
+                tableState.pageSize = +$(this).val();
+                tableState.page = 1;
+                renderTable();
+            });
             $(document).on('click', '#pagination a', function () {
                 var $li = $(this).parent();
                 if ($li.hasClass('disabled') || $li.hasClass('active')) return;
-                state.page = +$(this).data('page');
-                renderBody();
+                tableState.page = +$(this).data('page');
+                renderTable();
             });
 
-            // column toggles
-            renderColumnToggles();
-            function saveColumns() {
-                var visible = [];
-                COLUMNS.forEach(function (c, idx) { if (!c.hidden && !c.noToggle) visible.push(idx); });
-                try { localStorage.setItem('mock_visits_columns', JSON.stringify(visible)); } catch (e) { }
-            }
-            $(document).on('change', '.toggle-vis', function () {
-                COLUMNS[+$(this).data('column')].hidden = !this.checked;
-                $('#toggleAll').prop('checked', $('.toggle-vis:not(:checked)').length === 0);
-                saveColumns();
-                render();
-            });
-            $(document).on('change', '#toggleAll', function () {
-                var on = this.checked;
-                $('.toggle-vis').each(function () { this.checked = on; COLUMNS[+$(this).data('column')].hidden = !on; });
-                saveColumns();
-                render();
+            renderTable();
+        });
+
+        // ===================== footer scripts (date buttons, copy/paste/clear) =====================
+        $(document).ready(function () {
+            $(".remove-date").click(function () {
+                var targetDateFrom = $(this).closest('.btn-group').data('targetdatefrom');
+                var targetDateTo = $(this).closest('.btn-group').data('targetdateto');
+                $("#" + targetDateFrom).val("").trigger('change');
+                $("#" + targetDateTo).val("").trigger('change');
             });
 
-            // click case code / name => copy & search by it
-            $(document).on('click', '.CaseCode, .CaseInfo', function () {
-                var v = $(this).hasClass('CaseCode') ? $.trim($(this).text()) : $.trim($(this).find('.CaseName').text());
-                if (v === '-') return;
-                resetFilters();
-                $('#caseNameOrCode').val(v);
-                if (navigator.clipboard) navigator.clipboard.writeText(v).catch(function () { });
-                state.page = 1;
-                render();
-                toast('تم النسخ والبحث: ' + v);
-            });
-
-            function resetFilters() {
-                $('#search-form input[type=text], #search-form input[type=number]').val('');
-                $('#city, #amputationLevel').val(null).trigger('change');
-                ['searchOrderType', 'isAttend'].forEach(function (n) { $('#' + n + ' .btn-all').click(); });
-                $('.orderCategory input[value=all]').parent().click();
-                state.assessment = { from: '', to: '' };
-                state.visit = { from: '', to: '' };
-                state.statuses = []; state.teams = []; state.components = [];
-                pickers.forEach(function (p) { p.refresh(); });
+            function clearDatePicker(picker) {
+                var today = moment();
+                var tomorrow = today.clone().add(1, 'day');
+                picker.startDate = tomorrow.clone().startOf('day');
+                picker.endDate = tomorrow.clone().endOf('day');
+                picker.emptySelection = true;
+                picker.leftCalendar.month = today.clone().startOf('month');
+                if (picker.rightCalendar) {
+                    picker.rightCalendar.month = today.clone().startOf('month').add(1, 'month');
+                }
+                $(picker.element).val('');
+                picker.updateCalendars();
             }
 
-            // assessment modal
+            $(".remove-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDate = $group.data('targetdate');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+
+                $("#" + targetDate).val("").trigger('change');
+                if (targetDateFrom) $("#" + targetDateFrom).val("");
+                if (targetDateTo) $("#" + targetDateTo).val("");
+
+                if (targetDate === 'assessmentDatePeriod') clearDatePicker(drp);
+                if (targetDate === 'visitDatePeriod') clearDatePicker(drp_v2);
+            }).trigger('click');
+
+            $(".today-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+                var targetDate = $group.data('targetdate');
+
+                var today = moment().format('YYYY-MM-DD');
+
+                $("#" + targetDateFrom).val(today);
+                $("#" + targetDateTo).val(today);
+                $("#" + targetDate).val("من " + today + " إلي " + today).trigger('change');
+
+                if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(today); drp.setEndDate(today); }
+                if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(today); drp_v2.setEndDate(today); }
+            });
+
+            $(".week-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+                var targetDate = $group.data('targetdate');
+
+                var today = new Date();
+                var firstDay = new Date(today);
+                firstDay.setDate(today.getDate() - today.getDay()); // Sunday
+                var lastDay = new Date(firstDay);
+                lastDay.setDate(firstDay.getDate() + 4);            // Thursday
+
+                var fromDate = firstDay.toISOString().split('T')[0];
+                var toDate = lastDay.toISOString().split('T')[0];
+
+                $("#" + targetDateFrom).val(fromDate);
+                $("#" + targetDateTo).val(toDate);
+                $("#" + targetDate).val("من " + fromDate + " إلي " + toDate).trigger('change');
+
+                if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(fromDate); drp.setEndDate(toDate); }
+                if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(fromDate); drp_v2.setEndDate(toDate); }
+            });
+
+            $(document).on('click', '.copy-filter', async function () {
+                var field = $(this);
+                var value = field.closest('form').find('#' + field.closest('.btn-group').data('id')).val();
+                try { await navigator.clipboard.writeText(value); } catch (err) { console.error('Copy failed:', err); }
+            });
+
+            $(document).on('click', '.paste-filter', async function () {
+                var field = $(this);
+                var fieldId = field.closest('.btn-group').data('id');
+                var form = field.closest('form');
+                try {
+                    var text = await navigator.clipboard.readText();
+                    form.find('#' + fieldId).val(text).trigger('change');
+                } catch (err) { console.error('Paste failed:', err); }
+            });
+
+            $(document).on('click', '.remove-filter', function () {
+                var field = $(this);
+                field.closest('form').find('#' + field.closest('.btn-group').data('id')).val('').trigger('change');
+            });
+        });
+
+        // ===================== table-dropdown filters (copied as-is) =====================
+        // ----- status -----
+        var filterData = STATUS_DATA;
+        var selectedStatuses = [];
+
+        function renderStatusTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearStatusSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="status-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#statusDropdown').html(html);
+        }
+
+        renderStatusTable(filterData);
+
+        $(document).on('click', '.status-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.status-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedStatuses.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedStatuses.push({ id: id, name: name });
+            else selectedStatuses.splice(index, 1);
+            updateSelected();
+        });
+
+        function updateSelected() {
+            var ids = selectedStatuses.map(function (x) { return x.id; });
+            $('#selectedStatusIds').val(ids.join(','));
+            if (selectedStatuses.length) {
+                var html = '';
+                selectedStatuses.forEach(function (status) {
+                    html += '<span class="label selected-status" data-id="' + status.id + '">' + status.name +
+                        ' <span class="status-cell selected" data-id="' + status.id + '" data-name="' + status.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedStatusBtn').html(html);
+            } else {
+                $('#selectedStatusBtn').html('اختر حالة');
+            }
+        }
+
+        $(document).on('click', '#clearStatusSelection', function (e) {
+            e.stopPropagation();
+            selectedStatuses = [];
+            $('.status-cell.selected').removeClass('selected');
+            updateSelected();
+        });
+
+        // ----- responsible team -----
+        var filterData = TEAM_DATA;
+        var selectedResponsibleTeams = [];
+
+        function renderResponsibleTeamsTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearResponsibleTeamSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="responsibleTeam-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#responsibleTeamDropdown').html(html);
+        }
+
+        renderResponsibleTeamsTable(filterData);
+
+        $(document).on('click', '.responsibleTeam-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.responsibleTeam-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedResponsibleTeams.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedResponsibleTeams.push({ id: id, name: name });
+            else selectedResponsibleTeams.splice(index, 1);
+            updateSelectedResponsibleTeams();
+        });
+
+        function updateSelectedResponsibleTeams() {
+            var ids = selectedResponsibleTeams.map(function (x) { return x.id; });
+            $('#selectedResponsibleTeamIds').val(ids.join(','));
+            if (selectedResponsibleTeams.length) {
+                var html = '';
+                selectedResponsibleTeams.forEach(function (team) {
+                    html += '<span class="label selected-responsible-team" data-id="' + team.id + '">' + team.name +
+                        ' <span class="responsibleTeam-cell selected" data-id="' + team.id + '" data-name="' + team.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedResponsibleTeamBtn').html(html);
+            } else {
+                $('#selectedResponsibleTeamBtn').html('اختر الفريق المسؤول');
+            }
+        }
+
+        $(document).on('click', '#clearResponsibleTeamSelection', function (e) {
+            e.stopPropagation();
+            selectedResponsibleTeams = [];
+            $('.responsibleTeam-cell.selected').removeClass('selected');
+            updateSelectedResponsibleTeams();
+        });
+
+        // ----- components -----
+        var filterData = COMPONENTS_DATA;
+        var selectedComponents = [];
+
+        function renderComponentsTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearComponentsSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="components-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#componentsDropdown').html(html);
+        }
+
+        renderComponentsTable(filterData);
+
+        $(document).on('click', '.components-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.components-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedComponents.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedComponents.push({ id: id, name: name });
+            else selectedComponents.splice(index, 1);
+            updateComponentsSelected();
+        });
+
+        function updateComponentsSelected() {
+            var ids = selectedComponents.map(function (x) { return x.id; });
+            $('#selectedComponentsIds').val(ids.join(','));
+            if (selectedComponents.length) {
+                var html = '';
+                selectedComponents.forEach(function (component) {
+                    html += '<span class="label selected-component" data-id="' + component.id + '">' + component.name +
+                        ' <span class="components-cell selected" data-id="' + component.id + '" data-name="' + component.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedComponentsBtn').html(html);
+            } else {
+                $('#selectedComponentsBtn').html('المكونات');
+            }
+        }
+
+        $(document).on('click', '#clearComponentsSelection', function (e) {
+            e.stopPropagation();
+            selectedComponents = [];
+            $('.components-cell.selected').removeClass('selected');
+            updateComponentsSelected();
+        });
+
+        // ===================== click case code / name => copy & search (copied as-is) =====================
+        var hidePopover;
+
+        $(document).on('mouseenter', '.CaseCode, .CaseInfo', function () {
+            clearTimeout(hidePopover);
+            $(this).popover({
+                html: true,
+                trigger: 'manual',
+                placement: 'top',
+                container: 'body',
+                content: `اضغط للنسخ والبحث بهذه القيمة`
+            }).popover('show');
+        });
+
+        $(document).on('mouseleave', '.CaseCode, .CaseInfo', function () {
+            $(this).popover('hide').popover('destroy');
+        });
+
+        $(document).on('click', '.CaseCode, .CaseInfo', async function () {
+            var $this = $(this);
+            $this.addClass('loading');
+
+            var value = '';
+            var $form = $("#search-form");
+            $("#searchOrderType").find('.btn-all').click();
+            $("#isAttend").find('.btn-all').click();
+            $form.find('input:not(:checkbox):not(:radio)').val('');
+            $form.find('input:checkbox, input:radio').prop('checked', false);
+            $form.find('select').val(null).trigger('change');
+            $form.find('textarea').val('');
+
+            if ($this.hasClass('CaseCode')) {
+                value = $.trim($this.text());
+                $("#caseNameOrCode").val(value);
+            } else if ($this.hasClass('CaseInfo')) {
+                value = $.trim($this.find('.CaseName').text());
+                $("#caseNameOrCode").val(value);
+            }
+
+            $(".orderCategory [value='all']").parent().click();
+
+            try {
+                await navigator.clipboard.writeText(value);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        });
+
+        // =====================================================================
+        // MOCK-ONLY: assessment modal, print, excel, files manager
+        // =====================================================================
+        $(function () {
             var modalCtx = null;
             $(document).on('click', '.add-assessment', function (e) {
                 e.stopPropagation();
-                var row = ROWS.filter(function (r) { return r.id == $(this).data('id'); }.bind(this))[0];
+                var id = $(this).data('id');
+                var row = ROWS.filter(function (r) { return r.id == id; })[0];
                 var stage = $(this).data('stage');
                 modalCtx = { row: row, stage: stage, statusId: null };
-                $('#modalStage').text(STATUS_GROUPS[stage].title);
+                $('#modalStage').text(STAGES[stage].title);
                 $('#modalCase').text(row.name + (row.code !== '-' ? ' (' + row.code + ')' : ''));
-                $('#modalOptions').html(STATUS_GROUPS[stage].items.map(function (it) {
+                $('#modalOptions').html(STAGES[stage].items.map(function (it) {
                     return '<button type="button" class="btn btn-default btn-sm" data-sid="' + it.id + '">' + it.name + '</button>';
                 }).join(''));
-                $('#modalDate').val(TODAY.format('YYYY-MM-DD'));
+                $('#modalDate').val(moment().format('YYYY-MM-DD'));
                 $('#modalNotes').val('');
                 $('#assessmentModal').modal('show');
             });
@@ -1369,18 +1933,17 @@
             });
             $('#modalSave').on('click', function () {
                 if (!modalCtx.statusId) return toast('اختر التقييم أولاً');
-                modalCtx.row.assessments[modalCtx.stage] = { id: modalCtx.statusId, date: $('#modalDate').val(), notes: $('#modalNotes').val() };
+                modalCtx.row.assessments[modalCtx.stage] = { id: modalCtx.statusId, date: $('#modalDate').val() };
                 if ($('#modalNotes').val()) modalCtx.row.notes = $('#modalNotes').val();
                 modalCtx.row.attended = 1;
                 $('#assessmentModal').modal('hide');
-                renderBody();
+                oTable.fnDraw(false);
                 toast('تم الإضافة بنجاح');
             });
 
-            // print / excel
             $('#printBtn').on('click', function () { window.print(); });
             $('#excelBtn').on('click', function () {
-                var cols = COLUMNS.filter(function (c) { return !c.hidden; });
+                var cols = COLUMNS.filter(function (c, i) { return !c.hidden || [15, 17, 19, 21].indexOf(i) !== -1; });
                 var lines = [cols.map(function (c) { return '"' + c.title + '"'; }).join(',')];
                 filteredRows().forEach(function (r) {
                     lines.push(cols.map(function (c) {
@@ -1396,8 +1959,6 @@
             });
 
             $('#bulk-download-manager-btn').on('click', function () { toast('إدارة الملفات (غير مفعلة في النسخة التجريبية)'); });
-
-            render();
         });
     </script>
 </body>
