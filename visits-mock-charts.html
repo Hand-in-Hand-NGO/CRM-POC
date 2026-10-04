@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>الزيارات</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/3.4.0/css/bootstrap-rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/skins/flat/green.css">
+
+    <!-- charts library for the side statistics dashboard, same stack as the printer-maintenance page -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Same font as the live CMS page: Droid Arabic Kufi (AdminLTE arabic theme).
+         Google retired Droid Arabic Kufi; Noto Kufi Arabic is its official successor (same design). -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+    <script crossorigin src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
+    <!-- =====================================================================
+         (A) Mock shell + AdminLTE / theme defaults the live page inherits
+         ===================================================================== -->
+    <style>
+        /* one font for the whole page (change it here only) */
+        :root {
+            --live-font: 'Droid Arabic Kufi', 'Noto Kufi Arabic', Tahoma, Arial, sans-serif;
+        }
+
+        body,
+        h1, h2, h3, h4, h5, h6,
+        .h1, .h2, .h3, .h4, .h5, .h6,
+        .tooltip,
+        .popover,
+        .daterangepicker,
+        .select2-container,
+        .select2-dropdown {
+            font-family: var(--live-font);
+        }
+
+        body {
+            background: #fff;
+            color: #333;
+            margin: 0;
+        }
+
+        .main-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 50px;
+            z-index: 1030;
+            background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(235, 246, 237, 1) 17%, rgba(255, 249, 228, 1) 34%, rgba(249, 231, 222, 1) 47%, rgba(248, 242, 228, 1) 57%, rgba(217, 234, 244, 1) 64%, rgba(233, 239, 236, 1) 74%, rgba(186, 234, 230, 1) 100%);
+            box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .main-header a {
+            color: #535252;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        .main-header .user-chip i {
+            font-size: 22px;
+            vertical-align: middle;
+        }
+
+        .main-sidebar {
+            position: fixed;
+            top: 50px;
+            right: 0;
+            bottom: 0;
+            width: 50px;
+            background: #222d32;
+            z-index: 1020;
+            padding-top: 6px;
+            text-align: center;
+        }
+
+        .main-sidebar a {
+            display: block;
+            color: #b8c7ce;
+            padding: 10px 0;
+        }
+
+        .main-sidebar a.active,
+        .main-sidebar a:hover {
+            color: #fff;
+            background: #1e282c;
+        }
+
+        /* ===== side statistics dashboard (slides in from the left) — same visual system
+           as the printer-maintenance analytics drawer: CSS variables + chart cards ===== */
+        :root {
+            --vs-bg: #f5f6f8;
+            --vs-bg-raised: #ffffff;
+            --vs-surface: #ffffff;
+            --vs-surface-2: #eef0f3;
+            --vs-border: #e2e5ea;
+            --vs-border-soft: #ececf0;
+            --vs-text: #1a1d23;
+            --vs-text-dim: #62697a;
+            --vs-text-faint: #97a0ad;
+            --vs-accent: #2f6fed;
+            --vs-accent-hover: #2559c9;
+            --vs-green: #15803d;
+            --vs-radius-sm: 6px;
+            --vs-radius: 10px;
+            --vs-font-ui: var(--live-font);
+            --vs-font-mono: var(--live-font);
+        }
+
+        .stats-panel {
+            position: fixed;
+            top: 58px;
+            left: 0;
+            width: 640px;
+            max-width: calc(100vw - 80px);
+            height: calc(100vh - 58px);
+            background: var(--vs-bg-raised);
+            border: 1px solid var(--vs-border);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .18);
+            z-index: 1040;
+            transform: translateX(-100%);
+            transition: transform .3s ease;
+            font-family: var(--vs-font-ui);
+            color: var(--vs-text);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .stats-panel.open {
+            transform: translateX(0);
+        }
+
+        .stats-toggle {
+            position: fixed;
+            top: 58px;
+            left: 0;
+            width: 26px;
+            height: 30px;
+            background: var(--vs-accent);
+            color: #fff;
+            border: 0;
+            border-radius: 0 4px 4px 0;
+            z-index: 1041;
+            transition: left .3s ease, background .15s;
+        }
+
+        .stats-toggle:hover {
+            background: var(--vs-accent-hover);
+        }
+
+        .stats-toggle.open {
+            left: min(640px, calc(100vw - 80px));
+        }
+
+        .stats-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--vs-border-soft);
+            background: var(--vs-bg-raised);
+            flex: none;
+        }
+
+        .stats-head .stats-title {
+            font-weight: 700;
+            font-size: 15.5px;
+            color: var(--vs-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-head .stats-title i {
+            color: var(--vs-accent);
+        }
+
+        .stats-head .btn {
+            padding: 6px 11px;
+            font-size: 12px;
+            margin-right: 4px;
+            border-radius: var(--vs-radius-sm) !important;
+        }
+
+        .stats-head .stats-refresh {
+            background: var(--vs-bg-raised);
+            border-color: var(--vs-border);
+            color: var(--vs-text-dim);
+        }
+
+        .stats-body-scroll {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 18px;
+        }
+
+        .stats-refresh.spinning i {
+            animation: fa-spin .8s linear infinite;
+        }
+
+        /* ---- chart-drawer building blocks ---- */
+        .vs-dash-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; flex-wrap: wrap; gap: 10px; }
+        .vs-period-tabs { display: inline-flex; background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius-sm); padding: 3px; gap: 2px; flex-wrap: wrap; }
+        .vs-period-tabs button {
+            border: none; background: none; color: var(--vs-text-dim); padding: 7px 14px; border-radius: 5px;
+            font-size: 12.5px; cursor: pointer; font-family: inherit; font-weight: 600; transition: background .15s, color .15s;
+        }
+        .vs-period-tabs button:hover { color: var(--vs-text); }
+        .vs-period-tabs button.active { background: var(--vs-accent); color: #fff; }
+        .vs-period-range { font-size: 11.5px; color: var(--vs-text-faint); font-family: var(--vs-font-mono); }
+
+        .vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+        .vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
+        .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+        .vs-kpi .lbl { font-size: 11px; color: var(--vs-text-dim); }
+        .vs-kpi.zero .num { color: var(--vs-text-faint); }
+
+        .vs-group-label { font-size: 11px; font-weight: 700; color: var(--vs-text-faint); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; }
+        .vs-chart-group { margin-bottom: 22px; }
+        .vs-chart-group:last-child { margin-bottom: 0; }
+        .vs-chart-row-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        .vs-chart-card { background: var(--vs-surface); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 16px; }
+        .vs-chart-card-head { margin-bottom: 10px; }
+        .vs-chart-card-head h4 { margin: 0; font-size: 13.5px; font-weight: 700; }
+        .vs-chart-card-head p.sub { margin: 3px 0 0; font-size: 11.5px; color: var(--vs-text-dim); }
+
+        .vs-target-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .vs-target-card { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px; }
+        .vs-target-card .name { font-size: 12px; font-weight: 700; color: var(--vs-text); margin-bottom: 8px; }
+        .vs-target-card .row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; font-size: 11.5px; color: var(--vs-text-dim); }
+        .vs-target-card .row b { font-family: var(--vs-font-mono); color: var(--vs-text); font-size: 12.5px; font-weight: 700; }
+        .vs-bar-track { height: 7px; border-radius: 999px; background: var(--vs-surface-2); overflow: hidden; margin: 7px 0 5px; }
+        .vs-bar-fill { height: 100%; border-radius: 999px; background: var(--vs-accent); transition: width .4s ease; }
+        .vs-bar-fill.ok { background: var(--vs-green); }
+        .vs-pct-badge { font-family: var(--vs-font-mono); font-size: 12.5px; font-weight: 700; }
+        .vs-pct-badge.ok { color: var(--vs-green); }
+        .vs-pct-badge.warn { color: var(--vs-accent); }
+        .vs-no-target { color: var(--vs-text-faint); font-size: 12px; text-align: center; padding: 30px 10px; }
+        .vs-chart-empty { display: flex; align-items: center; justify-content: center; height: 180px; color: var(--vs-text-faint); font-size: 12.5px; }
+
+        .vs-tooltip { background: var(--vs-bg-raised); border: 1px solid var(--vs-border); border-radius: var(--vs-radius-sm); padding: 8px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.1); font-size: 12px; direction: rtl; font-family: var(--vs-font-ui); }
+        .vs-tooltip .t-label { font-weight: 700; margin-bottom: 4px; }
+        .vs-tooltip .t-row { display: flex; align-items: center; gap: 6px; }
+        .vs-tooltip .t-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+        .stats-panel .recharts-wrapper { direction: ltr; }
+
+        @media (min-width: 560px) {
+            .vs-chart-row-2 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 700px) {
+            .vs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .vs-target-grid { grid-template-columns: 1fr; }
+        }
+
+        .content-wrapper {
+            margin-top: 50px;
+            margin-right: 50px;
+            padding: 15px;
+            background-color: white;
+        }
+
+        /* AdminLTE defaults */
+        .form-control {
+            border-radius: 0;
+            box-shadow: none;
+            border-color: #d2d6de;
+        }
+
+        .input-group .input-group-addon {
+            border-radius: 0;
+            border-color: #d2d6de;
+            background-color: #fff;
+        }
+
+        .btn {
+            border-radius: 3px;
+            box-shadow: none;
+            border: 1px solid transparent;
+        }
+
+        .btn-flat {
+            border-radius: 0;
+            border-width: 1px;
+        }
+
+        .btn-default {
+            background-color: #f4f4f4;
+            color: #444;
+            border-color: #ddd;
+        }
+
+        .box-footer {
+            border-top: 1px solid #f4f4f4;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .box-body {
+            padding: 10px;
+        }
+
+        .well {
+            background: #f5f5f5;
+        }
+
+        .text-yellow {
+            color: #f39c12 !important;
+        }
+
+        /* theme button palette (dist/css/arabic/style.css) */
+        .btn-primary {
+            background-color: #0093e9;
+            border-color: #0084d2;
+            color: #fff;
+        }
+
+        .btn-success {
+            background-color: #31c860;
+            border-color: #2db457;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: #f96a74;
+            border-color: #f85561;
+            color: #fff;
+        }
+
+        .btn-warning {
+            background-color: #ff6a00;
+            border-color: #e65f00;
+            color: #fff;
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover,
+        .btn-danger:hover,
+        .btn-warning:hover {
+            color: #fff;
+            filter: brightness(0.95);
+        }
+
+        .panel-primary {
+            border-style: inherit;
+        }
+
+        .panel-primary>.panel-heading {
+            color: #535252 !important;
+            background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(235, 246, 237, 1) 17%, rgba(255, 249, 228, 1) 34%, rgba(249, 231, 222, 1) 47%, rgba(248, 242, 228, 1) 57%, rgba(217, 234, 244, 1) 64%, rgba(233, 239, 236, 1) 74%, rgba(186, 234, 230, 1) 100%);
+            border: 0px !important;
+        }
+
+        .alert,
+        .panel {
+            box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important;
+        }
+
+        .modal-header-primary {
+            padding: 9px 15px;
+            background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(255, 249, 228, 1) 34%, rgba(186, 234, 230, 1) 100%);
+        }
+
+        .modal-header-primary .close {
+            float: left;
+        }
+
+        .modal-title {
+            color: #535252 !important;
+        }
+
+        /* mock-only helpers */
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 8px;
+        }
+
+        .table-toolbar label {
+            font-weight: normal;
+            margin: 0;
+        }
+
+        .table-toolbar select {
+            width: 70px;
+        }
+
+        .pager-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pager-bar .pagination {
+            margin: 0;
+        }
+
+        .pager-bar .pagination>li>a {
+            cursor: pointer;
+        }
+
+        #orders-table td {
+            vertical-align: top;
+        }
+
+        .info-table td {
+            padding: 0 2px;
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .add-assessment {
+            color: #0093e9;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .assess-label {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #ccd;
+            white-space: nowrap;
+        }
+
+        .assess-label small {
+            display: block;
+            color: #777;
+        }
+
+        .empty-row td {
+            text-align: center;
+            padding: 30px !important;
+            color: #888;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #333;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            z-index: 2000;
+            display: none;
+        }
+
+        .assessment-options .btn {
+            margin: 3px;
+        }
+    </style>
+
+    <!-- =====================================================================
+         (B) Copied as-is from the live page (layout <style> + page <style>)
+         ===================================================================== -->
+    <style>
+        .btn-group>.btn.active:hover {
+            color: white;
+        }
+
+        .select2-selection__rendered {
+            direction: rtl;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f96a741f !important;
+        }
+
+        thead>tr>th {
+            text-align: center;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #67B9EC !important;
+        }
+
+        .select2-container--default .select2-results__option[aria-selected="true"] {
+            background-color: #ddd !important;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #67B9EC !important;
+        }
+
+        .btn-default.btn-all.active {
+            background-color: #B7B7B7;
+            color: white;
+        }
+
+        .btn-default.btn-on.active {
+            background-color: #5BB75B;
+            color: white;
+        }
+
+        .btn-default.btn-off.active {
+            background-color: #DA4F49;
+            color: white;
+        }
+
+        /* تحسين شكل الـ Select2 ليتناسب مع الـ Modern Skin */
+        .select2-container--default .select2-selection--multiple {
+            border-radius: 8px !important;
+            border: 1px solid #d2d6de !important;
+            padding: 5px !important;
+        }
+
+        #orders-table tr th {
+            white-space: nowrap;
+        }
+
+        #orders-table tbody tr:hover {
+            background-color: transparent !important;
+        }
+
+        /* Danger row */
+        #orders-table tbody tr.danger-row {
+            background-color: #f2dede !important;
+        }
+
+        /* Primary row */
+        #orders-table tbody tr.primary-row {
+            background-color: #d9edf7 !important;
+        }
+
+        #orders-table tbody tr.danger-row:hover {
+            background-color: #dbc6c6ff !important;
+        }
+
+        #orders-table tbody tr.primary-row:hover {
+            background-color: #becfd8ff !important;
+        }
+
+        /* fixed: the live page has ".dropdown-men" (typo), so the status table never got this width */
+        .status-filter .dropdown-menu,
+        .responsibleTeam-filter .dropdown-menu,
+        .components-filter .dropdown-menu {
+            min-width: 1000px;
+            overflow: auto;
+            background: #f4f4f4;
+        }
+
+        .status-table {
+            width: 100%;
+            table-layout: fixed;
+            background-color: white;
+            margin: 0px !important;
+        }
+
+        .status-table th {
+            text-align: center;
+            background: #d9e8f7;
+            white-space: nowrap;
+            border: 1px solid gray !important;
+        }
+
+        .status-table td {
+            text-align: center;
+            cursor: pointer;
+            transition: .2s;
+            border: 1px solid gray !important;
+        }
+
+        .status-table td:hover {
+            background: #fff0 !important;
+            color: black !important;
+        }
+
+        .status-table td.selected {
+            background: #31c860;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .status-table th:nth-child(1),
+        .status-table th:nth-child(3),
+        .status-table td:nth-child(1),
+        .status-table td:nth-child(3) {
+            background: #c3e0f9;
+        }
+
+        .status-table td:nth-child(1).selected,
+        .status-table td:nth-child(3).selected {
+            background: #0093e9;
+        }
+
+        .status-table th:nth-child(2),
+        .status-table th:nth-child(4),
+        .status-table td:nth-child(2),
+        .status-table td:nth-child(4) {
+            background: #ffbec2;
+        }
+
+        .status-table td:nth-child(2).selected,
+        .status-table td:nth-child(4).selected {
+            background: #f96a74;
+        }
+
+        #selectedStatusBtn,
+        #selectedResponsibleTeamBtn,
+        #selectedComponentsBtn {
+            background: white;
+            border: 1px solid #e0e2e8;
+            width: 100%;
+            color: #a9a9a9;
+            white-space: normal;
+            height: 50px;
+            border-radius: 8px;
+            text-align: right;
+        }
+
+        #statusDropdown,
+        #responsibleTeamDropdown,
+        #componentsDropdown {
+            padding: 10px !important;
+            right: 0px !important;
+            border: 1px solid #e5e5e5;
+        }
+
+        td.NewOrder {
+            background-color: #e8f1ff !important;
+        }
+
+        td.MaintenanceOrder {
+            background-color: #fbe8e8 !important;
+        }
+
+        /* NEW: value + [🔍 search] [نسخ copy] buttons (code / name) */
+        .case-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+        }
+
+        .case-value .case-text {
+            margin-left: 3px;
+        }
+
+        .case-value .btn-xs {
+            padding: 0 5px;
+            font-size: 11px;
+            line-height: 18px;
+            border-radius: 3px !important;
+        }
+
+        .case-value .case-search {
+            background: #fff;
+            border-color: #ccc;
+            color: #333;
+        }
+
+        .case-value .case-copy.copied {
+            background-color: #31c860;
+            border-color: #2db457;
+        }
+
+        .info-table .case-row td {
+            padding-bottom: 3px;
+        }
+
+        /* records count shown at the top too, next to "عرض 20" */
+        .table-toolbar .toolbar-start {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .table-toolbar .page-info {
+            color: #333;
+        }
+
+        .titleInfo {
+            white-space: nowrap;
+            color: gray;
+            text-align: right !important;
+            width: 1px;
+        }
+
+        .info {
+            white-space: nowrap;
+            text-align: right !important;
+        }
+
+        .box-content {
+            padding: 10px;
+            background-color: #f6f6f6;
+            border-radius: 10px !important;
+            border: 1px solid #d7dbe0;
+        }
+
+        .no-padding {
+            padding: 0px !important;
+        }
+
+        .orderCategory .btn,
+        .remove-filter,
+        .copy-filter,
+        .paste-filter,
+        .today-date-period,
+        .week-date-period,
+        .remove-date-period,
+        .remove-date,
+        #search-icon,
+        #bulk-download-manager-btn,
+        #collapse-btn {
+            margin: 0px 5px;
+            border-radius: 10px !important;
+        }
+
+        .selected-status,
+        .selected-responsible-team,
+        .selected-component {
+            background: #e6f1fb !important;
+            border-radius: 15px;
+            color: #0093e9;
+            font-size: 12px;
+            border: 1px solid #0093e9;
+        }
+
+        .daterangepicker .cancelBtn,
+        .daterangepicker .applyBtn {
+            display: none !important;
+        }
+
+        .daterangepicker {
+            width: 278px !important;
+        }
+
+        .daterangepicker .drp-calendar.left {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .daterangepicker .drp-calendar.right {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            pointer-events: none;
+        }
+
+        .daterangepicker .drp-calendar.right .calendar-table {
+            visibility: hidden;
+        }
+
+        .daterangepicker .drp-calendar.right th.next {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            position: absolute;
+            right: 8px;
+            top: 8px;
+        }
+
+        .daterangepicker .drp-calendar.right th.month {
+            visibility: hidden;
+        }
+
+        .single-cal-view .drp-calendar.right {
+            display: none !important;
+        }
+
+        .single-cal-view .drp-calendar.left thead tr:first-child th:last-child {
+            cursor: pointer;
+        }
+
+        .single-cal-view .drp-calendar.left thead tr:first-child th:last-child::after {
+            content: '';
+            display: inline-block;
+            border: solid black;
+            border-width: 0 2px 2px 0;
+            border-radius: 0;
+            padding: 3px;
+            transform: rotate(-45deg);
+        }
+
+        /* =====================================================================
+           (C) NEW: compact filters layout
+           ===================================================================== */
+        #search-form .filters-row {
+            margin-right: -8px;
+            margin-left: -8px;
+        }
+
+        #search-form .filters-row>[class*="col-"] {
+            padding-right: 8px;
+            padding-left: 8px;
+            float: right;
+            clear: both;   /* one filter per line, narrower width */
+        }
+
+        #search-form .filter-item {
+            margin-bottom: 15px;
+        }
+
+        #search-form .filter-item .control-label {
+            display: block;
+            float: none;
+            width: auto;
+            text-align: right;
+            padding-top: 0;
+            margin-bottom: 5px;
+        }
+
+        /* field + its buttons on one line, buttons right next to the field */
+        #search-form .filter-inline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #search-form .filter-inline>.filter-field {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        #search-form .filter-inline>.btn-group {
+            flex: 0 0 auto;
+            float: none !important;
+            display: flex;
+            white-space: nowrap;
+        }
+
+        #search-form .filter-inline>.btn-group>.btn {
+            float: none;
+            margin: 0 2px !important;
+            padding: 6px 9px;
+            font-size: 12px;
+        }
+
+        /* pickers: same height as the other inputs, grow when chips wrap */
+        #search-form #selectedStatusBtn,
+        #search-form #selectedResponsibleTeamBtn,
+        #search-form #selectedComponentsBtn {
+            height: auto;
+            min-height: 34px;
+            padding: 6px 12px;
+            line-height: 20px;
+        }
+
+        #search-form .selected-status,
+        #search-form .selected-responsible-team,
+        #search-form .selected-component {
+            display: inline-block;
+            margin: 1px 0;
+        }
+
+        /* keep the 1000px picker tables on screen */
+        #search-form .status-filter .dropdown-menu,
+        #search-form .responsibleTeam-filter .dropdown-menu,
+        #search-form .components-filter .dropdown-menu {
+            min-width: 0;
+            width: 1000px;
+            max-width: calc(100vw - 90px);
+        }
+
+        /* only the table scrolls sideways; the toolbar (عرض / طباعة / اكسيل) and the pager stay in place */
+        #list-form .table-scroll {
+            overflow-x: auto;
+        }
+
+        /* multi-select tabs: hide the checkboxes like Bootstrap does for data-toggle="buttons" */
+        .orderCategory input[type=checkbox] {
+            position: absolute;
+            clip: rect(0, 0, 0, 0);
+            pointer-events: none;
+        }
+
+        @media print {
+
+            .main-header,
+            .main-sidebar,
+            .stats-toggle,
+            #search-form,
+            .table-toolbar,
+            .pager-bar,
+            #collapseExample {
+                display: none !important;
+            }
+
+            .content-wrapper {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===================== Header ===================== -->
+    <header class="main-header">
+        <div>
+            <a href="#"><i class="fa fa-home"></i></a>
+            <a href="#"><i class="fa fa-bars"></i></a>
+        </div>
+        <div>
+            <a href="#"><i class="fa fa-calendar"></i></a>
+            <a href="#"><i class="fa fa-sun-o" style="color:#f0ad4e"></i></a>
+            <a href="#">EN</a>
+            <a href="#" class="user-chip"><i class="fa fa-user-circle"></i> يوسف محمد</a>
+        </div>
+    </header>
+
+    <!-- ===================== Sidebar ===================== -->
+    <aside class="main-sidebar">
+        <a href="#" title="الرئيسية"><i class="fa fa-home"></i></a>
+        <a href="#" title="لوحة التحكم"><i class="fa fa-dashboard"></i></a>
+        <a href="#" title="قسم الطلبات"><i class="fa fa-folder-open"></i></a>
+        <a href="#" title="قسم طلبات الصيانة"><i class="fa fa-folder-open"></i></a>
+        <a href="#" title="قسم الأبحاث"><i class="fa fa-search"></i></a>
+        <a href="#" title="قسم التوقيع"><i class="fa fa-pencil"></i></a>
+        <a href="#" title="الكول سنتر"><i class="fa fa-phone"></i></a>
+        <a href="#" title="قسم الإستقبال"><i class="fa fa-file"></i></a>
+        <a href="#" title="القسم النفسى"><i class="fa fa-user-md"></i></a>
+        <a href="#" title="القسم الهندسى" class="active"><i class="fa fa-briefcase"></i></a>
+        <a href="#" title="المتابعات"><i class="fa fa-calendar"></i></a>
+        <a href="#" title="إعدادات نظام الحالات"><i class="fa fa-cog"></i></a>
+        <a href="#" title="السجلات"><i class="fa fa-history"></i></a>
+    </aside>
+
+    <!-- ===================== Side statistics dashboard ===================== -->
+    <button class="stats-toggle" id="statistics-toggle" title="إحصائيات الزيارات"><i class="fa fa-chevron-right"></i></button>
+    <div class="stats-panel" id="StatisicsMeasurementsAndDeliveries">
+        <div class="stats-head">
+            <span class="stats-title"><i class="fa fa-bar-chart"></i> إحصائيات الزيارات</span>
+            <span>
+                <button type="button" class="btn btn-xs stats-refresh" id="refresh_dashboard" title="تحديث"><i class="fa fa-refresh"></i></button>
+                <button type="button" class="btn btn-xs btn-success" id="export_dashboard"><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button>
+            </span>
+        </div>
+        <div class="stats-body-scroll">
+            <div id="vs-stats-root"></div>
+        </div>
+    </div>
+
+    <!-- ===================== Content (same markup as the live page) ===================== -->
+    <div class="content-wrapper">
+        <div class="panel-group" id="new_order" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-primary flat">
+                <div class="panel-heading" role="tab" id="headingTwo">
+                    <h4 class="panel-title" role="button" data-parent="#new_order" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <i class="fa fa-fw fa-search"></i>
+                    </h4>
+                </div>
+                <div id="collapseTwo" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingTwo">
+                    <div class="panel-body">
+                        <form class="form-horizontal" id="search-form" autocomplete="off" onsubmit="return false;">
+                            <div class="box-body">
+
+                                <!-- ===== Row 1: text / lists ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Case Name / Order Code -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="caseNameOrCode" class="control-label">اسم الحالة / كود الطلب</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="text" name="caseNameOrCode" id="caseNameOrCode" class="form-control" placeholder="ابحث بالاسم أو الكود" />
+                                                </div>
+                                                <div class="btn-group" data-id="caseNameOrCode">
+                                                    <button type="button" class="btn btn-md btn-danger remove-filter pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary copy-filter pointer" title="نسخ"><i class="fa fa-copy"></i> نسخ</button>
+                                                    <button type="button" class="btn btn-md btn-success paste-filter pointer" title="لصق"><i class="fa fa-paste"></i> لصق</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- City -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="city" class="control-label">المحافظة</label>
+                                            <select id="city" name="city[]" multiple class="form-control"></select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Amputation Level -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="amputationLevel" class="control-label">مستوى البتر</label>
+                                            <select id="amputationLevel" name="amputationLevel[]" multiple class="form-control"></select>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <!-- ===== Row 2: table-dropdown pickers ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Responsible Team -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="responsibleTeam" class="control-label">الفريق المسؤول</label>
+                                            <div class="dropdown responsibleTeam-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedResponsibleTeamBtn">اختر الفريق المسؤول</button>
+                                                <div class="dropdown-menu" id="responsibleTeamDropdown"></div>
+                                            </div>
+                                            <input type="hidden" id="selectedResponsibleTeamIds" name="responsibleTeam_ids">
+                                        </div>
+                                    </div>
+
+                                    <!-- Components -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="components" class="control-label">المكونات</label>
+                                            <div class="dropdown components-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedComponentsBtn">المكونات</button>
+                                                <div class="dropdown-menu" id="componentsDropdown"></div>
+                                            </div>
+                                            <input type="hidden" id="selectedComponentsIds" name="components_ids">
+                                        </div>
+                                    </div>
+
+                                    <!-- Engineering Assessment -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="engineeringAssessment" class="control-label">التقييم الهندسى</label>
+                                            <div class="dropdown status-filter">
+                                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" id="selectedStatusBtn">اختر حالة</button>
+                                                <div class="dropdown-menu" id="statusDropdown"></div>
+                                            </div>
+                                            <input type="hidden" id="selectedStatusIds" name="status_ids">
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <!-- ===== Row 3: dates / numbers ===== -->
+                                <div class="row filters-row">
+
+                                    <!-- Assessment Date -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="assessmentDatePeriod" class="control-label">تاريخ التقييم الهندسى</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <div class="input-group">
+                                                        <input type="text" id="assessmentDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                        <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
+                                                    </div>
+                                                    <input type="hidden" name="assessmentDateFrom" id="assessmentDateFrom">
+                                                    <input type="hidden" name="assessmentDateTo" id="assessmentDateTo">
+                                                </div>
+                                                <div class="btn-group" data-targetDate="assessmentDatePeriod" data-targetDateFrom="assessmentDateFrom" data-targetDateTo="assessmentDateTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                    <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Visit Date -->
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="visitDatePeriod" class="control-label">تاريخ حجز الزيارة</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <div class="input-group">
+                                                        <input type="text" id="visitDatePeriod" class="form-control" value="" placeholder="اختر الفترة" />
+                                                        <span class="input-group-addon"><span class="glyphicon-calendar pointer glyphicon"></span></span>
+                                                    </div>
+                                                    <input type="hidden" name="visitDateFrom" id="visitDateFrom">
+                                                    <input type="hidden" name="visitDateTo" id="visitDateTo">
+                                                </div>
+                                                <div class="btn-group" data-targetDate="visitDatePeriod" data-targetDateFrom="visitDateFrom" data-targetDateTo="visitDateTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
+                                                    <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
+                                                    <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Number Of Days -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
+                                                </div>
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
+                                                </div>
+                                                <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date" title="مسح"><i class="fa fa-times"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <!-- ===== Row 4: Is Attend (replaces نوع الطلب) ===== -->
+                                <div class="row filters-row">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item box-content">
+                                            <label for="isAttend" class="control-label">هل حضر</label>
+                                            <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
+                                                <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isAttend" checked="checked"> الكل</label>
+                                                <label class="btn btn-default btn-on"><input type="radio" value="1" name="isAttend"> حضر</label>
+                                                <label class="btn btn-default btn-off"><input type="radio" value="0" name="isAttend"> لم يحضر</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="box-footer">
+                                <div class="form-group">
+                                    <div class="col-md-4 col-sm-12 pull-left">
+                                        <div class="btn-group" style="float: left;">
+                                            <button type="button" id="search-icon" class="btn btn-flat btn-success"><span class="glyphicon glyphicon-search"></span> بحث</button>
+                                            <button class="btn btn-flat btn-default" type="button" id="collapse-btn" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                                <span class="glyphicon glyphicon glyphicon-th text-primary"></span> تفاصيل الجدول
+                                            </button>
+                                            <button type="button" id="bulk-download-manager-btn" class="btn btn-flat btn-warning"><i class="fa fa-folder-open"></i> إدارة الملفات</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <!-- multi-select: checkboxes, handled by our own click handler (no data-toggle) -->
+                                        <div class="btn-group orderCategory">
+                                            <label class="btn btn-lg btn-default active">
+                                                <input type="checkbox" name="category[]" value="all" checked> الكل
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-primary">
+                                                <input type="checkbox" name="category[]" value="mdm-new"> التقييم الطبي و القياسات
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-primary">
+                                                <input type="checkbox" name="category[]" value="fitting-new"> تسليم طرف جديد
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-danger">
+                                                <input type="checkbox" name="category[]" value="mdm-maintenance"> تقييم الصيانة
+                                            </label>
+                                            <label class="btn btn-lg btn-default" data-active-class="btn-danger">
+                                                <input type="checkbox" name="category[]" value="fitting-maintenance"> تسليم الصيانة
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div><!-- /.box-footer -->
+                        </form>
+
+                        <form class="form-horizontal col-sm-12" id="list-form" autocomplete="off" onsubmit="return false;">
+                            <div class="box-body">
+                                <div class="form-group">
+                                    <div class="collapse col-lg-8 pull-left well" id="collapseExample">
+                                        <div class="text-right">
+                                            <span class="col-lg-4 text-yellow text-bold"><input id="toggle" type="checkbox" autocomplete="off"> اختيار الكل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> نوع الطلب</span>
+                                            <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ تقديم الطلب</span>
+                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> كود الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين أخذ المقاس وجاهزية التسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> هل حضر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حضور تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ التأجيل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- DataTables-like toolbar (length + TableTools) -->
+                                <div class="table-toolbar">
+                                    <div class="toolbar-start">
+                                        <label>عرض
+                                            <select id="pageSize">
+                                                <option value="20">20</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                                <option value="-1">الكل</option>
+                                            </select>
+                                        </label>
+                                        <span class="page-info" id="pageInfoTop"></span>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-default btn-sm" id="printBtn"><span class="glyphicon glyphicon-print"></span> طباعة</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="excelBtn"><span class="glyphicon glyphicon-export"></span> اكسيل</button>
+                                    </div>
+                                </div>
+
+                                <div class="table-scroll">
+                                    <table id="orders-table" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered table-hover" style="text-align: center;">
+                                        <thead>
+                                            <tr id="headRow"></tr>
+                                        </thead>
+                                        <tbody id="bodyRows"></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="pager-bar">
+                                    <div id="pageInfo"></div>
+                                    <ul class="pagination" id="pagination"></ul>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== Assessment modal (mock) ===================== -->
+    <div class="modal fade" id="assessmentModal" tabindex="-1">
+        <div class="modal-dialog" style="width: 60%;">
+            <div class="modal-content">
+                <div class="modal-header-primary">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> إضافة تقييم — <span id="modalStage"></span></h4>
+                </div>
+                <div class="modal-body">
+                    <p><b>الحالة:</b> <span id="modalCase"></span></p>
+                    <div class="form-group">
+                        <label class="control-label">التقييم</label>
+                        <div class="assessment-options" id="modalOptions"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <label class="control-label">التاريخ</label>
+                            <input type="date" id="modalDate" class="form-control">
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="control-label">الملاحظات</label>
+                            <input type="text" id="modalNotes" class="form-control" placeholder="الملاحظات">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-flat btn-success" id="modalSave"><span class="glyphicon glyphicon-floppy-disk"></span> حفظ</button>
+                    <button type="button" class="btn btn-flat btn-danger" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-msg" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/icheck.min.js"></script>
+
+    <script>
+        // =====================================================================
+        // MOCK DATA (stands in for the server)
+        // =====================================================================
+
+        // Same lookups the server renders into the live page
+        var STATUS_DATA = {
+            "التقييم الطبى والقياسات": [
+                { "id": "new_mdm_1", "name": "تم أخد مقاس" }, { "id": "new_mdm_22", "name": "مؤجل" }, { "id": "new_mdm_18", "name": "خارج المعايير" },
+                { "id": "new_mdm_19", "name": "عدم رغبة الحالة" }, { "id": "new_mdm_20", "name": "عدم إحتياج الحالة" }
+            ],
+            "تسليم طرف جديد": [
+                { "id": "new_fitting_3", "name": "تم التسليم" }, { "id": "new_fitting_22", "name": "مؤجل" },
+                { "id": "new_fitting_4", "name": "إعادة تصنيع (تلف فى الطرف وقت التسليم)" },
+                { "id": "new_fitting_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "new_fitting_36", "name": "تعديل في التصميم (نفس المقاس السابق) " },
+                { "id": "new_fitting_5", "name": "رفض الإستلام" }, { "id": "new_fitting_2", "name": "مستبعد (الطرف غير مناسب ولا يوجد حل)" }
+            ],
+            "تقييم الصيانة": [
+                { "id": "maintenance_mdm_37", "name": "توفير قطع غيار" }, { "id": "maintenance_mdm_15", "name": "تم نهاية الصيانة" },
+                { "id": "maintenance_mdm_22", "name": "مؤجل" }, { "id": "maintenance_mdm_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "maintenance_mdm_36", "name": "تعديل في التصميم (نفس المقاس السابق) " }, { "id": "maintenance_mdm_32", "name": "توفير قطع غيار" },
+                { "id": "maintenance_mdm_9", "name": "تصنيع قطع غيار" }, { "id": "maintenance_mdm_34", "name": "مستبعد من الصيانة" },
+                { "id": "maintenance_mdm_35", "name": "استرداد الطرف" }
+            ],
+            "تسليم صيانة": [
+                { "id": "maintenance_fitting_37", "name": "توفير قطع غيار" }, { "id": "maintenance_fitting_3", "name": "تم التسليم" },
+                { "id": "maintenance_fitting_22", "name": "مؤجل" }, { "id": "maintenance_fitting_4", "name": "إعادة تصنيع (تلف فى الطرف وقت التسليم)" },
+                { "id": "maintenance_fitting_7", "name": "تم أخذ مقاس جديد (تعديل فى المقاس السابق)" },
+                { "id": "maintenance_fitting_36", "name": "تعديل في التصميم (نفس المقاس السابق) " }, { "id": "maintenance_fitting_32", "name": "توفير قطع غيار" },
+                { "id": "maintenance_fitting_9", "name": "تصنيع قطع غيار" }, { "id": "maintenance_fitting_34", "name": "مستبعد من الصيانة" }
+            ]
+        };
+
+        var TEAM_DATA = {
+            "مهندس / علاج طبيعى": [
+                { "id": "engineer-154", "name": "همام" }, { "id": "engineer-188", "name": "سامح" }, { "id": "engineer-229", "name": "كيرلس" },
+                { "id": "engineer-230", "name": "سلمى" }, { "id": "engineer-272", "name": "عبد المقصود" }, { "id": "engineer-274", "name": "blank" },
+                { "id": "engineer-288", "name": "youssef mostafa" }, { "id": "engineer-287", "name": "eslam ahmed" }, { "id": "engineer-291", "name": "اسلام رجب" },
+                { "id": "engineer-292", "name": "اسلام عاصم" }, { "id": "engineer-293", "name": "يحيى الغايش" }, { "id": "engineer-308", "name": "اشرف محمد" },
+                { "id": "engineer-307", "name": "محمود مغربي" }, { "id": "engineer-306", "name": "اسلام جمال" }, { "id": "engineer-305", "name": "هنا جوهر" },
+                { "id": "engineer-234", "name": "م/ محمد حطب (CEO)" }
+            ],
+            "فنى أطراف/تجميع": [
+                { "id": "technical-157", "name": "محمد أشرف" }, { "id": "assembly_technician-160", "name": "يسري عبد العزيز" }, { "id": "technical-16", "name": "عمرو" },
+                { "id": "technical-17", "name": "عبدالله" }, { "id": "technical-275", "name": "blank1" }, { "id": "assembly_technician-310", "name": "شعبان" },
+                { "id": "assembly_technician-309", "name": "جمعة" }
+            ]
+        };
+
+        var COMPONENTS_DATA = {
+            "الاكسسوارات": [
+                { "id": "33", "name": "جوانتى سيليكون" }, { "id": "34", "name": "تريكو" }, { "id": "32", "name": "بطانة" }, { "id": "31", "name": "سكوتش" },
+                { "id": "28", "name": "شاوما" }, { "id": "29", "name": "شراب شاوما" }, { "id": "30", "name": "ركبة قماش" }, { "id": "27", "name": "شراب تريكو" },
+                { "id": "23", "name": "بطانة" }, { "id": "26", "name": "سوفت سوكيت TPU" }, { "id": "24", "name": "شراب قطن" }, { "id": "25", "name": "شراب جيل" },
+                { "id": "22", "name": "حزام" }, { "id": "60", "name": "سكوتش" }
+            ],
+            "المكونات": [
+                { "id": "35", "name": "ذراع " }, { "id": "36", "name": "كف تصنيع داخلي" }, { "id": "37", "name": "جوانتي تجميل" }, { "id": "38", "name": "سوكيت  PP" },
+                { "id": "40", "name": "صمام" }, { "id": "41", "name": "شوكة" }, { "id": "42", "name": "Shuttle Lock  " }, { "id": "43", "name": "مسمار Shuttle Lock" },
+                { "id": "45", "name": "ركبة " }, { "id": "46", "name": "عمود ركبة متحركة" }, { "id": "47", "name": "ماسورة" }, { "id": "48", "name": "قدم" },
+                { "id": "49", "name": "مشط قدم" }, { "id": "52", "name": "مسمار قدم" }, { "id": "53", "name": "محور قدم" }, { "id": "54", "name": "كاوتشة مفصل قدم متحرك" },
+                { "id": "55", "name": "مفصل حوض " }, { "id": "56", "name": "مفصلات رجل مقلوبة" }, { "id": "58", "name": "جلبة تطويل" }, { "id": "57", "name": "دعامة ركبة" }
+            ],
+            "قطع الغيار": [],
+            "الخامات": [
+                { "id": "63", "name": "pp" }, { "id": "64", "name": "PLA" }, { "id": "65", "name": "PP Pellets" }, { "id": "66", "name": "TPU 95A" }, { "id": "67", "name": "TPU 87A" },
+                { "id": "68", "name": "TPU 65A" }, { "id": "69", "name": "PETG" }, { "id": "70", "name": "ASA" }, { "id": "71", "name": "ABS" }, { "id": "72", "name": "PC" }
+            ]
+        };
+
+        // Stage => { title, items:[{id, name}] } built from STATUS_DATA ("new_mdm_1" -> stage "new_mdm", id 1)
+        var STAGES = {};
+        Object.keys(STATUS_DATA).forEach(function (title) {
+            STATUS_DATA[title].forEach(function (it) {
+                var m = it.id.match(/^(new_mdm|new_fitting|maintenance_mdm|maintenance_fitting)_(\d+)$/);
+                STAGES[m[1]] = STAGES[m[1]] || { title: title, items: [] };
+                STAGES[m[1]].items.push({ id: +m[2], name: it.name });
+            });
+        });
+        function statusName(stage, id) {
+            var it = STAGES[stage].items.filter(function (x) { return x.id == id; })[0];
+            return it ? it.name : '';
+        }
+
+        var CITIES = ['القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'المنوفية', 'الشرقية', 'الغربية', 'القليوبية', 'أسيوط', 'سوهاج', 'المنيا', 'بني سويف', 'الفيوم', 'قنا', 'أسوان'];
+        var AMPUTATION_LEVELS = ['تحت الركبة', 'فوق الركبة', 'تحت الكوع', 'فوق الكوع', 'مفصل الركبة', 'مفصل الحوض', 'القدم الجزئي', 'الرسغ'];
+
+        // Mock data is generated relative to the real "today" so اليوم / هذا الاسبوع always hit rows
+        var TODAY = moment().startOf('day');
+
+        var seed = 7;
+        function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+        function pick(arr) { return arr[Math.floor(rnd() * arr.length)]; }
+        function pickSome(arr, max) {
+            var n = Math.floor(rnd() * (max + 1)), out = [];
+            while (out.length < n && out.length < arr.length) {
+                var x = pick(arr);
+                if (out.indexOf(x) === -1) out.push(x);
+            }
+            return out;
+        }
+        function dateAround(daysBack, span) { return TODAY.clone().subtract(daysBack - Math.floor(rnd() * span), 'days').format('YYYY-MM-DD'); }
+
+        var ALL_TEAM = [].concat(TEAM_DATA['مهندس / علاج طبيعى'], TEAM_DATA['فنى أطراف/تجميع']);
+        var FIRST = ['محمود', 'السيد', 'أحمد', 'محمد', 'مصطفى', 'إبراهيم', 'علي', 'حسن', 'خالد', 'عمر', 'فاطمة', 'منى', 'سارة', 'هدى', 'ياسمين', 'كريم', 'طارق', 'نادية', 'رشا', 'عبدالله'];
+        var MIDDLE = ['أحمد', 'محمد', 'إبراهيم', 'صالح', 'عبدالرحمن', 'حسين', 'سعيد', 'فتحي', 'جمال', 'رمضان'];
+        var LAST = ['سليمان', 'صالح', 'عبدالعزيز', 'الشافعي', 'منصور', 'النجار', 'حسانين', 'عوض', 'شلبي', 'زكي'];
+
+        var ROWS = [];
+        for (var i = 0; i < 64; i++) {
+            var type = rnd() < 0.62 ? 'new' : 'maintenance';
+            var surgery = dateAround(500, 400);
+            var row = {
+                id: 1000 + i,
+                type: type,
+                submitDate: dateAround(20, 25),
+                code: rnd() < 0.3 ? '-' : (pick(['BK', 'AK', 'BE', 'AE']) + String(Math.floor(rnd() * 90) + 10) + String(Math.floor(rnd() * 900) + 100)),
+                name: pick(FIRST) + ' ' + pick(MIDDLE) + ' ' + pick(MIDDLE) + ' ' + pick(LAST),
+                city: pick(CITIES),
+                nid: '2' + String(Math.floor(rnd() * 9e12 + 1e12)).slice(0, 13),
+                funding: pick(['-', '-', '-', 'متبرع فردي', 'مؤسسة مصر الخير', 'بنك الطعام']),
+                level: pick(AMPUTATION_LEVELS),
+                side: pick(['أيمن', 'أيسر']),
+                amputationDate: surgery,
+                cause: pick(['حادث', 'مرضي', 'سكر', 'خلقي', 'ورم']),
+                surgeryDate: surgery,
+                visitDate: dateAround(3, 10),
+                days: null,
+                attended: rnd() < 0.35 ? null : (rnd() < 0.75 ? 1 : 0),
+                hasLimb: type === 'maintenance' ? 'نعم' : (rnd() < 0.2 ? 'نعم' : '-'),
+                accessories: pickSome(COMPONENTS_DATA['الاكسسوارات'], 2),
+                components: pickSome(COMPONENTS_DATA['المكونات'], 3),
+                spareParts: [],
+                videos: Math.floor(rnd() * 4),
+                assessments: {},
+                notes: rnd() < 0.3 ? pick(['الحالة محتاجة متابعة', 'تأجيل لحين التئام الجرح', 'تم التواصل تليفونياً', 'القطع المطلوب توفيرها: بطانة']) : '',
+                postponeDate: '',
+                team: pickSome(ALL_TEAM, 2)
+            };
+
+            var r = rnd();
+            if (type === 'new') {
+                if (r > 0.45) {
+                    row.assessments.new_mdm = { id: pick([1, 1, 1, 22, 18]), date: dateAround(30, 31) };
+                    if (row.assessments.new_mdm.id == 1 && r > 0.7) {
+                        row.assessments.new_fitting = { id: pick([3, 3, 22, 4, 7]), date: dateAround(5, 8) };
+                        row.days = Math.floor(rnd() * 25) + 3;
+                    }
+                }
+            } else if (r > 0.45) {
+                row.assessments.maintenance_mdm = { id: pick([15, 37, 22, 9]), date: dateAround(25, 26) };
+                if (r > 0.75) {
+                    row.assessments.maintenance_fitting = { id: pick([3, 3, 22]), date: dateAround(5, 8) };
+                    row.days = Math.floor(rnd() * 15) + 1;
+                }
+            }
+            if (Object.keys(row.assessments).some(function (k) { return row.assessments[k].id == 22; })) {
+                row.postponeDate = TODAY.clone().add(Math.floor(rnd() * 20) + 2, 'days').format('YYYY-MM-DD');
+            }
+            ROWS.push(row);
+        }
+
+        // Final statuses close a stage (no more ➕)
+        var FINAL = { new_mdm: [18, 19, 20], new_fitting: [3, 5, 2], maintenance_mdm: [34, 35], maintenance_fitting: [3, 34] };
+        function isFinal(row, stage) { var a = row.assessments[stage]; return a && FINAL[stage].indexOf(+a.id) !== -1; }
+        function currentStage(row) {
+            if (row.type === 'new') {
+                if (isFinal(row, 'new_mdm') || isFinal(row, 'new_fitting')) return 'done';
+                if (!row.assessments.new_mdm || row.assessments.new_mdm.id != 1) return 'new_mdm';
+                return 'new_fitting';
+            }
+            if (isFinal(row, 'maintenance_mdm') || isFinal(row, 'maintenance_fitting')) return 'done';
+            if (!row.assessments.maintenance_mdm || row.assessments.maintenance_mdm.id == 22) return 'maintenance_mdm';
+            return 'maintenance_fitting';
+        }
+        var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
+
+        // =====================================================================
+        // Columns — same 25 columns / order as the live DataTable
+        // =====================================================================
+        function assessmentCell(stage) {
+            return function (row) {
+                if (row.type !== stage.split('_')[0]) return '-';
+                var a = row.assessments[stage], html = '';
+                if (a) html += '<span class="assess-label">' + statusName(stage, a.id) + '<small>' + a.date + '</small></span><br>';
+                if (currentStage(row) === stage) html += '<i class="fa fa-plus-square add-assessment" data-id="' + row.id + '" data-stage="' + stage + '" title="إضافة تقييم"></i>';
+                return html || '-';
+            };
+        }
+        function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
+        // value followed by [🔍] (search by it) and [نسخ] (copy it)
+        function caseValue(value) {
+            if (!value || value === '-') return value || '-';
+            var v = String(value).replace(/"/g, '&quot;');
+            return '<span class="case-value"><span class="case-text">' + value + '</span>' +
+                '<button type="button" class="btn btn-xs case-search" data-value="' + v + '" title="بحث بهذه القيمة"><i class="fa fa-search"></i></button>' +
+                '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + v + '" title="نسخ">نسخ</button>' +
+                '</span>';
+        }
+        function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
+
+        var COLUMNS = [
+            { title: 'نوع الطلب', render: function (r) { return r.type === 'new' ? 'طلب جديد' : 'طلب صيانة'; } },
+            { title: 'تاريخ تقديم الطلب', render: function (r) { return r.submitDate; } },
+            { title: 'كود الحالة', render: function (r) { return caseValue(r.code); } },
+            {
+                title: 'بيانات الحالة', render: function (r) {
+                    return '<table class="info-table">' +
+                        '<tr class="case-row"><td class="titleInfo">الاسم:</td><td class="info">' + caseValue(r.name) + '</td></tr>' +
+                        '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
+                        '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
+                }
+            },
+            { title: 'بيانات التمويل', render: function (r) { return r.funding; } },
+            {
+                title: 'بيانات البتر', render: function (r) {
+                    return '<table class="info-table"><tr><td class="titleInfo">مستوى البتر:</td><td class="info">' + r.level + '</td></tr>' +
+                        '<tr><td class="titleInfo">الطرف المبتور:</td><td class="info">' + r.side + '</td></tr>' +
+                        '<tr><td class="titleInfo">تاريخ البتر:</td><td class="info">' + r.amputationDate + '</td></tr>' +
+                        '<tr><td class="titleInfo">سبب البتر:</td><td class="info">' + r.cause + '</td></tr>' +
+                        '<tr><td class="titleInfo">اخر جراحة:</td><td class="info">' + r.surgeryDate + '</td></tr></table>';
+                }
+            },
+            { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
+            { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
+            { title: 'هل حضر', render: function (r) { return r.attended === null ? '-' : (r.attended ? 'حضر' : 'لم يحضر'); } },
+            { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
+            { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
+            { title: 'المكونات', render: function (r) { return list(r.components); } },
+            { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
+            { title: 'الفيديوهات', render: function (r) { return r.videos ? '<i class="fa fa-video-camera text-primary"></i> ' + r.videos : '-'; } },
+            { title: 'التقييم الطبي و القياسات', render: assessmentCell('new_mdm') },
+            { title: 'تاريخ الحضور', render: attendDate('new_mdm') },
+            { title: 'تسليم طرف جديد', render: assessmentCell('new_fitting') },
+            { title: 'تاريخ الحضور', render: attendDate('new_fitting') },
+            { title: 'تقييم الصيانة', render: assessmentCell('maintenance_mdm') },
+            { title: 'تاريخ الحضور', render: attendDate('maintenance_mdm') },
+            { title: 'تسليم الصيانة', render: assessmentCell('maintenance_fitting') },
+            { title: 'تاريخ الحضور', render: attendDate('maintenance_fitting') },
+            { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
+            { title: 'تاريخ التأجيل', render: function (r) { return r.postponeDate || '-'; } },
+            { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } }
+        ];
+        // aoColumnDefs in the live page hide 15, 17, 19, 21 by default
+        [15, 17, 19, 21].forEach(function (c) { COLUMNS[c].hidden = true; });
+
+        // =====================================================================
+        // Mock "oTable": reads the serialized search form like the server does
+        // =====================================================================
+        var tableState = { page: 1, pageSize: 20 };
+
+        function formValues() {
+            var out = {};
+            $('#search-form').serializeArray().forEach(function (f) {
+                if (/\[\]$/.test(f.name)) (out[f.name] = out[f.name] || []).push(f.value);
+                else out[f.name] = f.value;
+            });
+            return out;
+        }
+
+        function csv(v) { return v ? v.split(',').filter(Boolean) : []; }
+
+        function filteredRows() {
+            var f = formValues();
+            var q = $.trim(f.caseNameOrCode || '').toLowerCase();
+            var cities = f['city[]'] || [];
+            var levels = f['amputationLevel[]'] || [];
+            var teams = csv(f.responsibleTeam_ids), comps = csv(f.components_ids), statuses = csv(f.status_ids);
+            var dFrom = f.numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom, dTo = f.numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo;
+            var allExcept = cities.indexOf('allExcept') !== -1;
+            var cityList = cities.filter(function (c) { return c !== 'allExcept' && c !== 'blank'; });
+            var wantBlankCity = cities.indexOf('blank') !== -1;
+            var categories = f['category[]'] || [];
+
+            return ROWS.filter(function (r) {
+                if (q && r.name.toLowerCase().indexOf(q) === -1 && r.code.toLowerCase().indexOf(q) === -1) return false;
+                if (cities.length) {
+                    var inList = cityList.indexOf(r.city) !== -1 || (wantBlankCity && !r.city);
+                    if (allExcept ? inList : !inList) return false;
+                }
+                if (levels.length && levels.indexOf(r.level) === -1) return false;
+                if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
+                if (categories.length && categories.indexOf('all') === -1 &&
+                    !categories.some(function (c) { return currentStage(r) === CATEGORY_STAGE[c]; })) return false;
+                if (dFrom && (r.days === null || r.days <= +dFrom)) return false;
+                if (dTo && (r.days === null || r.days >= +dTo)) return false;
+                if (teams.length && !r.team.some(function (t) { return teams.indexOf(t.id) !== -1; })) return false;
+                if (comps.length && !r.accessories.concat(r.components).some(function (c) { return comps.indexOf(c.id) !== -1; })) return false;
+                if (statuses.length && !Object.keys(r.assessments).some(function (k) { return statuses.indexOf(k + '_' + r.assessments[k].id) !== -1; })) return false;
+                if (f.assessmentDateFrom && !Object.keys(r.assessments).some(function (k) {
+                    var d = r.assessments[k].date; return d >= f.assessmentDateFrom && d <= f.assessmentDateTo;
+                })) return false;
+                if (f.visitDateFrom && !(r.visitDate >= f.visitDateFrom && r.visitDate <= f.visitDateTo)) return false;
+                return true;
+            });
+        }
+
+        function renderTable() {
+            $('#headRow').html(COLUMNS.map(function (c) { return c.hidden ? '' : '<th>' + c.title + '</th>'; }).join(''));
+
+            var rows = filteredRows(), total = rows.length;
+            var size = tableState.pageSize === -1 ? (total || 1) : tableState.pageSize;
+            var pages = Math.max(1, Math.ceil(total / size));
+            if (tableState.page > pages) tableState.page = pages;
+            var start = (tableState.page - 1) * size;
+            var pageRows = rows.slice(start, start + size);
+            var visible = COLUMNS.filter(function (c) { return !c.hidden; }).length;
+
+            if (!pageRows.length) {
+                $('#bodyRows').html('<tr class="empty-row"><td colspan="' + visible + '">لم يتم العثور علي أي نتائج</td></tr>');
+            } else {
+                $('#bodyRows').html(pageRows.map(function (r) {
+                    return '<tr id="' + r.id + '" class="' + (r.type === 'new' ? 'primary-row' : 'danger-row') + '" type="' + r.type + '">' +
+                        COLUMNS.map(function (c) { return c.hidden ? '' : '<td>' + c.render(r) + '</td>'; }).join('') + '</tr>';
+                }).join(''));
+
+                // fnDrawCallback: classes go on visible cells 2 and 3 (same as live)
+                $('#bodyRows tr').each(function () {
+                    var t = $(this).attr('type') === 'new' ? 'NewOrder' : 'MaintenanceOrder';
+                    $(this).find('td').eq(2).addClass('CaseCode ' + t);
+                    $(this).find('td').eq(3).addClass('CaseInfo ' + t);
+                });
+            }
+            $('.popover').remove();
+
+            $('#pageInfo, #pageInfoTop').text(total ? ('عرض ' + (start + 1) + ' إلي ' + Math.min(start + size, total) + ' من ' + total + ' سجل') : '');
+            function li(label, page, disabled, active) {
+                return '<li class="' + (disabled ? 'disabled' : '') + (active ? ' active' : '') + '"><a data-page="' + page + '">' + label + '</a></li>';
+            }
+            var p = li('الأول', 1, tableState.page === 1) + li('السابق', tableState.page - 1, tableState.page === 1);
+            for (var i = 1; i <= pages; i++) p += li(i, i, false, i === tableState.page);
+            p += li('التالي', tableState.page + 1, tableState.page === pages) + li('الأخير', pages, tableState.page === pages);
+            $('#pagination').html(p);
+        }
+
+        // API compatible with the bits of oTable the live page uses
+        var oTable = {
+            fnDraw: function (resetPaging) {
+                if (resetPaging !== false) tableState.page = 1;
+                $('#search-icon').button('loading');
+                setTimeout(function () {           // fake server round-trip
+                    renderTable();
+                    $('#search-icon').button('reset');
+                }, 250);
+            },
+            fnSetColumnVis: function (iCol, visible, redraw) {
+                COLUMNS[parseInt(iCol)].hidden = !visible;
+                renderTable();
+            }
+        };
+
+        function toast(msg) { $('#toast').text(msg).stop(true, true).fadeIn(150).delay(1400).fadeOut(300); }
+
+        // vanilla-datetimerange-picker shim: same constructor signature as the live page,
+        // backed by bootstrap-daterangepicker (same .drp-calendar DOM, so the same CSS applies)
+        function DateRangePicker(id, options, callback) {
+            $('#' + id).daterangepicker(options, callback);
+            return $('#' + id).data('daterangepicker');
+        }
+
+        // Fake select2 "ajax" so the dropdowns load/search like the real autocomplete endpoints
+        function localTransport(list) {
+            return function (params, success) {
+                var term = (params.data.term || '').toLowerCase();
+                success(list.filter(function (x) { return x.toLowerCase().indexOf(term) !== -1; }).map(function (x) { return { id: x, text: x }; }));
+            };
+        }
+
+        // =====================================================================
+        // LIVE PAGE SCRIPTS (copied; server calls replaced with the mock above)
+        // =====================================================================
+        function prependFixedOptions(data) {
+            data.unshift({ id: 'blank', text: 'الفارغ' });
+            data.unshift({ id: 'allExcept', text: 'الكل ماعدا' });
+            return data;
+        }
+
+        function setupSingleCalendar(picker) {
+            let $container = $(picker.container);
+            $container.addClass('single-cal-view');
+            $container.off('click.singlecal');
+            $container.on('click.singlecal', '.drp-calendar.left thead tr:first-child th:last-child', function () {
+                $container.find('.drp-calendar.right th.next').click();
+            });
+        }
+
+        var drp;
+        var drp_v2;
+
+        $(document).ready(function () {
+            $("[type='checkbox']").not('.orderCategory input').iCheck({
+                checkboxClass: 'icheckbox_flat-green'
+            });
+
+            drp = new DateRangePicker('assessmentDatePeriod', {
+                timePicker: false,
+                opens: 'left',
+                autoUpdateInput: false,
+                autoApply: true,
+                locale: { format: "YYYY-MM-DD", applyLabel: 'تم', cancelLabel: 'إلغاء' }
+            }, function (start, end) {
+                let dateFrom = start.format('YYYY-MM-DD');
+                let dateTo = end.format('YYYY-MM-DD');
+                $('#assessmentDateFrom').val(dateFrom);
+                $('#assessmentDateTo').val(dateTo);
+                setTimeout(function () {
+                    $('#assessmentDatePeriod').val('من ' + dateFrom + ' إلى ' + dateTo);
+                    setupSingleCalendar(drp);
+                }, 0);
+            });
+
+            $('#assessmentDatePeriod').val('');
+            $('#assessmentDateFrom').val('');
+            $('#assessmentDateTo').val('');
+
+            $("#assessmentDatePeriod").change(function () {
+                if ($(this).val() === '') {
+                    $('#assessmentDateFrom').val('');
+                    $('#assessmentDateTo').val('');
+                }
+            });
+
+            drp_v2 = new DateRangePicker('visitDatePeriod', {
+                timePicker: false,
+                opens: 'left',
+                autoUpdateInput: false,
+                autoApply: true,
+                locale: { format: "YYYY-MM-DD", applyLabel: 'تم', cancelLabel: 'إلغاء' }
+            }, function (start, end) {
+                let dateFrom = start.format('YYYY-MM-DD');
+                let dateTo = end.format('YYYY-MM-DD');
+                $('#visitDateFrom').val(dateFrom);
+                $('#visitDateTo').val(dateTo);
+                setTimeout(function () {
+                    $('#visitDatePeriod').val('من ' + dateFrom + ' إلى ' + dateTo);
+                    setupSingleCalendar(drp_v2);
+                }, 0);
+            });
+
+            $('#visitDatePeriod').val('');
+            $('#visitDateFrom').val('');
+            $('#visitDateTo').val('');
+
+            $("#visitDatePeriod").change(function () {
+                if ($(this).val() === '') {
+                    $('#visitDateFrom').val('');
+                    $('#visitDateTo').val('');
+                }
+            });
+
+            // ---------------------------------------- amputationLevel ----------------------------------------
+            $("#amputationLevel").select2({
+                width: '100%',
+                placeholder: "اختر مستوى البتر",
+                allowClear: true,
+                ajax: {
+                    transport: localTransport(AMPUTATION_LEVELS),
+                    processResults: function (response) { return { results: response }; }
+                },
+                "language": {
+                    noResults: function () { return "لا يوجد بيانات متطابقة"; },
+                    "searching": function () { return "جاري البحث..."; }
+                }
+            });
+            // ---------------------------------------- city ----------------------------------------
+            $("#city").select2({
+                width: '100%',
+                placeholder: "اختر المحافظة",
+                allowClear: true,
+                ajax: {
+                    transport: localTransport(CITIES),
+                    processResults: function (response) {
+                        response = prependFixedOptions(response);
+                        return { results: response };
+                    }
+                },
+                "language": {
+                    noResults: function () { return "لا يوجد بيانات متطابقة"; },
+                    "searching": function () { return "جاري البحث..."; }
+                }
+            });
+
+            $("#search-icon").click(function () {
+                oTable.fnDraw();
+            });
+
+
+            // ---------------------------------------- column visibility ----------------------------------------
+            var userID = "184";
+            var storageKey = "engineering_table_columns_" + userID;
+
+            var saved = null;
+            try { saved = localStorage.getItem(storageKey); } catch (e) { }
+            if (saved) {
+                var columns = JSON.parse(saved);
+                $(".toggle-vis").each(function () {
+                    var iCol = $(this).attr('data-column');
+                    if (columns.indexOf(parseInt(iCol)) !== -1) {
+                        $(this).iCheck('check');
+                        COLUMNS[iCol].hidden = false;
+                    } else {
+                        $(this).iCheck('uncheck');
+                        COLUMNS[iCol].hidden = true;
+                    }
+                });
+            }
+
+            if ($(".toggle-vis:checked").length === $(".toggle-vis").length) {
+                $('#toggle').iCheck('check');
+            } else {
+                $('#toggle').iCheck('uncheck');
+            }
+
+            $(document).on('click', '.dropdown-menu', function (e) {
+                e.stopPropagation();
+            });
+
+            $('#toggle').on('ifChecked', function () {
+                $('.toggle-vis').iCheck('check');
+                saveColumns();
+            });
+
+            $('#toggle').on('ifUnchecked', function () {
+                $('.toggle-vis').iCheck('uncheck');
+                saveColumns();
+            });
+
+            function saveColumns() {
+                var visibleColumns = [];
+                $(".toggle-vis:checked").each(function () {
+                    visibleColumns.push(parseInt($(this).attr('data-column')));
+                });
+                try { localStorage.setItem(storageKey, JSON.stringify(visibleColumns)); } catch (e) { }
+            }
+
+            $('.toggle-vis').on('ifChanged', function () {
+                var $this = $(this);
+                oTable.fnSetColumnVis(parseInt($this.attr('data-column')), $this.is(':checked'), false);
+                saveColumns();
+            });
+
+            // ---------------------------------------- category buttons ----------------------------------------
+            function updateCategoryButtons() {
+                $('.orderCategory label').each(function () {
+                    var activeClass = $(this).data('active-class');
+                    var value = $(this).find('input').val();
+
+                    $(this).removeClass('btn-primary btn-danger');
+
+                    if ($(this).hasClass('active')) {
+                        if (value !== 'all') {
+                            $(this).removeClass('btn-default');
+                        }
+                        if (activeClass) {
+                            $(this).addClass(activeClass);
+                        }
+                    } else {
+                        $(this).addClass('btn-default');
+                    }
+                });
+            }
+
+            updateCategoryButtons();
+
+            // Multi-select tabs:
+            //  - "الكل" clears every other tab
+            //  - any other tab toggles on/off and turns "الكل" off
+            //  - nothing selected => back to "الكل"
+            $(document).on('click', '.orderCategory label', function (e) {
+                e.preventDefault();
+                var $group = $(this).closest('.orderCategory');
+                var $input = $(this).find('input');
+                var $all = $group.find('input[value="all"]');
+                var $others = $group.find('input').not($all);
+
+                if ($input.val() === 'all') {
+                    $others.prop('checked', false);
+                    $all.prop('checked', true);
+                } else {
+                    $input.prop('checked', !$input.prop('checked'));
+                    $all.prop('checked', $others.filter(':checked').length === 0);
+                }
+
+                $group.find('label').each(function () {
+                    $(this).toggleClass('active', $(this).find('input').prop('checked'));
+                });
+                updateCategoryButtons();
+                oTable.fnDraw();
+            });
+
+            // ---------------------------------------- table paging (DataTables stand-in) ----------------------------------------
+            $('#pageSize').select2({ minimumResultsForSearch: -1, width: '70px' }).on('change', function () {
+                tableState.pageSize = +$(this).val();
+                tableState.page = 1;
+                renderTable();
+            });
+            $(document).on('click', '#pagination a', function () {
+                var $li = $(this).parent();
+                if ($li.hasClass('disabled') || $li.hasClass('active')) return;
+                tableState.page = +$(this).data('page');
+                renderTable();
+            });
+
+            renderTable();
+        });
+
+        // ===================== footer scripts (date buttons, copy/paste/clear) =====================
+        $(document).ready(function () {
+            $(".remove-date").click(function () {
+                var targetDateFrom = $(this).closest('.btn-group').data('targetdatefrom');
+                var targetDateTo = $(this).closest('.btn-group').data('targetdateto');
+                $("#" + targetDateFrom).val("").trigger('change');
+                $("#" + targetDateTo).val("").trigger('change');
+            });
+
+            function clearDatePicker(picker) {
+                var today = moment();
+                var tomorrow = today.clone().add(1, 'day');
+                picker.startDate = tomorrow.clone().startOf('day');
+                picker.endDate = tomorrow.clone().endOf('day');
+                picker.emptySelection = true;
+                picker.leftCalendar.month = today.clone().startOf('month');
+                if (picker.rightCalendar) {
+                    picker.rightCalendar.month = today.clone().startOf('month').add(1, 'month');
+                }
+                $(picker.element).val('');
+                picker.updateCalendars();
+            }
+
+            $(".remove-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDate = $group.data('targetdate');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+
+                $("#" + targetDate).val("").trigger('change');
+                if (targetDateFrom) $("#" + targetDateFrom).val("");
+                if (targetDateTo) $("#" + targetDateTo).val("");
+
+                if (targetDate === 'assessmentDatePeriod') clearDatePicker(drp);
+                if (targetDate === 'visitDatePeriod') clearDatePicker(drp_v2);
+            }).trigger('click');
+
+            $(".today-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+                var targetDate = $group.data('targetdate');
+
+                var today = moment().format('YYYY-MM-DD');
+
+                $("#" + targetDateFrom).val(today);
+                $("#" + targetDateTo).val(today);
+                $("#" + targetDate).val("من " + today + " إلي " + today).trigger('change');
+
+                if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(today); drp.setEndDate(today); }
+                if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(today); drp_v2.setEndDate(today); }
+            });
+
+            $(".week-date-period").click(function () {
+                var $group = $(this).closest('.btn-group');
+                var targetDateFrom = $group.data('targetdatefrom');
+                var targetDateTo = $group.data('targetdateto');
+                var targetDate = $group.data('targetdate');
+
+                var today = new Date();
+                var firstDay = new Date(today);
+                firstDay.setDate(today.getDate() - today.getDay()); // Sunday
+                var lastDay = new Date(firstDay);
+                lastDay.setDate(firstDay.getDate() + 4);            // Thursday
+
+                var fromDate = firstDay.toISOString().split('T')[0];
+                var toDate = lastDay.toISOString().split('T')[0];
+
+                $("#" + targetDateFrom).val(fromDate);
+                $("#" + targetDateTo).val(toDate);
+                $("#" + targetDate).val("من " + fromDate + " إلي " + toDate).trigger('change');
+
+                if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(fromDate); drp.setEndDate(toDate); }
+                if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(fromDate); drp_v2.setEndDate(toDate); }
+            });
+
+            $(document).on('click', '.copy-filter', async function () {
+                var field = $(this);
+                var value = field.closest('form').find('#' + field.closest('.btn-group').data('id')).val();
+                try { await navigator.clipboard.writeText(value); } catch (err) { console.error('Copy failed:', err); }
+            });
+
+            $(document).on('click', '.paste-filter', async function () {
+                var field = $(this);
+                var fieldId = field.closest('.btn-group').data('id');
+                var form = field.closest('form');
+                try {
+                    var text = await navigator.clipboard.readText();
+                    form.find('#' + fieldId).val(text).trigger('change');
+                } catch (err) { console.error('Paste failed:', err); }
+            });
+
+            $(document).on('click', '.remove-filter', function () {
+                var field = $(this);
+                field.closest('form').find('#' + field.closest('.btn-group').data('id')).val('').trigger('change');
+            });
+        });
+
+        // ===================== table-dropdown filters (copied as-is) =====================
+        // ----- status -----
+        var filterData = STATUS_DATA;
+        var selectedStatuses = [];
+
+        function renderStatusTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearStatusSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="status-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#statusDropdown').html(html);
+        }
+
+        renderStatusTable(filterData);
+
+        $(document).on('click', '.status-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.status-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedStatuses.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedStatuses.push({ id: id, name: name });
+            else selectedStatuses.splice(index, 1);
+            updateSelected();
+        });
+
+        function updateSelected() {
+            var ids = selectedStatuses.map(function (x) { return x.id; });
+            $('#selectedStatusIds').val(ids.join(','));
+            if (selectedStatuses.length) {
+                var html = '';
+                selectedStatuses.forEach(function (status) {
+                    html += '<span class="label selected-status" data-id="' + status.id + '">' + status.name +
+                        ' <span class="status-cell selected" data-id="' + status.id + '" data-name="' + status.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedStatusBtn').html(html);
+            } else {
+                $('#selectedStatusBtn').html('اختر حالة');
+            }
+        }
+
+        $(document).on('click', '#clearStatusSelection', function (e) {
+            e.stopPropagation();
+            selectedStatuses = [];
+            $('.status-cell.selected').removeClass('selected');
+            updateSelected();
+        });
+
+        // ----- responsible team -----
+        var filterData = TEAM_DATA;
+        var selectedResponsibleTeams = [];
+
+        function renderResponsibleTeamsTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearResponsibleTeamSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="responsibleTeam-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#responsibleTeamDropdown').html(html);
+        }
+
+        renderResponsibleTeamsTable(filterData);
+
+        $(document).on('click', '.responsibleTeam-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.responsibleTeam-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedResponsibleTeams.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedResponsibleTeams.push({ id: id, name: name });
+            else selectedResponsibleTeams.splice(index, 1);
+            updateSelectedResponsibleTeams();
+        });
+
+        function updateSelectedResponsibleTeams() {
+            var ids = selectedResponsibleTeams.map(function (x) { return x.id; });
+            $('#selectedResponsibleTeamIds').val(ids.join(','));
+            if (selectedResponsibleTeams.length) {
+                var html = '';
+                selectedResponsibleTeams.forEach(function (team) {
+                    html += '<span class="label selected-responsible-team" data-id="' + team.id + '">' + team.name +
+                        ' <span class="responsibleTeam-cell selected" data-id="' + team.id + '" data-name="' + team.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedResponsibleTeamBtn').html(html);
+            } else {
+                $('#selectedResponsibleTeamBtn').html('اختر الفريق المسؤول');
+            }
+        }
+
+        $(document).on('click', '#clearResponsibleTeamSelection', function (e) {
+            e.stopPropagation();
+            selectedResponsibleTeams = [];
+            $('.responsibleTeam-cell.selected').removeClass('selected');
+            updateSelectedResponsibleTeams();
+        });
+
+        // ----- components -----
+        var filterData = COMPONENTS_DATA;
+        var selectedComponents = [];
+
+        function renderComponentsTable(data) {
+            var headers = Object.keys(data);
+            var maxRows = 0;
+            headers.forEach(function (h) { maxRows = Math.max(maxRows, data[h].length); });
+
+            html = '<div class="text-left" style="margin-bottom:10px;">';
+            html += '<button type="button" class="btn btn-xs btn-danger" id="clearComponentsSelection">';
+            html += '<i class="glyphicon glyphicon-remove"></i> إزالة التحديد';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="table table-bordered status-table">';
+            html += '<thead><tr>';
+            headers.forEach(function (h) { html += '<th>' + h + '</th>'; });
+            html += '</tr></thead><tbody>';
+            for (var i = 0; i < maxRows; i++) {
+                html += '<tr>';
+                headers.forEach(function (h) {
+                    if (data[h][i]) {
+                        var item = data[h][i];
+                        html += '<td class="components-cell" data-id="' + item.id + '" data-name="' + item.name + '">' + item.name + '</td>';
+                    } else {
+                        html += '<td></td>';
+                    }
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            $('#componentsDropdown').html(html);
+        }
+
+        renderComponentsTable(filterData);
+
+        $(document).on('click', '.components-cell', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            $('.components-cell[data-id="' + id + '"]').toggleClass('selected');
+            var index = selectedComponents.findIndex(function (x) { return x.id == id; });
+            if (index == -1) selectedComponents.push({ id: id, name: name });
+            else selectedComponents.splice(index, 1);
+            updateComponentsSelected();
+        });
+
+        function updateComponentsSelected() {
+            var ids = selectedComponents.map(function (x) { return x.id; });
+            $('#selectedComponentsIds').val(ids.join(','));
+            if (selectedComponents.length) {
+                var html = '';
+                selectedComponents.forEach(function (component) {
+                    html += '<span class="label selected-component" data-id="' + component.id + '">' + component.name +
+                        ' <span class="components-cell selected" data-id="' + component.id + '" data-name="' + component.name + '" style="cursor:pointer; margin-left:5px;">&times;</span></span> ';
+                });
+                $('#selectedComponentsBtn').html(html);
+            } else {
+                $('#selectedComponentsBtn').html('المكونات');
+            }
+        }
+
+        $(document).on('click', '#clearComponentsSelection', function (e) {
+            e.stopPropagation();
+            selectedComponents = [];
+            $('.components-cell.selected').removeClass('selected');
+            updateComponentsSelected();
+        });
+
+        // ===================== case code / name buttons: 🔍 search by value, نسخ copy =====================
+        // (replaces the old "click the cell to copy & search" + its hover popover)
+        $(document).on('click', '.case-search', function (e) {
+            e.stopPropagation();
+            var value = $(this).data('value');
+            var $form = $("#search-form");
+
+            // reset every filter, then search by this value only
+            $("#isAttend").find('.btn-all').click();
+            $form.find('input:not(:checkbox):not(:radio)').val('');
+            $form.find('input:checkbox, input:radio').prop('checked', false);
+            $form.find('select').val(null).trigger('change');
+            $form.find('textarea').val('');
+            $('#clearStatusSelection, #clearResponsibleTeamSelection, #clearComponentsSelection').click();
+            $('.remove-date-period').click();
+
+            $("#caseNameOrCode").val(value);
+            $(".orderCategory [value='all']").parent().click(); // redraws the table
+        });
+
+        $(document).on('click', '.case-copy', async function (e) {
+            e.stopPropagation();
+            var $btn = $(this);
+            try {
+                await navigator.clipboard.writeText(String($btn.data('value')));
+                $btn.addClass('copied').text('تم');
+                setTimeout(function () { $btn.removeClass('copied').text('نسخ'); }, 1200);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        });
+
+        // =====================================================================
+        // MOCK-ONLY: assessment modal, print, excel, files manager
+        // =====================================================================
+        $(function () {
+            var modalCtx = null;
+            $(document).on('click', '.add-assessment', function (e) {
+                e.stopPropagation();
+                var id = $(this).data('id');
+                var row = ROWS.filter(function (r) { return r.id == id; })[0];
+                var stage = $(this).data('stage');
+                modalCtx = { row: row, stage: stage, statusId: null };
+                $('#modalStage').text(STAGES[stage].title);
+                $('#modalCase').text(row.name + (row.code !== '-' ? ' (' + row.code + ')' : ''));
+                $('#modalOptions').html(STAGES[stage].items.map(function (it) {
+                    return '<button type="button" class="btn btn-default btn-sm" data-sid="' + it.id + '">' + it.name + '</button>';
+                }).join(''));
+                $('#modalDate').val(moment().format('YYYY-MM-DD'));
+                $('#modalNotes').val('');
+                $('#assessmentModal').modal('show');
+            });
+            $(document).on('click', '#modalOptions .btn', function () {
+                $('#modalOptions .btn').removeClass('btn-primary active').addClass('btn-default');
+                $(this).removeClass('btn-default').addClass('btn-primary active');
+                modalCtx.statusId = $(this).data('sid');
+            });
+            $('#modalSave').on('click', function () {
+                if (!modalCtx.statusId) return toast('اختر التقييم أولاً');
+                modalCtx.row.assessments[modalCtx.stage] = { id: modalCtx.statusId, date: $('#modalDate').val() };
+                if ($('#modalNotes').val()) modalCtx.row.notes = $('#modalNotes').val();
+                modalCtx.row.attended = 1;
+                $('#assessmentModal').modal('hide');
+                oTable.fnDraw(false);
+                if (typeof renderStats === 'function') renderStats();
+                toast('تم الإضافة بنجاح');
+            });
+
+            $('#printBtn').on('click', function () { window.print(); });
+            $('#excelBtn').on('click', function () {
+                var cols = COLUMNS.filter(function (c, i) { return !c.hidden || [15, 17, 19, 21].indexOf(i) !== -1; });
+                var lines = [cols.map(function (c) { return '"' + c.title + '"'; }).join(',')];
+                filteredRows().forEach(function (r) {
+                    lines.push(cols.map(function (c) {
+                        var txt = $('<div>').html(String(c.render(r)).replace(/<br>/g, ' | ').replace(/<\/tr>/g, ' ')).text().replace(/\s+/g, ' ').trim();
+                        return '"' + txt.replace(/"/g, '""') + '"';
+                    }).join(','));
+                });
+                var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'orders.csv';
+                a.click();
+            });
+
+            $('#bulk-download-manager-btn').on('click', function () { toast('إدارة الملفات (غير مفعلة في النسخة التجريبية)'); });
+        });
+
+        // =====================================================================
+        // MOCK-ONLY: side statistics dashboard
+        // =====================================================================
+        // Counts per period from the table rows + a seeded history of earlier visits
+        // (so the quarter / year rows look realistic). Set TARGETS to show the target-vs-actual charts.
+        var TARGETS = {
+            month: null,
+            quarter: { measurements: 300, deliveries: 240, maintenanceAssess: 45, maintenanceDeliver: 30 },
+            year: { measurements: 1000, deliveries: 800, maintenanceAssess: 180, maintenanceDeliver: 120 }
+        };
+        var STAT_KEYS = ['measurements', 'deliveries', 'maintenanceAssess', 'maintenanceDeliver', 'rejected', 'remake'];
+
+        // stage + status id => which column it counts in
+        function statKey(stage, id) {
+            id = +id;
+            if (stage === 'new_mdm' && id === 1) return 'measurements';
+            if ((stage === 'new_fitting' || stage === 'maintenance_mdm' || stage === 'maintenance_fitting') && id === 7) return 'measurements';
+            if (stage === 'new_fitting' && id === 3) return 'deliveries';
+            if (stage === 'maintenance_mdm' && id === 15) return 'maintenanceAssess';
+            if (stage === 'maintenance_fitting' && id === 3) return 'maintenanceDeliver';
+            if (stage === 'new_fitting' && id === 5) return 'rejected';
+            if ((stage === 'new_fitting' || stage === 'maintenance_fitting') && id === 4) return 'remake';
+            return null;
+        }
+
+        var HISTORY = (function () {
+            var out = [], hs = 99;
+            function hr() { hs = (hs * 9301 + 49297) % 233280; return hs / 233280; }
+            var rates = { measurements: 4.2, deliveries: 3.6, maintenanceAssess: 1.1, maintenanceDeliver: 0.8, rejected: 0.12, remake: 0.08 };
+            var d = TODAY.clone().startOf('year');
+            var stop = TODAY.clone().subtract(35, 'days'); // the table rows cover the last ~5 weeks
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue; // Friday / Saturday off
+                STAT_KEYS.forEach(function (k) {
+                    var n = Math.floor(rates[k] * 2 * hr());
+                    for (var i = 0; i < n; i++) out.push({ key: k, date: d.format('YYYY-MM-DD') });
+                });
+            }
+            return out;
+        })();
+
+        function statEvents() {
+            var ev = HISTORY.slice();
+            ROWS.forEach(function (r) {
+                Object.keys(r.assessments).forEach(function (stage) {
+                    var a = r.assessments[stage], k = statKey(stage, a.id);
+                    if (k) ev.push({ key: k, date: a.date });
+                });
+            });
+            return ev;
+        }
+
+        function countBetween(ev, from, to) {
+            var c = {};
+            STAT_KEYS.forEach(function (k) { c[k] = 0; });
+            ev.forEach(function (e) { if (e.date >= from && e.date <= to) c[e.key]++; });
+            return c;
+        }
+
+        function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
+
+        var STAT_LABELS = { measurements: 'القياسات', deliveries: 'التسليمات', maintenanceAssess: 'تقييم صيانة', maintenanceDeliver: 'تسليم صيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
+        var lastStatsData = null; // periods + targets, computed below — the React chart drawer and the Excel export both read from here
+
+        // builds N independent (non-overlapping) buckets of the given calendar unit, ending at `t`,
+        // so the trend chart zigzags instead of only climbing — unlike the period rows below, which
+        // are nested (today ⊂ week ⊂ month ⊂ ...) and can never go down from one to the next.
+        function buildTrendBuckets(ev, t, unit, count) {
+            var points = [];
+            for (var i = count - 1; i >= 0; i--) {
+                var bStart, bEnd, label;
+                if (unit === 'day') {
+                    bStart = t.clone().subtract(i, 'days');
+                    bEnd = bStart.clone();
+                    label = bStart.format('DD/MM');
+                } else if (unit === 'week') {
+                    bEnd = t.clone().subtract(i * 7, 'days');
+                    bStart = bEnd.clone().subtract(6, 'days');
+                    label = bStart.format('DD/MM');
+                } else if (unit === 'month') {
+                    var m = t.clone().subtract(i, 'months');
+                    bStart = m.clone().startOf('month');
+                    bEnd = m.clone().endOf('month');
+                    label = m.format('MM/YYYY');
+                } else if (unit === 'quarter') {
+                    var q = t.clone().subtract(i * 3, 'months');
+                    bStart = q.clone().startOf('quarter');
+                    bEnd = q.clone().endOf('quarter');
+                    label = 'Q' + q.quarter() + ' ' + q.format('YYYY');
+                } else { // year
+                    var y = t.clone().subtract(i, 'years');
+                    bStart = y.clone().startOf('year');
+                    bEnd = y.clone().endOf('year');
+                    label = y.format('YYYY');
+                }
+                var counts = countBetween(ev, bStart.format('YYYY-MM-DD'), bEnd.format('YYYY-MM-DD'));
+                var point = { name: label };
+                STAT_KEYS.forEach(function (k) { point[k] = counts[k]; });
+                points.push(point);
+            }
+            return points;
+        }
+
+        // which calendar unit (and how many buckets of it) the trend chart uses per selected period tab
+        var TREND_META = {
+            today: { unit: 'day', count: 14, label: 'آخر 14 يوم — عدد مستقل لكل يوم' },
+            week: { unit: 'week', count: 10, label: 'آخر 10 أسابيع — عدد مستقل لكل أسبوع' },
+            month: { unit: 'month', count: 12, label: 'آخر 12 شهر — عدد مستقل لكل شهر' },
+            quarter: { unit: 'quarter', count: 8, label: 'آخر 8 أرباع — عدد مستقل لكل ربع' },
+            year: { unit: 'year', count: 5, label: 'آخر 5 سنوات — عدد مستقل لكل سنة' }
+        };
+
+        function buildStatsData() {
+            var ev = statEvents(), t = TODAY;
+            var weekStart = t.clone().subtract(t.day(), 'days'); // Sunday
+            var periodDefs = [
+                { key: 'today', label: 'اليوم', sub: t.format('YYYY-MM-DD'), from: t.clone(), to: t.clone() },
+                { key: 'week', label: 'الأسبوع', sub: weekStart.format('YYYY-MM-DD') + ' - ' + weekStart.clone().add(6, 'days').format('YYYY-MM-DD'), from: weekStart, to: weekStart.clone().add(6, 'days') },
+                { key: 'month', label: 'الشهر', sub: t.format('YYYY-MM'), from: t.clone().startOf('month'), to: t.clone().endOf('month') },
+                { key: 'quarter', label: 'ربع سنوي', sub: t.clone().startOf('quarter').format('YYYY-MM-DD') + ' - ' + t.clone().endOf('quarter').format('YYYY-MM-DD'), from: t.clone().startOf('quarter'), to: t.clone().endOf('quarter') },
+                { key: 'year', label: 'سنوية', sub: t.format('YYYY'), from: t.clone().startOf('year'), to: t.clone().endOf('year') }
+            ];
+            var periods = periodDefs.map(function (p) {
+                var counts = countBetween(ev, p.from.format('YYYY-MM-DD'), p.to.format('YYYY-MM-DD'));
+                var meta = TREND_META[p.key];
+                return {
+                    key: p.key, label: p.label, range: p.sub, values: counts, target: TARGETS[p.key] || null,
+                    trend: buildTrendBuckets(ev, t, meta.unit, meta.count), trendLabel: meta.label
+                };
+            });
+
+            return { periods: periods, keys: STAT_KEYS, labels: STAT_LABELS };
+        }
+
+        function renderStats() {
+            lastStatsData = buildStatsData();
+            if (window.renderStatsCharts) window.renderStatsCharts(lastStatsData);
+        }
+
+        function setStatsPanelOpen(open) {
+            if (open) renderStats();
+            $('#StatisicsMeasurementsAndDeliveries, #statistics-toggle').toggleClass('open', open);
+            $('#statistics-toggle').find('i').toggleClass('fa-chevron-right', !open).toggleClass('fa-chevron-left', open);
+        }
+
+        $(function () {
+            renderStats();
+
+            $('#statistics-toggle').on('click', function () {
+                setStatsPanelOpen(!$('#StatisicsMeasurementsAndDeliveries').hasClass('open'));
+            });
+
+            // close the dashboard on any click outside it — same outside-click pattern used
+            // for the written-off dropdown on the printer-maintenance page
+            $(document).on('mousedown', function (e) {
+                if (!$('#StatisicsMeasurementsAndDeliveries').hasClass('open')) return;
+                if ($(e.target).closest('#StatisicsMeasurementsAndDeliveries, #statistics-toggle').length) return;
+                setStatsPanelOpen(false);
+            });
+
+            $('#refresh_dashboard').on('click', function () {
+                var $b = $(this).addClass('spinning');
+                setTimeout(function () { renderStats(); $b.removeClass('spinning'); }, 400);
+            });
+
+            $('#export_dashboard').on('click', function () {
+                var data = lastStatsData || buildStatsData();
+                var lines = [['', STAT_KEYS.map(function (k) { return STAT_LABELS[k]; }).join(',')].join(',')];
+                function row(label, sub, cellText) {
+                    var cells = ['"' + (label + (sub ? ' (' + sub + ')' : '')).replace(/"/g, '""') + '"'];
+                    STAT_KEYS.forEach(function (k) { cells.push(cellText(k)); });
+                    lines.push(cells.join(','));
+                }
+                data.periods.forEach(function (p) { row(p.label, p.range, function (k) { return fmt(p.values[k]); }); });
+                data.periods.filter(function (p) { return p.target; }).forEach(function (p) {
+                    row('الرقم المستهدف — ' + p.label, p.range, function (k) { return p.target[k] != null ? fmt(p.target[k]) : '-'; });
+                    row('النسبة المحققة — ' + p.label, p.range, function (k) {
+                        return p.target[k] ? Math.round(p.values[k] / p.target[k] * 100) + '%' : '-';
+                    });
+                });
+                var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'visits-statistics.csv';
+                a.click();
+            });
+        });
+    </script>
+
+    <!-- =====================================================================
+         Charts for the side statistics dashboard — same visual system as the
+         printer-maintenance analytics drawer. window.renderStatsCharts(data)
+         is called by the vanilla script above every time the mock stats are
+         (re)computed; data = { periods, keys, labels } from buildStatsData().
+         ===================================================================== -->
+    <script type="text/babel" data-presets="react,env" data-plugins="transform-react-jsx">
+        const { useState, useMemo } = React;
+        const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend } = Recharts;
+
+        const STAT_COLORS = ["#2f6fed", "#0d9488", "#7c6ef0", "#9333ea", "#dc2626", "#15803d"];
+
+        function ChartTooltip({ active, payload, label, unit }) {
+            if (!active || !payload || !payload.length) return null;
+            return (
+                <div className="vs-tooltip">
+                    <div className="t-label">{label}</div>
+                    {payload.map((p, i) => (
+                        <div className="t-row" key={i}>
+                            <span className="t-dot" style={{ background: p.color || p.fill }}></span>
+                            <span>{p.name}: <b>{p.value}{unit ? ` ${unit}` : ""}</b></span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        function ChartCard({ title, subtitle, children }) {
+            return (
+                <div className="vs-chart-card">
+                    <div className="vs-chart-card-head">
+                        <h4>{title}</h4>
+                        {subtitle && <p className="sub">{subtitle}</p>}
+                    </div>
+                    {children}
+                </div>
+            );
+        }
+
+        function VisitsStatsPanel({ data }) {
+            const { periods, keys, labels } = data;
+            const [periodKey, setPeriodKey] = useState(() => (periods.some(p => p.key === "year") ? "year" : periods[0].key));
+            const period = useMemo(() => periods.find(p => p.key === periodKey) || periods[0], [periods, periodKey]);
+
+            const trendData = period.trend;
+            const targetKeys = period.target ? keys.filter(k => period.target[k] != null) : [];
+
+            return (
+                <div>
+                    <div className="vs-dash-head">
+                        <div className="vs-period-tabs" role="tablist" aria-label="الفترة الزمنية">
+                            {periods.map(p => (
+                                <button key={p.key} type="button" role="tab" aria-selected={periodKey === p.key}
+                                    className={periodKey === p.key ? "active" : ""} onClick={() => setPeriodKey(p.key)}>
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                        <span className="vs-period-range" dir="ltr">{period.range}</span>
+                    </div>
+
+                    <div className="vs-kpi-grid">
+                        {keys.map(k => (
+                            <div key={k} className={`vs-kpi ${period.values[k] === 0 ? "zero" : ""}`}>
+                                <div className="num">{period.values[k].toLocaleString("en-US")}</div>
+                                <div className="lbl">{labels[k]}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="vs-chart-group">
+                        <p className="vs-group-label">الأداء مقابل المستهدف</p>
+                        <ChartCard title="نسبة تحقيق المستهدف" subtitle={<span dir="ltr">{period.range}</span>}>
+                                {targetKeys.length === 0 ? (
+                                    <div className="vs-no-target">لا يوجد مستهدف محدد</div>
+                                ) : (
+                                    <div className="vs-target-grid">
+                                        {targetKeys.map(k => {
+                                            const actual = period.values[k];
+                                            const target = period.target[k];
+                                            const pct = target ? +(actual / target * 100).toFixed(1) : 0;
+                                            const ok = pct >= 100;
+                                            return (
+                                                <div key={k} className="vs-target-card">
+                                                    <div className="name">{labels[k]}</div>
+                                                    <div className="row"><span>الفعلي</span><b>{actual.toLocaleString("en-US")}</b></div>
+                                                    <div className="row"><span>المستهدف</span><b>{target.toLocaleString("en-US")}</b></div>
+                                                    <div className="vs-bar-track"><div className={`vs-bar-fill ${ok ? "ok" : ""}`} style={{ width: `${Math.min(100, pct)}%` }}></div></div>
+                                                    <span className={`vs-pct-badge ${ok ? "ok" : "warn"}`}>{pct}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                        </ChartCard>
+                    </div>
+
+                    <div className="vs-chart-group">
+                        <p className="vs-group-label">الاتجاه عبر الفترات</p>
+                        <ChartCard title="نمو المؤشرات حسب الفترة" subtitle={period.trendLabel}>
+                            <ResponsiveContainer width="100%" height={230}>
+                                <LineChart data={trendData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e5ea" vertical={false} />
+                                    <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 11, fontFamily: "var(--vs-font-ui)" }} axisLine={{ stroke: "#d6d9df" }} tickLine={false} />
+                                    <YAxis tick={{ fill: "#6b7280", fontSize: 11, fontFamily: "var(--vs-font-mono)" }} axisLine={{ stroke: "#d6d9df" }} tickLine={false} width={40} />
+                                    <RTooltip content={<ChartTooltip />} />
+                                    <Legend wrapperStyle={{ fontSize: 11, fontFamily: "var(--vs-font-ui)" }} />
+                                    {keys.map((k, i) => (
+                                        <Line key={k} type="monotone" dataKey={k} name={labels[k]} stroke={STAT_COLORS[i % STAT_COLORS.length]} strokeWidth={2.2} dot={{ r: 3 }} />
+                                    ))}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </ChartCard>
+                    </div>
+                </div>
+            );
+        }
+
+        let vsStatsRoot = null;
+        window.renderStatsCharts = function (data) {
+            const container = document.getElementById("vs-stats-root");
+            if (!container) return;
+            if (!vsStatsRoot) vsStatsRoot = ReactDOM.createRoot(container);
+            vsStatsRoot.render(<VisitsStatsPanel data={data} />);
+        };
+        // covers the case where this script finishes loading after the vanilla script already
+        // computed the first batch of mock data (timing between the two script blocks isn't guaranteed)
+        if (window.lastStatsData) window.renderStatsCharts(window.lastStatsData);
+    </script>
+</body>
+
+</html>
