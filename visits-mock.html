@@ -73,16 +73,136 @@
             background: #1e282c;
         }
 
+        /* ===== side statistics dashboard (slides in from the left) ===== */
+        .stats-panel {
+            position: fixed;
+            top: 58px;
+            left: 0;
+            width: 490px;
+            max-width: calc(100vw - 80px);
+            max-height: calc(100vh - 70px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #fff;
+            border: 1px solid #d7dbe0;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .18);
+            z-index: 1040;
+            transform: translateX(-100%);
+            transition: transform .3s ease;
+            font-size: 12px;
+        }
+
+        .stats-panel.open {
+            transform: translateX(0);
+        }
+
         .stats-toggle {
             position: fixed;
-            top: 55px;
+            top: 58px;
             left: 0;
             width: 26px;
-            height: 26px;
+            height: 30px;
             background: #0093e9;
             color: #fff;
             border: 0;
-            z-index: 1025;
+            border-radius: 0 4px 4px 0;
+            z-index: 1041;
+            transition: left .3s ease;
+        }
+
+        .stats-toggle.open {
+            left: min(490px, calc(100vw - 80px));
+        }
+
+        .stats-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fafafa;
+        }
+
+        .stats-head .stats-title {
+            font-weight: bold;
+            color: #444;
+        }
+
+        .stats-head .btn {
+            padding: 2px 8px;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .stats-head .stats-refresh {
+            background: #fff;
+            border-color: #ccc;
+            color: #333;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            border: 1px solid #e3e6ea;
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .stats-table thead th {
+            background: #e9eef3;
+            color: #333;
+            font-size: 11px;
+            padding: 4px 3px;
+            white-space: nowrap;
+        }
+
+        .stats-table td.stats-label {
+            text-align: right;
+            font-weight: bold;
+            color: #333;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        .stats-table td.stats-label small {
+            display: block;
+            font-weight: normal;
+            color: #999;
+            font-size: 10px;
+            text-align: left;
+        }
+
+        .stats-table td.stats-num {
+            font-weight: bold;
+            color: #222;
+            width: 56px;
+            padding: 4px 3px;
+        }
+
+        .stats-table tr.row-period:nth-child(even) td {
+            background: #f7f9fb;
+        }
+
+        .stats-table tr.row-target td {
+            background: #fdf6df;
+        }
+
+        .stats-table tr.row-percent td {
+            background: #dff0d8;
+        }
+
+        .stats-table tr.row-percent:nth-child(even) td {
+            background: #d3eacb;
+        }
+
+        .stats-refresh.spinning i {
+            animation: fa-spin .8s linear infinite;
         }
 
         .content-wrapper {
@@ -753,7 +873,30 @@
         <a href="#" title="السجلات"><i class="fa fa-history"></i></a>
     </aside>
 
-    <button class="stats-toggle" title="الإحصائيات"><i class="fa fa-chevron-right"></i></button>
+    <!-- ===================== Side statistics dashboard ===================== -->
+    <button class="stats-toggle" id="statistics-toggle" title="إحصائيات الزيارات"><i class="fa fa-chevron-right"></i></button>
+    <div class="stats-panel" id="StatisicsMeasurementsAndDeliveries">
+        <div class="stats-head">
+            <span class="stats-title"><i class="fa fa-bar-chart"></i> إحصائيات الزيارات</span>
+            <span>
+                <button type="button" class="btn btn-xs stats-refresh" id="refresh_dashboard" title="تحديث"><i class="fa fa-refresh"></i></button>
+                <button type="button" class="btn btn-xs btn-success" id="export_dashboard"><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button>
+            </span>
+        </div>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>القياسات</th>
+                    <th>التسليمات</th>
+                    <th>صيانات</th>
+                    <th>رفض الاستلام</th>
+                    <th>إعادة تصنيع</th>
+                </tr>
+            </thead>
+            <tbody id="statsBody"></tbody>
+        </table>
+    </div>
 
     <!-- ===================== Content (same markup as the live page) ===================== -->
     <div class="content-wrapper">
@@ -2055,6 +2198,7 @@
                 modalCtx.row.attended = 1;
                 $('#assessmentModal').modal('hide');
                 oTable.fnDraw(false);
+                if (typeof renderStats === 'function') renderStats();
                 toast('تم الإضافة بنجاح');
             });
 
@@ -2076,6 +2220,143 @@
             });
 
             $('#bulk-download-manager-btn').on('click', function () { toast('إدارة الملفات (غير مفعلة في النسخة التجريبية)'); });
+        });
+
+        // =====================================================================
+        // MOCK-ONLY: side statistics dashboard
+        // =====================================================================
+        // Counts per period from the table rows + a seeded history of earlier visits
+        // (so the quarter / year rows look realistic). Set TARGETS to show the yellow/green rows.
+        var TARGETS = {
+            month: null,    // e.g. { measurements: 120, deliveries: 100, maintenance: 40, rejected: 0, remake: 0 }
+            quarter: null,
+            year: null
+        };
+        var STAT_KEYS = ['measurements', 'deliveries', 'maintenance', 'rejected', 'remake'];
+
+        // stage + status id => which column it counts in
+        function statKey(stage, id) {
+            id = +id;
+            if (stage === 'new_mdm' && id === 1) return 'measurements';
+            if ((stage === 'new_fitting' || stage === 'maintenance_mdm' || stage === 'maintenance_fitting') && id === 7) return 'measurements';
+            if (stage === 'new_fitting' && id === 3) return 'deliveries';
+            if ((stage === 'maintenance_fitting' && id === 3) || (stage === 'maintenance_mdm' && id === 15)) return 'maintenance';
+            if (stage === 'new_fitting' && id === 5) return 'rejected';
+            if ((stage === 'new_fitting' || stage === 'maintenance_fitting') && id === 4) return 'remake';
+            return null;
+        }
+
+        var HISTORY = (function () {
+            var out = [], hs = 99;
+            function hr() { hs = (hs * 9301 + 49297) % 233280; return hs / 233280; }
+            var rates = { measurements: 4.2, deliveries: 3.6, maintenance: 1.9, rejected: 0.12, remake: 0.08 };
+            var d = TODAY.clone().startOf('year');
+            var stop = TODAY.clone().subtract(35, 'days'); // the table rows cover the last ~5 weeks
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue; // Friday / Saturday off
+                STAT_KEYS.forEach(function (k) {
+                    var n = Math.floor(rates[k] * 2 * hr());
+                    for (var i = 0; i < n; i++) out.push({ key: k, date: d.format('YYYY-MM-DD') });
+                });
+            }
+            return out;
+        })();
+
+        function statEvents() {
+            var ev = HISTORY.slice();
+            ROWS.forEach(function (r) {
+                Object.keys(r.assessments).forEach(function (stage) {
+                    var a = r.assessments[stage], k = statKey(stage, a.id);
+                    if (k) ev.push({ key: k, date: a.date });
+                });
+            });
+            return ev;
+        }
+
+        function countBetween(ev, from, to) {
+            var c = {};
+            STAT_KEYS.forEach(function (k) { c[k] = 0; });
+            ev.forEach(function (e) { if (e.date >= from && e.date <= to) c[e.key]++; });
+            return c;
+        }
+
+        function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
+
+        function renderStats() {
+            var ev = statEvents(), t = TODAY;
+            var weekStart = t.clone().subtract(t.day(), 'days'); // Sunday
+            var periods = [
+                { label: 'اليوم', sub: t.format('YYYY-MM-DD'), from: t.clone(), to: t.clone() },
+                { label: 'الأسبوع', sub: weekStart.format('YYYY-MM-DD') + ' - ' + weekStart.clone().add(6, 'days').format('YYYY-MM-DD'), from: weekStart, to: weekStart.clone().add(6, 'days') },
+                { label: 'الشهر', sub: t.format('YYYY-MM'), from: t.clone().startOf('month'), to: t.clone().endOf('month') },
+                { label: 'ربع سنوي', sub: t.clone().startOf('quarter').format('YYYY-MM-DD') + ' - ' + t.clone().endOf('quarter').format('YYYY-MM-DD'), from: t.clone().startOf('quarter'), to: t.clone().endOf('quarter') },
+                { label: 'سنوية', sub: t.format('YYYY'), from: t.clone().startOf('year'), to: t.clone().endOf('year') }
+            ];
+            var counts = periods.map(function (p) { return countBetween(ev, p.from.format('YYYY-MM-DD'), p.to.format('YYYY-MM-DD')); });
+
+            function row(cls, label, sub, values) {
+                return '<tr class="' + cls + '"><td class="stats-label">' + label + '<small>' + sub + '</small></td>' +
+                    STAT_KEYS.map(function (k) { return '<td class="stats-num">' + values(k) + '</td>'; }).join('') + '</tr>';
+            }
+
+            var html = '';
+            periods.forEach(function (p, i) { html += row('row-period', p.label, p.sub, function (k) { return fmt(counts[i][k]); }); });
+
+            var q = 'Q' + t.quarter() + '-' + t.year();
+            var tgt = [
+                { key: 'month', label: 'الرقم المستهدف هذا الشهر', sub: t.format('MM-YYYY'), idx: 2 },
+                { key: 'quarter', label: 'الرقم المستهدف هذا الربع', sub: q, idx: 3 },
+                { key: 'year', label: 'الرقم المستهدف هذه السنة', sub: t.format('YYYY'), idx: 4 }
+            ];
+            tgt.forEach(function (g) {
+                html += row('row-target', g.label, g.sub, function (k) { return TARGETS[g.key] ? fmt(TARGETS[g.key][k]) : '-'; });
+            });
+            var pct = [
+                { key: 'month', label: 'النسبة المحققة من المستهدف الشهرى', sub: t.format('MM-YYYY'), idx: 2 },
+                { key: 'quarter', label: 'النسبة المحققة من المستهدف الربع سنوى', sub: q, idx: 3 },
+                { key: 'year', label: 'النسبة المحققة من المستهدف السنوى', sub: t.format('YYYY'), idx: 4 }
+            ];
+            pct.forEach(function (g) {
+                html += row('row-percent', g.label, g.sub, function (k) {
+                    var target = TARGETS[g.key] && TARGETS[g.key][k];
+                    return target ? Math.round(counts[g.idx][k] / target * 100) + '%' : '-';
+                });
+            });
+            $('#statsBody').html(html);
+        }
+
+        $(function () {
+            renderStats();
+
+            $('#statistics-toggle').on('click', function () {
+                var open = !$('#StatisicsMeasurementsAndDeliveries').hasClass('open');
+                if (open) renderStats();
+                $('#StatisicsMeasurementsAndDeliveries, #statistics-toggle').toggleClass('open', open);
+                $(this).find('i').toggleClass('fa-chevron-right', !open).toggleClass('fa-chevron-left', open);
+            });
+
+            $('#refresh_dashboard').on('click', function () {
+                var $b = $(this).addClass('spinning');
+                setTimeout(function () { renderStats(); $b.removeClass('spinning'); }, 400);
+            });
+
+            $('#export_dashboard').on('click', function () {
+                var lines = [];
+                $('.stats-table tr').each(function () {
+                    lines.push($(this).children().map(function () {
+                        var $c = $(this).clone();
+                        var sub = $c.find('small').text();
+                        $c.find('small').remove();
+                        var txt = $.trim($c.text()) + (sub ? ' (' + sub + ')' : '');
+                        return '"' + txt.replace(/"/g, '""') + '"';
+                    }).get().join(','));
+                });
+                var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'visits-statistics.csv';
+                a.click();
+            });
         });
     </script>
 </body>
