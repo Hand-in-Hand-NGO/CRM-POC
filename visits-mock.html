@@ -605,6 +605,8 @@
         #search-form .filters-row>[class*="col-"] {
             padding-right: 8px;
             padding-left: 8px;
+            float: right;
+            clear: both;   /* one filter per line, narrower width */
         }
 
         #search-form .filter-item {
@@ -670,15 +672,6 @@
             min-width: 0;
             width: 1000px;
             max-width: calc(100vw - 90px);
-        }
-
-        @media (min-width: 1200px) {
-
-            /* left-most column (RTL): open the table towards the right */
-            #search-form .filter-col-end .dropdown-menu {
-                right: auto !important;
-                left: 0 !important;
-            }
         }
 
         /* multi-select tabs: hide the checkboxes like Bootstrap does for data-toggle="buttons" */
@@ -760,7 +753,7 @@
                                 <div class="row filters-row">
 
                                     <!-- Case Name / Order Code -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="caseNameOrCode" class="control-label">اسم الحالة / كود الطلب</label>
                                             <div class="filter-inline">
@@ -777,7 +770,7 @@
                                     </div>
 
                                     <!-- City -->
-                                    <div class="col-lg-4 col-md-3 col-sm-6">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <div class="filter-item">
                                             <label for="city" class="control-label">المحافظة</label>
                                             <select id="city" name="city[]" multiple class="form-control"></select>
@@ -785,7 +778,7 @@
                                     </div>
 
                                     <!-- Amputation Level -->
-                                    <div class="col-lg-4 col-md-3 col-sm-6">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <div class="filter-item">
                                             <label for="amputationLevel" class="control-label">مستوى البتر</label>
                                             <select id="amputationLevel" name="amputationLevel[]" multiple class="form-control"></select>
@@ -798,7 +791,7 @@
                                 <div class="row filters-row">
 
                                     <!-- Responsible Team -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="responsibleTeam" class="control-label">الفريق المسؤول</label>
                                             <div class="dropdown responsibleTeam-filter">
@@ -810,7 +803,7 @@
                                     </div>
 
                                     <!-- Components -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="components" class="control-label">المكونات</label>
                                             <div class="dropdown components-filter">
@@ -822,7 +815,7 @@
                                     </div>
 
                                     <!-- Engineering Assessment -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12 filter-col-end">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="engineeringAssessment" class="control-label">التقييم الهندسى</label>
                                             <div class="dropdown status-filter">
@@ -839,7 +832,7 @@
                                 <div class="row filters-row">
 
                                     <!-- Assessment Date -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="assessmentDatePeriod" class="control-label">تاريخ التقييم الهندسى</label>
                                             <div class="filter-inline">
@@ -861,7 +854,7 @@
                                     </div>
 
                                     <!-- Visit Date -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-5 col-md-8 col-sm-12">
                                         <div class="filter-item">
                                             <label for="visitDatePeriod" class="control-label">تاريخ حجز الزيارة</label>
                                             <div class="filter-inline">
@@ -883,7 +876,7 @@
                                     </div>
 
                                     <!-- Number Of Days -->
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <div class="filter-item">
                                             <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
                                             <div class="filter-inline">
@@ -904,7 +897,7 @@
 
                                 <!-- ===== Row 4: Is Attend (replaces نوع الطلب) ===== -->
                                 <div class="row filters-row">
-                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
                                         <div class="filter-item box-content">
                                             <label for="isAttend" class="control-label">هل حضر</label>
                                             <div class="btn-group btn-group-justified" id="isAttend" data-toggle="buttons">
