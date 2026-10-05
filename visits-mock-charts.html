@@ -229,6 +229,8 @@
         .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
         .vs-kpi .lbl { font-size: 11px; color: var(--vs-text-dim); }
         .vs-kpi.zero .num { color: var(--vs-text-faint); }
+        .vs-kpi-days { grid-column: 1 / -1; flex-direction: row; align-items: baseline; justify-content: space-between; }
+        .vs-kpi-days .num small { font-size: 12px; font-weight: 600; color: var(--vs-text-dim); }
 
         .vs-group-label { font-size: 11px; font-weight: 700; color: var(--vs-text-faint); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; }
         .vs-chart-group { margin-bottom: 22px; }
@@ -372,11 +374,28 @@
         }
 
         /* ---- مرفقات الحالة ---- */
-        .case-attachments { text-align: right; min-width: 150px; }
-        .case-attachments .attach-download { border-radius: 10px !important; margin-bottom: 4px; white-space: nowrap; }
-        .case-attachments ul { list-style: none; padding: 0; margin: 0; font-size: 11px; }
-        .case-attachments li { white-space: nowrap; line-height: 1.7; }
-        .case-attachments li .fa { color: #888; }
+        .case-docs { text-align: right; min-width: 250px; font-size: 11.5px; }
+        .case-docs .docs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .case-docs .attach-download { border-radius: 10px !important; white-space: nowrap; }
+        .case-docs .docs-count { color: #666; font-weight: bold; direction: ltr; }
+        .case-docs .docs-list { width: 100%; border-collapse: collapse; }
+        .case-docs .docs-list td { border: 0 !important; padding: 1px 2px !important; text-align: right !important; white-space: nowrap; line-height: 18px; background: transparent !important; }
+        .case-docs .doc-state { width: 16px; }
+        .case-docs .doc-ok .doc-state .fa-check { color: #31c860; }
+        .case-docs .doc-missing .doc-state .fa { color: #f96a74; }
+        .case-docs .doc-missing .doc-name { color: #999; }
+        .case-docs .doc-actions { text-align: left !important; }
+        .case-docs .doc-actions .btn-link { padding: 0 3px; font-size: 12px; line-height: 16px; color: #0093e9; }
+        .case-docs .doc-actions .doc-del { color: #f96a74; }
+        .case-docs .doc-actions .doc-add { color: #31c860; font-size: 11px; }
+        .case-docs .docs-sep td { font-weight: bold; color: #535252; padding-top: 5px !important; border-top: 1px dashed #ccc !important; }
+
+        /* ---- التأجيل inside the 4 assessment columns ---- */
+        .postpone-box { display: inline-block; text-align: right; background: #e3ebf1; border-radius: 6px; padding: 4px 8px; margin: 3px 0; font-size: 12px; color: #333; white-space: nowrap; }
+        .postpone-box div { line-height: 26px; }
+        .postpone-box b { display: inline-block; background: #fff; border: 1px solid #d7dbe0; border-radius: 4px; padding: 0 6px; margin: 0 4px; line-height: 20px; direction: ltr; }
+        .order-cell { white-space: nowrap; }
+        .order-cell small { display: block; color: gray; margin-top: 2px; }
 
         /* ---- الاستقبال (reception) ---- */
         .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
@@ -1230,28 +1249,25 @@
                                     <div class="collapse col-lg-8 pull-left well" id="collapseExample">
                                         <div class="text-right">
                                             <span class="col-lg-4 text-yellow text-bold"><input id="toggle" type="checkbox" autocomplete="off"> اختيار الكل</span>
-                                            <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> نوع الطلب</span>
-                                            <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ تقديم الطلب</span>
-                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> كود الحالة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
-                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
-                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> هل حضر ؟</span>
-                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين أخذ المقاس وجاهزية التسليم</span>
-                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
-                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
-                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
-                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حضور تسليم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
-                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ التأجيل</span>
-                                            <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="25" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الطلب</span>
+                                            <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="18" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1318,6 +1334,12 @@
                         <div class="col-sm-8">
                             <label class="control-label">الملاحظات</label>
                             <input type="text" id="modalNotes" class="form-control" placeholder="الملاحظات">
+                        </div>
+                    </div>
+                    <div class="row postpone-field" style="display:none; margin-top:10px;">
+                        <div class="col-sm-4">
+                            <label class="control-label">تاريخ التأجيل <span style="color:#dd4b39">*</span></label>
+                            <input type="date" id="modalPostpone" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -1437,6 +1459,7 @@
         </div>
     </div>
 
+    <input type="file" id="docUploadInput" style="display:none">
     <div class="toast-msg" id="toast"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -1610,6 +1633,14 @@
             ROWS.push(row);
         }
 
+        // postponed assessments carry their postpone date
+        ROWS.forEach(function (row) {
+            Object.keys(row.assessments).forEach(function (k) {
+                var a = row.assessments[k];
+                if (+a.id === 22 && row.postponeDate) a.postponeDate = moment(a.date).add(moment(row.postponeDate).diff(TODAY, 'days') * 5 + 20, 'days').format('YYYY-MM-DD');
+            });
+        });
+
         // Final statuses close a stage (no more ➕)
         var FINAL = { new_mdm: [18, 19, 20], new_fitting: [3, 5, 2], maintenance_mdm: [34, 35], maintenance_fitting: [3, 34] };
         function isFinal(row, stage) { var a = row.assessments[stage]; return a && FINAL[stage].indexOf(+a.id) !== -1; }
@@ -1625,82 +1656,155 @@
         }
         var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
 
-        // مرفقات الحالة — every file uploaded for the case; download as a folder (zip) named after the case
-        var SEED_ATTACHMENTS = [
-            { name: 'صورة البطاقة.png', type: 'ملف', kind: 'img' },
-            { name: 'إقرار التصنيع.png', type: 'ملف', kind: 'img' },
-            { name: 'تقرير طبي.txt', type: 'ملف', kind: 'txt' },
-            { name: 'فيديو المشي.txt', type: 'فيديو', kind: 'txt' }
-        ];
-        function seedAttachments(row) {
-            if (row.attachments) return row.attachments;
-            var n = row.id % 5; // 0..4 mock files per case
-            row.attachments = SEED_ATTACHMENTS.slice(0, n === 4 ? 4 : n).map(function (a, i) {
-                return { name: a.name, type: a.type, kind: a.kind, by: 'يوسف محمد', date: moment(row.submitDate).add(i + 1, 'day').format('YYYY-MM-DD HH:mm') };
+        // مرفقات الحالة — the standard case documents (✓ uploaded / ✗ missing) + any other uploaded files.
+        // Each file: download / print / delete; missing ones: add. "تحميل الكل" = zip with a folder named after the case.
+        var CASE_DOCS = ['البطاقة الشخصية', 'شهادة الميلاد', 'باسبور', 'مفوضية', 'التقرير الطبى', 'البرنت التامينى', 'بيان المعاش',
+            'مفردات المرتب', 'الحيازة الزراعية', 'ايصال المرافق او عقد الايجار', 'اثبات القيد الدراسى', 'شهادة الوفاة', 'قسيمة الطلاق'];
+        var CURRENT_USER_NAME = 'يوسف محمد';
+        function seedDocs(row) {
+            if (row.docs) return row.docs;
+            row.docs = CASE_DOCS.map(function (d, i) {
+                var h = ((row.id + 7) * (i + 3) * 2654435761) % 100; // deterministic mock
+                var p = i === 0 ? 85 : i === 4 ? 70 : i < 4 ? 35 : 15;
+                return h < p ? { name: d + '.png', by: CURRENT_USER_NAME, date: moment(row.submitDate).add(i % 4, 'day').format('YYYY-MM-DD'), mock: true } : null;
             });
+            return row.docs;
+        }
+        function seedAttachments(row) {           // other files uploaded from the reception popup
+            if (!row.attachments) row.attachments = [];
             return row.attachments;
         }
         function safeName(t) { return String(t).replace(/[\\\/:*?"<>|]+/g, '-').trim() || 'الحالة'; }
-        function attachmentBlob(row, a) {
-            if (a.file) return Promise.resolve(a.file);
-            if (a.kind === 'img') {
-                var c = document.createElement('canvas'); c.width = 600; c.height = 380;
-                var g = c.getContext('2d');
-                g.fillStyle = '#f6f6f6'; g.fillRect(0, 0, 600, 380);
-                g.strokeStyle = '#0093e9'; g.lineWidth = 6; g.strokeRect(10, 10, 580, 360);
-                g.fillStyle = '#333'; g.textAlign = 'center'; g.direction = 'rtl';
-                g.font = 'bold 34px "Noto Kufi Arabic", Tahoma'; g.fillText(a.name.replace(/\.\w+$/, ''), 300, 160);
-                g.font = '24px "Noto Kufi Arabic", Tahoma'; g.fillText(row.name, 300, 220); g.fillText(row.code, 300, 265);
-                return new Promise(function (res) { c.toBlob(res, 'image/png'); });
-            }
-            return Promise.resolve(new Blob(['﻿' + a.name + '\n' + row.name + ' - ' + row.code + '\nملف تجريبي (داتا وهمية)'], { type: 'text/plain;charset=utf-8' }));
+        function extOf(name) { var m = /\.[A-Za-z0-9]{1,5}$/.exec(name || ''); return m ? m[0] : ''; }
+        function docFileName(i, d) { return safeName(CASE_DOCS[i]) + extOf(d.name); }
+        function mockImage(row, title) {
+            var c = document.createElement('canvas'); c.width = 600; c.height = 380;
+            var g = c.getContext('2d');
+            g.fillStyle = '#f6f6f6'; g.fillRect(0, 0, 600, 380);
+            g.strokeStyle = '#0093e9'; g.lineWidth = 6; g.strokeRect(10, 10, 580, 360);
+            g.fillStyle = '#333'; g.textAlign = 'center'; g.direction = 'rtl';
+            g.font = 'bold 34px "Noto Kufi Arabic", Tahoma'; g.fillText(title, 300, 160);
+            g.font = '24px "Noto Kufi Arabic", Tahoma'; g.fillText(row.name, 300, 220); g.fillText(row.code, 300, 265);
+            g.font = '16px "Noto Kufi Arabic", Tahoma'; g.fillStyle = '#999'; g.fillText('ملف تجريبي (داتا وهمية)', 300, 330);
+            return new Promise(function (res) { c.toBlob(res, 'image/png'); });
         }
+        function fileBlob(row, f, title) { return f.file ? Promise.resolve(f.file) : mockImage(row, title); }
         function saveBlob(blob, filename) {
             var url = URL.createObjectURL(blob), link = document.createElement('a');
             link.href = url; link.download = filename;
             document.body.appendChild(link); link.click(); link.remove();
             setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
         }
+        function printBlob(blob, title) {
+            var url = URL.createObjectURL(blob), frame = document.createElement('iframe');
+            frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;height:600px;border:0';
+            document.body.appendChild(frame);
+            setTimeout(function () { frame.remove(); URL.revokeObjectURL(url); }, 120000);
+            function printDoc(body) {
+                frame.onload = function () { frame.onload = null; };
+                frame.srcdoc = '<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>' + $('<div>').text(title).html() + '</title>' +
+                    '<style>body{margin:0;text-align:center;font-family:Tahoma}img{max-width:100%;max-height:100vh}pre{text-align:right;white-space:pre-wrap;font-size:14px;padding:20px}</style></head>' +
+                    '<body>' + body + '</body></html>';
+            }
+            var type = blob.type || '';
+            if (/^image\//.test(type)) {
+                printDoc('<img src="' + url + '" onload="setTimeout(function(){window.focus();window.print();},50)">');
+            } else if (type === 'application/pdf') {
+                frame.onload = function () { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) { window.open(url); } };
+                frame.src = url;
+            } else if (/^text\//.test(type) || /\.(txt|csv)$/i.test(title)) {
+                blob.text().then(function (t) { printDoc('<pre>' + $('<div>').text(t).html() + '</pre><script>window.onload=function(){window.print();}<\/script>'); });
+            } else {
+                frame.remove();
+                window.open(url, '_blank');
+                toast('تم فتح الملف — اطبعه من البرنامج الخاص به');
+            }
+        }
+        function findRow(id) { return ROWS.filter(function (r) { return r.id == id; })[0]; }
         function downloadCaseAttachments(row) {
-            var files = seedAttachments(row);
-            if (!files.length) return toast('لا توجد مرفقات لهذه الحالة');
+            var docs = seedDocs(row), extras = seedAttachments(row), jobs = [];
             if (!window.JSZip) return toast('تعذر تحميل مكتبة الضغط');
             var folderName = safeName(row.name), zip = new JSZip(), folder = zip.folder(folderName), used = {};
-            return Promise.all(files.map(function (a) { return attachmentBlob(row, a); })).then(function (blobs) {
-                blobs.forEach(function (b, i) {
-                    var n = safeName(files[i].name);
-                    if (used[n]) { n = n.replace(/(\.\w+)?$/, ' (' + (++used[n]) + ')$1'); } else used[n] = 1;
-                    folder.file(n, b);
-                });
-                return zip.generateAsync({ type: 'blob' });
-            }).then(function (blob) { saveBlob(blob, folderName + '.zip'); toast('تم تحميل مرفقات ' + row.name); });
+            function unique(n) { if (used[n]) { n = n.replace(/(\.\w+)?$/, ' (' + (++used[n]) + ')$1'); } else used[n] = 1; return n; }
+            docs.forEach(function (d, i) { if (d) jobs.push(fileBlob(row, d, CASE_DOCS[i]).then(function (b) { folder.file(unique(docFileName(i, d)), b); })); });
+            extras.forEach(function (a) { jobs.push(fileBlob(row, a, a.name).then(function (b) { folder.folder('مرفقات أخرى').file(unique(safeName(a.name)), b); })); });
+            if (!jobs.length) return toast('لا توجد مرفقات لهذه الحالة');
+            return Promise.all(jobs).then(function () { return zip.generateAsync({ type: 'blob' }); })
+                .then(function (blob) { saveBlob(blob, folderName + '.zip'); toast('تم تحميل مرفقات ' + row.name); });
+        }
+        function fileActions(id, attr) {
+            return '<button type="button" class="btn btn-link btn-xs doc-dl" ' + attr + ' data-id="' + id + '" title="تحميل"><i class="fa fa-download"></i></button>' +
+                '<button type="button" class="btn btn-link btn-xs doc-print" ' + attr + ' data-id="' + id + '" title="طباعة"><i class="fa fa-print"></i></button>' +
+                '<button type="button" class="btn btn-link btn-xs doc-del" ' + attr + ' data-id="' + id + '" title="حذف"><i class="fa fa-trash"></i></button>';
         }
         function attachmentsCell(r) {
-            var files = seedAttachments(r);
-            if (!files.length) return '-';
-            return '<div class="case-attachments">' +
-                '<button type="button" class="btn btn-warning btn-xs attach-download" data-id="' + r.id + '" title="تحميل كل المرفقات في فولدر باسم الحالة"><i class="fa fa-download"></i> تحميل (' + files.length + ')</button>' +
-                '<ul>' + files.map(function (a, i) {
-                    return '<li><a href="#" class="attach-one" data-id="' + r.id + '" data-i="' + i + '"><i class="fa ' + (a.type === 'فيديو' ? 'fa-file-video-o' : 'fa-file-o') + '"></i> ' + $('<div>').text(a.name).html() + '</a></li>';
-                }).join('') + '</ul></div>';
+            var docs = seedDocs(r), extras = seedAttachments(r);
+            var done = docs.filter(Boolean).length;
+            var html = '<div class="case-docs" data-id="' + r.id + '">' +
+                '<div class="docs-head"><button type="button" class="btn btn-warning btn-xs attach-download" data-id="' + r.id + '" title="تحميل كل المرفقات في فولدر باسم الحالة"' + (done + extras.length ? '' : ' disabled') + '><i class="fa fa-download"></i> تحميل الكل</button>' +
+                '<span class="docs-count">' + done + '/' + CASE_DOCS.length + '</span></div><table class="docs-list">';
+            docs.forEach(function (d, i) {
+                html += '<tr class="' + (d ? 'doc-ok' : 'doc-missing') + '"><td class="doc-state"><i class="fa ' + (d ? 'fa-check' : 'fa-times') + '"></i></td>' +
+                    '<td class="doc-name"' + (d ? ' title="' + $('<div>').text(d.name + ' — ' + d.date + ' — ' + d.by).html() + '"' : '') + '>' + CASE_DOCS[i] + '</td><td class="doc-actions">' +
+                    (d ? fileActions(r.id, 'data-doc="' + i + '"')
+                        : '<button type="button" class="btn btn-link btn-xs doc-add" data-id="' + r.id + '" data-doc="' + i + '" title="إضافة"><i class="fa fa-plus-circle"></i> إضافة</button>') +
+                    '</td></tr>';
+            });
+            if (extras.length) {
+                html += '<tr class="docs-sep"><td colspan="3">مرفقات أخرى</td></tr>';
+                extras.forEach(function (a, i) {
+                    html += '<tr class="doc-ok"><td class="doc-state"><i class="fa ' + (a.type === 'فيديو' ? 'fa-file-video-o' : 'fa-file-o') + '"></i></td><td class="doc-name">' + $('<div>').text(a.name).html() + '</td><td class="doc-actions">' + fileActions(r.id, 'data-extra="' + i + '"') + '</td></tr>';
+                });
+            }
+            return html + '</table></div>';
         }
-        $(document).on('click', '.attach-download', function (e) {
-            e.stopPropagation();
-            var id = $(this).data('id');
-            downloadCaseAttachments(ROWS.filter(function (r) { return r.id == id; })[0]);
+        function refreshDocsCell(row) {
+            $('.case-docs[data-id="' + row.id + '"]').parent().html(attachmentsCell(row));
+        }
+        function pickFile(btn) {
+            var $b = $(btn), row = findRow($b.data('id'));
+            if ($b.is('[data-doc]')) { var i = +$b.data('doc'); return { row: row, file: row.docs[i], title: CASE_DOCS[i], filename: row.docs[i] && docFileName(i, row.docs[i]), doc: i }; }
+            var x = +$b.data('extra'), a = row.attachments[x];
+            return { row: row, file: a, title: a.name, filename: safeName(a.name), extra: x };
+        }
+        $(document).on('click', '.attach-download', function (e) { e.stopPropagation(); downloadCaseAttachments(findRow($(this).data('id'))); });
+        $(document).on('click', '.doc-dl', function (e) {
+            e.stopPropagation(); var p = pickFile(this);
+            fileBlob(p.row, p.file, p.title).then(function (b) { saveBlob(b, p.filename); });
         });
-        $(document).on('click', '.attach-one', function (e) {
-            e.preventDefault(); e.stopPropagation();
-            var id = $(this).data('id'), row = ROWS.filter(function (r) { return r.id == id; })[0], a = seedAttachments(row)[+$(this).data('i')];
-            attachmentBlob(row, a).then(function (b) { saveBlob(b, safeName(a.name)); });
+        $(document).on('click', '.doc-print', function (e) {
+            e.stopPropagation(); var p = pickFile(this);
+            fileBlob(p.row, p.file, p.title).then(function (b) { printBlob(b, p.filename); });
+        });
+        $(document).on('click', '.doc-del', function (e) {
+            e.stopPropagation(); var p = pickFile(this);
+            if (!confirm('حذف "' + p.title + '" من مرفقات ' + p.row.name + '؟')) return;
+            if (p.doc !== undefined) p.row.docs[p.doc] = null; else p.row.attachments.splice(p.extra, 1);
+            refreshDocsCell(p.row);
+            toast('تم حذف ' + p.title);
+        });
+        var pendingDoc = null;
+        $(document).on('click', '.doc-add', function (e) {
+            e.stopPropagation();
+            pendingDoc = { row: findRow($(this).data('id')), i: +$(this).data('doc') };
+            $('#docUploadInput').val('').click();
+        });
+        $(document).on('change', '#docUploadInput', function () {
+            var f = this.files[0];
+            if (!f || !pendingDoc) return;
+            pendingDoc.row.docs[pendingDoc.i] = { name: f.name, file: f, by: CURRENT_USER_NAME, date: moment().format('YYYY-MM-DD') };
+            refreshDocsCell(pendingDoc.row);
+            toast('تم رفع ' + CASE_DOCS[pendingDoc.i]);
+            pendingDoc = null;
         });
 
-        // هل حضر ؟ — استقبال 1 (تقييم طبي وقياسات / تقييم صيانة) or استقبال 2 (تسليم طرف جديد / تسليم صيانة)
+        // الاستقبال — one "استقبال" button; the popup differs by stage:
+        //   تقييم طبي وقياسات / تقييم صيانة => popup 1, تسليم طرف جديد / تسليم صيانة => popup 2
         var RECEPTION_OF_STAGE = { new_mdm: 1, maintenance_mdm: 1, new_fitting: 2, maintenance_fitting: 2 };
         function receptionCell(r) {
             var rec = RECEPTION_OF_STAGE[currentStage(r)], html = '';
-            if (rec === 1) html += '<button type="button" class="btn btn-primary btn-xs reception-btn" data-id="' + r.id + '" data-rec="1"><i class="fa fa-sign-in"></i> استقبال 1</button>';
-            if (rec === 2) html += '<button type="button" class="btn btn-success btn-xs reception-btn" data-id="' + r.id + '" data-rec="2"><i class="fa fa-sign-in"></i> استقبال 2</button>';
+            if (rec === 1) html += '<button type="button" class="btn btn-primary btn-xs reception-btn" data-id="' + r.id + '" data-rec="1"><i class="fa fa-sign-in"></i> استقبال</button>';
+            if (rec === 2) html += '<button type="button" class="btn btn-primary btn-xs reception-btn" data-id="' + r.id + '" data-rec="2"><i class="fa fa-sign-in"></i> استقبال</button>';
             var status = r.attended === null ? '' : (r.attended ? 'حضر' : 'لم يحضر');
             if (!html) return status || '-';
             return html + (status ? '<span class="reception-status">' + status + '</span>' : '');
@@ -1709,11 +1813,18 @@
         // =====================================================================
         // Columns — same 25 columns / order as the live DataTable
         // =====================================================================
+        // التأجيل: shown inside the assessment cell when the status is "مؤجل" and a postpone date exists
+        function postponeBox(a) {
+            if (!a || +a.id !== 22 || !a.postponeDate) return '';
+            var days = moment(a.postponeDate).diff(moment(a.date), 'days');
+            return '<div class="postpone-box"><div>عدد ايام التأجيل: <b>' + days + '</b> يوم</div>' +
+                '<div>تاريخ التأجيل: <b>' + moment(a.postponeDate).format('DD-MM-YYYY') + '</b></div></div><br>';
+        }
         function assessmentCell(stage) {
             return function (row) {
                 if (row.type !== stage.split('_')[0]) return '-';
                 var a = row.assessments[stage], html = '';
-                if (a) html += '<span class="assess-label">' + statusName(stage, a.id) + '<small>' + a.date + '</small></span><br>';
+                if (a) html += '<span class="assess-label">' + statusName(stage, a.id) + '<small>' + a.date + '</small></span><br>' + postponeBox(a);
                 if (currentStage(row) === stage) html += '<i class="fa fa-plus-square add-assessment" data-id="' + row.id + '" data-stage="' + stage + '" title="إضافة تقييم"></i>';
                 return html || '-';
             };
@@ -1731,13 +1842,12 @@
         function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
 
         var COLUMNS = [
-            { title: 'نوع الطلب', render: function (r) { return r.type === 'new' ? 'طلب جديد' : 'طلب صيانة'; } },
-            { title: 'تاريخ تقديم الطلب', render: function (r) { return r.submitDate; } },
-            { title: 'كود الحالة', render: function (r) { return caseValue(r.code); } },
+            { title: 'الطلب', render: function (r) { return '<span class="order-cell">' + (r.type === 'new' ? 'طلب جديد' : 'طلب صيانة') + '<small>' + r.submitDate + '</small></span>'; } },
             {
                 title: 'بيانات الحالة', render: function (r) {
                     return '<table class="info-table">' +
                         '<tr class="case-row"><td class="titleInfo">الاسم:</td><td class="info">' + caseValue(r.name) + '</td></tr>' +
+                        '<tr class="case-row"><td class="titleInfo">الكود:</td><td class="info">' + caseValue(r.code) + '</td></tr>' +
                         '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
                 }
@@ -1753,28 +1863,28 @@
                 }
             },
             { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
-            { title: 'هل حضر ؟', render: receptionCell },
-            { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
+            { title: 'الاستقبال', render: receptionCell },
+            { title: 'عدد الأيام بين المقاس والتسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
             { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
             { title: 'المكونات', render: function (r) { return list(r.components); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
             { title: 'الفيديوهات', render: function (r) { return r.videos ? '<i class="fa fa-video-camera text-primary"></i> ' + r.videos : '-'; } },
             { title: 'التقييم الطبي و القياسات', render: assessmentCell('new_mdm') },
-            { title: 'تاريخ الحضور', render: attendDate('new_mdm') },
+            { title: 'تاريخ الحضور', attend: true, render: attendDate('new_mdm') },
             { title: 'تسليم طرف جديد', render: assessmentCell('new_fitting') },
-            { title: 'تاريخ الحضور', render: attendDate('new_fitting') },
+            { title: 'تاريخ الحضور', attend: true, render: attendDate('new_fitting') },
             { title: 'تقييم الصيانة', render: assessmentCell('maintenance_mdm') },
-            { title: 'تاريخ الحضور', render: attendDate('maintenance_mdm') },
+            { title: 'تاريخ الحضور', attend: true, render: attendDate('maintenance_mdm') },
             { title: 'تسليم الصيانة', render: assessmentCell('maintenance_fitting') },
-            { title: 'تاريخ الحضور', render: attendDate('maintenance_fitting') },
+            { title: 'تاريخ الحضور', attend: true, render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
-            { title: 'تاريخ التأجيل', render: function (r) { return r.postponeDate || '-'; } },
             { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } },
             { title: 'مرفقات الحالة', render: attachmentsCell }
         ];
-        // aoColumnDefs in the live page hide 15, 17, 19, 21 by default
-        [15, 17, 19, 21].forEach(function (c) { COLUMNS[c].hidden = true; });
+        // the four "تاريخ الحضور" columns are hidden by default (aoColumnDefs in the live page)
+        var ATTEND_COLS = COLUMNS.map(function (c, i) { return c.attend ? i : -1; }).filter(function (i) { return i >= 0; });
+        ATTEND_COLS.forEach(function (c) { COLUMNS[c].hidden = true; });
 
         // =====================================================================
         // Mock "oTable": reads the serialized search form like the server does
@@ -2019,7 +2129,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v2_" + userID;
+            var storageKey = "engineering_table_columns_v3_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -2514,16 +2624,21 @@
                 }).join(''));
                 $('#modalDate').val(moment().format('YYYY-MM-DD'));
                 $('#modalNotes').val('');
+                $('#modalPostpone').val('');
+                $('#assessmentModal .postpone-field').hide();
                 $('#assessmentModal').modal('show');
             });
             $(document).on('click', '#modalOptions .btn', function () {
                 $('#modalOptions .btn').removeClass('btn-primary active').addClass('btn-default');
                 $(this).removeClass('btn-default').addClass('btn-primary active');
                 modalCtx.statusId = $(this).data('sid');
+                $('#assessmentModal .postpone-field').toggle(+modalCtx.statusId === 22);
             });
             $('#modalSave').on('click', function () {
                 if (!modalCtx.statusId) return toast('اختر التقييم أولاً');
+                if (+modalCtx.statusId === 22 && !$('#modalPostpone').val()) return toast('أدخل تاريخ التأجيل');
                 modalCtx.row.assessments[modalCtx.stage] = { id: modalCtx.statusId, date: $('#modalDate').val() };
+                if (+modalCtx.statusId === 22) modalCtx.row.assessments[modalCtx.stage].postponeDate = modalCtx.row.postponeDate = $('#modalPostpone').val();
                 if ($('#modalNotes').val()) modalCtx.row.notes = $('#modalNotes').val();
                 modalCtx.row.attended = 1;
                 $('#assessmentModal').modal('hide');
@@ -2534,7 +2649,7 @@
 
             $('#printBtn').on('click', function () { window.print(); });
             $('#excelBtn').on('click', function () {
-                var cols = COLUMNS.filter(function (c, i) { return !c.hidden || [15, 17, 19, 21].indexOf(i) !== -1; });
+                var cols = COLUMNS.filter(function (c, i) { return !c.hidden || ATTEND_COLS.indexOf(i) !== -1; });
                 var lines = [cols.map(function (c) { return '"' + c.title + '"'; }).join(',')];
                 filteredRows().forEach(function (r) {
                     lines.push(cols.map(function (c) {
@@ -2611,6 +2726,29 @@
             return c;
         }
 
+        // متوسط عدد الأيام بين المقاس والتسليم — per delivery date (table rows + seeded history)
+        var DAYS_HISTORY = (function () {
+            var out = [], s = 7;
+            function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+            var d = TODAY.clone().startOf('year'), stop = TODAY.clone().subtract(35, 'days');
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue;
+                var n = Math.floor(r() * 6);
+                for (var i = 0; i < n; i++) out.push({ date: d.format('YYYY-MM-DD'), days: 4 + Math.floor(r() * 24) });
+            }
+            return out;
+        })();
+        function avgDaysBetween(from, to) {
+            var list = DAYS_HISTORY.slice();
+            ROWS.forEach(function (row) {
+                var del = row.assessments.new_fitting || row.assessments.maintenance_fitting;
+                if (row.days !== null && row.days !== undefined && del) list.push({ date: del.date, days: row.days });
+            });
+            var sum = 0, n = 0;
+            list.forEach(function (e) { if (e.date >= from && e.date <= to) { sum += e.days; n++; } });
+            return { avg: n ? Math.round(sum / n * 10) / 10 : null, n: n };
+        }
+
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
 
         var STAT_LABELS = { measurements: 'القياسات', deliveries: 'التسليمات', maintenanceAssess: 'تقييم صيانة', maintenanceDeliver: 'تسليم صيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
@@ -2679,6 +2817,7 @@
                 var meta = TREND_META[p.key];
                 return {
                     key: p.key, label: p.label, range: p.sub, values: counts, target: TARGETS[p.key] || null,
+                    avgDays: avgDaysBetween(p.from.format('YYYY-MM-DD'), p.to.format('YYYY-MM-DD')),
                     trend: buildTrendBuckets(ev, t, meta.unit, meta.count), trendLabel: meta.label
                 };
             });
@@ -2726,6 +2865,7 @@
                     lines.push(cells.join(','));
                 }
                 data.periods.forEach(function (p) { row(p.label, p.range, function (k) { return fmt(p.values[k]); }); });
+                data.periods.forEach(function (p) { lines.push('"متوسط أيام المقاس والتسليم — ' + p.label + '",' + (p.avgDays.avg === null ? '-' : p.avgDays.avg)); });
                 data.periods.filter(function (p) { return p.target; }).forEach(function (p) {
                     row('الرقم المستهدف — ' + p.label, p.range, function (k) { return p.target[k] != null ? fmt(p.target[k]) : '-'; });
                     row('النسبة المحققة — ' + p.label, p.range, function (k) {
@@ -2929,6 +3069,10 @@
                                 <div className="lbl">{labels[k]}</div>
                             </div>
                         ))}
+                        <div className={`vs-kpi vs-kpi-days ${period.avgDays.avg === null ? "zero" : ""}`}>
+                            <div className="num">{period.avgDays.avg === null ? "-" : period.avgDays.avg} <small>يوم</small></div>
+                            <div className="lbl">متوسط أيام المقاس والتسليم ({period.avgDays.n} حالة)</div>
+                        </div>
                     </div>
 
                     <div className="vs-chart-group">
