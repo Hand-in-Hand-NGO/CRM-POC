@@ -308,6 +308,33 @@
             box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important;
         }
 
+        /* ---- الاستقبال (reception) ---- */
+        .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
+        .reception-status { display: block; font-size: 11px; color: gray; margin-top: 3px; }
+        #receptionModal .modal-dialog { width: 70%; min-width: 900px; }
+        #receptionModal .modal-body { padding: 12px 12px 0; }
+        #receptionModal .rec-attach .panel-heading { background: #f5f5f5; color: #333; padding: 8px 12px; }
+        #receptionModal .rec-upload { text-align: left; margin: 6px 0 22px; }
+        #receptionModal .rec-upload .btn { border-radius: 0 !important; }
+        #receptionModal .rec-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        #receptionModal .rec-toolbar select { width: 70px; display: inline-block; height: 30px; padding: 2px 6px; }
+        #receptionModal table { margin-bottom: 10px; }
+        #receptionModal table th, #receptionModal table td { text-align: center; vertical-align: middle; }
+        #receptionModal .rec-pager .btn { color: #666; }
+        #receptionModal .rec-form { padding: 14px 0 6px; }
+        #receptionModal .rec-form .form-group { margin-bottom: 12px; }
+        #receptionModal .rec-form .control-label { font-weight: bold; padding-top: 6px; }
+        #receptionModal .rec-form .req { color: #dd4b39; }
+        #receptionModal .rec-form .input-group-addon { background: #fff; }
+        #receptionModal .rec-form .rec-file { border: 1px solid #d2d6de; padding: 3px; display: flex; align-items: center; gap: 8px; }
+        #receptionModal .rec-form .rec-file .btn { border-radius: 2px !important; }
+        #receptionModal .rec-form .rec-file span { color: #666; font-size: 12px; }
+        #receptionModal .modal-footer { text-align: left; border-top: 1px solid #e5e5e5; padding: 14px 6px 10px; }
+        #receptionModal .modal-footer .btn { border-radius: 0 !important; outline: none !important; }
+        #receptionModal .rec-time { direction: ltr; text-align: right; }
+        #receptionModal .rec-history { margin: 0 6px 14px; }
+        #receptionModal .rec-history thead th { background: #f9f9f9; }
+
         .modal-header-primary {
             padding: 9px 15px;
             background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(255, 249, 228, 1) 34%, rgba(186, 234, 230, 1) 100%);
@@ -1241,6 +1268,114 @@
         </div>
     </div>
 
+    <!-- ===================== الاستقبال — إضافة زيارة (استقبال 1: تقييم طبي وقياسات / تقييم صيانة — استقبال 2: تسليم طرف جديد / تسليم صيانة) ===================== -->
+    <div class="modal fade" id="receptionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header-primary">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"><i class="fa fa-search"></i> إضافة زيارة <small class="rec-case" style="color:#777"></small></h4>
+                </div>
+                <div class="modal-body">
+                    <div class="panel panel-default rec-attach">
+                        <div class="panel-heading">مرفقات الحالة</div>
+                        <div class="panel-body">
+                            <div class="rec-upload">
+                                <button type="button" class="btn btn-success btn-sm" id="recUploadVideo"><i class="fa fa-cloud-upload"></i> رفع فيديو</button><button type="button" class="btn btn-primary btn-sm" id="recUploadFile"><i class="fa fa-cloud-upload"></i> رفع ملف</button>
+                                <input type="file" id="recVideoInput" accept="video/*" multiple style="display:none">
+                                <input type="file" id="recFileInput" multiple style="display:none">
+                            </div>
+                            <div class="rec-toolbar">
+                                <div>عرض <select class="form-control"><option>20</option><option>50</option><option>100</option></select></div>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-sm"><i class="fa fa-print"></i> طباعة</button>
+                                    <button type="button" class="btn btn-default btn-sm"><i class="fa fa-file-excel-o"></i> اكسيل</button>
+                                </div>
+                            </div>
+                            <table class="table table-bordered">
+                                <thead><tr><th style="width:40px"></th><th>المرفق</th><th>نوع المرفق</th><th>تم الإضافة بواسطة</th><th>تاريخ الإضافة</th><th>حذف</th></tr></thead>
+                                <tbody id="recAttachBody"></tbody>
+                            </table>
+                            <div class="btn-group rec-pager">
+                                <button type="button" class="btn btn-default btn-sm" disabled>الأخير</button>
+                                <button type="button" class="btn btn-default btn-sm" disabled>&larr; التالي</button>
+                                <button type="button" class="btn btn-default btn-sm" disabled>السابق &rarr;</button>
+                                <button type="button" class="btn btn-default btn-sm" disabled>الأول</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-horizontal rec-form">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">حضر؟<span class="req">*</span></label>
+                            <div class="col-sm-3">
+                                <select id="recAttend" class="form-control">
+                                    <option></option>
+                                    <option value="1">حضر</option>
+                                    <option value="0">لم يحضر</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">وقت الدخول<span class="req">*</span></label>
+                            <div class="col-sm-3">
+                                <div class="input-group">
+                                    <input type="text" id="recTimeIn" class="form-control rec-time" placeholder="وقت الدخول" maxlength="8">
+                                    <span class="input-group-addon rec-now pointer" title="الوقت الحالي"><i class="fa fa-clock-o"></i></span>
+                                </div>
+                            </div>
+                            <label class="col-sm-2 control-label">وقت المغادرة<span class="req rec2-only">*</span></label>
+                            <div class="col-sm-3">
+                                <div class="input-group">
+                                    <input type="text" id="recTimeOut" class="form-control rec-time" placeholder="وقت المغادرة" maxlength="8">
+                                    <span class="input-group-addon rec-now pointer" title="الوقت الحالي"><i class="fa fa-clock-o"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group rec2-only">
+                            <label class="col-sm-offset-5 col-sm-2 control-label">تسليم الجهاز القديم<span class="req">*</span></label>
+                            <div class="col-sm-3">
+                                <select id="recOldDevice" class="form-control">
+                                    <option></option>
+                                    <option value="نعم">نعم</option>
+                                    <option value="لا">لا</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-1 col-sm-4">
+                                <label class="control-label"><input type="checkbox" id="recPhotoConsent"> <span id="recCheckLabel">الموافقة على التصوير</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-6">
+                                <div class="rec-file">
+                                    <button type="button" class="btn btn-default btn-sm" id="recConsentBtn">إختر صورة إقرار التصنيع</button>
+                                    <span id="recConsentName"></span>
+                                    <input type="file" id="recConsentInput" style="display:none">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">الملاحظات</label>
+                            <div class="col-sm-3"><textarea id="recNotes" class="form-control" rows="2"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> إلغاء</button>
+                    <button type="button" class="btn btn-success" id="recSave"><i class="fa fa-floppy-o"></i> حفظ</button>
+                </div>
+                <div class="rec-history">
+                    <table class="table table-bordered">
+                        <thead><tr><th>التاريخ</th><th>حضر؟</th><th>وقت الدخول</th><th>وقت المغادرة</th><th id="recHistCol5">الموافقة على التصوير</th><th id="recHistCol6">صورة إقرار التصنيع</th><th>الملاحظات</th></tr></thead>
+                        <tbody id="recHistoryBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-msg" id="toast"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -1428,6 +1563,17 @@
         }
         var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
 
+        // هل حضر ؟ — استقبال 1 (تقييم طبي وقياسات / تقييم صيانة) or استقبال 2 (تسليم طرف جديد / تسليم صيانة)
+        var RECEPTION_OF_STAGE = { new_mdm: 1, maintenance_mdm: 1, new_fitting: 2, maintenance_fitting: 2 };
+        function receptionCell(r) {
+            var rec = RECEPTION_OF_STAGE[currentStage(r)], html = '';
+            if (rec === 1) html += '<button type="button" class="btn btn-primary btn-xs reception-btn" data-id="' + r.id + '" data-rec="1"><i class="fa fa-sign-in"></i> استقبال 1</button>';
+            if (rec === 2) html += '<button type="button" class="btn btn-success btn-xs reception-btn" data-id="' + r.id + '" data-rec="2"><i class="fa fa-sign-in"></i> استقبال 2</button>';
+            var status = r.attended === null ? '' : (r.attended ? 'حضر' : 'لم يحضر');
+            if (!html) return status || '-';
+            return html + (status ? '<span class="reception-status">' + status + '</span>' : '');
+        }
+
         // =====================================================================
         // Columns — same 25 columns / order as the live DataTable
         // =====================================================================
@@ -1476,7 +1622,7 @@
             },
             { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
             { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
-            { title: 'هل حضر', render: function (r) { return r.attended === null ? '-' : (r.attended ? 'حضر' : 'لم يحضر'); } },
+            { title: 'هل حضر ؟', render: receptionCell },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
             { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
             { title: 'المكونات', render: function (r) { return list(r.components); } },
@@ -2407,6 +2553,122 @@
                 a.href = URL.createObjectURL(blob);
                 a.download = 'visits-statistics.csv';
                 a.click();
+            });
+        });
+            // =====================================================================
+        // الاستقبال — هل حضر ؟ popups
+        // =====================================================================
+        $(function () {
+            var recRow = null, recKind = 1, CURRENT_USER = 'يوسف محمد';
+            var REC = {
+                1: { check: 'الموافقة على التصوير', file: 'إختر صورة إقرار التصنيع', col5: 'الموافقة على التصوير', col6: 'صورة إقرار التصنيع', accept: 'image/*' },
+                2: { check: 'إقرار استلام', file: 'اختر الملف', col5: 'إقرار استلام', col6: 'المرفق', accept: '' }
+            };
+            function nowTime() { return moment().format('HH:mm:ss'); }
+            function ensureReceptionData(row) {
+                if (!row.attachments) row.attachments = [];
+                if (!row.receptions) row.receptions = {};
+                if (!row.receptions[recKind]) {
+                    row.receptions[recKind] = row.attended === null ? [] : [{
+                        date: moment.min(moment(row.visitDate), moment()).format('YYYY-MM-DD'), attend: row.attended, timeIn: row.attended ? '09:00:00' : '-', timeOut: row.attended ? '10:24:00' : '-',
+                        photo: false, consentImg: '-', notes: row.notes || '-'
+                    }];
+                }
+            }
+            function renderAttachments() {
+                var list = recRow.attachments;
+                $('#recAttachBody').html(list.length ? list.map(function (a, i) {
+                    return '<tr><td>' + (i + 1) + '</td><td><a href="#" onclick="return false">' + $('<div>').text(a.name).html() + '</a></td><td>' + a.type + '</td><td>' + a.by + '</td><td>' + a.date + '</td>' +
+                        '<td><button type="button" class="btn btn-danger btn-xs rec-del" data-i="' + i + '"><i class="fa fa-trash"></i></button></td></tr>';
+                }).join('') : '<tr><td colspan="6">لم يتم العثور علي أي نتائج</td></tr>');
+            }
+            function renderHistory() {
+                var list = recRow.receptions[recKind];
+                $('#recHistoryBody').html(list.length ? list.map(function (h) {
+                    return '<tr><td>' + h.date + '</td><td>' + (h.attend ? 'حضر' : 'لم يحضر') + '</td><td>' + h.timeIn + '</td><td>' + h.timeOut + '</td>' +
+                        '<td>' + (h.photo ? '<span class="label label-success">نعم</span>' : '<span class="label label-danger">لا</span>') + '</td>' +
+                        '<td>' + $('<div>').text(h.consentImg).html() + '</td><td>' + $('<div>').text(h.notes).html() + '</td></tr>';
+                }).join('') : '<tr><td colspan="7">لم يتم العثور علي أي نتائج</td></tr>');
+            }
+            function setConsent(on) {
+                var $cb = $('#recPhotoConsent');
+                if ($cb.data('iCheck')) $cb.iCheck(on ? 'check' : 'uncheck'); else $cb.prop('checked', on);
+            }
+            function resetForm() {
+                $('#recAttend').val(null).trigger('change');
+                $('#recTimeIn').val(nowTime());
+                $('#recTimeOut').val('');
+                setConsent(false);
+                $('#recConsentInput').val(''); $('#recConsentName').text('');
+                $('#recNotes').val('');
+                $('#recOldDevice').val(null).trigger('change');
+            }
+
+            $('#recAttend').select2({ dropdownParent: $('#receptionModal'), placeholder: 'اختر', allowClear: true, minimumResultsForSearch: -1, width: '100%' });
+            $('#recOldDevice').select2({ dropdownParent: $('#receptionModal'), placeholder: 'تسليم الجهاز القديم', allowClear: true, minimumResultsForSearch: -1, width: '100%' });
+            $(document).on('click', '#receptionModal .rec-now', function () { $(this).siblings('input').val(nowTime()); });
+            function validTime(t) { return /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(t); }
+
+            $(document).on('click', '.reception-btn', function (e) {
+                e.stopPropagation();
+                var id = $(this).data('id');
+                var row = ROWS.filter(function (r) { return r.id == id; })[0];
+                recRow = row;
+                recKind = +$(this).data('rec');
+                var c = REC[recKind];
+                $('#receptionModal .rec2-only').toggle(recKind === 2);
+                $('#recCheckLabel').text(c.check);
+                $('#recConsentBtn').text(c.file);
+                $('#recConsentInput').attr('accept', c.accept);
+                $('#recHistCol5').text(c.col5);
+                $('#recHistCol6').text(c.col6);
+                ensureReceptionData(row);
+                $('#receptionModal .rec-case').text('— ' + row.name + (row.code !== '-' ? ' (' + row.code + ')' : ''));
+                renderAttachments(); renderHistory(); resetForm();
+                $('#receptionModal').modal('show');
+            });
+
+            $('#recUploadVideo').on('click', function () { $('#recVideoInput').click(); });
+            $('#recUploadFile').on('click', function () { $('#recFileInput').click(); });
+            $('#recVideoInput, #recFileInput').on('change', function () {
+                var type = this.id === 'recVideoInput' ? 'فيديو' : 'ملف';
+                $.each(this.files, function (_, f) {
+                    recRow.attachments.push({ name: f.name, type: type, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm') });
+                });
+                this.value = '';
+                renderAttachments();
+            });
+            $(document).on('click', '.rec-del', function () {
+                recRow.attachments.splice(+$(this).data('i'), 1);
+                renderAttachments();
+            });
+
+            $('#recConsentBtn').on('click', function () { $('#recConsentInput').click(); });
+            $('#recConsentInput').on('change', function () { $('#recConsentName').text(this.files[0] ? this.files[0].name : ''); });
+
+            $('#recSave').on('click', function () {
+                var attend = $('#recAttend').val();
+                if (attend === null || attend === '') return toast('اختر حضر؟ أولاً');
+                if (attend === '1' && !$('#recTimeIn').val()) return toast('أدخل وقت الدخول');
+                if ($('#recTimeIn').val() && !validTime($('#recTimeIn').val())) return toast('وقت الدخول بصيغة 09:00:00');
+                if ($('#recTimeOut').val() && !validTime($('#recTimeOut').val())) return toast('وقت المغادرة بصيغة 10:30:00');
+                if (recKind === 2 && attend === '1' && !$('#recTimeOut').val()) return toast('أدخل وقت المغادرة');
+                if (recKind === 2 && attend === '1' && !$('#recOldDevice').val()) return toast('اختر تسليم الجهاز القديم');
+                var withSeconds = function (t) { return t ? (t.length === 5 ? t + ':00' : t) : '-'; };
+                recRow.receptions[recKind].push({
+                    oldDevice: recKind === 2 ? ($('#recOldDevice').val() || '-') : undefined,
+                    date: moment().format('YYYY-MM-DD'),
+                    attend: +attend,
+                    timeIn: attend === '1' ? withSeconds($('#recTimeIn').val()) : '-',
+                    timeOut: attend === '1' ? withSeconds($('#recTimeOut').val()) : '-',
+                    photo: $('#recPhotoConsent').prop('checked'),
+                    consentImg: $('#recConsentName').text() || '-',
+                    notes: $('#recNotes').val() || '-'
+                });
+                recRow.attended = +attend;
+                renderHistory(); resetForm();
+                oTable.fnDraw();
+                toast('تم حفظ الزيارة');
             });
         });
     </script>
