@@ -308,6 +308,13 @@
             box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important;
         }
 
+        /* ---- مرفقات الحالة ---- */
+        .case-attachments { text-align: right; min-width: 150px; }
+        .case-attachments .attach-download { border-radius: 10px !important; margin-bottom: 4px; white-space: nowrap; }
+        .case-attachments ul { list-style: none; padding: 0; margin: 0; font-size: 11px; }
+        .case-attachments li { white-space: nowrap; line-height: 1.7; }
+        .case-attachments li .fa { color: #888; }
+
         /* ---- الاستقبال (reception) ---- */
         .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
         .reception-status { display: block; font-size: 11px; color: gray; margin-top: 3px; }
@@ -1177,8 +1184,8 @@
                                             <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
                                             <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
                                             <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين أخذ المقاس وجاهزية التسليم</span>
-                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> هل حضر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> هل حضر ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين أخذ المقاس وجاهزية التسليم</span>
                                             <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
                                             <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
                                             <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
@@ -1191,6 +1198,7 @@
                                             <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
                                             <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ التأجيل</span>
                                             <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                            <span class="col-lg-4"><input name="column" data-column="25" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1384,6 +1392,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/icheck.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         // =====================================================================
@@ -1563,6 +1572,76 @@
         }
         var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
 
+        // مرفقات الحالة — every file uploaded for the case; download as a folder (zip) named after the case
+        var SEED_ATTACHMENTS = [
+            { name: 'صورة البطاقة.png', type: 'ملف', kind: 'img' },
+            { name: 'إقرار التصنيع.png', type: 'ملف', kind: 'img' },
+            { name: 'تقرير طبي.txt', type: 'ملف', kind: 'txt' },
+            { name: 'فيديو المشي.txt', type: 'فيديو', kind: 'txt' }
+        ];
+        function seedAttachments(row) {
+            if (row.attachments) return row.attachments;
+            var n = row.id % 5; // 0..4 mock files per case
+            row.attachments = SEED_ATTACHMENTS.slice(0, n === 4 ? 4 : n).map(function (a, i) {
+                return { name: a.name, type: a.type, kind: a.kind, by: 'يوسف محمد', date: moment(row.submitDate).add(i + 1, 'day').format('YYYY-MM-DD HH:mm') };
+            });
+            return row.attachments;
+        }
+        function safeName(t) { return String(t).replace(/[\\\/:*?"<>|]+/g, '-').trim() || 'الحالة'; }
+        function attachmentBlob(row, a) {
+            if (a.file) return Promise.resolve(a.file);
+            if (a.kind === 'img') {
+                var c = document.createElement('canvas'); c.width = 600; c.height = 380;
+                var g = c.getContext('2d');
+                g.fillStyle = '#f6f6f6'; g.fillRect(0, 0, 600, 380);
+                g.strokeStyle = '#0093e9'; g.lineWidth = 6; g.strokeRect(10, 10, 580, 360);
+                g.fillStyle = '#333'; g.textAlign = 'center'; g.direction = 'rtl';
+                g.font = 'bold 34px "Noto Kufi Arabic", Tahoma'; g.fillText(a.name.replace(/\.\w+$/, ''), 300, 160);
+                g.font = '24px "Noto Kufi Arabic", Tahoma'; g.fillText(row.name, 300, 220); g.fillText(row.code, 300, 265);
+                return new Promise(function (res) { c.toBlob(res, 'image/png'); });
+            }
+            return Promise.resolve(new Blob(['﻿' + a.name + '\n' + row.name + ' - ' + row.code + '\nملف تجريبي (داتا وهمية)'], { type: 'text/plain;charset=utf-8' }));
+        }
+        function saveBlob(blob, filename) {
+            var url = URL.createObjectURL(blob), link = document.createElement('a');
+            link.href = url; link.download = filename;
+            document.body.appendChild(link); link.click(); link.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        }
+        function downloadCaseAttachments(row) {
+            var files = seedAttachments(row);
+            if (!files.length) return toast('لا توجد مرفقات لهذه الحالة');
+            if (!window.JSZip) return toast('تعذر تحميل مكتبة الضغط');
+            var folderName = safeName(row.name), zip = new JSZip(), folder = zip.folder(folderName), used = {};
+            return Promise.all(files.map(function (a) { return attachmentBlob(row, a); })).then(function (blobs) {
+                blobs.forEach(function (b, i) {
+                    var n = safeName(files[i].name);
+                    if (used[n]) { n = n.replace(/(\.\w+)?$/, ' (' + (++used[n]) + ')$1'); } else used[n] = 1;
+                    folder.file(n, b);
+                });
+                return zip.generateAsync({ type: 'blob' });
+            }).then(function (blob) { saveBlob(blob, folderName + '.zip'); toast('تم تحميل مرفقات ' + row.name); });
+        }
+        function attachmentsCell(r) {
+            var files = seedAttachments(r);
+            if (!files.length) return '-';
+            return '<div class="case-attachments">' +
+                '<button type="button" class="btn btn-warning btn-xs attach-download" data-id="' + r.id + '" title="تحميل كل المرفقات في فولدر باسم الحالة"><i class="fa fa-download"></i> تحميل (' + files.length + ')</button>' +
+                '<ul>' + files.map(function (a, i) {
+                    return '<li><a href="#" class="attach-one" data-id="' + r.id + '" data-i="' + i + '"><i class="fa ' + (a.type === 'فيديو' ? 'fa-file-video-o' : 'fa-file-o') + '"></i> ' + $('<div>').text(a.name).html() + '</a></li>';
+                }).join('') + '</ul></div>';
+        }
+        $(document).on('click', '.attach-download', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            downloadCaseAttachments(ROWS.filter(function (r) { return r.id == id; })[0]);
+        });
+        $(document).on('click', '.attach-one', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            var id = $(this).data('id'), row = ROWS.filter(function (r) { return r.id == id; })[0], a = seedAttachments(row)[+$(this).data('i')];
+            attachmentBlob(row, a).then(function (b) { saveBlob(b, safeName(a.name)); });
+        });
+
         // هل حضر ؟ — استقبال 1 (تقييم طبي وقياسات / تقييم صيانة) or استقبال 2 (تسليم طرف جديد / تسليم صيانة)
         var RECEPTION_OF_STAGE = { new_mdm: 1, maintenance_mdm: 1, new_fitting: 2, maintenance_fitting: 2 };
         function receptionCell(r) {
@@ -1621,8 +1700,8 @@
                 }
             },
             { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
-            { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'هل حضر ؟', render: receptionCell },
+            { title: 'عدد الأيام بين أخذ المقاس وجاهزية التسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
             { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
             { title: 'المكونات', render: function (r) { return list(r.components); } },
@@ -1638,7 +1717,8 @@
             { title: 'تاريخ الحضور', render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
             { title: 'تاريخ التأجيل', render: function (r) { return r.postponeDate || '-'; } },
-            { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } }
+            { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } },
+            { title: 'مرفقات الحالة', render: attachmentsCell }
         ];
         // aoColumnDefs in the live page hide 15, 17, 19, 21 by default
         [15, 17, 19, 21].forEach(function (c) { COLUMNS[c].hidden = true; });
@@ -1886,7 +1966,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_" + userID;
+            var storageKey = "engineering_table_columns_v2_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -2566,7 +2646,7 @@
             };
             function nowTime() { return moment().format('HH:mm:ss'); }
             function ensureReceptionData(row) {
-                if (!row.attachments) row.attachments = [];
+                seedAttachments(row);
                 if (!row.receptions) row.receptions = {};
                 if (!row.receptions[recKind]) {
                     row.receptions[recKind] = row.attended === null ? [] : [{
@@ -2628,12 +2708,13 @@
                 $('#receptionModal').modal('show');
             });
 
+            $('#receptionModal').on('hidden.bs.modal', function () { oTable.fnDraw(); });
             $('#recUploadVideo').on('click', function () { $('#recVideoInput').click(); });
             $('#recUploadFile').on('click', function () { $('#recFileInput').click(); });
             $('#recVideoInput, #recFileInput').on('change', function () {
                 var type = this.id === 'recVideoInput' ? 'فيديو' : 'ملف';
                 $.each(this.files, function (_, f) {
-                    recRow.attachments.push({ name: f.name, type: type, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm') });
+                    recRow.attachments.push({ name: f.name, type: type, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm'), file: f });
                 });
                 this.value = '';
                 renderAttachments();
@@ -2665,7 +2746,10 @@
                     consentImg: $('#recConsentName').text() || '-',
                     notes: $('#recNotes').val() || '-'
                 });
+                var cf = $('#recConsentInput')[0].files[0];
+                if (cf) recRow.attachments.push({ name: cf.name, type: REC[recKind].col6, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm'), file: cf });
                 recRow.attended = +attend;
+                renderAttachments();
                 renderHistory(); resetForm();
                 oTable.fnDraw();
                 toast('تم حفظ الزيارة');
