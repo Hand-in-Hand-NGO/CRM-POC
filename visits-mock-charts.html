@@ -224,6 +224,42 @@
         .vs-period-tabs button.active { background: var(--vs-accent); color: #fff; }
         .vs-period-range { font-size: 11.5px; color: var(--vs-text-faint); font-family: var(--vs-font-mono); }
 
+        /* ---- period picker (calendar) ---- */
+        .vs-picker { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+        .vs-picker-btn, .vs-step { border: 1px solid var(--vs-border); background: var(--vs-bg-raised); color: var(--vs-text); border-radius: var(--vs-radius-sm); font-family: inherit; font-size: 12px; height: 32px; cursor: pointer; }
+        .vs-picker-btn { padding: 0 10px; font-weight: 600; }
+        .vs-picker-btn .fa-calendar { color: var(--vs-accent); }
+        .vs-picker-btn.open, .vs-picker-btn:hover, .vs-step:hover:not(:disabled) { border-color: var(--vs-accent); }
+        .vs-step { width: 30px; color: var(--vs-text-dim); }
+        .vs-step:disabled { opacity: .35; cursor: default; }
+        .vs-picker-pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: 290px; background: var(--vs-bg-raised); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 10px; }
+        .vs-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .vs-cal-nav b { font-size: 13px; }
+        .vs-cal-nav button { border: 0; background: var(--vs-bg); width: 28px; height: 28px; border-radius: 6px; color: var(--vs-text-dim); cursor: pointer; }
+        .vs-cal-nav button:disabled { opacity: .3; cursor: default; }
+        .vs-cal { width: 100%; border-collapse: separate; border-spacing: 0 2px; text-align: center; font-size: 12px; }
+        .vs-cal th { color: var(--vs-text-faint); font-weight: 700; padding: 3px 0; }
+        .vs-cal td { padding: 5px 0; cursor: pointer; border-radius: 5px; font-variant-numeric: tabular-nums; }
+        .vs-cal td:hover { background: var(--vs-surface-2); }
+        .vs-cal td.other { color: var(--vs-text-faint); }
+        .vs-cal td.today { font-weight: 700; color: var(--vs-accent); }
+        .vs-cal td.sel { background: var(--vs-accent); color: #fff; }
+        .vs-cal td.disabled { color: #ccd1d9; cursor: default; background: none; }
+        .vs-cal.pick-week tbody tr:hover td:not(.disabled) { background: #e8efff; border-radius: 0; }
+        .vs-cal tr.sel-week td { background: var(--vs-accent) !important; color: #fff; border-radius: 0; }
+        .vs-cal tr td:first-child { border-radius: 0 5px 5px 0; }
+        .vs-cal tr td:last-child { border-radius: 5px 0 0 5px; }
+        .vs-cal-hint { font-size: 10.5px; color: var(--vs-text-faint); text-align: center; margin-top: 4px; }
+        .vs-cal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .vs-cal-grid.quarter { grid-template-columns: repeat(2, 1fr); }
+        .vs-cal-grid button { border: 1px solid var(--vs-border); background: var(--vs-bg); border-radius: 6px; padding: 8px 4px; font-family: inherit; font-size: 12px; cursor: pointer; color: var(--vs-text); }
+        .vs-cal-grid button small { display: block; font-size: 10px; color: var(--vs-text-faint); margin-top: 2px; }
+        .vs-cal-grid button:hover:not(:disabled) { border-color: var(--vs-accent); }
+        .vs-cal-grid button.sel { background: var(--vs-accent); border-color: var(--vs-accent); color: #fff; }
+        .vs-cal-grid button.sel small { color: #dbe6ff; }
+        .vs-cal-grid button:disabled { opacity: .35; cursor: default; }
+        .vs-cal-foot { border-top: 1px solid var(--vs-border-soft); margin-top: 8px; padding-top: 8px; text-align: center; }
+        .vs-cal-foot button { border: 0; background: none; color: var(--vs-accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
         .vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
         .vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
         .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -2696,7 +2732,7 @@
             var out = [], hs = 99;
             function hr() { hs = (hs * 9301 + 49297) % 233280; return hs / 233280; }
             var rates = { measurements: 4.2, deliveries: 3.6, maintenanceAssess: 1.1, maintenanceDeliver: 0.8, rejected: 0.12, remake: 0.08 };
-            var d = TODAY.clone().startOf('year');
+            var d = TODAY.clone().subtract(2, 'years').startOf('year'); // 2 past years so past periods can be picked in the calendar
             var stop = TODAY.clone().subtract(35, 'days'); // the table rows cover the last ~5 weeks
             for (; d.isBefore(stop); d.add(1, 'day')) {
                 if (d.day() === 5 || d.day() === 6) continue; // Friday / Saturday off
@@ -2730,7 +2766,7 @@
         var DAYS_HISTORY = (function () {
             var out = [], s = 7;
             function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-            var d = TODAY.clone().startOf('year'), stop = TODAY.clone().subtract(35, 'days');
+            var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');
             for (; d.isBefore(stop); d.add(1, 'day')) {
                 if (d.day() === 5 || d.day() === 6) continue;
                 var n = Math.floor(r() * 6);
@@ -2802,28 +2838,44 @@
             year: { unit: 'year', count: 5, label: 'آخر 5 سنوات — عدد مستقل لكل سنة' }
         };
 
-        function buildStatsData() {
-            var ev = statEvents(), t = TODAY;
-            var weekStart = t.clone().subtract(t.day(), 'days'); // Sunday
-            var periodDefs = [
-                { key: 'today', label: 'اليوم', sub: t.format('YYYY-MM-DD'), from: t.clone(), to: t.clone() },
-                { key: 'week', label: 'الأسبوع', sub: weekStart.format('YYYY-MM-DD') + ' - ' + weekStart.clone().add(6, 'days').format('YYYY-MM-DD'), from: weekStart, to: weekStart.clone().add(6, 'days') },
-                { key: 'month', label: 'الشهر', sub: t.format('YYYY-MM'), from: t.clone().startOf('month'), to: t.clone().endOf('month') },
-                { key: 'quarter', label: 'ربع سنوي', sub: t.clone().startOf('quarter').format('YYYY-MM-DD') + ' - ' + t.clone().endOf('quarter').format('YYYY-MM-DD'), from: t.clone().startOf('quarter'), to: t.clone().endOf('quarter') },
-                { key: 'year', label: 'سنوية', sub: t.format('YYYY'), from: t.clone().startOf('year'), to: t.clone().endOf('year') }
-            ];
-            var periods = periodDefs.map(function (p) {
-                var counts = countBetween(ev, p.from.format('YYYY-MM-DD'), p.to.format('YYYY-MM-DD'));
-                var meta = TREND_META[p.key];
-                return {
-                    key: p.key, label: p.label, range: p.sub, values: counts, target: TARGETS[p.key] || null,
-                    avgDays: avgDaysBetween(p.from.format('YYYY-MM-DD'), p.to.format('YYYY-MM-DD')),
-                    trend: buildTrendBuckets(ev, t, meta.unit, meta.count), trendLabel: meta.label
-                };
-            });
+        var PERIOD_LABELS = { today: 'اليوم', week: 'الأسبوع', month: 'الشهر', quarter: 'ربع سنوي', year: 'سنوية' };
+        var AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
-            return { periods: periods, keys: STAT_KEYS, labels: STAT_LABELS };
+        // start / end of the period of type `key` that contains `anchor` (week = Sunday → Saturday)
+        function periodRange(key, anchor) {
+            var a = moment(anchor), from, to, range;
+            if (key === 'today') { from = a.clone().startOf('day'); to = from.clone(); range = from.format('YYYY-MM-DD'); }
+            else if (key === 'week') { from = a.clone().subtract(a.day(), 'days').startOf('day'); to = from.clone().add(6, 'days'); range = from.format('YYYY-MM-DD') + ' - ' + to.format('YYYY-MM-DD'); }
+            else if (key === 'month') { from = a.clone().startOf('month'); to = a.clone().endOf('month'); range = AR_MONTHS[a.month()] + ' ' + a.year(); }
+            else if (key === 'quarter') { from = a.clone().startOf('quarter'); to = a.clone().endOf('quarter'); range = 'Q' + a.quarter() + ' ' + a.year() + ' (' + from.format('YYYY-MM-DD') + ' - ' + to.format('YYYY-MM-DD') + ')'; }
+            else { from = a.clone().startOf('year'); to = a.clone().endOf('year'); range = String(a.year()); }
+            return { from: from, to: to, range: range };
         }
+
+        function buildStatsPeriod(key, anchor, ev) {
+            ev = ev || statEvents();
+            var r = periodRange(key, anchor || TODAY), f = r.from.format('YYYY-MM-DD'), t = r.to.format('YYYY-MM-DD');
+            var meta = TREND_META[key];
+            var trendEnd = moment.min(r.to.clone(), TODAY.clone()); // trend ends at the selected period (never in the future)
+            var isCurrent = r.from.isSameOrBefore(TODAY) && r.to.isSameOrAfter(TODAY, 'day');
+            return {
+                key: key, label: PERIOD_LABELS[key], range: r.range, from: f, to: t, isCurrent: isCurrent,
+                values: countBetween(ev, f, t), target: TARGETS[key] || null,
+                avgDays: avgDaysBetween(f, t),
+                trend: buildTrendBuckets(ev, key === 'week' ? r.to.clone() : trendEnd, meta.unit, meta.count),
+                trendLabel: meta.label + (isCurrent ? '' : ' — حتى ' + trendEnd.format('YYYY-MM-DD'))
+            };
+        }
+        window.buildStatsPeriod = buildStatsPeriod;
+
+        function buildStatsData() {
+            var ev = statEvents();
+            var periods = ['today', 'week', 'month', 'quarter', 'year'].map(function (k) { return buildStatsPeriod(k, TODAY, ev); });
+            return { periods: periods, keys: STAT_KEYS, labels: STAT_LABELS, stamp: Date.now() };
+        }
+
+        // what the dashboard currently shows (period type + selected date) — used by the export
+        window.statsView = { key: 'year', anchor: TODAY.format('YYYY-MM-DD') };
 
         function renderStats() {
             lastStatsData = buildStatsData();
@@ -2857,26 +2909,28 @@
             });
 
             $('#export_dashboard').on('click', function () {
-                var data = lastStatsData || buildStatsData();
-                var lines = [['', STAT_KEYS.map(function (k) { return STAT_LABELS[k]; }).join(',')].join(',')];
-                function row(label, sub, cellText) {
-                    var cells = ['"' + (label + (sub ? ' (' + sub + ')' : '')).replace(/"/g, '""') + '"'];
-                    STAT_KEYS.forEach(function (k) { cells.push(cellText(k)); });
-                    lines.push(cells.join(','));
-                }
-                data.periods.forEach(function (p) { row(p.label, p.range, function (k) { return fmt(p.values[k]); }); });
-                data.periods.forEach(function (p) { lines.push('"متوسط أيام المقاس والتسليم — ' + p.label + '",' + (p.avgDays.avg === null ? '-' : p.avgDays.avg)); });
-                data.periods.filter(function (p) { return p.target; }).forEach(function (p) {
-                    row('الرقم المستهدف — ' + p.label, p.range, function (k) { return p.target[k] != null ? fmt(p.target[k]) : '-'; });
-                    row('النسبة المحققة — ' + p.label, p.range, function (k) {
-                        return p.target[k] ? Math.round(p.values[k] / p.target[k] * 100) + '%' : '-';
-                    });
+                var v = window.statsView, p = buildStatsPeriod(v.key, v.anchor);
+                function q(x) { return '"' + String(x).replace(/"/g, '""') + '"'; }
+                var lines = [
+                    [q('الفترة'), q(p.label), q(p.range)].join(','),
+                    [q('من'), q(p.from), q('إلى'), q(p.to)].join(','),
+                    '',
+                    [q('المؤشر'), q('الفعلي'), q('المستهدف'), q('النسبة المحققة')].join(',')
+                ];
+                STAT_KEYS.forEach(function (k) {
+                    var tg = p.target && p.target[k];
+                    lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
+                lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
+                lines.push('', q(p.trendLabel));
+                lines.push([q('الفترة')].concat(STAT_KEYS.map(function (k) { return q(STAT_LABELS[k]); })).join(','));
+                p.trend.forEach(function (pt) { lines.push([q(pt.name)].concat(STAT_KEYS.map(function (k) { return pt[k]; })).join(',')); });
                 var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
                 var a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = 'visits-statistics.csv';
+                a.download = 'visits-statistics_' + p.key + '_' + p.from + '_' + p.to + '.csv';
                 a.click();
+                toast('تم تصدير ' + p.label + ': ' + p.range);
             });
         });
             // =====================================================================
@@ -3008,7 +3062,7 @@
          (re)computed; data = { periods, keys, labels } from buildStatsData().
          ===================================================================== -->
     <script type="text/babel" data-presets="react,env" data-plugins="transform-react-jsx">
-        const { useState, useMemo } = React;
+        const { useState, useMemo, useEffect, useRef } = React;
         const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend } = Recharts;
 
         const STAT_COLORS = ["#2f6fed", "#0d9488", "#7c6ef0", "#9333ea", "#dc2626", "#15803d"];
@@ -3040,10 +3094,147 @@
             );
         }
 
+
+        const AR_DAYS = ["ح", "ن", "ث", "ر", "خ", "ج", "س"]; // Sunday → Saturday
+        const AR_MONTH_NAMES = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+        const QUARTER_NAMES = ["الربع الأول", "الربع الثاني", "الربع الثالث", "الربع الرابع"];
+        const STEP_UNIT = { today: "day", week: "week", month: "month", quarter: "quarter", year: "year" };
+
+        // calendar popover: pick a day / week / month / quarter / year depending on the selected tab
+        function PeriodPicker({ kind, anchor, range, onPick }) {
+            const today = TODAY.clone().startOf("day");
+            const a = moment(anchor);
+            const [open, setOpen] = useState(false);
+            const [view, setView] = useState(a.clone());   // month shown (day/week) or year shown (month/quarter) or last year of the page (year)
+            const ref = useRef(null);
+            useEffect(() => { setView(moment(anchor)); }, [anchor, kind]);
+            useEffect(() => {
+                if (!open) return;
+                const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+                document.addEventListener("mousedown", close);
+                return () => document.removeEventListener("mousedown", close);
+            }, [open]);
+
+            const pick = d => { onPick(d.format("YYYY-MM-DD")); setOpen(false); };
+            const unit = STEP_UNIT[kind];
+            const nextStart = a.clone().add(1, unit).startOf(unit === "week" ? "day" : unit);
+            const canNext = (unit === "week" ? nextStart.clone().subtract(nextStart.day(), "days") : nextStart).isSameOrBefore(today);
+            const step = n => onPick(moment.min(a.clone().add(n, unit), today).format("YYYY-MM-DD"));
+
+            let body;
+            if (kind === "today" || kind === "week") {
+                const first = view.clone().startOf("month");
+                const gridStart = first.clone().subtract(first.day(), "days");
+                const selFrom = kind === "week" ? a.clone().subtract(a.day(), "days") : a.clone();
+                const selTo = kind === "week" ? selFrom.clone().add(6, "days") : a.clone();
+                const weeks = [];
+                for (let w = 0; w < 6; w++) {
+                    const days = [];
+                    for (let d = 0; d < 7; d++) days.push(gridStart.clone().add(w * 7 + d, "days"));
+                    if (w === 5 && days[0].month() !== view.month()) break;
+                    weeks.push(days);
+                }
+                body = (
+                    <div>
+                        <div className="vs-cal-nav">
+                            <button type="button" onClick={() => setView(view.clone().subtract(1, "month"))}><i className="fa fa-chevron-right"></i></button>
+                            <b>{AR_MONTH_NAMES[view.month()]} {view.year()}</b>
+                            <button type="button" disabled={view.clone().add(1, "month").startOf("month").isAfter(today)} onClick={() => setView(view.clone().add(1, "month"))}><i className="fa fa-chevron-left"></i></button>
+                        </div>
+                        <table className={`vs-cal ${kind === "week" ? "pick-week" : ""}`}>
+                            <thead><tr>{AR_DAYS.map(d => <th key={d}>{d}</th>)}</tr></thead>
+                            <tbody>
+                                {weeks.map((days, wi) => {
+                                    const weekSel = kind === "week" && days[0].isSame(selFrom, "day");
+                                    return (
+                                        <tr key={wi} className={weekSel ? "sel-week" : ""}>
+                                            {days.map(d => {
+                                                const future = kind === "week" ? days[0].isAfter(today) : d.isAfter(today);
+                                                const cls = [d.month() !== view.month() ? "other" : "", d.isSame(today, "day") ? "today" : "",
+                                                    kind === "today" && d.isSame(selFrom, "day") ? "sel" : "", future ? "disabled" : ""].join(" ");
+                                                return <td key={d.format("YYYYMMDD")} className={cls} onClick={() => !future && pick(d)}>{d.date()}</td>;
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        {kind === "week" && <div className="vs-cal-hint">اضغط على أي يوم لاختيار أسبوعه (الأحد ← السبت)</div>}
+                    </div>
+                );
+            } else if (kind === "month" || kind === "quarter") {
+                const y = view.year();
+                const items = kind === "month"
+                    ? AR_MONTH_NAMES.map((n, i) => ({ label: n, d: moment([y, i, 1]) }))
+                    : QUARTER_NAMES.map((n, i) => ({ label: n, sub: AR_MONTH_NAMES[i * 3] + " - " + AR_MONTH_NAMES[i * 3 + 2], d: moment([y, i * 3, 1]) }));
+                body = (
+                    <div>
+                        <div className="vs-cal-nav">
+                            <button type="button" onClick={() => setView(view.clone().subtract(1, "year"))}><i className="fa fa-chevron-right"></i></button>
+                            <b>{y}</b>
+                            <button type="button" disabled={y + 1 > today.year()} onClick={() => setView(view.clone().add(1, "year"))}><i className="fa fa-chevron-left"></i></button>
+                        </div>
+                        <div className={`vs-cal-grid ${kind}`}>
+                            {items.map(it => {
+                                const future = it.d.isAfter(today);
+                                const sel = it.d.isSame(a, kind);
+                                return (
+                                    <button type="button" key={it.label} disabled={future} className={sel ? "sel" : ""} onClick={() => pick(moment.min(it.d.clone().endOf(kind), today))}>
+                                        {it.label}{it.sub && <small>{it.sub}</small>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            } else {
+                const last = view.year(), years = [];
+                for (let y = last - 11; y <= last; y++) years.push(y);
+                body = (
+                    <div>
+                        <div className="vs-cal-nav">
+                            <button type="button" onClick={() => setView(view.clone().subtract(12, "years"))}><i className="fa fa-chevron-right"></i></button>
+                            <b>{years[0]} - {last}</b>
+                            <button type="button" disabled={last + 1 > today.year()} onClick={() => setView(moment.min(view.clone().add(12, "years"), today))}><i className="fa fa-chevron-left"></i></button>
+                        </div>
+                        <div className="vs-cal-grid year">
+                            {years.map(y => (
+                                <button type="button" key={y} disabled={y > today.year()} className={y === a.year() ? "sel" : ""}
+                                    onClick={() => pick(moment.min(moment([y, 11, 31]), today))}>{y}</button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="vs-picker" ref={ref}>
+                    <button type="button" className="vs-step" title="الفترة السابقة" onClick={() => step(-1)}><i className="fa fa-chevron-right"></i></button>
+                    <button type="button" className={`vs-picker-btn ${open ? "open" : ""}`} onClick={() => setOpen(!open)} title="اختر الفترة">
+                        <i className="fa fa-calendar"></i> <span dir="ltr">{range}</span> <i className="fa fa-caret-down"></i>
+                    </button>
+                    <button type="button" className="vs-step" title="الفترة التالية" disabled={!canNext} onClick={() => step(1)}><i className="fa fa-chevron-left"></i></button>
+                    {open && (
+                        <div className="vs-picker-pop">
+                            {body}
+                            <div className="vs-cal-foot">
+                                <button type="button" onClick={() => pick(today)}>الفترة الحالية</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         function VisitsStatsPanel({ data }) {
             const { periods, keys, labels } = data;
             const [periodKey, setPeriodKey] = useState(() => (periods.some(p => p.key === "year") ? "year" : periods[0].key));
-            const period = useMemo(() => periods.find(p => p.key === periodKey) || periods[0], [periods, periodKey]);
+            const todayStr = TODAY.format("YYYY-MM-DD");
+            const [anchors, setAnchors] = useState({ today: todayStr, week: todayStr, month: todayStr, quarter: todayStr, year: todayStr });
+            const anchor = anchors[periodKey];
+            // data.stamp changes on every refresh, so the selected period is recomputed with fresh numbers
+            const period = useMemo(() => window.buildStatsPeriod(periodKey, anchor), [periodKey, anchor, data.stamp]);
+            useEffect(() => { window.statsView = { key: periodKey, anchor: anchor }; }, [periodKey, anchor]);
 
             const trendData = period.trend;
             const targetKeys = period.target ? keys.filter(k => period.target[k] != null) : [];
@@ -3059,7 +3250,8 @@
                                 </button>
                             ))}
                         </div>
-                        <span className="vs-period-range" dir="ltr">{period.range}</span>
+                        <PeriodPicker kind={periodKey} anchor={anchor} range={period.range}
+                            onPick={d => setAnchors(Object.assign({}, anchors, { [periodKey]: d }))} />
                     </div>
 
                     <div className="vs-kpi-grid">
