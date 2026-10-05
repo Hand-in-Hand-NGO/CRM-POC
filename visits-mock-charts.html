@@ -795,6 +795,23 @@
         /* =====================================================================
            (C) NEW: compact filters layout
            ===================================================================== */
+        /* ---- المزيد من الفلاتر ---- */
+        .more-filters { margin: 4px 0 12px; }
+        .more-filters-toggle {
+            border-radius: 6px !important;
+            background: linear-gradient(#fafafa, #ececec);
+            border-color: #cfd3d8;
+            color: #333;
+            font-size: 14px;
+            padding: 7px 12px;
+        }
+        .more-filters-toggle:hover, .more-filters-toggle:focus { background: #e6e6e6; border-color: #bfc4ca; }
+        .more-filters-toggle:focus, .more-filters-toggle:active { outline: none !important; box-shadow: none; }
+        .more-filters-toggle .fa { margin-right: 4px; transition: transform .2s; }
+        .more-filters-toggle:not(.collapsed) .fa { transform: rotate(180deg); }
+        .more-filters-count { background: #0093e9; margin-right: 4px; }
+        #moreFilters { padding-top: 10px; }
+
         #search-form .filters-row {
             margin-right: -8px;
             margin-left: -8px;
@@ -1003,8 +1020,13 @@
 
                                 </div>
 
-                                <!-- ===== Row 2: table-dropdown pickers ===== -->
-                                <div class="row filters-row">
+                                <!-- ===== More filters (collapsed): team / components / days ===== -->
+                                <div class="more-filters">
+                                    <button type="button" class="btn btn-default btn-block more-filters-toggle collapsed" data-toggle="collapse" data-target="#moreFilters" aria-expanded="false">
+                                        المزيد من الفلاتر <span class="badge more-filters-count" style="display:none"></span> <i class="fa fa-chevron-down"></i>
+                                    </button>
+                                    <div id="moreFilters" class="collapse">
+                                        <div class="row filters-row">
 
                                     <!-- Responsible Team -->
                                     <div class="col-lg-5 col-md-8 col-sm-12">
@@ -1029,6 +1051,31 @@
                                             <input type="hidden" id="selectedComponentsIds" name="components_ids">
                                         </div>
                                     </div>
+
+                                    <!-- Number Of Days -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
+                                                </div>
+                                                <div class="filter-field">
+                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
+                                                </div>
+                                                <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
+                                                    <button type="button" class="btn btn-md btn-danger remove-date" title="مسح"><i class="fa fa-times"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ===== Row 2: table-dropdown pickers ===== -->
+                                <div class="row filters-row">
 
                                     <!-- Engineering Assessment -->
                                     <div class="col-lg-5 col-md-8 col-sm-12">
@@ -1086,24 +1133,6 @@
                                                     <button type="button" class="btn btn-md btn-danger remove-date-period pointer" title="مسح"><i class="fa fa-times"></i> مسح</button>
                                                     <button type="button" class="btn btn-md btn-primary today-date-period pointer" title="اليوم"><i class="fa fa-calendar-o"></i> اليوم</button>
                                                     <button type="button" class="btn btn-md btn-success week-date-period pointer" title="هذا الاسبوع"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Number Of Days -->
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
-                                        <div class="filter-item">
-                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
-                                            <div class="filter-inline">
-                                                <div class="filter-field">
-                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
-                                                </div>
-                                                <div class="filter-field">
-                                                    <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo" class="form-control" value="" placeholder="أقل من" />
-                                                </div>
-                                                <div class="btn-group" data-targetDateFrom="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" data-targetDateTo="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo">
-                                                    <button type="button" class="btn btn-md btn-danger remove-date" title="مسح"><i class="fa fa-times"></i></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1963,6 +1992,17 @@
                 if (targetDate === 'assessmentDatePeriod') { drp.setStartDate(fromDate); drp.setEndDate(toDate); }
                 if (targetDate === 'visitDatePeriod') { drp_v2.setStartDate(fromDate); drp_v2.setEndDate(toDate); }
             });
+
+            // ---------------------------------------- المزيد من الفلاتر: count active hidden filters ----------------------------------------
+            function updateMoreFiltersCount() {
+                var n = 0;
+                if ($('#selectedResponsibleTeamIds').val()) n++;
+                if ($('#selectedComponentsIds').val()) n++;
+                if ($('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom').val() || $('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo').val()) n++;
+                $('.more-filters-count').text(n).toggle(n > 0);
+            }
+            $('#moreFilters').on('click change input', function () { setTimeout(updateMoreFiltersCount, 0); });
+            $(document).on('click', '#clearResponsibleTeamSelection, #clearComponentsSelection, .remove-date', function () { setTimeout(updateMoreFiltersCount, 0); });
 
             // default: visits booked today
             $('#visitDatePeriod').closest('.filter-item').find('.today-date-period').click();
