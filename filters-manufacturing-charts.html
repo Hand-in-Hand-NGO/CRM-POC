@@ -1269,7 +1269,7 @@
         .days-badge.mid { background: #ff6a00; }
         .days-badge.bad { background: #f96a74; }
         .days-cell small { color: gray; font-size: 10px; white-space: nowrap; }
-        .days-cell small.running { color: #ff6a00; }
+        .days-cell small.running { color: #f96a74; }
 
         @media print {
             .main-header,
@@ -2117,13 +2117,13 @@
                 '</div>';
         }
 
-        // عدد الأيام بين أخذ المقاس وجاهزية التسليم (until today while the limb is not ready yet)
+        // عدد الأيام بين أخذ المقاس وجاهزية التسليم (counts until today while the limb is not ready yet)
         function daysCell(r) {
             var d = daysBetween(r);
-            var cls = d <= 14 ? 'good' : (d <= 30 ? 'mid' : 'bad');
+            var cls = r.readyDate ? 'good' : 'bad';   // red until the limb is ready for delivery, then green whatever the number
             return '<div class="days-cell"><span class="days-badge ' + cls + '">' + d + ' يوم</span>' +
                 '<small>المقاس: ' + r.measurementDate + '</small>' +
-                (r.readyDate ? '<small>الجاهزية: ' + r.readyDate.slice(0, 10) + '</small>' : '<small class="running">لم يجهز بعد — حتى اليوم</small>') +
+                (r.readyDate ? '<small>الجاهزية: ' + r.readyDate.slice(0, 10) + '</small>' : '<small class="running">لم يجهز بعد</small>') +
                 '</div>';
         }
 
@@ -2167,7 +2167,7 @@
             },
             {
                 title: 'نقطة بداية دورة التصنيع', render: function (r) {
-                    return '<span class="start-point">' + START_POINTS[r.startPoint] + '</span><span class="cycle-no">الدورة رقم ' + r.cycleNo + '</span>';
+                    return '<span class="start-point">' + START_POINTS[r.startPoint] + '</span>';
                 }
             },
             {
