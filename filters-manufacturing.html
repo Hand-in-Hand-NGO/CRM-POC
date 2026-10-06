@@ -2614,31 +2614,34 @@
             $('#print-ready-container').html(edit && (r.status === 'design_progress' || r.status === 'print_ready') ?
                 '<div class="readonly-box" style="margin-bottom:12px">' +
                 '<div class="row">' +
-                '<div class="col-sm-6 form-group-sm" style="margin-bottom:10px"><label>ملفات التصميم <span class="req">*</span></label><input type="file" multiple class="form-control" id="designingFiles"></div>' +
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات الطباعة <span class="req">*</span></label><input type="file" multiple class="form-control" id="printingFiles"></div>' +
+                // both file inputs are optional; picking design files shows (and requires) the design engineer,
+                // picking print files shows (and requires) the materials needed for printing
+                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات التصميم</label><input type="file" multiple class="form-control" id="designingFiles"></div>' +
+                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات الطباعة</label><input type="file" multiple class="form-control" id="printingFiles"></div>' +
                 '</div><div class="row">' +
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>الخامات المطلوبة للطباعة</label><select multiple class="materials" data-placeholder="اختر الخامات">' +
+                '<div class="col-sm-6 engineer-field" style="margin-bottom:10px; display:none"><label>مهندس التصميم <span class="req">*</span></label>' + memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') + '</div>' +
+                '<div class="col-sm-6 materials-field" style="margin-bottom:10px; display:none"><label>الخامات المطلوبة للطباعة <span class="req">*</span></label><select multiple class="materials" data-placeholder="اختر الخامات">' +
                 MATERIALS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>مهندس التصميم <span class="req">*</span></label>' + memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') + '</div>' +
                 '</div><div class="row"><div class="col-sm-12"><label>الملاحظات</label><textarea class="form-control upload-notes" rows="2"></textarea></div></div>' +
                 '<div class="modal-footer-btns"><button type="button" class="btn btn-success" id="add-print-ready"><i class="fa fa-plus"></i> إضافة</button></div>' +
                 '</div>' : '');
 
-            var lastId = r.uploads.length ? r.uploads[r.uploads.length - 1].id : null;
+            var printUploads = r.uploads.filter(function (u) { return u.printFiles.length; });
+            var lastId = printUploads.length ? printUploads[printUploads.length - 1].id : null;
             var idx = STAGE_INDEX[r.status];
             var rows = r.uploads.map(function (u) {
-                var isLast = u.id === lastId;
+                var isLast = u.id === lastId;   // only an upload with print files can be sent to printing
                 var printing = isLast && idx >= 3;
                 var canToggle = isLast && !r.closed && (r.status === 'print_ready' || r.status === 'print_progress');
                 return '<tr data-upload="' + u.id + '">' +
-                    '<td>' + u.designFiles.map(function (f) { return '<span class="file-link open-file"><i class="fa fa-cube"></i> ' + f + '</span>'; }).join('<br>') + '</td>' +
-                    '<td>' + u.printFiles.map(function (f) { return '<span class="file-link open-file"><i class="fa fa-file-code-o"></i> ' + f + '</span>'; }).join('<br>') + '</td>' +
+                    '<td>' + (u.designFiles.map(function (f) { return '<span class="file-link open-file"><i class="fa fa-cube"></i> ' + f + '</span>'; }).join('<br>') || '-') + '</td>' +
+                    '<td>' + (u.printFiles.map(function (f) { return '<span class="file-link open-file"><i class="fa fa-file-code-o"></i> ' + f + '</span>'; }).join('<br>') || '-') + '</td>' +
                     '<td>' + u.date + '</td>' +
                     '<td>' + (u.materials.join('، ') || '-') + '</td>' +
                     '<td>' + (u.notes || '-') + '</td>' +
-                    '<td>' + memberName(u.engineer) + '</td>' +
+                    '<td>' + (memberName(u.engineer) || '-') + '</td>' +
                     '<td>' + (edit && r.status === 'print_ready' ? '<button type="button" class="btn btn-xs btn-danger delete_print_ready"><i class="fa fa-trash"></i></button>' : '-') + '</td>' +
-                    '<td>' + (isLast ? '<input type="checkbox" class="apply_print_progress"' + (printing ? ' checked' : '') + (canToggle ? '' : ' disabled') + '>' : '') + '</td>' +
+                    '<td>' + (isLast ? '<input type="checkbox" class="apply_print_progress"' + (printing ? ' checked' : '') + (canToggle ? '' : ' disabled') + '>' : '-') + '</td>' +
                     '</tr>';
             }).join('');
             $('#sessions-print-ready-table tbody').html(rows || '<tr class="empty-row"><td colspan="8">لم يتم العثور علي أي نتائج</td></tr>');
@@ -2654,22 +2657,31 @@
         $(document).on('click', '#add-print-ready', function () {
             var r = current.row;
             var design = $('#designingFiles')[0].files, print = $('#printingFiles')[0].files;
-            var eng = $('#print-ready-container .engineerId').val();
-            if (!design.length || !print.length) return notify('اختر ملفات التصميم وملفات الطباعة', 'error');
-            if (!eng) return notify('اختر مهندس التصميم', 'error');
+            var eng = design.length ? $('#print-ready-container .engineerId').val() : null;
+            var materials = print.length ? ($('#print-ready-container .materials').val() || []) : [];
+            if (!design.length && !print.length) return notify('اختر ملفات التصميم أو ملفات الطباعة', 'error');
+            if (design.length && !eng) return notify('اختر مهندس التصميم', 'error');
+            if (print.length && !materials.length) return notify('اختر الخامات المطلوبة للطباعة', 'error');
+            if (eng) r.design.engineer = eng;
             r.uploads.push({
                 id: nextId++,
                 designFiles: [].map.call(design, function (f) { return f.name; }),
                 printFiles: [].map.call(print, function (f) { return f.name; }),
                 date: stamp(moment()),
-                materials: $('#print-ready-container .materials').val() || [],
+                materials: materials,
                 notes: $('#print-ready-container .upload-notes').val(),
                 engineer: eng
             });
-            if (r.status === 'design_progress') moveTo(r, 'print_ready');
-            notify('تم الإضافة بنجاح');
+            // the cycle is ready for printing once print files exist
+            if (print.length && r.status === 'design_progress') moveTo(r, 'print_ready');
+            notify(print.length ? 'تم الإضافة بنجاح — يمكنك الآن تحديد جارى الطباعة' : 'تم الإضافة بنجاح');
             renderPrintReady();
             redraw();
+        });
+
+        $(document).on('change', '#designingFiles, #printingFiles', function () {
+            var $field = $('#print-ready-container').find(this.id === 'designingFiles' ? '.engineer-field' : '.materials-field');
+            $field.toggle(this.files.length > 0);
         });
 
         $(document).on('click', '.delete_print_ready', function () {
@@ -2677,7 +2689,8 @@
             confirmBox('هل أنت متأكد من رغبتك في حذف هذا السجل؟', 'نعم، احذفه').then(function (ok) {
                 if (!ok) return;
                 r.uploads = r.uploads.filter(function (u) { return u.id !== id; });
-                if (!r.uploads.length && r.status === 'print_ready') revertTo(r, 'design_progress', 'حذف ملفات الطباعة');
+                var hasPrint = r.uploads.some(function (u) { return u.printFiles.length; });
+                if (!hasPrint && r.status === 'print_ready') revertTo(r, 'design_progress', 'حذف ملفات الطباعة');
                 notify('تم الحذف بنجاح');
                 renderPrintReady();
                 redraw();
