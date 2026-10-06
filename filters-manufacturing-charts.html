@@ -2181,7 +2181,7 @@
                 title: 'تاريخ الحجز', render: function (r) {
                     if (!r.bookingDate) return '<span class="muted-dash">لم يتم الحجز</span>';
                     var m = moment(r.bookingDate, 'YYYY-MM-DD HH:mm');
-                    return '<span class="case-value"><span class="case-text">' + m.format('YYYY-MM-DD') + '<br><small class="text-muted">' + to12h(m) + '</small></span>' +
+                    return '<span class="case-value"><span class="case-text">' + m.format('YYYY-MM-DD') + '</span>' +
                         '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + m.format('YYYY-MM-DD') + '" title="نسخ">نسخ</button></span>';
                 }
             },
