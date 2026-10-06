@@ -2021,7 +2021,7 @@
                     var finalStatus, closed = false;
                     if (!last) {
                         // earlier cycles stopped somewhere — that's where the next cycle starts from
-                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress']);
+                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress', 'out_for_delivery']);
                         if (STAGE_INDEX[finalStatus] < STAGE_INDEX[startStatus]) finalStatus = startStatus;
                         closed = true;
                     } else {
@@ -2043,6 +2043,10 @@
                     m = moment(cyc.statusDate, 'YYYY-MM-DD HH:mm').add(between(2, 20), 'hours');
                     if (m.isAfter(NOW)) m = NOW.clone().subtract(30, 'minutes');
                     if (cyc.status === 'print_progress') { startPoint = 'failed_to_print'; startStatus = 'print_ready'; }
+                    else if (cyc.status === 'out_for_delivery') {
+                        startPoint = type === 'new' ? 'remanufacturing_damage_during_new_prosthetic_limb_delivery' : 'remanufacturing_damage_during_maintenance_delivery';
+                        startStatus = 'design_ready';
+                    }
                     else { startPoint = 'remanufacturing_damage_to_the_end_during_assembly'; startStatus = 'design_ready'; }
                 }
             }
@@ -2775,9 +2779,10 @@
 
         // إنتاج فريق التصنيع: designs per engineer, printed parts accepted / rejected,
         // assemblies per technician and damaged limbs (during assembly / during delivery)
+        var DELIVERY_DAMAGE = ['remanufacturing_damage_during_new_prosthetic_limb_delivery', 'remanufacturing_damage_during_maintenance_delivery'];
         function teamStats(rows, f, t) {
             function inRange(h) { var d = h.date.slice(0, 10); return d >= f && d <= t; }
-            var designs = {}, assembly = {}, ok = 0, rejected = 0, dmgAssembly = 0;
+            var designs = {}, assembly = {}, ok = 0, rejected = 0, dmgAssembly = 0, dmgDelivery = 0;
             DESIGN_TEAM.forEach(function (m) { designs[m.id] = 0; });
             ASSEMBLY_TEAM.forEach(function (m) { assembly[m.id] = 0; });
             rows.forEach(function (r) {
@@ -2787,6 +2792,7 @@
                         // a new cycle tells why the previous one stopped
                         if (r.cycleNo > 1 && r.startPoint === 'failed_to_print') rejected++;
                         if (r.cycleNo > 1 && r.startPoint === 'remanufacturing_damage_to_the_end_during_assembly') dmgAssembly++;
+                        if (r.cycleNo > 1 && DELIVERY_DAMAGE.indexOf(r.startPoint) !== -1) dmgDelivery++;
                         return;
                     }
                     if (h.status === 'print_ready' && r.design.engineer && designs[r.design.engineer] !== undefined) designs[r.design.engineer]++;
@@ -2801,7 +2807,7 @@
                 designs: list(DESIGN_TEAM, designs),
                 assembly: list(ASSEMBLY_TEAM, assembly),
                 printed: { ok: ok, rejected: rejected, rate: ok + rejected ? Math.round(ok / (ok + rejected) * 1000) / 10 : null },
-                damage: [{ name: 'تالف أثناء التجميع', count: dmgAssembly }, { name: 'تالف اثناء الاستلام من الطباعة', count: rejected }]
+                damage: [{ name: 'فشل فى الطباعة', count: rejected }, { name: 'تلف أثناء التجميع', count: dmgAssembly }, { name: 'تلف أثناء التسليم', count: dmgDelivery }]
             };
         }
 
@@ -2849,7 +2855,7 @@
                 [csvCell('نسبة النجاح %'), tm.printed.rate === null ? '-' : tm.printed.rate].join(','));
             lines.push(csvCell('التجميع'));
             tm.assembly.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
-            lines.push(csvCell('التالف'), [csvCell('إعادة تصنيع / فشل طباعة'), p.values.remade].join(','));
+            lines.push(csvCell('التالف'));
             tm.damage.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
             lines.push('', csvCell(p.trendLabel));
             lines.push([csvCell('الفترة')].concat(STAT_KEYS.map(function (k) { return csvCell(STAT_LABELS[k]); }), [csvCell('متوسط الأيام')]).join(','));
@@ -3753,11 +3759,8 @@
                                     </div>
                                 )}
                             </ChartCard>
-                            <ChartCard title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle="الأطراف التي أُعيد تصنيعها بسبب التلف">
-                                <div className={`vs-damage-total ${period.values.remade ? "" : "zero"}`}>
-                                    <b>{period.values.remade}</b><span>إعادة تصنيع / فشل طباعة</span>
-                                </div>
-                                <TeamBars data={tm.damage} colors={["#ff6a00", "#f96a74"]} unit="طرف" height={120} nameWidth={170} />
+                            <ChartCard title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle={`${sum(tm.damage)} دورة أُعيد تصنيعها`}>
+                                <TeamBars data={tm.damage} colors={["#7c6ef0", "#ff6a00", "#f96a74"]} unit="طرف" nameWidth={130} />
                             </ChartCard>
                         </div>
                     </div>
