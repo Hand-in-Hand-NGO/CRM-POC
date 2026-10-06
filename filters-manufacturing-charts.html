@@ -417,6 +417,10 @@
 
 
         /* manufacturing dashboard extras */
+        .vs-damage-total { display: flex; align-items: baseline; gap: 8px; background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 8px 12px; margin-bottom: 8px; }
+        .vs-damage-total b { font-size: 20px; color: #ff6a00; font-variant-numeric: tabular-nums; }
+        .vs-damage-total span { font-size: 11.5px; color: var(--vs-text-dim); }
+        .vs-damage-total.zero b { color: var(--vs-text-faint); }
         .vs-donut-wrap { position: relative; }
         .vs-donut-center { position: absolute; top: 95px; left: 50%; transform: translate(-50%, -50%); text-align: center; line-height: 1.2; pointer-events: none; }
         .vs-donut-center b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
@@ -426,7 +430,7 @@
         .vs-legend-rows b { margin-right: auto; color: var(--vs-text); }
         .vs-legend-rows .t-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
         .vs-chart-card-head h4 .fa { color: var(--vs-accent); margin-left: 4px; }
-        .vs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        .vs-kpi-grid { grid-template-columns: repeat(3, 1fr); }
         .vs-kpi-days { flex-direction: column; align-items: stretch; }
         .vs-kpi-days .top { display: flex; align-items: baseline; justify-content: space-between; }
         .vs-days-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--vs-text-dim); margin-top: 4px; }
@@ -2017,7 +2021,7 @@
                     var finalStatus, closed = false;
                     if (!last) {
                         // earlier cycles stopped somewhere — that's where the next cycle starts from
-                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress', 'out_for_delivery']);
+                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress']);
                         if (STAGE_INDEX[finalStatus] < STAGE_INDEX[startStatus]) finalStatus = startStatus;
                         closed = true;
                     } else {
@@ -2039,10 +2043,6 @@
                     m = moment(cyc.statusDate, 'YYYY-MM-DD HH:mm').add(between(2, 20), 'hours');
                     if (m.isAfter(NOW)) m = NOW.clone().subtract(30, 'minutes');
                     if (cyc.status === 'print_progress') { startPoint = 'failed_to_print'; startStatus = 'print_ready'; }
-                    else if (cyc.status === 'out_for_delivery') {
-                        startPoint = type === 'new' ? 'remanufacturing_damage_during_new_prosthetic_limb_delivery' : 'remanufacturing_damage_during_maintenance_delivery';
-                        startStatus = 'design_ready';
-                    }
                     else { startPoint = 'remanufacturing_damage_to_the_end_during_assembly'; startStatus = 'design_ready'; }
                 }
             }
@@ -2775,10 +2775,9 @@
 
         // إنتاج فريق التصنيع: designs per engineer, printed parts accepted / rejected,
         // assemblies per technician and damaged limbs (during assembly / during delivery)
-        var DELIVERY_DAMAGE = ['remanufacturing_damage_during_new_prosthetic_limb_delivery', 'remanufacturing_damage_during_maintenance_delivery'];
         function teamStats(rows, f, t) {
             function inRange(h) { var d = h.date.slice(0, 10); return d >= f && d <= t; }
-            var designs = {}, assembly = {}, ok = 0, rejected = 0, dmgAssembly = 0, dmgDelivery = 0;
+            var designs = {}, assembly = {}, ok = 0, rejected = 0, dmgAssembly = 0;
             DESIGN_TEAM.forEach(function (m) { designs[m.id] = 0; });
             ASSEMBLY_TEAM.forEach(function (m) { assembly[m.id] = 0; });
             rows.forEach(function (r) {
@@ -2788,7 +2787,6 @@
                         // a new cycle tells why the previous one stopped
                         if (r.cycleNo > 1 && r.startPoint === 'failed_to_print') rejected++;
                         if (r.cycleNo > 1 && r.startPoint === 'remanufacturing_damage_to_the_end_during_assembly') dmgAssembly++;
-                        if (r.cycleNo > 1 && DELIVERY_DAMAGE.indexOf(r.startPoint) !== -1) dmgDelivery++;
                         return;
                     }
                     if (h.status === 'print_ready' && r.design.engineer && designs[r.design.engineer] !== undefined) designs[r.design.engineer]++;
@@ -2803,7 +2801,7 @@
                 designs: list(DESIGN_TEAM, designs),
                 assembly: list(ASSEMBLY_TEAM, assembly),
                 printed: { ok: ok, rejected: rejected, rate: ok + rejected ? Math.round(ok / (ok + rejected) * 1000) / 10 : null },
-                damage: [{ name: 'هالك أثناء التجميع', count: dmgAssembly }, { name: 'هالك أثناء التسليم', count: dmgDelivery }]
+                damage: [{ name: 'تالف أثناء التجميع', count: dmgAssembly }, { name: 'تالف اثناء الاستلام من الطباعة', count: rejected }]
             };
         }
 
@@ -2851,7 +2849,7 @@
                 [csvCell('نسبة النجاح %'), tm.printed.rate === null ? '-' : tm.printed.rate].join(','));
             lines.push(csvCell('التجميع'));
             tm.assembly.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
-            lines.push(csvCell('هالك / تالف'));
+            lines.push(csvCell('التالف'), [csvCell('إعادة تصنيع / فشل طباعة'), p.values.remade].join(','));
             tm.damage.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
             lines.push('', csvCell(p.trendLabel));
             lines.push([csvCell('الفترة')].concat(STAT_KEYS.map(function (k) { return csvCell(STAT_LABELS[k]); }), [csvCell('متوسط الأيام')]).join(','));
@@ -3472,7 +3470,7 @@
         const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend, BarChart, Bar, Cell, LabelList, PieChart, Pie } = Recharts;
 
         const STAT_COLORS = { started: "#2f6fed", designed: "#0093e9", printed: "#7c6ef0", ready: "#15803d", delivered: "#31c860", remade: "#ff6a00", gone: "#f96a74" };
-        const KPI_CARD_KEYS = ["remade", "gone"];
+        const KPI_CARD_KEYS = ["gone"];
         const AXIS_TICK = { fill: "#6b7280", fontSize: 11, fontFamily: "var(--vs-font-ui)" };
 
         function ChartTooltip({ active, payload, label, unit }) {
@@ -3647,14 +3645,14 @@
         }
 
         // horizontal bars, one per person / reason, with the number written at the end of the bar
-        function TeamBars({ data, color, colors, unit, height }) {
+        function TeamBars({ data, color, colors, unit, height, nameWidth }) {
             if (!data.length || sum(data) === 0) return <div className="vs-chart-empty" style={{ height: height || 180 }}>لا توجد بيانات في هذه الفترة</div>;
             return (
                 <ResponsiveContainer width="100%" height={height || Math.max(150, data.length * 30 + 20)}>
                     <BarChart data={data} layout="vertical" margin={{ top: 4, right: 4, left: 24, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#d6d9df" horizontal={false} />
                         <XAxis type="number" reversed allowDecimals={false} hide />
-                        <YAxis type="category" dataKey="name" orientation="right" width={120} tick={NameTick} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" orientation="right" width={nameWidth || 120} tick={NameTick} axisLine={false} tickLine={false} />
                         <RTooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "#eef0f3" }} />
                         <Bar dataKey="count" name="العدد" fill={color} radius={[4, 0, 0, 4]} barSize={16} isAnimationActive={false}>
                             {colors && data.map((d, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
@@ -3679,7 +3677,6 @@
             const d = period.days;
             const tm = period.team;
             const hasDays = d.n > 0;
-            const snapshot = period.snapshot.filter(s => s.open + s.stopped > 0);
 
             return (
                 <div>
@@ -3756,8 +3753,11 @@
                                     </div>
                                 )}
                             </ChartCard>
-                            <ChartCard title={<span><i className="fa fa-warning"></i> هالك / تالف</span>} subtitle={`${sum(tm.damage)} طرف أُعيد تصنيعه بسبب التلف`}>
-                                <TeamBars data={tm.damage} colors={["#ff6a00", "#f96a74"]} unit="طرف" height={120} />
+                            <ChartCard title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle="الأطراف التي أُعيد تصنيعها بسبب التلف">
+                                <div className={`vs-damage-total ${period.values.remade ? "" : "zero"}`}>
+                                    <b>{period.values.remade}</b><span>إعادة تصنيع / فشل طباعة</span>
+                                </div>
+                                <TeamBars data={tm.damage} colors={["#ff6a00", "#f96a74"]} unit="طرف" height={120} nameWidth={170} />
                             </ChartCard>
                         </div>
                     </div>
@@ -3780,24 +3780,6 @@
                         </ChartCard>
                     </div>
 
-                    <div className="vs-chart-group">
-                        <p className="vs-group-label">الوضع الحالي</p>
-                        <ChartCard title="الدورات الحالية حسب حالة التصنيع" subtitle="الدورات الفعالة والمتوقفة الآن (لا تتغير بالفترة)">
-                            {snapshot.length === 0 ? <div className="vs-chart-empty">لا توجد بيانات</div> : (
-                                <ResponsiveContainer width="100%" height={Math.max(160, snapshot.length * 30 + 40)}>
-                                    <BarChart data={snapshot} layout="vertical" margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#d6d9df" horizontal={false} />
-                                        <XAxis type="number" reversed allowDecimals={false} tick={AXIS_TICK} axisLine={{ stroke: "#d6d9df" }} tickLine={false} />
-                                        <YAxis type="category" dataKey="name" orientation="right" width={150} tick={{ ...AXIS_TICK, fill: "#1a1d23" }} axisLine={false} tickLine={false} />
-                                        <RTooltip content={<ChartTooltip unit="دورة" />} cursor={{ fill: "#eef0f3" }} />
-                                        <Legend wrapperStyle={{ fontSize: 11, fontFamily: "var(--vs-font-ui)", direction: "rtl" }} />
-                                        <Bar dataKey="open" name="الفعالة" stackId="a" fill="#31c860" />
-                                        <Bar dataKey="stopped" name="المتوقفة" stackId="a" fill="#f96a74" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            )}
-                        </ChartCard>
-                    </div>
                 </div>
             );
         }
