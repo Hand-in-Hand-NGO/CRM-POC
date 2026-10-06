@@ -417,6 +417,15 @@
 
 
         /* manufacturing dashboard extras */
+        .vs-donut-wrap { position: relative; }
+        .vs-donut-center { position: absolute; top: 95px; left: 50%; transform: translate(-50%, -50%); text-align: center; line-height: 1.2; pointer-events: none; }
+        .vs-donut-center b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+        .vs-donut-center span { font-size: 11px; color: var(--vs-text-dim); }
+        .vs-legend-rows { font-size: 11.5px; color: var(--vs-text-dim); display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+        .vs-legend-rows div { display: flex; align-items: center; gap: 6px; }
+        .vs-legend-rows b { margin-right: auto; color: var(--vs-text); }
+        .vs-legend-rows .t-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+        .vs-chart-card-head h4 .fa { color: var(--vs-accent); margin-left: 4px; }
         .vs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
         .vs-kpi-days { flex-direction: column; align-items: stretch; }
         .vs-kpi-days .top { display: flex; align-items: baseline; justify-content: space-between; }
@@ -2008,7 +2017,7 @@
                     var finalStatus, closed = false;
                     if (!last) {
                         // earlier cycles stopped somewhere — that's where the next cycle starts from
-                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress']);
+                        finalStatus = pick(['print_progress', 'in_progress', 'print_progress', 'out_for_delivery']);
                         if (STAGE_INDEX[finalStatus] < STAGE_INDEX[startStatus]) finalStatus = startStatus;
                         closed = true;
                     } else {
@@ -2030,6 +2039,10 @@
                     m = moment(cyc.statusDate, 'YYYY-MM-DD HH:mm').add(between(2, 20), 'hours');
                     if (m.isAfter(NOW)) m = NOW.clone().subtract(30, 'minutes');
                     if (cyc.status === 'print_progress') { startPoint = 'failed_to_print'; startStatus = 'print_ready'; }
+                    else if (cyc.status === 'out_for_delivery') {
+                        startPoint = type === 'new' ? 'remanufacturing_damage_during_new_prosthetic_limb_delivery' : 'remanufacturing_damage_during_maintenance_delivery';
+                        startStatus = 'design_ready';
+                    }
                     else { startPoint = 'remanufacturing_damage_to_the_end_during_assembly'; startStatus = 'design_ready'; }
                 }
             }
@@ -2745,6 +2758,7 @@
                 values: countBetween(ev, f, t),
                 days: daysStats(rows, f, t),
                 quality: qualityStats(rows, f, t),
+                team: teamStats(rows, f, t),
                 trend: buildTrendBuckets(rows, ev, trendEnd, meta.unit, meta.count),
                 trendLabel: meta.label + (isCurrent ? '' : ' — حتى ' + trendEnd.format('YYYY-MM-DD')),
                 // where the cycles are right now (not tied to the period)
@@ -2758,6 +2772,40 @@
             };
         }
         window.buildStatsPeriod = buildStatsPeriod;
+
+        // إنتاج فريق التصنيع: designs per engineer, printed parts accepted / rejected,
+        // assemblies per technician and damaged limbs (during assembly / during delivery)
+        var DELIVERY_DAMAGE = ['remanufacturing_damage_during_new_prosthetic_limb_delivery', 'remanufacturing_damage_during_maintenance_delivery'];
+        function teamStats(rows, f, t) {
+            function inRange(h) { var d = h.date.slice(0, 10); return d >= f && d <= t; }
+            var designs = {}, assembly = {}, ok = 0, rejected = 0, dmgAssembly = 0, dmgDelivery = 0;
+            DESIGN_TEAM.forEach(function (m) { designs[m.id] = 0; });
+            ASSEMBLY_TEAM.forEach(function (m) { assembly[m.id] = 0; });
+            rows.forEach(function (r) {
+                r.history.forEach(function (h, i) {
+                    if (h.revert || h.stop || !inRange(h)) return;
+                    if (i === 0) {
+                        // a new cycle tells why the previous one stopped
+                        if (r.cycleNo > 1 && r.startPoint === 'failed_to_print') rejected++;
+                        if (r.cycleNo > 1 && r.startPoint === 'remanufacturing_damage_to_the_end_during_assembly') dmgAssembly++;
+                        if (r.cycleNo > 1 && DELIVERY_DAMAGE.indexOf(r.startPoint) !== -1) dmgDelivery++;
+                        return;
+                    }
+                    if (h.status === 'print_ready' && r.design.engineer && designs[r.design.engineer] !== undefined) designs[r.design.engineer]++;
+                    if (h.status === 'in_progress') ok++;
+                    if (/delivery_ready$/.test(h.status) && r.assembly && assembly[r.assembly] !== undefined) assembly[r.assembly]++;
+                });
+            });
+            function list(team, counts) {
+                return team.map(function (m) { return { name: m.name, count: counts[m.id] }; }).sort(function (a, b) { return b.count - a.count; });
+            }
+            return {
+                designs: list(DESIGN_TEAM, designs),
+                assembly: list(ASSEMBLY_TEAM, assembly),
+                printed: { ok: ok, rejected: rejected, rate: ok + rejected ? Math.round(ok / (ok + rejected) * 1000) / 10 : null },
+                damage: [{ name: 'هالك أثناء التجميع', count: dmgAssembly }, { name: 'هالك أثناء التسليم', count: dmgDelivery }]
+            };
+        }
 
         // what the dashboard currently shows (period type + selected date) — used by the export
         window.statsView = { key: 'month', anchor: TODAY.format('YYYY-MM-DD') };
@@ -2796,6 +2844,15 @@
             d.buckets.forEach(function (b) { lines.push([csvCell(b.name), b.count].join(',')); });
             lines.push('', [csvCell('متوسط جودة الأجزاء المطبوعة %'), p.quality.avg === null ? '-' : p.quality.avg].join(','));
             lines.push([csvCell('متوسط الفرق بين الوزن الافتراضى والفعلى %'), d.weight === null ? '-' : d.weight].join(','));
+            var tm = p.team;
+            lines.push('', csvCell('إنتاج فريق التصنيع'), csvCell('التصميمات'));
+            tm.designs.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
+            lines.push(csvCell('الأجزاء المطبوعة'), [csvCell('تمت طباعته بنجاح'), tm.printed.ok].join(','), [csvCell('مرفوض (إعادة طباعة)'), tm.printed.rejected].join(','),
+                [csvCell('نسبة النجاح %'), tm.printed.rate === null ? '-' : tm.printed.rate].join(','));
+            lines.push(csvCell('التجميع'));
+            tm.assembly.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
+            lines.push(csvCell('هالك / تالف'));
+            tm.damage.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
             lines.push('', csvCell(p.trendLabel));
             lines.push([csvCell('الفترة')].concat(STAT_KEYS.map(function (k) { return csvCell(STAT_LABELS[k]); }), [csvCell('متوسط الأيام')]).join(','));
             p.trend.forEach(function (pt) {
@@ -3412,7 +3469,7 @@
          ===================================================================== -->
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
-        const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend, BarChart, Bar, Cell } = Recharts;
+        const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend, BarChart, Bar, Cell, LabelList, PieChart, Pie } = Recharts;
 
         const STAT_COLORS = { started: "#2f6fed", designed: "#0093e9", printed: "#7c6ef0", ready: "#15803d", delivered: "#31c860", remade: "#ff6a00", gone: "#f96a74" };
         const KPI_CARD_KEYS = ["remade", "gone"];
@@ -3577,6 +3634,37 @@
         }
 
 
+        function sum(list) { return list.reduce((a, x) => a + x.count, 0); }
+
+        // the bars grow right → left (RTL), so the number is written just past the bar's left end
+        function BarValue({ x, y, width, height, value }) {
+            const left = Math.min(x, x + width);
+            return <text x={left - 6} y={y + height / 2} dy={4} textAnchor="end" style={{ direction: "ltr" }} fill="#1a1d23" fontSize={11} fontWeight={700} fontFamily="var(--vs-font-ui)">{value}</text>;
+        }
+        // person / reason names to the right of the bars (RTL text: "end" is its left edge, so it grows rightwards from x)
+        function NameTick({ x, y, payload }) {
+            return <text x={x} y={y} dy={4} textAnchor="end" style={{ direction: "rtl" }} fill="#1a1d23" fontSize={11} fontFamily="var(--vs-font-ui)">{payload.value}</text>;
+        }
+
+        // horizontal bars, one per person / reason, with the number written at the end of the bar
+        function TeamBars({ data, color, colors, unit, height }) {
+            if (!data.length || sum(data) === 0) return <div className="vs-chart-empty" style={{ height: height || 180 }}>لا توجد بيانات في هذه الفترة</div>;
+            return (
+                <ResponsiveContainer width="100%" height={height || Math.max(150, data.length * 30 + 20)}>
+                    <BarChart data={data} layout="vertical" margin={{ top: 4, right: 4, left: 24, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#d6d9df" horizontal={false} />
+                        <XAxis type="number" reversed allowDecimals={false} hide />
+                        <YAxis type="category" dataKey="name" orientation="right" width={120} tick={NameTick} axisLine={false} tickLine={false} />
+                        <RTooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "#eef0f3" }} />
+                        <Bar dataKey="count" name="العدد" fill={color} radius={[4, 0, 0, 4]} barSize={16} isAnimationActive={false}>
+                            {colors && data.map((d, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                            <LabelList dataKey="count" content={BarValue} />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            );
+        }
+
         function dash(v, suffix) { return v === null || v === undefined ? "-" : (suffix ? `${v}${suffix}` : v); }
 
         function ManufacturingStatsPanel({ data }) {
@@ -3589,6 +3677,7 @@
             useEffect(() => { window.statsView = { key: periodKey, anchor: anchor }; }, [periodKey, anchor]);
 
             const d = period.days;
+            const tm = period.team;
             const hasDays = d.n > 0;
             const snapshot = period.snapshot.filter(s => s.open + s.stopped > 0);
 
@@ -3635,6 +3724,41 @@
                                 <span>طلب صيانة: <b>{dash(d.avgMaint)}</b></span>
                                 <span>جاهز خلال 14 يوم: <b>{hasDays ? `${d.within14} من ${d.n} (${Math.round(d.within14 / d.n * 100)}%)` : "-"}</b></span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="vs-chart-group">
+                        <p className="vs-group-label">إنتاج فريق التصنيع — <span dir="ltr">{period.range}</span></p>
+                        <div className="vs-chart-row-2">
+                            <ChartCard title={<span><i className="fa fa-pencil"></i> التصميمات</span>} subtitle={`${sum(tm.designs)} تصميم حسب مهندس التصميم`}>
+                                <TeamBars data={tm.designs} color="#2f6fed" unit="تصميم" />
+                            </ChartCard>
+                            <ChartCard title={<span><i className="fa fa-wrench"></i> التجميع</span>} subtitle={`${sum(tm.assembly)} طرف حسب فنى التجميع`}>
+                                <TeamBars data={tm.assembly} color="#0d9488" unit="طرف" />
+                            </ChartCard>
+                            <ChartCard title={<span><i className="fa fa-print"></i> الأجزاء المطبوعة</span>} subtitle={tm.printed.rate === null ? "لا توجد أجزاء مستلمة في هذه الفترة" : `نسبة النجاح ${tm.printed.rate}%`}>
+                                {tm.printed.ok + tm.printed.rejected === 0 ? <div className="vs-chart-empty">لا توجد بيانات</div> : (
+                                    <div className="vs-donut-wrap">
+                                        <ResponsiveContainer width="100%" height={190}>
+                                            <PieChart>
+                                                <Pie data={[{ name: "تمت طباعته بنجاح", value: tm.printed.ok }, { name: "مرفوض (إعادة طباعة)", value: tm.printed.rejected }]}
+                                                    dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={2} startAngle={90} endAngle={-270} isAnimationActive={false}>
+                                                    <Cell fill="#31c860" /><Cell fill="#f96a74" />
+                                                </Pie>
+                                                <RTooltip content={<ChartTooltip />} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                        <div className="vs-donut-center"><b>{tm.printed.rate}%</b><span>نجاح</span></div>
+                                        <div className="vs-legend-rows">
+                                            <div><span className="t-dot" style={{ background: "#31c860" }}></span> تمت طباعته بنجاح <b>{tm.printed.ok}</b></div>
+                                            <div><span className="t-dot" style={{ background: "#f96a74" }}></span> مرفوض (إعادة طباعة) <b>{tm.printed.rejected}</b></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </ChartCard>
+                            <ChartCard title={<span><i className="fa fa-warning"></i> هالك / تالف</span>} subtitle={`${sum(tm.damage)} طرف أُعيد تصنيعه بسبب التلف`}>
+                                <TeamBars data={tm.damage} colors={["#ff6a00", "#f96a74"]} unit="طرف" height={120} />
+                            </ChartCard>
                         </div>
                     </div>
 
