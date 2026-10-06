@@ -2700,26 +2700,8 @@
         $(document).on('change', '.apply_print_progress', function () {
             var r = current.row, $cb = $(this), checked = this.checked;
             if (checked) {
-                var opts = {};
-                PRINT_TEAM.forEach(function (m) { opts[m.id] = m.name; });
-                var ask = window.Swal ? Swal.fire({
-                    title: 'هل انت متأكد؟',
-                    text: 'سيتم تحويل الطلب إلى مرحلة الطباعة قيد التنفيذ — اختر فنى الطباعة',
-                    icon: 'warning',
-                    input: 'select',
-                    inputOptions: opts,
-                    inputPlaceholder: 'اختر فنى الطباعة',
-                    inputValidator: function (v) { return v ? null : 'اختر فنى الطباعة'; },
-                    showCancelButton: true,
-                    confirmButtonText: 'نعم، تحويل',
-                    cancelButtonText: 'إلغاء',
-                    confirmButtonColor: '#31c860',
-                    cancelButtonColor: '#f96a74',
-                    reverseButtons: true
-                }).then(function (res) { return res.isConfirmed ? res.value : null; }) : Promise.resolve(PRINT_TEAM[0].id);
-                ask.then(function (tech) {
-                    if (!tech) { $cb.prop('checked', false); return; }
-                    r.printTech = tech;
+                confirmBox('سيتم تحويل الطلب إلى مرحلة الطباعة قيد التنفيذ').then(function (ok) {
+                    if (!ok) { $cb.prop('checked', false); return; }
                     moveTo(r, 'print_progress');
                     notify('تم تحويل الطلب إلى مرحلة الطباعة قيد التنفيذ بنجاح');
                     renderPrintReady();
