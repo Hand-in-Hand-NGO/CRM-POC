@@ -2851,12 +2851,12 @@
             var tm = p.team;
             lines.push('', csvCell('إنتاج فريق التصنيع'), csvCell('التصميمات'));
             tm.designs.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
-            lines.push(csvCell('الأجزاء المطبوعة'), [csvCell('تمت طباعته بنجاح'), tm.printed.ok].join(','), [csvCell('مرفوض (إعادة طباعة)'), tm.printed.rejected].join(','),
-                [csvCell('نسبة النجاح %'), tm.printed.rate === null ? '-' : tm.printed.rate].join(','));
             lines.push(csvCell('التجميع'));
             tm.assembly.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
             lines.push(csvCell('التالف'));
-            tm.damage.forEach(function (x) { lines.push([csvCell(x.name), x.count].join(',')); });
+            var dmgTotal = tm.damage.reduce(function (a, x) { return a + x.count; }, 0);
+            lines.push([csvCell('السبب'), csvCell('العدد'), csvCell('النسبة %')].join(','));
+            tm.damage.forEach(function (x) { lines.push([csvCell(x.name), x.count, dmgTotal ? Math.round(x.count / dmgTotal * 100) : '-'].join(',')); });
             lines.push('', csvCell(p.trendLabel));
             lines.push([csvCell('الفترة')].concat(STAT_KEYS.map(function (k) { return csvCell(STAT_LABELS[k]); }), [csvCell('متوسط الأيام')]).join(','));
             p.trend.forEach(function (pt) {
@@ -3494,9 +3494,9 @@
             );
         }
 
-        function ChartCard({ title, subtitle, children }) {
+        function ChartCard({ title, subtitle, children, wide }) {
             return (
-                <div className="vs-chart-card">
+                <div className="vs-chart-card" style={wide ? { gridColumn: "1 / -1" } : undefined}>
                     <div className="vs-chart-card-head">
                         <h4>{title}</h4>
                         {subtitle && <p className="sub">{subtitle}</p>}
@@ -3651,18 +3651,21 @@
         }
 
         // horizontal bars, one per person / reason, with the number written at the end of the bar
-        function TeamBars({ data, color, colors, unit, height, nameWidth }) {
-            if (!data.length || sum(data) === 0) return <div className="vs-chart-empty" style={{ height: height || 180 }}>لا توجد بيانات في هذه الفترة</div>;
+        function TeamBars({ data, color, colors, unit, height, nameWidth, showPct }) {
+            const total = sum(data);
+            // showPct: each bar also shows its share of the card's total, e.g. "16 (46%)"
+            if (showPct && total) data = data.map(d => Object.assign({}, d, { label: `${d.count} (${Math.round(d.count / total * 100)}%)` }));
+            if (!data.length || total === 0) return <div className="vs-chart-empty" style={{ height: height || 180 }}>لا توجد بيانات في هذه الفترة</div>;
             return (
                 <ResponsiveContainer width="100%" height={height || Math.max(150, data.length * 30 + 20)}>
-                    <BarChart data={data} layout="vertical" margin={{ top: 4, right: 4, left: 24, bottom: 0 }}>
+                    <BarChart data={data} layout="vertical" margin={{ top: 4, right: 4, left: showPct ? 64 : 24, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#d6d9df" horizontal={false} />
                         <XAxis type="number" reversed allowDecimals={false} hide />
                         <YAxis type="category" dataKey="name" orientation="right" width={nameWidth || 120} tick={NameTick} axisLine={false} tickLine={false} />
                         <RTooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "#eef0f3" }} />
                         <Bar dataKey="count" name="العدد" fill={color} radius={[4, 0, 0, 4]} barSize={16} isAnimationActive={false}>
                             {colors && data.map((d, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
-                            <LabelList dataKey="count" content={BarValue} />
+                            <LabelList dataKey={showPct ? "label" : "count"} content={BarValue} />
                         </Bar>
                     </BarChart>
                 </ResponsiveContainer>
@@ -3739,28 +3742,8 @@
                             <ChartCard title={<span><i className="fa fa-wrench"></i> التجميع</span>} subtitle={`${sum(tm.assembly)} طرف حسب فنى التجميع`}>
                                 <TeamBars data={tm.assembly} color="#0d9488" unit="طرف" />
                             </ChartCard>
-                            <ChartCard title={<span><i className="fa fa-print"></i> الأجزاء المطبوعة</span>} subtitle={tm.printed.rate === null ? "لا توجد أجزاء مستلمة في هذه الفترة" : `نسبة النجاح ${tm.printed.rate}%`}>
-                                {tm.printed.ok + tm.printed.rejected === 0 ? <div className="vs-chart-empty">لا توجد بيانات</div> : (
-                                    <div className="vs-donut-wrap">
-                                        <ResponsiveContainer width="100%" height={190}>
-                                            <PieChart>
-                                                <Pie data={[{ name: "تمت طباعته بنجاح", value: tm.printed.ok }, { name: "مرفوض (إعادة طباعة)", value: tm.printed.rejected }]}
-                                                    dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={2} startAngle={90} endAngle={-270} isAnimationActive={false}>
-                                                    <Cell fill="#31c860" /><Cell fill="#f96a74" />
-                                                </Pie>
-                                                <RTooltip content={<ChartTooltip />} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                        <div className="vs-donut-center"><b>{tm.printed.rate}%</b><span>نجاح</span></div>
-                                        <div className="vs-legend-rows">
-                                            <div><span className="t-dot" style={{ background: "#31c860" }}></span> تمت طباعته بنجاح <b>{tm.printed.ok}</b></div>
-                                            <div><span className="t-dot" style={{ background: "#f96a74" }}></span> مرفوض (إعادة طباعة) <b>{tm.printed.rejected}</b></div>
-                                        </div>
-                                    </div>
-                                )}
-                            </ChartCard>
-                            <ChartCard title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle={`${sum(tm.damage)} دورة أُعيد تصنيعها`}>
-                                <TeamBars data={tm.damage} colors={["#7c6ef0", "#ff6a00", "#f96a74"]} unit="طرف" nameWidth={130} />
+                            <ChartCard wide title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle={`${sum(tm.damage)} دورة أُعيد تصنيعها`}>
+                                <TeamBars data={tm.damage} colors={["#7c6ef0", "#ff6a00", "#f96a74"]} unit="طرف" nameWidth={130} showPct />
                             </ChartCard>
                         </div>
                     </div>
