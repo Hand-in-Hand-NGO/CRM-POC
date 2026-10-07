@@ -1978,7 +1978,7 @@
                 case 'new_delivery_ready':
                 case 'maintenance_delivery_ready':
                     if (generating) {
-                        r.actualWeight = Math.round(r.defaultWeight * (1 + (rnd() * 0.24 - 0.08)));
+                        r.actualWeight = Math.round(r.defaultWeight * (1 + (rnd() * 0.24 - 0.12)));
                         r.assembly = pick(ASSEMBLY_TEAM).id;
                     }
                     r.readyDate = when;
@@ -2066,6 +2066,8 @@
             if (!r.actualWeight || !r.defaultWeight) return null;
             return (r.actualWeight - r.defaultWeight) / r.defaultWeight * 100;
         }
+        // weight differences always carry their sign: +50 / -50 (0 stays 0)
+        function signed(v) { return +v > 0 ? '+' + v : String(v); }
         function to12h(m) { return m.format('h:mm') + ' ' + (m.hour() >= 12 ? 'م' : 'ص'); }
         function rowTeamIds(r) {
             var ids = [];
@@ -2181,22 +2183,21 @@
                 title: 'تاريخ الحجز', render: function (r) {
                     if (!r.bookingDate) return '<span class="muted-dash">لم يتم الحجز</span>';
                     var m = moment(r.bookingDate, 'YYYY-MM-DD HH:mm');
-                    return '<span class="case-value"><span class="case-text">' + m.format('YYYY-MM-DD') + '</span>' +
-                        '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + m.format('YYYY-MM-DD') + '" title="نسخ">نسخ</button></span>';
+                    return '<span class="case-value"><span class="case-text">' + m.format('YYYY-MM-DD') + '</span></span>';
                 }
             },
             { title: 'حالة التصنيع', render: statusCell },
             { title: 'عدد الأيام بين المقاس وجاهزية التسليم', render: daysCell },
             { title: 'خطوات التصنيع', render: stepButtons },
-            { title: 'الوزن الافتراضى', render: function (r) { return r.defaultWeight ? r.defaultWeight + ' جم' : dash(); } },
-            { title: 'الوزن الفعلى', render: function (r) { return r.actualWeight ? r.actualWeight + ' جم' : dash(); } },
+            { title: 'الوزن الافتراضى', render: function (r) { return r.defaultWeight ? '<span dir="ltr">' + r.defaultWeight + ' G</span>' : dash(); } },
+            { title: 'الوزن الفعلى', render: function (r) { return r.actualWeight ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : dash(); } },
             {
                 title: 'الفرق بين الوزن الافتراضى والفعلى', render: function (r) {
                     var p = weightDiffPct(r);
                     if (p === null) return dash();
                     var g = r.actualWeight - r.defaultWeight;
-                    return '<span class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '">' + (g > 0 ? '+' : '') + g + ' جم<br>' +
-                        '<small dir="ltr">' + (p > 0 ? '+' : '') + p.toFixed(1) + '%</small></span>';
+                    return '<span class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '">' + '<span dir="ltr">' + signed(g) + ' G</span><br>' +
+                        '<small dir="ltr">' + signed(p.toFixed(1)) + '%</small></span>';
                 }
             },
             {
@@ -3133,8 +3134,8 @@
             var body;
             if (edit) {
                 body = '<div class="row">' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الافتراضى</label><p class="form-control-static">' + r.defaultWeight + ' جم</p></div>' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الفعلى (جم) <span class="req">*</span></label><input type="number" min="0" class="form-control" id="actualWeight"></div>' +
+                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الافتراضى</label><p class="form-control-static" dir="ltr" style="text-align: right;">' + r.defaultWeight + ' G</p></div>' +
+                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الفعلى (G) <span class="req">*</span></label><input type="number" min="0" class="form-control" id="actualWeight"></div>' +
                     '<div class="col-sm-4" style="margin-bottom:10px"><label>فنى التجميع <span class="req">*</span></label>' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'اختر فنى التجميع') + '</div></div>' +
                     '<div id="weightPreview" class="text-muted" style="margin-bottom:8px"></div>' +
                     '<label>الملاحظات</label><textarea class="form-control" rows="2" id="assemblyNotes"></textarea>' +
@@ -3144,9 +3145,9 @@
             } else {
                 var p = weightDiffPct(r);
                 body = '<div class="readonly-box"><div class="row">' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الافتراضى: </span>' + r.defaultWeight + ' جم</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الفعلى: </span>' + (r.actualWeight ? r.actualWeight + ' جم' : '-') + '</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الفرق: </span>' + (p === null ? '-' : p.toFixed(2) + ' %') + '</div>' +
+                    '<div class="col-sm-3"><span class="titleInfo">الوزن الافتراضى: </span><span dir="ltr">' + r.defaultWeight + ' G</span></div>' +
+                    '<div class="col-sm-3"><span class="titleInfo">الوزن الفعلى: </span>' + (r.actualWeight ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : '-') + '</div>' +
+                    '<div class="col-sm-3"><span class="titleInfo">الفرق: </span>' + (p === null ? '-' : '<span dir="ltr">' + signed(r.actualWeight - r.defaultWeight) + ' G (' + signed(p.toFixed(1)) + '%)</span>') + '</div>' +
                     '<div class="col-sm-3"><span class="titleInfo">فنى التجميع: </span>' + (memberName(r.assembly) || '-') + '</div></div></div>';
             }
             $('#receiving-from-assembly-container').html(body);
@@ -3158,7 +3159,7 @@
             var r = current.row, w = +$(this).val();
             if (!w) return $('#weightPreview').text('');
             var p = (w - r.defaultWeight) / r.defaultWeight * 100;
-            $('#weightPreview').html('الفرق بين الوزن الافتراضى والفعلى: <b class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '">' + (w - r.defaultWeight) + ' جم (' + p.toFixed(2) + ' %)</b>');
+            $('#weightPreview').html('الفرق بين الوزن الافتراضى والفعلى: <b class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '" dir="ltr">' + signed(w - r.defaultWeight) + ' G (' + signed(p.toFixed(1)) + '%)</b>');
         });
 
         $(document).on('click', '#saveAcceptReceiving', function () {
