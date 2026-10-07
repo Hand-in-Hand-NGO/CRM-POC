@@ -200,20 +200,19 @@
             box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important;
         }
 
+        /* live layout: modal header gradient, close button, title colour */
         .modal-header-primary {
-            color: #535252;
-            padding: 9px 15px;
-            border-bottom: 1px solid #eee;
+            background: rgb(211, 241, 248);
             background: linear-gradient(90deg, rgba(211, 241, 248, 1) 0%, rgba(235, 246, 237, 1) 17%, rgba(255, 249, 228, 1) 34%, rgba(249, 231, 222, 1) 47%, rgba(248, 242, 228, 1) 57%, rgba(217, 234, 244, 1) 64%, rgba(233, 239, 236, 1) 74%, rgba(186, 234, 230, 1) 100%);
         }
 
-        .modal-header-primary .close {
-            float: left;
-            opacity: 1;
-            color: #535252;
+        .close {
+            opacity: 1 !important;
+            color: #fff !important;
         }
 
-        .modal-title {
+        .modal-title,
+        .close span {
             color: #535252 !important;
         }
 
@@ -1084,16 +1083,12 @@
             color: #aaa;
         }
 
-        /* ---- modals ---- */
-        .modal-dialog.modal-wide {
-            width: 65%;
-            min-width: 860px;
-        }
-
-        .modal-body .table th,
-        .modal-body .table td {
-            text-align: center;
-            vertical-align: middle;
+        /* ---- modals (live page styles) ---- */
+        .modal-header-primary {
+            color: #fff;
+            padding: 9px 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #428bca;
         }
 
         .file-link {
@@ -1102,11 +1097,91 @@
             white-space: nowrap;
         }
 
-        .readonly-box {
-            background: #f6f6f6;
-            border: 1px solid #d7dbe0;
-            border-radius: 10px;
-            padding: 10px 14px;
+        input[type=file] {
+            display: block !important;
+            right: 1px;
+            top: 1px;
+            height: 34px;
+            opacity: 0;
+            width: 100%;
+            background: none;
+            position: absolute;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .control-fileupload {
+            display: block;
+            border: 1px solid #d6d7d6;
+            background: #FFF;
+            border-radius: 4px;
+            width: 100%;
+            height: 36px;
+            line-height: 36px;
+            padding: 0px 10px 2px 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .control-fileupload:before,
+        .control-fileupload input,
+        .control-fileupload label {
+            cursor: pointer !important;
+        }
+
+        .control-fileupload:before {
+            padding: 4px 12px;
+            margin-bottom: 0;
+            font-size: 14px;
+            line-height: 20px;
+            color: #333333;
+            text-align: center;
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+            vertical-align: middle;
+            cursor: pointer;
+            background-color: rgb(245, 245, 245);
+            background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+            background-repeat: repeat-x;
+            border: 1px solid #cccccc;
+            border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+            border-bottom-color: #b3b3b3;
+            border-radius: 4px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: color 0.2s ease;
+            display: block;
+            position: absolute;
+            z-index: 1;
+            top: 2px;
+            right: 2px;
+        }
+
+        .control-fileupload:hover:before,
+        .control-fileupload:focus:before {
+            color: #333333;
+            background-color: #e6e6e6;
+            text-decoration: none;
+            background-position: 0 -15px;
+            transition: background-position 0.2s ease-out;
+        }
+
+        .control-fileupload.designingFiles:before {
+            content: 'اختر ملفات التصميم';
+        }
+
+        .control-fileupload.printingFiles:before {
+            content: 'اختر ملفات الطباعة';
+        }
+
+        .control-fileupload label {
+            display: block;
+            line-height: 34px;
+            color: #999;
+            font-size: 14px;
+            font-weight: normal;
+            margin-right: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .history-cycle {
@@ -1120,18 +1195,6 @@
 
         .history-cycle.closed h5 {
             color: #ef5350;
-        }
-
-        .modal-footer-btns {
-            text-align: left;
-            border-top: 1px solid #e5e5e5;
-            padding-top: 12px;
-            margin-top: 6px;
-        }
-
-        .modal-footer-btns .btn {
-            border-radius: 10px !important;
-            margin-right: 5px;
         }
 
         .req {
@@ -1549,117 +1612,141 @@
         <strong>Copyright &copy; 2026 Innov8.</strong> All rights reserved. <span class="text-muted">— نسخة تجريبية ببيانات وهمية</span>
     </footer>
 
-    <!-- ===================== Modal: التقرير الطبى والقياسات / جاري التصميم ===================== -->
+    <!-- ===================== Modals: same markup as the live page ===================== -->
     <div class="modal fade" role="dialog" id="view-modal-design-progress">
-        <div class="modal-dialog modal-wide">
+        <div class="modal-dialog" style="width: 65%;">
             <div class="modal-content">
-                <div class="modal-header-primary">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاري التصميم <small class="modal-case"></small></h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" id="design-progress-form" autocomplete="off" onsubmit="return false;">
-                        <table class="table table-striped table-bordered" id="sessions-design-progress-table">
-                            <thead>
-                                <tr>
-                                    <th>التقرير الطبى</th>
-                                    <th>القياسات</th>
-                                    <th>تاريخ التقرير</th>
-                                    <th>جاري التصميم</th>
-                                    <th>موعد بدء التصميم</th>
-                                    <th>مهندس التصميم</th>
-                                    <th>الملاحظات</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                        <div class="design-footer"></div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="modal-content">
+                    <div class="modal-header-primary">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاري التصميم</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" id="design-progress-form" autocomplete="off" onsubmit="return false;">
+                            <input type="hidden" class="orderId" name="orderId">
+                            <input type="hidden" class="orderType" name="orderType">
+                            <div class="form-group">
+                                <div class="box-body">
+                                    <table id="sessions-design-progress-table" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered table-hover" style="text-align: center;">
+                                        <thead>
+                                            <tr>
+                                                <th>التقرير الطبى</th>
+                                                <th>القياسات</th>
+                                                <th>تاريخ التقرير</th>
+                                                <th>جاري التصميم</th>
+                                                <th>موعد بدء التصميم</th>
+                                                <th>مهندس التصميم</th>
+                                                <th>الملاحظات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="box-footer"></div>
+                            </div>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-    <!-- ===================== Modal: ملفات التصميم والطباعة / جاهز للطباعة ===================== -->
     <div class="modal fade" role="dialog" id="view-modal-print-ready">
-        <div class="modal-dialog modal-wide">
+        <div class="modal-dialog" style="width: 65%;">
             <div class="modal-content">
-                <div class="modal-header-primary">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاهز للطباعة <small class="modal-case"></small></h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" id="print-ready-form" autocomplete="off" onsubmit="return false;">
-                        <div id="print-ready-container"></div>
-                        <table class="table table-striped table-bordered" id="sessions-print-ready-table">
-                            <thead>
-                                <tr>
-                                    <th>ملفات التصميم</th>
-                                    <th>ملفات الطباعة</th>
-                                    <th>تاريخ الرفع</th>
-                                    <th>الخامات المطلوبة للطباعة</th>
-                                    <th>الملاحظات</th>
-                                    <th>مهندس التصميم</th>
-                                    <th>حذف</th>
-                                    <th>جارى الطباعة</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="modal-content">
+                    <div class="modal-header-primary">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاهز للطباعة</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" id="print-ready-form" autocomplete="off" onsubmit="return false;">
+                            <input type="hidden" class="orderId" name="orderId">
+                            <input type="hidden" class="orderType" name="orderType">
+                            <div id="print-ready-container"></div>
+                            <div class="form-group">
+                                <div class="box-body">
+                                    <table id="sessions-print-ready-table" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered table-hover" style="text-align: center;">
+                                        <thead>
+                                            <tr>
+                                                <th>ملفات التصميم</th>
+                                                <th>ملفات الطباعة</th>
+                                                <th>تاريخ الرفع</th>
+                                                <th>الخامات المطلوبة للطباعة</th>
+                                                <th>الملاحظات</th>
+                                                <th>مهندس التصميم</th>
+                                                <th>حذف</th>
+                                                <th>جارى الطباعة</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-    <!-- ===================== Modal: استلام الأجزاء المطبوعة ===================== -->
     <div class="modal fade" role="dialog" id="view-modal-receiving-printed-parts">
-        <div class="modal-dialog modal-wide">
+        <div class="modal-dialog" style="width: 65%;">
             <div class="modal-content">
-                <div class="modal-header-primary">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الأجزاء المطبوعة <small class="modal-case"></small></h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" id="receiving-printed-parts-form" autocomplete="off" onsubmit="return false;">
-                        <div id="receiving-printed-parts-container"></div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="modal-content">
+                    <div class="modal-header-primary">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الأجزاء المطبوعة</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" id="receiving-printed-parts-form" autocomplete="off" onsubmit="return false;">
+                            <input type="hidden" class="orderId" name="orderId">
+                            <input type="hidden" class="orderType" name="orderType">
+                            <div id="receiving-printed-parts-container"></div>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-    <!-- ===================== Modal: استلام الطرف من التجميع ===================== -->
     <div class="modal fade" role="dialog" id="view-modal-receiving-from-assembly">
-        <div class="modal-dialog modal-wide">
+        <div class="modal-dialog" style="width: 65%;">
             <div class="modal-content">
-                <div class="modal-header-primary">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الطرف من التجميع <small class="modal-case"></small></h4>
-                </div>
-                <div class="modal-body">
-                    <form class="form-horizontal" id="receiving-from-assembly-form" autocomplete="off" onsubmit="return false;">
-                        <div id="receiving-from-assembly-container"></div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="modal-content">
+                    <div class="modal-header-primary">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الطرف من التجميع</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" id="receiving-from-assembly-form" autocomplete="off" onsubmit="return false;">
+                            <input type="hidden" class="orderId" name="orderId">
+                            <input type="hidden" class="orderType" name="orderType">
+                            <div id="receiving-from-assembly-container"></div>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-    <!-- ===================== Modal: تاريخ التصنيع ===================== -->
     <div class="modal fade" role="dialog" id="view-modal-manufacturing-history">
-        <div class="modal-dialog modal-wide">
+        <div class="modal-dialog" style="width: 65%;">
             <div class="modal-content">
-                <div class="modal-header-primary">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-history"></i> تاريخ التصنيع <small class="modal-case"></small></h4>
-                </div>
-                <div class="modal-body">
-                    <div id="manufacturing-history-container"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="modal-content">
+                    <div class="modal-header-primary">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> تاريخ التصنيع</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" id="manufacturing-history-form" autocomplete="off" onsubmit="return false;">
+                            <div id="manufacturing-history-container"></div>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -2521,8 +2608,19 @@
 
         function openFor(btn) {
             var r = rowById($(btn).closest('tr').attr('id'));
+            $('.modal .orderId').val(r.id);
+            $('.modal .orderType').val(r.type);
             current = { row: r, mode: $(btn).data('actionmode') };
             return r;
+        }
+        // live modal form layout: label col-sm-3 + field col-sm-8; buttons in a box-footer row
+        function formRow(label, field, extraClass, hidden) {
+            return '<div class="form-group' + (extraClass ? ' ' + extraClass : '') + '"' + (hidden ? ' style="display:none"' : '') + '>' +
+                '<label class="col-sm-3 control-label">' + label + '</label><div class="col-sm-8">' + field + '</div></div>';
+        }
+        function staticRow(label, value) { return formRow(label, '<p class="form-control-static">' + value + '</p>'); }
+        function footerRow(buttons) {
+            return '<div class="box-footer"><div class="row"><label class="col-sm-7 control-label"></label><div class="col-sm-5 text-left">' + buttons + '</div></div></div>';
         }
         function caseTitle(r) { return ' — ' + r.name + ' (' + r.code + ') — الدورة ' + r.cycleNo; }
 
@@ -2563,8 +2661,9 @@
                 (edit ? memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') : (memberName(r.design.engineer) || '-')) + '</div></td>' +
                 '<td>' + (edit ? '<textarea class="form-control design-notes" rows="2">' + (r.design.notes || '') + '</textarea>' : (r.design.notes || '-')) + '</td>' +
                 '</tr>');
-            $m.find('.design-footer').html(edit
-                ? '<div class="modal-footer-btns"><button type="button" class="btn btn-primary" id="saveDesignProgress"><i class="glyphicon glyphicon-save"></i> حفظ</button></div>'
+            $m.find('.box-footer').html(edit
+                ? '<div class="row"><label for="comment" class="col-sm-9 control-label"></label><div class="col-sm-3">' +
+                  '<button type="button" class="btn btn-primary" id="saveDesignProgress"><i class="glyphicon glyphicon-save"></i> حفظ</button></div></div>'
                 : '');
             initModalSelects($m);
             $m.modal('show');
@@ -2612,19 +2711,16 @@
             $m.find('.modal-case').text(caseTitle(r));
 
             $('#print-ready-container').html(edit && (r.status === 'design_progress' || r.status === 'print_ready') ?
-                '<div class="readonly-box" style="margin-bottom:12px">' +
-                '<div class="row">' +
                 // both file inputs are optional; picking design files shows (and requires) the design engineer,
                 // picking print files shows (and requires) the materials needed for printing
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات التصميم</label><input type="file" multiple class="form-control" id="designingFiles"></div>' +
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات الطباعة</label><input type="file" multiple class="form-control" id="printingFiles"></div>' +
-                '</div><div class="row">' +
-                '<div class="col-sm-6 engineer-field" style="margin-bottom:10px; display:none"><label>مهندس التصميم <span class="req">*</span></label>' + memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') + '</div>' +
-                '<div class="col-sm-6 materials-field" style="margin-bottom:10px; display:none"><label>الخامات المطلوبة للطباعة <span class="req">*</span></label><select multiple class="materials" data-placeholder="اختر الخامات">' +
-                MATERIALS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
-                '</div><div class="row"><div class="col-sm-12"><label>الملاحظات</label><textarea class="form-control upload-notes" rows="2"></textarea></div></div>' +
-                '<div class="modal-footer-btns"><button type="button" class="btn btn-success" id="add-print-ready"><i class="fa fa-plus"></i> إضافة</button></div>' +
-                '</div>' : '');
+                formRow('ملفات التصميم', '<div class="control-fileupload designingFiles"><label for="designingFiles"></label><input type="file" multiple id="designingFiles" name="designingFiles[]"></div>') +
+                formRow('مهندس التصميم <span class="req">*</span>', memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم'), 'engineer-field', true) +
+                formRow('ملفات الطباعة', '<div class="control-fileupload printingFiles"><label for="printingFiles"></label><input type="file" multiple id="printingFiles" name="printingFiles[]"></div>') +
+                formRow('الخامات المطلوبة للطباعة <span class="req">*</span>', '<select multiple class="materials" data-placeholder="اختر الخامات">' +
+                    MATERIALS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select>', 'materials-field', true) +
+                formRow('الملاحظات', '<textarea class="form-control upload-notes" rows="2" placeholder="الملاحظات"></textarea>') +
+                footerRow('<button type="button" class="btn btn-primary" id="add-print-ready"><i class="glyphicon glyphicon-save"></i> إضافة</button>')
+                : '');
 
             var printUploads = r.uploads.filter(function (u) { return u.printFiles.length; });
             var lastId = printUploads.length ? printUploads[printUploads.length - 1].id : null;
@@ -2682,6 +2778,8 @@
         $(document).on('change', '#designingFiles, #printingFiles', function () {
             var $field = $('#print-ready-container').find(this.id === 'designingFiles' ? '.engineer-field' : '.materials-field');
             $field.toggle(this.files.length > 0);
+            // live page: the chosen file names show inside the upload box
+            $(this).prev('label').text([].map.call(this.files, function (f) { return f.name; }).join(', '));
         });
 
         $(document).on('click', '.delete_print_ready', function () {
@@ -2725,24 +2823,20 @@
             var $m = $('#view-modal-receiving-printed-parts');
             $m.find('.modal-case').text(caseTitle(r));
             var last = r.uploads[r.uploads.length - 1];
-            var info = '<div class="readonly-box" style="margin-bottom:12px"><div class="row">' +
-                '<div class="col-sm-4"><span class="titleInfo">ملفات الطباعة: </span>' + (last ? last.printFiles.join('، ') : '-') + '</div>' +
-                '<div class="col-sm-4"><span class="titleInfo">فنى الطباعة: </span>' + (memberName(r.printTech) || '-') + '</div>' +
-                '<div class="col-sm-4"><span class="titleInfo">محاولة الطباعة رقم: </span>' + r.printTries + '</div></div></div>';
+            var info = staticRow('ملفات الطباعة', last ? last.printFiles.join('، ') : '-') +
+                staticRow('فنى الطباعة', memberName(r.printTech) || '-') +
+                staticRow('محاولة الطباعة رقم', r.printTries);
             var body;
             if (edit) {
-                body = '<div class="row">' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>جودة الأجزاء المطبوعة (%) <span class="req">*</span></label><input type="number" min="0" max="100" class="form-control" id="qualityOfPrintedParts" placeholder="0 - 100"></div>' +
-                    '<div class="col-sm-8" style="margin-bottom:10px"><label>عيوب الطباعة</label><select multiple class="defects" data-placeholder="اختر العيوب">' +
-                    PRINT_DEFECTS.map(function (d) { return '<option>' + d + '</option>'; }).join('') + '</select></div></div>' +
-                    '<label>الملاحظات</label><textarea class="form-control" rows="2" id="printedPartsNotes"></textarea>' +
-                    '<div class="modal-footer-btns">' +
-                    '<button type="button" class="btn btn-success" id="saveAccepted"><i class="fa fa-check"></i> قبول</button>' +
-                    '<button type="button" class="btn btn-danger" id="saveNotAccepted"><i class="fa fa-times"></i> رفض (فشل فى الطباعة)</button></div>';
+                body = formRow('جودة الأجزاء المطبوعة (%) <span class="req">*</span>', '<input type="number" min="0" max="100" class="form-control" id="qualityOfPrintedParts" placeholder="0 - 100">') +
+                    formRow('عيوب الطباعة', '<select multiple class="defects" data-placeholder="اختر العيوب">' +
+                        PRINT_DEFECTS.map(function (d) { return '<option>' + d + '</option>'; }).join('') + '</select>') +
+                    formRow('الملاحظات', '<textarea class="form-control" rows="2" id="printedPartsNotes" placeholder="الملاحظات"></textarea>') +
+                    footerRow('<button type="button" class="btn btn-success" id="saveAccepted"><i class="fa fa-check"></i> قبول</button> ' +
+                        '<button type="button" class="btn btn-danger" id="saveNotAccepted"><i class="fa fa-times"></i> رفض (فشل فى الطباعة)</button>');
             } else {
-                body = '<div class="readonly-box"><div class="row">' +
-                    '<div class="col-sm-4"><span class="titleInfo">جودة الأجزاء المطبوعة: </span>' + (r.quality === null ? '-' : r.quality + '%') + '</div>' +
-                    '<div class="col-sm-8"><span class="titleInfo">عيوب الطباعة: </span>' + (r.defects.join('، ') || '-') + '</div></div></div>';
+                body = staticRow('جودة الأجزاء المطبوعة', r.quality === null ? '-' : r.quality + '%') +
+                    staticRow('عيوب الطباعة', r.defects.join('، ') || '-');
             }
             $('#receiving-printed-parts-container').html(info + body);
             initModalSelects($m);
@@ -2780,22 +2874,18 @@
             $m.find('.modal-case').text(caseTitle(r));
             var body;
             if (edit) {
-                body = '<div class="row">' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الافتراضى</label><p class="form-control-static">' + r.defaultWeight + ' جم</p></div>' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الفعلى (جم) <span class="req">*</span></label><input type="number" min="0" class="form-control" id="actualWeight"></div>' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>فنى التجميع <span class="req">*</span></label>' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'اختر فنى التجميع') + '</div></div>' +
-                    '<div id="weightPreview" class="text-muted" style="margin-bottom:8px"></div>' +
-                    '<label>الملاحظات</label><textarea class="form-control" rows="2" id="assemblyNotes"></textarea>' +
-                    '<div class="modal-footer-btns">' +
-                    '<button type="button" class="btn btn-success" id="saveAcceptReceiving"><i class="fa fa-check"></i> قبول</button>' +
-                    '<button type="button" class="btn btn-danger" id="saveNotAcceptReceiving"><i class="fa fa-times"></i> رفض (إعادة تصنيع)</button></div>';
+                body = staticRow('الوزن الافتراضى', r.defaultWeight + ' جم') +
+                    formRow('الوزن الفعلى (جم) <span class="req">*</span>', '<input type="number" min="0" class="form-control" id="actualWeight" placeholder="الوزن الفعلى"><div id="weightPreview" class="help-block"></div>') +
+                    formRow('فنى التجميع <span class="req">*</span>', memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'اختر فنى التجميع')) +
+                    formRow('الملاحظات', '<textarea class="form-control" rows="2" id="assemblyNotes" placeholder="الملاحظات"></textarea>') +
+                    footerRow('<button type="button" class="btn btn-success" id="saveAcceptReceiving"><i class="fa fa-check"></i> قبول</button> ' +
+                        '<button type="button" class="btn btn-danger" id="saveNotAcceptReceiving"><i class="fa fa-times"></i> رفض (إعادة تصنيع)</button>');
             } else {
                 var p = weightDiffPct(r);
-                body = '<div class="readonly-box"><div class="row">' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الافتراضى: </span>' + r.defaultWeight + ' جم</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الفعلى: </span>' + (r.actualWeight ? r.actualWeight + ' جم' : '-') + '</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الفرق: </span>' + (p === null ? '-' : p.toFixed(2) + ' %') + '</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">فنى التجميع: </span>' + (memberName(r.assembly) || '-') + '</div></div></div>';
+                body = staticRow('الوزن الافتراضى', r.defaultWeight + ' جم') +
+                    staticRow('الوزن الفعلى', r.actualWeight ? r.actualWeight + ' جم' : '-') +
+                    staticRow('الفرق بين الوزن الافتراضى والفعلى', p === null ? '-' : p.toFixed(2) + ' %') +
+                    staticRow('فنى التجميع', memberName(r.assembly) || '-');
             }
             $('#receiving-from-assembly-container').html(body);
             initModalSelects($m);
