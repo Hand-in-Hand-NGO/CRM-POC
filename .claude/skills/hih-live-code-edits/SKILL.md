@@ -31,7 +31,14 @@ The CMS is built by an outside company. When the user hands back an edited page,
 6. **Keep the original next to the edit.** Save `live/<page>-live-original.html` (verbatim) and
    `live/<page>-live-<change>.html` (edited).
    - Before committing, check `diff original edited`: every hunk must be inside the marked area.
-7. **Test** in headless Chromium. Route the CMS asset URLs to local npm copies (jQuery 2.1.4,
+7. **Interactive preview with fake data.** When asked, don't edit the page code. Build
+   `live/<page>-live-mock.html` from the edited page plus one inline `MOCK DATA (preview only)` block
+   right after jQuery (`live/mock/build-mock-page.py`).
+   - The block answers every ajax call to `cms.handinhand-eg.com` through `$.ajaxTransport`, returning
+     the same response format the page code expects (DataTables `aaData` objects with `DT_RowId`,
+     `{status:true}`, HTML forms).
+   - That keeps the page code identical to what the developer gets.
+8. **Test** in headless Chromium. Route the CMS asset URLs to local npm copies (jQuery 2.1.4,
    Bootstrap 3, moment, Highcharts 4.x). Check that the changed area works and adds no new page errors.
 
 ## Highcharts in the RTL page
