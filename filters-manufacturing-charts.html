@@ -1178,6 +1178,56 @@
             color: #aaa;
         }
 
+        /* ---- modal: جاري التصميم (same look as the live popup) ---- */
+        #view-modal-design-progress .modal-title { font-size: 16px; }
+        #view-modal-design-progress .modal-body { padding: 44px 8px 6px; }
+        #view-modal-design-progress .table { margin-bottom: 10px; font-size: 13px; }
+        #view-modal-design-progress .table > thead > tr > th { font-weight: bold; padding: 8px; border-bottom-width: 1px; }
+        #view-modal-design-progress .table > tbody > tr > td { vertical-align: top; padding: 8px; }
+        #view-modal-design-progress .dp-info { font-size: 13px; color: #333; text-align: right; padding-bottom: 8px; }
+        #view-modal-design-progress .box-footer { border-top: 1px solid #f4f4f4; padding: 10px; }
+        #view-modal-design-progress .box-footer .btn { border-radius: 3px !important; padding: 4px 12px; font-size: 13px; }
+
+        /* ---- modal: جاهز للطباعة (same look as the live popup) ---- */
+        #view-modal-print-ready .modal-title { font-size: 16px; }
+        #view-modal-print-ready .modal-body { padding: 14px 8px 30px; }
+        #print-ready-container .form-group { margin-bottom: 12px; }
+        #print-ready-container .control-label { text-align: right; font-weight: bold; padding-top: 7px; }
+        #print-ready-container .control-label .req { color: #dd4b39; }
+        .hih-file { display: flex; align-items: center; border: 1px solid #ccc; border-radius: 4px; height: 31px; padding: 0 3px; background: #fff; }
+        .hih-file label.btn { margin: 0; padding: 3px 10px; font-size: 12.5px; font-weight: normal; border-radius: 3px !important; white-space: nowrap; }
+        .hih-file .hih-file-names { flex: 1; padding: 0 8px; font-size: 12px; color: #555; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .hih-file input[type=file] { display: none; }
+        .materials-table { margin-bottom: 0; background: #fff; }
+        .materials-table > thead > tr > th { font-weight: bold; padding: 6px; }
+        .materials-table > tbody > tr > td, .materials-table > tfoot > tr > td { padding: 6px; vertical-align: middle; }
+        .materials-table .btn { border-radius: 3px !important; }
+        #print-ready-container .box-footer { border-top: 1px solid #f4f4f4; padding: 12px 10px 0; margin: 0 10px 40px; text-align: left; }
+        #print-ready-container .box-footer .btn { border-radius: 3px !important; padding: 5px 12px; font-size: 13px; }
+        #sessions-print-ready-table { font-size: 13px; }
+        #sessions-print-ready-table > thead > tr > th { font-weight: bold; padding: 8px; }
+
+        /* ---- modal: استلام الأجزاء المطبوعة (same look as the live popup) ---- */
+        #view-modal-receiving-printed-parts .modal-title, #view-modal-receiving-from-assembly .modal-title { font-size: 16px; }
+        #view-modal-receiving-printed-parts .modal-body, #view-modal-receiving-from-assembly .modal-body { padding: 12px 15px 15px; }
+        .rpp-choice { text-align: center; margin-bottom: 12px; }
+        .rpp-choice .btn { font-size: 15px; padding: 6px 12px; border-radius: 3px !important; margin: 0 2px; }
+        .rpp-choice .btn.active-ok { background: #31c860; border-color: #1f8a3f; color: #fff; box-shadow: inset 0 0 0 1px #1f8a3f; }
+        .rpp-choice .btn.active-no { background: #f96a74; border-color: #c9434d; color: #fff; box-shadow: inset 0 0 0 1px #c9434d; }
+        .rpp-panel { border: 1px solid #d6e9c6; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.12); margin-bottom: 4px; }
+        .rpp-panel > .rpp-head { background: #dff0d8; color: #3c763d; font-weight: bold; padding: 9px 12px; font-size: 13px; border-bottom: 1px solid #d6e9c6; }
+        .rpp-panel.no { border-color: #ebccd1; }
+        .rpp-panel.no > .rpp-head { background: #f2dede; color: #a94442; border-color: #ebccd1; }
+        .rpp-panel > .rpp-body { padding: 20px 15px 16px; }
+        .rpp-panel .form-group { margin-bottom: 14px; }
+        .rpp-panel .control-label { text-align: right; font-weight: bold; padding-top: 7px; }
+        .rpp-panel .control-label .req { color: #dd4b39; }
+        .rpp-panel .select2-container--default .select2-selection--multiple { border-radius: 8px; min-height: 36px; }
+        .rpp-panel .rpp-pct { font-size: 18px; font-weight: bold; padding-top: 4px; }
+        .rpp-panel .materials-table td { text-align: center; }
+        .rpp-panel .materials-table .empty td { background: #f9f9f9; color: #555; }
+        .rpp-panel .btn-save { border-radius: 3px !important; padding: 4px 12px; font-size: 13px; }
+
         /* ---- modals ---- */
         .modal-dialog.modal-wide {
             width: 65%;
@@ -1675,7 +1725,7 @@
             <div class="modal-content">
                 <div class="modal-header-primary">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاري التصميم <small class="modal-case"></small></h4>
+                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاري التصميم</h4>
                 </div>
                 <div class="modal-body">
                     <form class="form-horizontal" id="design-progress-form" autocomplete="off" onsubmit="return false;">
@@ -1693,9 +1743,10 @@
                             </thead>
                             <tbody></tbody>
                         </table>
-                        <div class="design-footer"></div>
+                        <div class="dp-info"></div>
                     </form>
                 </div>
+                <div class="box-footer design-footer"></div>
             </div>
         </div>
     </div>
@@ -1706,7 +1757,7 @@
             <div class="modal-content">
                 <div class="modal-header-primary">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاهز للطباعة <small class="modal-case"></small></h4>
+                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> جاهز للطباعة</h4>
                 </div>
                 <div class="modal-body">
                     <form class="form-horizontal" id="print-ready-form" autocomplete="off" onsubmit="return false;">
@@ -1738,7 +1789,7 @@
             <div class="modal-content">
                 <div class="modal-header-primary">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الأجزاء المطبوعة <small class="modal-case"></small></h4>
+                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الأجزاء المطبوعة</h4>
                 </div>
                 <div class="modal-body">
                     <form class="form-horizontal" id="receiving-printed-parts-form" autocomplete="off" onsubmit="return false;">
@@ -1755,7 +1806,7 @@
             <div class="modal-content">
                 <div class="modal-header-primary">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الطرف من التجميع <small class="modal-case"></small></h4>
+                    <h4 class="modal-title"><i class="fa fa-fw fa-plus"></i> استلام الطرف من التجميع</h4>
                 </div>
                 <div class="modal-body">
                     <form class="form-horizontal" id="receiving-from-assembly-form" autocomplete="off" onsubmit="return false;">
@@ -2904,21 +2955,38 @@
             var edit = current.mode === 'edit';
             var started = STAGE_INDEX[r.status] >= 1;
             var $m = $('#view-modal-design-progress');
-            $m.find('.modal-case').text(caseTitle(r));
-            $m.find('tbody').html(
-                '<tr' + (started ? ' style="background-color: rgba(144, 238, 144, 0.27);"' : '') + '>' +
-                '<td><span class="file-link open-file"><i class="fa fa-file-pdf-o"></i> تقرير_طبى_' + r.code + '.pdf</span></td>' +
-                '<td>' + r.measures + '</td>' +
+            // one row per medical report: the current cycle first (with the "جاري التصميم" checkbox), then older reports
+            var older = ROWS.filter(function (x) { return x.caseId === r.caseId && x.cycleNo < r.cycleNo; })
+                .sort(function (a, b) { return b.cycleNo - a.cycleNo; });
+            function reportCell(x) { return '<span class="file-link open-file"><i class="fa fa-file-pdf-o"></i> تقرير_طبى_' + x.code + '.pdf</span>'; }
+            var rows = '<tr' + (started ? ' style="background-color: rgba(144, 238, 144, 0.27);"' : '') + '>' +
+                '<td>' + reportCell(r) + '</td>' +
+                '<td>' + (r.measures || '-') + '</td>' +
                 '<td>' + r.measurementDate + '</td>' +
                 '<td><input type="checkbox" class="apply_design_progress"' + (started ? ' checked' : '') + (edit ? '' : ' disabled') + '></td>' +
                 '<td class="design-date">' + (started && r.design.date ? r.design.date : '') + '</td>' +
                 '<td style="min-width:180px"><div class="designEngineerContainer"' + (started ? '' : ' style="display:none"') + '>' +
-                (edit ? memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') : (memberName(r.design.engineer) || '-')) + '</div></td>' +
-                '<td>' + (edit ? '<textarea class="form-control design-notes" rows="2">' + (r.design.notes || '') + '</textarea>' : (r.design.notes || '-')) + '</td>' +
-                '</tr>');
+                (edit ? memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') : (memberName(r.design.engineer) || '')) + '</div></td>' +
+                '<td>' + (r.design.notes || '') + '</td>' +
+                '</tr>';
+            older.forEach(function (x) {
+                rows += '<tr>' +
+                    '<td>' + reportCell(x) + '</td>' +
+                    '<td>' + (x.measures || '-') + '</td>' +
+                    '<td>' + x.measurementDate + '</td>' +
+                    '<td></td>' +
+                    '<td>' + (x.design.date || '') + '</td>' +
+                    '<td>' + (memberName(x.design.engineer) || '') + '</td>' +
+                    '<td>' + (x.design.notes || '') + '</td>' +
+                    '</tr>';
+            });
+            var n = older.length + 1;
+            $m.find('tbody').html(rows);
+            $m.find('.dp-info').text('عرض 1 إلي ' + n + ' من ' + n + ' سجل');
             $m.find('.design-footer').html(edit
-                ? '<div class="modal-footer-btns"><button type="button" class="btn btn-primary" id="saveDesignProgress"><i class="glyphicon glyphicon-save"></i> حفظ</button></div>'
-                : '');
+                ? '<div class="row"><label for="comment" class="col-sm-9 control-label"></label><div class="col-sm-3">' +
+                  '<button type="button" class="btn btn-primary" id="saveDesignProgress"><i class="glyphicon glyphicon-save"></i> حفظ</button></div></div>'
+                : '').toggle(edit);
             initModalSelects($m);
             $m.modal('show');
         });
@@ -2941,7 +3009,6 @@
             var r = current.row, $m = $('#view-modal-design-progress');
             var checked = $m.find('.apply_design_progress').is(':checked');
             var eng = $m.find('.engineerId').val();
-            r.design.notes = $m.find('.design-notes').val();
             if (checked) {
                 if (!eng) return notify('اختر مهندس التصميم', 'error');
                 r.design.engineer = eng;
@@ -2964,20 +3031,22 @@
             var $m = $('#view-modal-print-ready');
             $m.find('.modal-case').text(caseTitle(r));
 
+            // both file inputs are optional; picking design files shows (and requires) the design engineer,
+            // picking print files shows (and requires) the materials needed for printing
+            function fileBox(id, label) {
+                return '<div class="hih-file"><label class="btn btn-default" for="' + id + '">' + label + '</label>' +
+                    '<span class="hih-file-names"></span><input type="file" multiple id="' + id + '"></div>';
+            }
             $('#print-ready-container').html(edit && (r.status === 'design_progress' || r.status === 'print_ready') ?
-                '<div class="readonly-box" style="margin-bottom:12px">' +
-                '<div class="row">' +
-                // both file inputs are optional; picking design files shows (and requires) the design engineer,
-                // picking print files shows (and requires) the materials needed for printing
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات التصميم</label><input type="file" multiple class="form-control" id="designingFiles"></div>' +
-                '<div class="col-sm-6" style="margin-bottom:10px"><label>ملفات الطباعة</label><input type="file" multiple class="form-control" id="printingFiles"></div>' +
-                '</div><div class="row">' +
-                '<div class="col-sm-6 engineer-field" style="margin-bottom:10px; display:none"><label>مهندس التصميم <span class="req">*</span></label>' + memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') + '</div>' +
-                '<div class="col-sm-6 materials-field" style="margin-bottom:10px; display:none"><label>الخامات المطلوبة للطباعة <span class="req">*</span></label><select multiple class="materials" data-placeholder="اختر الخامات">' +
-                MATERIALS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
-                '</div><div class="row"><div class="col-sm-12"><label>الملاحظات</label><textarea class="form-control upload-notes" rows="2"></textarea></div></div>' +
-                '<div class="modal-footer-btns"><button type="button" class="btn btn-success" id="add-print-ready"><i class="fa fa-plus"></i> إضافة</button></div>' +
-                '</div>' : '');
+                '<div class="form-group"><label class="col-sm-2 control-label"></label><div class="col-sm-5">' + fileBox('designingFiles', 'اختر ملفات التصميم') + '</div></div>' +
+                '<div class="form-group"><label class="col-sm-2 control-label"></label><div class="col-sm-5">' + fileBox('printingFiles', 'اختر ملفات الطباعة') + '</div></div>' +
+                '<div class="form-group materials-field" style="display:none"><label class="col-sm-2 control-label">الخامات المطلوبة للطباعة <span class="req">*</span></label>' +
+                '<div class="col-sm-7"><table class="table table-bordered materials-table"><thead><tr><th>المادة</th><th>الوزن الافتراضي</th><th style="width:120px"></th></tr></thead>' +
+                '<tbody></tbody><tfoot><tr><td colspan="3" class="text-center"><button type="button" class="btn btn-success btn-sm add-material" title="إضافة خامة"><i class="fa fa-plus"></i></button></td></tr></tfoot></table></div></div>' +
+                '<div class="form-group engineer-field" style="display:none"><label class="col-sm-2 control-label">مهندس التصميم <span class="req">*</span></label>' +
+                '<div class="col-sm-3">' + memberSelect('engineerId', DESIGN_TEAM, r.design.engineer, 'اختر مهندس التصميم') + '</div></div>' +
+                '<div class="box-footer"><button type="button" class="btn btn-success" id="add-print-ready"><i class="fa fa-floppy-o"></i> حفظ</button> ' +
+                '<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> إلغاء</button></div>' : '');
 
             var printUploads = r.uploads.filter(function (u) { return u.printFiles.length; });
             var lastId = printUploads.length ? printUploads[printUploads.length - 1].id : null;
@@ -3011,10 +3080,14 @@
             var r = current.row;
             var design = $('#designingFiles')[0].files, print = $('#printingFiles')[0].files;
             var eng = design.length ? $('#print-ready-container .engineerId').val() : null;
-            var materials = print.length ? ($('#print-ready-container .materials').val() || []) : [];
+            var materials = [], badMaterial = false;
+            if (print.length) $('#print-ready-container .materials-table tbody tr').each(function () {
+                var name = $(this).find('.material-name').val(), w = $(this).find('.material-weight').val();
+                if (!name || !w) badMaterial = true; else materials.push(name + ' (' + w + ' G)');
+            });
             if (!design.length && !print.length) return notify('اختر ملفات التصميم أو ملفات الطباعة', 'error');
             if (design.length && !eng) return notify('اختر مهندس التصميم', 'error');
-            if (print.length && !materials.length) return notify('اختر الخامات المطلوبة للطباعة', 'error');
+            if (print.length && (!materials.length || badMaterial)) return notify('أدخل الخامات المطلوبة للطباعة (المادة والوزن الافتراضي)', 'error');
             if (eng) r.design.engineer = eng;
             r.uploads.push({
                 id: nextId++,
@@ -3022,7 +3095,7 @@
                 printFiles: [].map.call(print, function (f) { return f.name; }),
                 date: stamp(moment()),
                 materials: materials,
-                notes: $('#print-ready-container .upload-notes').val(),
+                notes: '',
                 engineer: eng
             });
             // the cycle is ready for printing once print files exist
@@ -3035,7 +3108,22 @@
         $(document).on('change', '#designingFiles, #printingFiles', function () {
             var $field = $('#print-ready-container').find(this.id === 'designingFiles' ? '.engineer-field' : '.materials-field');
             $field.toggle(this.files.length > 0);
+            $(this).siblings('.hih-file-names').text([].map.call(this.files, function (f) { return f.name; }).join('، '));
+            // print files picked: start the materials table with one empty row
+            if (this.id === 'printingFiles' && this.files.length && !$('#print-ready-container .materials-table tbody tr').length) addMaterialRow();
         });
+
+        // الخامات المطلوبة للطباعة: one row per material (المادة + الوزن الافتراضي)
+        function addMaterialRow() {
+            var $tr = $('<tr><td><select class="form-control material-name" data-placeholder="اختر المادة"><option value=""></option>' +
+                MATERIALS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></td>' +
+                '<td><div class="input-group input-group-sm"><input type="number" min="0" class="form-control material-weight"><span class="input-group-addon">G</span></div></td>' +
+                '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-material" title="حذف"><i class="fa fa-trash"></i></button></td></tr>');
+            $('#print-ready-container .materials-table tbody').append($tr);
+            $tr.find('select').select2({ width: '100%', placeholder: 'اختر المادة', dropdownParent: $('#view-modal-print-ready'), language: select2Arabic() });
+        }
+        $(document).on('click', '.add-material', addMaterialRow);
+        $(document).on('click', '.remove-material', function () { $(this).closest('tr').remove(); });
 
         $(document).on('click', '.delete_print_ready', function () {
             var r = current.row, id = +$(this).closest('tr').data('upload');
@@ -3076,50 +3164,98 @@
         $(document).on('click', '.receivingPrintedParts', function () {
             var r = openFor(this), edit = current.mode === 'edit';
             var $m = $('#view-modal-receiving-printed-parts');
-            $m.find('.modal-case').text(caseTitle(r));
-            var last = r.uploads[r.uploads.length - 1];
-            var info = '<div class="readonly-box" style="margin-bottom:12px"><div class="row">' +
-                '<div class="col-sm-4"><span class="titleInfo">ملفات الطباعة: </span>' + (last ? last.printFiles.join('، ') : '-') + '</div>' +
-                '<div class="col-sm-4"><span class="titleInfo">فنى الطباعة: </span>' + (memberName(r.printTech) || '-') + '</div>' +
-                '<div class="col-sm-4"><span class="titleInfo">محاولة الطباعة رقم: </span>' + r.printTries + '</div></div></div>';
-            var body;
+            var html;
             if (edit) {
-                body = '<div class="row">' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>جودة الأجزاء المطبوعة (%) <span class="req">*</span></label><input type="number" min="0" max="100" class="form-control" id="qualityOfPrintedParts" placeholder="0 - 100"></div>' +
-                    '<div class="col-sm-8" style="margin-bottom:10px"><label>عيوب الطباعة</label><select multiple class="defects" data-placeholder="اختر العيوب">' +
-                    PRINT_DEFECTS.map(function (d) { return '<option>' + d + '</option>'; }).join('') + '</select></div></div>' +
-                    '<label>الملاحظات</label><textarea class="form-control" rows="2" id="printedPartsNotes"></textarea>' +
-                    '<div class="modal-footer-btns">' +
-                    '<button type="button" class="btn btn-success" id="saveAccepted"><i class="fa fa-check"></i> قبول</button>' +
-                    '<button type="button" class="btn btn-danger" id="saveNotAccepted"><i class="fa fa-times"></i> رفض (فشل فى الطباعة)</button></div>';
+                // first choose: مقبول / غير مقبول — the matching form opens under the buttons
+                html = '<div class="rpp-choice">' +
+                    '<button type="button" class="btn btn-default rpp-pick" data-pick="ok"><i class="fa fa-check"></i> مقبول</button>' +
+                    '<button type="button" class="btn btn-default rpp-pick" data-pick="no"><i class="fa fa-times"></i> غير مقبول</button></div>' +
+                    '<div class="rpp-form"></div>';
             } else {
-                body = '<div class="readonly-box"><div class="row">' +
-                    '<div class="col-sm-4"><span class="titleInfo">جودة الأجزاء المطبوعة: </span>' + (r.quality === null ? '-' : r.quality + '%') + '</div>' +
-                    '<div class="col-sm-8"><span class="titleInfo">عيوب الطباعة: </span>' + (r.defects.join('، ') || '-') + '</div></div></div>';
+                var acc = r.quality !== null;
+                html = '<div class="rpp-panel' + (acc ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (acc ? 'fa-check' : 'fa-times') + '"></i> الأجزاء المطبوعة - ' + (acc ? 'مقبول' : 'لم يتم الاستلام بعد') + '</div>' +
+                    '<div class="rpp-body form-horizontal">' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">جودة الأجزاء المطبوعة</label><div class="col-sm-5"><p class="form-control-static">' + (r.defects.join('، ') || '-') + '</p></div>' +
+                    '<div class="col-sm-1"></div><label class="col-sm-2 control-label">النسبة</label><div class="col-sm-2"><p class="form-control-static rpp-pct">' + (acc ? r.quality + '%' : '-') + '</p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">المواد المستخدمة</label><div class="col-sm-5">' + materialsTable(r, false) + '</div></div>' +
+                    '<div class="form-group" style="margin-bottom:0"><label class="col-sm-2 control-label">فنى التجميع</label><div class="col-sm-5"><p class="form-control-static">' + (memberName(r.assembly) || '-') + '</p></div></div>' +
+                    '</div></div>';
             }
-            $('#receiving-printed-parts-container').html(info + body);
-            initModalSelects($m);
+            $('#receiving-printed-parts-container').html(html);
             $m.modal('show');
         });
 
+        // materials of the last upload ("PLA (250 G)") with the actual weight used for each
+        function parseMaterial(x) {
+            var m = /^(.*?) \((\d+(?:\.\d+)?) G\)$/.exec(x);
+            return m ? { name: m[1], weight: m[2] } : { name: x, weight: null };
+        }
+        function materialsTable(r, edit) {
+            var last = r.uploads.filter(function (u) { return u.printFiles.length; }).pop();
+            var list = last ? last.materials.map(parseMaterial) : [];
+            var used = r.materialsUsed || {};
+            var rows = list.map(function (m) {
+                return '<tr><td>' + m.name + '</td><td dir="ltr">' + (m.weight ? m.weight + ' G' : '-') + '</td><td>' +
+                    (edit ? '<div class="input-group input-group-sm"><input type="number" min="0" class="form-control used-weight" data-name="' + m.name + '"><span class="input-group-addon">G</span></div>'
+                        : '<span dir="ltr">' + (used[m.name] ? used[m.name] + ' G' : '-') + '</span>') + '</td></tr>';
+            }).join('');
+            return '<table class="table table-bordered materials-table"><thead><tr><th>المادة</th><th>الوزن الافتراضى</th><th>الوزن الفعلى</th></tr></thead><tbody>' +
+                (rows || '<tr class="empty"><td colspan="3">لم يتم العثور على مواد</td></tr>') + '</tbody></table>';
+        }
+        // النسبة: 100% minus 10% for every defect picked in جودة الأجزاء المطبوعة
+        function defectsPct(list) { return Math.max(0, 100 - (list || []).length * 10); }
+
+        $(document).on('click', '.rpp-pick', function () {
+            var r = current.row, ok = $(this).data('pick') === 'ok';
+            $('.rpp-pick').removeClass('active-ok active-no');
+            $(this).addClass(ok ? 'active-ok' : 'active-no');
+            var save = function (id, cls) {
+                return '<div class="row"><div class="col-sm-9"></div><div class="col-sm-3"><button type="button" class="btn ' + cls + ' btn-save" id="' + id + '"><i class="glyphicon glyphicon-save"></i> حفظ</button></div></div>';
+            };
+            var html = '<div class="rpp-panel' + (ok ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (ok ? 'fa-check' : 'fa-times') + '"></i> الأجزاء المطبوعة - ' + (ok ? 'مقبول' : 'غير مقبول') + '</div>' +
+                '<div class="rpp-body form-horizontal">';
+            if (ok) {
+                html += '<div class="form-group"><label class="col-sm-2 control-label">جودة الأجزاء المطبوعة</label><div class="col-sm-5">' +
+                    '<select multiple class="defects" data-placeholder="">' + PRINT_DEFECTS.map(function (d) { return '<option>' + d + '</option>'; }).join('') + '</select></div>' +
+                    '<div class="col-sm-1"></div><label class="col-sm-2 control-label">النسبة</label><div class="col-sm-2"><p class="form-control-static rpp-pct">100%</p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">المواد المستخدمة <span class="req">*</span></label><div class="col-sm-5">' + materialsTable(r, true) + '</div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">فنى التجميع</label><div class="col-sm-5">' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'فنى التجميع') + '</div></div>' +
+                    save('saveAccepted', 'btn-success');
+            } else {
+                html += '<div class="form-group"><label class="col-sm-2 control-label">الملاحظات <span class="req">*</span></label><div class="col-sm-5">' +
+                    '<textarea class="form-control" rows="4" id="printedPartsNotes" placeholder="إذا كانت العيوب موجودة في بعض من الأجزاء و ليس كلها، اكتب هنا المطلوب إعادة طباعته"></textarea></div></div>' +
+                    save('saveNotAccepted', 'btn-danger');
+            }
+            html += '</div></div>';
+            $('.rpp-form').html(html);
+            initModalSelects($('#view-modal-receiving-printed-parts'));
+        });
+        $(document).on('change', '.rpp-panel .defects', function () {
+            if ($('.rpp-pick.active-ok').length) $('.rpp-pct').text(defectsPct($(this).val()) + '%');
+        });
+
         $(document).on('click', '#saveAccepted', function () {
-            var r = current.row, q = $('#qualityOfPrintedParts').val();
-            if (q === '' || +q < 0 || +q > 100) return notify('أدخل جودة الأجزاء المطبوعة من 0 إلى 100', 'error');
-            r.quality = +q;
-            r.defects = $('#receiving-printed-parts-container .defects').val() || [];
-            moveTo(r, 'in_progress', $('#printedPartsNotes').val());
+            var r = current.row, used = {}, missing = false;
+            $('.rpp-panel .used-weight').each(function () { if ($(this).val() === '') missing = true; used[$(this).data('name')] = +$(this).val(); });
+            if (missing) return notify('أدخل الوزن الفعلى لكل المواد المستخدمة', 'error');
+            r.defects = $('.rpp-panel .defects').val() || [];
+            r.quality = defectsPct(r.defects);
+            r.materialsUsed = used;
+            var tech = $('.rpp-panel .assemblyTechnicianId').val();
+            if (tech) r.assembly = tech;
+            moveTo(r, 'in_progress');
             notify('تم القبول بنجاح');
             $('#view-modal-receiving-printed-parts').modal('hide');
             redraw();
         });
 
         $(document).on('click', '#saveNotAccepted', function () {
-            var r = current.row;
+            var r = current.row, notes = $.trim($('#printedPartsNotes').val());
+            if (!notes) return notify('اكتب الملاحظات (المطلوب إعادة طباعته)', 'error');
             confirmBox('سيتم إيقاف الدورة الحالية وبدء دورة جديدة من "جاهز للطباعة" (فشل فى محاولة الطباعة)', 'نعم، رفض').then(function (ok) {
                 if (!ok) return;
-                r.quality = $('#qualityOfPrintedParts').val() === '' ? null : +$('#qualityOfPrintedParts').val();
-                r.defects = $('#receiving-printed-parts-container .defects').val() || [];
-                restartCycle(r, 'failed_to_print', 'print_ready', 'رفض الأجزاء المطبوعة');
+                r.rejectNotes = notes;
+                restartCycle(r, 'failed_to_print', 'print_ready', 'رفض الأجزاء المطبوعة: ' + notes);
                 notify('تم الرفض بنجاح — تم إنشاء دورة تصنيع جديدة');
                 $('#view-modal-receiving-printed-parts').modal('hide');
                 redraw();
@@ -3130,29 +3266,51 @@
         $(document).on('click', '.receivingFromAssembly', function () {
             var r = openFor(this), edit = current.mode === 'edit';
             var $m = $('#view-modal-receiving-from-assembly');
-            $m.find('.modal-case').text(caseTitle(r));
-            var body;
+            var html;
             if (edit) {
-                body = '<div class="row">' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الافتراضى</label><p class="form-control-static" dir="ltr" style="text-align: right;">' + r.defaultWeight + ' G</p></div>' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>الوزن الفعلى (G) <span class="req">*</span></label><input type="number" min="0" class="form-control" id="actualWeight"></div>' +
-                    '<div class="col-sm-4" style="margin-bottom:10px"><label>فنى التجميع <span class="req">*</span></label>' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'اختر فنى التجميع') + '</div></div>' +
-                    '<div id="weightPreview" class="text-muted" style="margin-bottom:8px"></div>' +
-                    '<label>الملاحظات</label><textarea class="form-control" rows="2" id="assemblyNotes"></textarea>' +
-                    '<div class="modal-footer-btns">' +
-                    '<button type="button" class="btn btn-success" id="saveAcceptReceiving"><i class="fa fa-check"></i> قبول</button>' +
-                    '<button type="button" class="btn btn-danger" id="saveNotAcceptReceiving"><i class="fa fa-times"></i> رفض (إعادة تصنيع)</button></div>';
+                // first choose: تم استلام الطرف و دخوله المخزن / تلف الأجزاء المطبوعة أثناء التجميع
+                html = '<div class="rpp-choice">' +
+                    '<button type="button" class="btn btn-default rfa-pick" data-pick="ok"><i class="fa fa-check"></i> تم استلام الطرف و دخوله المخزن</button>' +
+                    '<button type="button" class="btn btn-default rfa-pick" data-pick="no"><i class="fa fa-times"></i> تلف الأجزاء المطبوعة أثناء التجميع</button></div>' +
+                    '<div class="rfa-form"></div>';
             } else {
-                var p = weightDiffPct(r);
-                body = '<div class="readonly-box"><div class="row">' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الافتراضى: </span><span dir="ltr">' + r.defaultWeight + ' G</span></div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الوزن الفعلى: </span>' + (r.actualWeight ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : '-') + '</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">الفرق: </span>' + (p === null ? '-' : '<span dir="ltr">' + signed(r.actualWeight - r.defaultWeight) + ' G (' + signed(p.toFixed(1)) + '%)</span>') + '</div>' +
-                    '<div class="col-sm-3"><span class="titleInfo">فنى التجميع: </span>' + (memberName(r.assembly) || '-') + '</div></div></div>';
+                var p = weightDiffPct(r), done = !!r.actualWeight;
+                html = '<div class="rpp-panel' + (done ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (done ? 'fa-check' : 'fa-times') + '"></i> ' + (done ? 'تم استلام الطرف و دخوله المخزن' : 'لم يتم الاستلام بعد') + '</div>' +
+                    '<div class="rpp-body form-horizontal">' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الافتراضى</label><div class="col-sm-5"><p class="form-control-static"><span dir="ltr">' + r.defaultWeight + ' G</span></p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الفعلى</label><div class="col-sm-5"><p class="form-control-static">' + (done ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : '-') + '</p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">الفرق</label><div class="col-sm-5"><p class="form-control-static">' + (p === null ? '-' : '<span dir="ltr">' + signed(r.actualWeight - r.defaultWeight) + ' G (' + signed(p.toFixed(1)) + '%)</span>') + '</p></div></div>' +
+                    '<div class="form-group" style="margin-bottom:0"><label class="col-sm-2 control-label">فنى التجميع</label><div class="col-sm-5"><p class="form-control-static">' + (memberName(r.assembly) || '-') + '</p></div></div>' +
+                    '</div></div>';
             }
-            $('#receiving-from-assembly-container').html(body);
-            initModalSelects($m);
+            $('#receiving-from-assembly-container').html(html);
             $m.modal('show');
+        });
+
+        $(document).on('click', '.rfa-pick', function () {
+            var r = current.row, ok = $(this).data('pick') === 'ok';
+            $('.rfa-pick').removeClass('active-ok active-no');
+            $(this).addClass(ok ? 'active-ok' : 'active-no');
+            var save = function (id, cls) {
+                return '<div class="row"><div class="col-sm-9"></div><div class="col-sm-3"><button type="button" class="btn ' + cls + ' btn-save" id="' + id + '"><i class="glyphicon glyphicon-save"></i> حفظ</button></div></div>';
+            };
+            var html = '<div class="rpp-panel' + (ok ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (ok ? 'fa-check' : 'fa-times') + '"></i> ' +
+                (ok ? 'تم استلام الطرف و دخوله المخزن' : 'تلف الأجزاء المطبوعة أثناء التجميع') + '</div><div class="rpp-body form-horizontal">';
+            if (ok) {
+                html += '<div class="form-group"><label class="col-sm-2 control-label">الوزن الافتراضى</label><div class="col-sm-5"><p class="form-control-static"><span dir="ltr">' + r.defaultWeight + ' G</span></p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الفعلى <span class="req">*</span></label><div class="col-sm-5">' +
+                    '<div class="input-group"><input type="number" min="0" class="form-control" id="actualWeight"><span class="input-group-addon">G</span></div>' +
+                    '<div id="weightPreview" class="text-muted" style="margin-top:6px"></div></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">فنى التجميع <span class="req">*</span></label><div class="col-sm-5">' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'فنى التجميع') + '</div></div>' +
+                    save('saveAcceptReceiving', 'btn-success');
+            } else {
+                html += '<div class="form-group"><label class="col-sm-2 control-label">الملاحظات <span class="req">*</span></label><div class="col-sm-5">' +
+                    '<textarea class="form-control" rows="4" id="assemblyNotes" placeholder="اكتب سبب التلف والأجزاء التالفة"></textarea></div></div>' +
+                    save('saveNotAcceptReceiving', 'btn-danger');
+            }
+            html += '</div></div>';
+            $('.rfa-form').html(html);
+            initModalSelects($('#view-modal-receiving-from-assembly'));
         });
 
         $(document).on('input', '#actualWeight', function () {
@@ -3168,17 +3326,18 @@
             if (!tech) return notify('اختر فنى التجميع', 'error');
             r.actualWeight = w;
             r.assembly = tech;
-            moveTo(r, r.type === 'new' ? 'new_delivery_ready' : 'maintenance_delivery_ready', $('#assemblyNotes').val());
+            moveTo(r, r.type === 'new' ? 'new_delivery_ready' : 'maintenance_delivery_ready');
             notify('تم القبول بنجاح');
             $('#view-modal-receiving-from-assembly').modal('hide');
             redraw();
         });
 
         $(document).on('click', '#saveNotAcceptReceiving', function () {
-            var r = current.row;
-            confirmBox('سيتم إيقاف الدورة الحالية وبدء دورة جديدة من "جاهز للتصميم" (إعادة تصنيع - تلف وقت التجميع)', 'نعم، رفض').then(function (ok) {
+            var r = current.row, notes = $.trim($('#assemblyNotes').val());
+            if (!notes) return notify('اكتب الملاحظات (سبب التلف)', 'error');
+            confirmBox('سيتم إيقاف الدورة الحالية وبدء دورة جديدة من "جاهز للتصميم" (إعادة تصنيع - تلف وقت التجميع)', 'نعم، تأكيد').then(function (ok) {
                 if (!ok) return;
-                restartCycle(r, 'remanufacturing_damage_to_the_end_during_assembly', 'design_ready', 'رفض استلام الطرف من التجميع');
+                restartCycle(r, 'remanufacturing_damage_to_the_end_during_assembly', 'design_ready', 'تلف الأجزاء المطبوعة أثناء التجميع: ' + notes);
                 notify('تم الرفض بنجاح — تم إنشاء دورة تصنيع جديدة');
                 $('#view-modal-receiving-from-assembly').modal('hide');
                 redraw();
