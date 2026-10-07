@@ -1228,6 +1228,19 @@
         .rpp-panel .materials-table .empty td { background: #f9f9f9; color: #555; }
         .rpp-panel .btn-save { border-radius: 3px !important; padding: 4px 12px; font-size: 13px; }
 
+        /* ---- sections inside استلام الطرف من التجميع (same as the live page) ---- */
+        .section-title { position: relative; padding: 10px 16px; margin: 20px 0 16px; font-size: 19px; font-weight: 700; border-radius: 12px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06); overflow: hidden; }
+        .section-title span { position: relative; z-index: 2; }
+        .section-title::after { content: ''; position: absolute; right: -40px; top: -40px; width: 200px; height: 120px; border-radius: 50%; }
+        .section-title.accessories-section { color: #155724; background: linear-gradient(135deg, #e8f8ee, #d4f4df); border-left: 6px solid #28a745; }
+        .section-title.accessories-section::after { background: rgba(40, 167, 69, 0.12); }
+        .section-title.components-section { color: #0c5460; background: linear-gradient(135deg, #e8f7fb, #d5f0f7); border-left: 6px solid #17a2b8; }
+        .section-title.components-section::after { background: rgba(23, 162, 184, 0.12); }
+        .rfa-export { background: #ff6a00; border-color: #ff6a00; color: #fff; border-radius: 3px !important; padding: 4px 10px; font-size: 12.5px; margin-bottom: 8px; }
+        .rfa-export:hover, .rfa-export:focus { background: #e85f00; color: #fff; }
+        .rfa-items .form-group { margin-bottom: 10px; }
+        .rfa-items input[type=checkbox] { width: 16px; height: 16px; margin-top: 9px; }
+
         /* ---- modals ---- */
         .modal-dialog.modal-wide {
             width: 65%;
@@ -3241,6 +3254,8 @@
             r.defects = $('.rpp-panel .defects').val() || [];
             r.quality = defectsPct(r.defects);
             r.materialsUsed = used;
+            var total = Object.keys(used).reduce(function (t, k) { return t + used[k]; }, 0);
+            if (total) r.actualWeight = total;
             var tech = $('.rpp-panel .assemblyTechnicianId').val();
             if (tech) r.assembly = tech;
             moveTo(r, 'in_progress');
@@ -3274,17 +3289,60 @@
                     '<button type="button" class="btn btn-default rfa-pick" data-pick="no"><i class="fa fa-times"></i> تلف الأجزاء المطبوعة أثناء التجميع</button></div>' +
                     '<div class="rfa-form"></div>';
             } else {
-                var p = weightDiffPct(r), done = !!r.actualWeight;
-                html = '<div class="rpp-panel' + (done ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (done ? 'fa-check' : 'fa-times') + '"></i> ' + (done ? 'تم استلام الطرف و دخوله المخزن' : 'لم يتم الاستلام بعد') + '</div>' +
+                var done = STAGE_INDEX[r.status] >= 5;
+                html = '<div class="rpp-panel' + (done ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (done ? 'fa-check' : 'fa-times') + '"></i> ' + (done ? 'استلام الطرف من التجميع - مقبول' : 'لم يتم الاستلام بعد') + '</div>' +
                     '<div class="rpp-body form-horizontal">' +
-                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الافتراضى</label><div class="col-sm-5"><p class="form-control-static"><span dir="ltr">' + r.defaultWeight + ' G</span></p></div></div>' +
-                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الفعلى</label><div class="col-sm-5"><p class="form-control-static">' + (done ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : '-') + '</p></div></div>' +
-                    '<div class="form-group"><label class="col-sm-2 control-label">الفرق</label><div class="col-sm-5"><p class="form-control-static">' + (p === null ? '-' : '<span dir="ltr">' + signed(r.actualWeight - r.defaultWeight) + ' G (' + signed(p.toFixed(1)) + '%)</span>') + '</p></div></div>' +
-                    '<div class="form-group" style="margin-bottom:0"><label class="col-sm-2 control-label">فنى التجميع</label><div class="col-sm-5"><p class="form-control-static">' + (memberName(r.assembly) || '-') + '</p></div></div>' +
+                    '<div class="form-group"><label class="col-sm-2 control-label">فنى التجميع</label><div class="col-sm-4"><p class="form-control-static">' + (memberName(r.assembly) || '-') + '</p></div></div>' +
+                    rfaSection('accessories', false) + rfaSection('components', false) +
                     '</div></div>';
             }
             $('#receiving-from-assembly-container').html(html);
             $m.modal('show');
+        });
+
+        // الاكسسوارات / المكونات delivered with the limb (checkbox or a select per item)
+        var RFA_SECTIONS = {
+            accessories: { title: 'الاكسسوارات', cls: 'accessories-section', items: [
+                { key: 'siliconeGlove', label: 'جوانتى سيليكون', type: 'check' },
+                { key: 'triko', label: 'تريكو', type: 'check' },
+                { key: 'liner', label: 'بطانة', type: 'select', placeholder: 'تخانة', options: ['3 مم', '5 مم', '7 مم'] },
+                { key: 'tape', label: 'سكوتش', type: 'select', placeholder: 'عرض', options: ['2.5 سم', '5 سم'] }
+            ] },
+            components: { title: 'المكونات', cls: 'components-section', items: [
+                { key: 'arm', label: 'ذراع', type: 'select', placeholder: 'نوع الذراع', options: ['ذراع كهربائى', 'ذراع ميكانيكى', 'ذراع تجميلى'] },
+                { key: 'innerHand', label: 'كف تصنيع داخلي', type: 'check' },
+                { key: 'cosmeticGlove', label: 'جوانتي تجميل', type: 'select', placeholder: 'النوع', options: ['S', 'M', 'L'] }
+            ] }
+        };
+        function rfaSection(key, edit) {
+            var sec = RFA_SECTIONS[key], saved = (current.row[key] || {});
+            return '<div class="section-title ' + sec.cls + '"><span>' + sec.title + '</span></div>' +
+                '<button type="button" class="btn rfa-export" data-section="' + key + '"><i class="fa fa-file-excel-o"></i> تصدير كملف إكسيل</button>' +
+                '<div class="rfa-items" data-section="' + key + '">' + sec.items.map(function (it) {
+                    var v = saved[it.key], field;
+                    if (!edit) field = '<p class="form-control-static">' + (it.type === 'check' ? (v ? '<i class="fa fa-check text-green"></i>' : '-') : (v || '-')) + '</p>';
+                    else if (it.type === 'check') field = '<input type="checkbox" data-key="' + it.key + '"' + (v ? ' checked' : '') + '>';
+                    else field = '<select class="form-control" data-key="' + it.key + '" data-placeholder="' + it.placeholder + '"><option value=""></option>' +
+                        it.options.map(function (o) { return '<option' + (o === v ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
+                    return '<div class="form-group"><label class="col-sm-2 control-label">' + it.label + '</label><div class="col-sm-' + (it.type === 'check' ? '1' : '3') + '">' + field + '</div></div>';
+                }).join('') + '</div>';
+        }
+        function rfaValues(key) {
+            var out = {};
+            $('.rfa-items[data-section="' + key + '"] [data-key]').each(function () {
+                out[$(this).data('key')] = this.type === 'checkbox' ? this.checked : ($(this).val() || '');
+            });
+            return out;
+        }
+        $(document).on('click', '.rfa-export', function () {
+            var key = $(this).data('section'), sec = RFA_SECTIONS[key], r = current.row;
+            var vals = $('.rfa-items[data-section="' + key + '"] [data-key]').length ? rfaValues(key) : (r[key] || {});
+            var lines = [[csvCell('الكود'), csvCell(r.code)].join(','), [csvCell('الاسم'), csvCell(r.name)].join(','), '', [csvCell(sec.title), csvCell('القيمة')].join(',')];
+            sec.items.forEach(function (it) {
+                var v = vals[it.key];
+                lines.push([csvCell(it.label), csvCell(it.type === 'check' ? (v ? 'نعم' : 'لا') : (v || '-'))].join(','));
+            });
+            download(key + '_' + r.code + '.csv', '\ufeff' + lines.join('\r\n'));
         });
 
         $(document).on('click', '.rfa-pick', function () {
@@ -3295,17 +3353,14 @@
                 return '<div class="row"><div class="col-sm-9"></div><div class="col-sm-3"><button type="button" class="btn ' + cls + ' btn-save" id="' + id + '"><i class="glyphicon glyphicon-save"></i> حفظ</button></div></div>';
             };
             var html = '<div class="rpp-panel' + (ok ? '' : ' no') + '"><div class="rpp-head"><i class="fa ' + (ok ? 'fa-check' : 'fa-times') + '"></i> ' +
-                (ok ? 'تم استلام الطرف و دخوله المخزن' : 'تلف الأجزاء المطبوعة أثناء التجميع') + '</div><div class="rpp-body form-horizontal">';
+                (ok ? 'استلام الطرف من التجميع - مقبول' : 'استلام الطرف من التجميع - غير مقبول') + '</div><div class="rpp-body form-horizontal">';
             if (ok) {
-                html += '<div class="form-group"><label class="col-sm-2 control-label">الوزن الافتراضى</label><div class="col-sm-5"><p class="form-control-static"><span dir="ltr">' + r.defaultWeight + ' G</span></p></div></div>' +
-                    '<div class="form-group"><label class="col-sm-2 control-label">الوزن الفعلى <span class="req">*</span></label><div class="col-sm-5">' +
-                    '<div class="input-group"><input type="number" min="0" class="form-control" id="actualWeight"><span class="input-group-addon">G</span></div>' +
-                    '<div id="weightPreview" class="text-muted" style="margin-top:6px"></div></div></div>' +
-                    '<div class="form-group"><label class="col-sm-2 control-label">فنى التجميع <span class="req">*</span></label><div class="col-sm-5">' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'فنى التجميع') + '</div></div>' +
+                html += '<div class="form-group"><label class="col-sm-2 control-label">فنى التجميع <span class="req">*</span></label><div class="col-sm-4">' + memberSelect('assemblyTechnicianId', ASSEMBLY_TEAM, r.assembly, 'فنى التجميع') + '</div></div>' +
+                    rfaSection('accessories', true) + rfaSection('components', true) +
                     save('saveAcceptReceiving', 'btn-success');
             } else {
                 html += '<div class="form-group"><label class="col-sm-2 control-label">الملاحظات <span class="req">*</span></label><div class="col-sm-5">' +
-                    '<textarea class="form-control" rows="4" id="assemblyNotes" placeholder="اكتب سبب التلف والأجزاء التالفة"></textarea></div></div>' +
+                    '<textarea class="form-control" rows="4" id="assemblyNotes" placeholder="إذا كانت العيوب موجودة في بعض من الأجزاء و ليس كلها، اكتب هنا المطلوب إعادة طباعته"></textarea></div></div>' +
                     save('saveNotAcceptReceiving', 'btn-danger');
             }
             html += '</div></div>';
@@ -3321,11 +3376,11 @@
         });
 
         $(document).on('click', '#saveAcceptReceiving', function () {
-            var r = current.row, w = +$('#actualWeight').val(), tech = $('#receiving-from-assembly-container .assemblyTechnicianId').val();
-            if (!w) return notify('أدخل الوزن الفعلى', 'error');
+            var r = current.row, tech = $('#receiving-from-assembly-container .assemblyTechnicianId').val();
             if (!tech) return notify('اختر فنى التجميع', 'error');
-            r.actualWeight = w;
             r.assembly = tech;
+            r.accessories = rfaValues('accessories');
+            r.components = rfaValues('components');
             moveTo(r, r.type === 'new' ? 'new_delivery_ready' : 'maintenance_delivery_ready');
             notify('تم القبول بنجاح');
             $('#view-modal-receiving-from-assembly').modal('hide');
