@@ -438,6 +438,7 @@
         .postpone-box { display: inline-block; text-align: right; background: #e3ebf1; border-radius: 6px; padding: 4px 8px; margin: 3px 0; font-size: 12px; color: #333; white-space: nowrap; }
         .postpone-box div { line-height: 26px; }
         .postpone-box b { display: inline-block; background: #fff; border: 1px solid #d7dbe0; border-radius: 4px; padding: 0 6px; margin: 0 4px; line-height: 20px; direction: ltr; }
+        .phones-cell { white-space: nowrap; direction: ltr; display: inline-block; line-height: 1.35; }
         .order-cell { white-space: nowrap; }
         .order-cell small { display: block; color: gray; margin-top: 2px; }
 
@@ -1329,23 +1330,24 @@
                                             <span class="col-lg-4 text-yellow text-bold"><input id="toggle" type="checkbox" autocomplete="off"> اختيار الكل</span>
                                             <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الطلب</span>
                                             <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
-                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
-                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
-                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
-                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
-                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
-                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
-                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="18" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الهواتف</span>
+                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="15" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="17" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2013,6 +2015,16 @@
                 '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + v + '" title="نسخ">نسخ</button>' +
                 '</span>';
         }
+        // mock phone numbers (1-3 per case), derived from the case id so the random data sequence is untouched
+        function casePhones(row) {
+            if (row.phones) return row.phones;
+            var pre = ['010', '011', '012', '015'], n = 1 + (row.id * 7) % 3, out = [];
+            for (var i = 0; i < n; i++) {
+                var x = (row.id * 2654435761 + i * 40503 * 97) % 100000000;
+                out.push(pre[(row.id + i * 3) % 4] + String(Math.abs(x)).padStart(8, '0'));
+            }
+            return (row.phones = out);
+        }
         function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
 
         var COLUMNS = [
@@ -2026,6 +2038,7 @@
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
                 }
             },
+            { title: 'الهواتف', render: function (r) { return '<span class="phones-cell">' + casePhones(r).join('<br>-<br>') + '</span>'; } },
             { title: 'بيانات التمويل', render: function (r) { return r.funding; } },
             {
                 title: 'بيانات البتر', render: function (r) {
@@ -2304,7 +2317,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v3_" + userID;
+            var storageKey = "engineering_table_columns_v4_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
