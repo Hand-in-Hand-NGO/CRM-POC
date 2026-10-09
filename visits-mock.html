@@ -201,6 +201,15 @@
             background: #d3eacb;
         }
 
+        .stats-level { margin-top: 16px; }
+        .stats-level-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; padding: 0 8px; }
+        .stats-level-head select { width: 110px; height: 28px; padding: 2px 6px; }
+        .stats-level-range { font-size: 11px; color: #999; margin-bottom: 6px; direction: ltr; text-align: right; padding: 0 8px; }
+        .stats-table.level-table td.stats-label { white-space: nowrap; }
+        .stats-table.level-table th { white-space: normal; }
+        .stats-table tr.level-zero td { color: #bbb; }
+        .stats-table td.level-total { background: #eef2f6 !important; }
+
         .stats-refresh.spinning i {
             animation: fa-spin .8s linear infinite;
         }
@@ -999,6 +1008,34 @@
             </thead>
             <tbody id="statsBody"></tbody>
         </table>
+
+        <!-- حسب المرحلة ونوع البتر -->
+        <div class="stats-level">
+            <div class="stats-level-head">
+                <b>حسب المرحلة ونوع البتر</b>
+                <select id="levelPeriod" class="form-control input-sm">
+                    <option value="today">اليوم</option>
+                    <option value="week">الأسبوع</option>
+                    <option value="month" selected>الشهر</option>
+                    <option value="quarter">ربع سنوي</option>
+                    <option value="year">سنوية</option>
+                </select>
+            </div>
+            <div class="stats-level-range" id="levelRange"></div>
+            <table class="stats-table level-table">
+                <thead>
+                    <tr>
+                        <th>نوع البتر</th>
+                        <th>التقييم الطبي والقياسات</th>
+                        <th>تسليم طرف جديد</th>
+                        <th>تقييم الصيانة</th>
+                        <th>تسليم الصيانة</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody id="levelBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <!-- ===================== Content (same markup as the live page) ===================== -->
@@ -2961,7 +2998,63 @@
             return { avg: n ? Math.round(sum / n * 10) / 10 : null, n: n };
         }
 
+        // counts per stage (the 4 assessment columns) split by amputation level — table rows + seeded history
+        var STAGE_KEYS = ['new_mdm', 'new_fitting', 'maintenance_mdm', 'maintenance_fitting'];
+        var STAGE_LABELS = { new_mdm: 'التقييم الطبي والقياسات', new_fitting: 'تسليم طرف جديد', maintenance_mdm: 'تقييم الصيانة', maintenance_fitting: 'تسليم الصيانة' };
+        var STAGE_HISTORY = (function () {
+            var out = [], s = 13;
+            function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+            var weights = [5, 4, 2, 1.5, 1, 0.6, 1, 0.8], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
+            function level() { var x = r() * wSum; for (var i = 0; i < weights.length; i++) { x -= weights[i]; if (x <= 0) return AMPUTATION_LEVELS[i]; } return AMPUTATION_LEVELS[0]; }
+            var rates = { new_mdm: 4, new_fitting: 3.4, maintenance_mdm: 1.6, maintenance_fitting: 1.2 };
+            var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue;
+                STAGE_KEYS.forEach(function (k) {
+                    var n = Math.floor(rates[k] * 2 * r());
+                    for (var i = 0; i < n; i++) out.push({ stage: k, level: level(), date: d.format('YYYY-MM-DD') });
+                });
+            }
+            return out;
+        })();
+        function stageLevelBetween(from, to) {
+            var m = {};
+            AMPUTATION_LEVELS.forEach(function (l) { m[l] = {}; STAGE_KEYS.forEach(function (k) { m[l][k] = 0; }); });
+            function add(level, stage, date) { if (date >= from && date <= to && m[level]) m[level][stage]++; }
+            STAGE_HISTORY.forEach(function (e) { add(e.level, e.stage, e.date); });
+            ROWS.forEach(function (row) {
+                STAGE_KEYS.forEach(function (k) { var a = row.assessments[k]; if (a) add(row.level, k, a.date); });
+            });
+            var totals = {}, total = 0;
+            STAGE_KEYS.forEach(function (k) { totals[k] = 0; });
+            var rows = AMPUTATION_LEVELS.map(function (l) {
+                var t = 0;
+                STAGE_KEYS.forEach(function (k) { t += m[l][k]; totals[k] += m[l][k]; });
+                total += t;
+                return { level: l, counts: m[l], total: t };
+            }).sort(function (a, b) { return b.total - a.total; });
+            return { rows: rows, totals: totals, total: total };
+        }
+
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
+
+        function renderLevelTable() {
+            var key = $('#levelPeriod').val() || 'month', t = TODAY, from, to, label;
+            if (key === 'today') { from = t.clone(); to = t.clone(); label = t.format('YYYY-MM-DD'); }
+            else if (key === 'week') { from = t.clone().subtract(t.day(), 'days'); to = from.clone().add(6, 'days'); label = from.format('YYYY-MM-DD') + ' - ' + to.format('YYYY-MM-DD'); }
+            else { from = t.clone().startOf(key); to = t.clone().endOf(key); label = from.format('YYYY-MM-DD') + ' - ' + to.format('YYYY-MM-DD'); }
+            var d = stageLevelBetween(from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'));
+            $('#levelRange').text(label);
+            var html = d.rows.map(function (r) {
+                return '<tr class="row-period' + (r.total ? '' : ' level-zero') + '"><td class="stats-label">' + r.level + '</td>' +
+                    STAGE_KEYS.map(function (k) { return '<td class="stats-num">' + fmt(r.counts[k]) + '</td>'; }).join('') +
+                    '<td class="stats-num level-total">' + fmt(r.total) + '</td></tr>';
+            }).join('');
+            html += '<tr class="row-percent"><td class="stats-label">الإجمالي</td>' +
+                STAGE_KEYS.map(function (k) { return '<td class="stats-num">' + fmt(d.totals[k]) + '</td>'; }).join('') +
+                '<td class="stats-num">' + fmt(d.total) + '</td></tr>';
+            $('#levelBody').html(html);
+        }
 
         function renderStats() {
             var ev = statEvents(), t = TODAY;
@@ -3009,6 +3102,7 @@
                 });
             });
             $('#statsBody').html(html);
+            renderLevelTable();
         }
 
         $(function () {
@@ -3020,6 +3114,8 @@
                 $('#StatisicsMeasurementsAndDeliveries, #statistics-toggle').toggleClass('open', open);
                 $(this).find('i').toggleClass('fa-chevron-right', !open).toggleClass('fa-chevron-left', open);
             });
+
+            $('#levelPeriod').on('change', renderLevelTable);
 
             $('#refresh_dashboard').on('click', function () {
                 var $b = $(this).addClass('spinning');

@@ -260,6 +260,14 @@
         .vs-cal-grid button:disabled { opacity: .35; cursor: default; }
         .vs-cal-foot { border-top: 1px solid var(--vs-border-soft); margin-top: 8px; padding-top: 8px; text-align: center; }
         .vs-cal-foot button { border: 0; background: none; color: var(--vs-accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .vs-level-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; font-variant-numeric: tabular-nums; }
+        .vs-level-table th, .vs-level-table td { border: 1px solid var(--vs-border); padding: 6px 6px; text-align: center; }
+        .vs-level-table th { background: var(--vs-bg); color: var(--vs-text-dim); font-size: 11px; font-weight: 700; }
+        .vs-level-table th .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 4px; }
+        .vs-level-table td:first-child { text-align: right; font-weight: 600; white-space: nowrap; }
+        .vs-level-table tr.zero td { color: var(--vs-text-faint); }
+        .vs-level-table td.tot { font-weight: 700; background: var(--vs-bg); }
+        .vs-level-table tfoot td { font-weight: 700; background: var(--vs-surface-2); }
         .vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
         .vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
         .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -3052,6 +3060,44 @@
             return { avg: n ? Math.round(sum / n * 10) / 10 : null, n: n };
         }
 
+        // counts per stage (the 4 assessment columns) split by amputation level — table rows + seeded history
+        var STAGE_KEYS = ['new_mdm', 'new_fitting', 'maintenance_mdm', 'maintenance_fitting'];
+        var STAGE_LABELS = { new_mdm: 'التقييم الطبي والقياسات', new_fitting: 'تسليم طرف جديد', maintenance_mdm: 'تقييم الصيانة', maintenance_fitting: 'تسليم الصيانة' };
+        var STAGE_HISTORY = (function () {
+            var out = [], s = 13;
+            function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+            var weights = [5, 4, 2, 1.5, 1, 0.6, 1, 0.8], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
+            function level() { var x = r() * wSum; for (var i = 0; i < weights.length; i++) { x -= weights[i]; if (x <= 0) return AMPUTATION_LEVELS[i]; } return AMPUTATION_LEVELS[0]; }
+            var rates = { new_mdm: 4, new_fitting: 3.4, maintenance_mdm: 1.6, maintenance_fitting: 1.2 };
+            var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue;
+                STAGE_KEYS.forEach(function (k) {
+                    var n = Math.floor(rates[k] * 2 * r());
+                    for (var i = 0; i < n; i++) out.push({ stage: k, level: level(), date: d.format('YYYY-MM-DD') });
+                });
+            }
+            return out;
+        })();
+        function stageLevelBetween(from, to) {
+            var m = {};
+            AMPUTATION_LEVELS.forEach(function (l) { m[l] = {}; STAGE_KEYS.forEach(function (k) { m[l][k] = 0; }); });
+            function add(level, stage, date) { if (date >= from && date <= to && m[level]) m[level][stage]++; }
+            STAGE_HISTORY.forEach(function (e) { add(e.level, e.stage, e.date); });
+            ROWS.forEach(function (row) {
+                STAGE_KEYS.forEach(function (k) { var a = row.assessments[k]; if (a) add(row.level, k, a.date); });
+            });
+            var totals = {}, total = 0;
+            STAGE_KEYS.forEach(function (k) { totals[k] = 0; });
+            var rows = AMPUTATION_LEVELS.map(function (l) {
+                var t = 0;
+                STAGE_KEYS.forEach(function (k) { t += m[l][k]; totals[k] += m[l][k]; });
+                total += t;
+                return { level: l, counts: m[l], total: t };
+            }).sort(function (a, b) { return b.total - a.total; });
+            return { rows: rows, totals: totals, total: total };
+        }
+
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
 
         var STAT_LABELS = { measurements: 'القياسات', deliveries: 'التسليمات', maintenanceAssess: 'تقييم صيانة', maintenanceDeliver: 'تسليم صيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
@@ -3129,6 +3175,7 @@
                 key: key, label: PERIOD_LABELS[key], range: r.range, from: f, to: t, isCurrent: isCurrent,
                 values: countBetween(ev, f, t), target: TARGETS[key] || null,
                 avgDays: avgDaysBetween(f, t),
+                byLevel: stageLevelBetween(f, t),
                 trend: buildTrendBuckets(ev, key === 'week' ? r.to.clone() : trendEnd, meta.unit, meta.count),
                 trendLabel: meta.label + (isCurrent ? '' : ' — حتى ' + trendEnd.format('YYYY-MM-DD'))
             };
@@ -3189,6 +3236,10 @@
                     lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
                 lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
+                lines.push('', q('حسب المرحلة ونوع البتر'));
+                lines.push([q('نوع البتر')].concat(STAGE_KEYS.map(function (k) { return q(STAGE_LABELS[k]); })).concat([q('الإجمالي')]).join(','));
+                p.byLevel.rows.forEach(function (r) { lines.push([q(r.level)].concat(STAGE_KEYS.map(function (k) { return r.counts[k]; })).concat([r.total]).join(',')); });
+                lines.push([q('الإجمالي')].concat(STAGE_KEYS.map(function (k) { return p.byLevel.totals[k]; })).concat([p.byLevel.total]).join(','));
                 lines.push('', q(p.trendLabel));
                 lines.push([q('الفترة')].concat(STAT_KEYS.map(function (k) { return q(STAT_LABELS[k]); })).join(','));
                 p.trend.forEach(function (pt) { lines.push([q(pt.name)].concat(STAT_KEYS.map(function (k) { return pt[k]; })).join(',')); });
@@ -3330,7 +3381,8 @@
          ===================================================================== -->
     <script type="text/babel" data-presets="react,env" data-plugins="transform-react-jsx">
         const { useState, useMemo, useEffect, useRef } = React;
-        const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend } = Recharts;
+        const { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip: RTooltip, LineChart, Line, Legend, BarChart, Bar } = Recharts;
+        const STAGE_COLORS = { new_mdm: "#2f6fed", new_fitting: "#15803d", maintenance_mdm: "#f96a74", maintenance_fitting: "#ff6a00" };
 
         const STAT_COLORS = ["#2f6fed", "#0d9488", "#7c6ef0", "#9333ea", "#dc2626", "#15803d"];
 
@@ -3558,6 +3610,45 @@
                                         })}
                                     </div>
                                 )}
+                        </ChartCard>
+                    </div>
+
+                    <div className="vs-chart-group">
+                        <p className="vs-group-label">حسب المرحلة ونوع البتر</p>
+                        <ChartCard title="عدد الحالات في كل مرحلة حسب نوع البتر" subtitle={<span dir="ltr">{period.range}</span>}>
+                            {period.byLevel.total === 0 ? (
+                                <div className="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>
+                            ) : (
+                                <div>
+                                    <ResponsiveContainer width="100%" height={Math.max(180, period.byLevel.rows.filter(r => r.total > 0).length * 34 + 50)}>
+                                        <BarChart layout="vertical" data={period.byLevel.rows.filter(r => r.total > 0).map(r => Object.assign({ name: r.level }, r.counts))} margin={{ left: 10, right: 10 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e5ea" horizontal={false} />
+                                            <XAxis type="number" reversed tick={{ fill: "#6b7280", fontSize: 11, fontFamily: "var(--vs-font-mono)" }} axisLine={{ stroke: "#d6d9df" }} tickLine={false} allowDecimals={false} />
+                                            <YAxis type="category" dataKey="name" orientation="right" width={92} tick={{ fill: "#1a1d23", fontSize: 11, fontFamily: "var(--vs-font-ui)" }} axisLine={false} tickLine={false} />
+                                            <RTooltip content={<ChartTooltip />} cursor={{ fill: "rgba(47,111,237,.06)" }} />
+                                            <Legend wrapperStyle={{ fontSize: 11, fontFamily: "var(--vs-font-ui)" }} />
+                                            {STAGE_KEYS.map(k => <Bar key={k} dataKey={k} name={STAGE_LABELS[k]} stackId="s" fill={STAGE_COLORS[k]} maxBarSize={22} />)}
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                    <table className="vs-level-table">
+                                        <thead>
+                                            <tr><th>نوع البتر</th>{STAGE_KEYS.map(k => <th key={k}><span className="dot" style={{ background: STAGE_COLORS[k] }}></span>{STAGE_LABELS[k]}</th>)}<th>الإجمالي</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            {period.byLevel.rows.map(r => (
+                                                <tr key={r.level} className={r.total === 0 ? "zero" : ""}>
+                                                    <td>{r.level}</td>
+                                                    {STAGE_KEYS.map(k => <td key={k}>{r.counts[k].toLocaleString("en-US")}</td>)}
+                                                    <td className="tot">{r.total.toLocaleString("en-US")}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr><td>الإجمالي</td>{STAGE_KEYS.map(k => <td key={k}>{period.byLevel.totals[k].toLocaleString("en-US")}</td>)}<td className="tot">{period.byLevel.total.toLocaleString("en-US")}</td></tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            )}
                         </ChartCard>
                     </div>
 
