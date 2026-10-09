@@ -2043,7 +2043,8 @@
             { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
             { title: 'المكونات', render: function (r) { return list(r.components); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
-            { title: 'الفيديوهات', render: function (r) { return r.videos ? '<i class="fa fa-video-camera text-primary"></i> ' + r.videos : '-'; } },
+            // only videos really uploaded (رفع فيديو in the reception popup) — nothing is pre-filled
+            { title: 'الفيديوهات', render: function (r) { var n = (r.attachments || []).filter(function (a) { return a.type === 'فيديو'; }).length; return n ? '<i class="fa fa-video-camera text-primary"></i> ' + n : '-'; } },
             { title: 'التقييم الطبي و القياسات', render: assessmentCell('new_mdm') },
             { title: 'تاريخ الحضور', attend: true, render: attendDate('new_mdm') },
             { title: 'تسليم طرف جديد', render: assessmentCell('new_fitting') },
