@@ -1009,10 +1009,10 @@
             <tbody id="statsBody"></tbody>
         </table>
 
-        <!-- حسب المرحلة ونوع البتر -->
+        <!-- حسب المرحلة ومستوى البتر -->
         <div class="stats-level">
             <div class="stats-level-head">
-                <b>حسب المرحلة ونوع البتر</b>
+                <b>حسب المرحلة ومستوى البتر</b>
                 <select id="levelPeriod" class="form-control input-sm">
                     <option value="today">اليوم</option>
                     <option value="week">الأسبوع</option>
@@ -1025,7 +1025,7 @@
             <table class="stats-table level-table">
                 <thead>
                     <tr>
-                        <th>نوع البتر</th>
+                        <th>مستوى البتر</th>
                         <th>التقييم الطبي والقياسات</th>
                         <th>تسليم طرف جديد</th>
                         <th>تقييم الصيانة</th>
@@ -1669,7 +1669,7 @@
         }
 
         var CITIES = ['القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'المنوفية', 'الشرقية', 'الغربية', 'القليوبية', 'أسيوط', 'سوهاج', 'المنيا', 'بني سويف', 'الفيوم', 'قنا', 'أسوان'];
-        var AMPUTATION_LEVELS = ['تحت الركبة', 'فوق الركبة', 'تحت الكوع', 'فوق الكوع', 'مفصل الركبة', 'مفصل الحوض', 'القدم الجزئي', 'الرسغ'];
+        var AMPUTATION_LEVELS = ['تحت الكوع', 'الكف', 'تحت الركبة', 'مشط القدم', 'فوق الكوع', 'فوق الركبة', 'أصابع يد', 'كرسي متحرك', 'فرق طول', 'سقط القدم', 'حوض'];
 
         // Mock data is generated relative to the real "today" so اليوم / هذا الاسبوع always hit rows
         var TODAY = moment().startOf('day');
@@ -3004,7 +3004,7 @@
         var STAGE_HISTORY = (function () {
             var out = [], s = 13;
             function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-            var weights = [5, 4, 2, 1.5, 1, 0.6, 1, 0.8], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
+            var weights = [3, 1, 5, 0.8, 1.5, 4, 0.6, 0.5, 0.4, 0.5, 0.6], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
             function level() { var x = r() * wSum; for (var i = 0; i < weights.length; i++) { x -= weights[i]; if (x <= 0) return AMPUTATION_LEVELS[i]; } return AMPUTATION_LEVELS[0]; }
             var rates = { new_mdm: 4, new_fitting: 3.4, maintenance_mdm: 1.6, maintenance_fitting: 1.2 };
             var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');

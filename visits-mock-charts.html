@@ -1730,7 +1730,7 @@
         }
 
         var CITIES = ['القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'المنوفية', 'الشرقية', 'الغربية', 'القليوبية', 'أسيوط', 'سوهاج', 'المنيا', 'بني سويف', 'الفيوم', 'قنا', 'أسوان'];
-        var AMPUTATION_LEVELS = ['تحت الركبة', 'فوق الركبة', 'تحت الكوع', 'فوق الكوع', 'مفصل الركبة', 'مفصل الحوض', 'القدم الجزئي', 'الرسغ'];
+        var AMPUTATION_LEVELS = ['تحت الكوع', 'الكف', 'تحت الركبة', 'مشط القدم', 'فوق الكوع', 'فوق الركبة', 'أصابع يد', 'كرسي متحرك', 'فرق طول', 'سقط القدم', 'حوض'];
 
         // Mock data is generated relative to the real "today" so اليوم / هذا الاسبوع always hit rows
         var TODAY = moment().startOf('day');
@@ -3066,7 +3066,7 @@
         var STAGE_HISTORY = (function () {
             var out = [], s = 13;
             function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-            var weights = [5, 4, 2, 1.5, 1, 0.6, 1, 0.8], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
+            var weights = [3, 1, 5, 0.8, 1.5, 4, 0.6, 0.5, 0.4, 0.5, 0.6], wSum = weights.reduce(function (a, b) { return a + b; }, 0);
             function level() { var x = r() * wSum; for (var i = 0; i < weights.length; i++) { x -= weights[i]; if (x <= 0) return AMPUTATION_LEVELS[i]; } return AMPUTATION_LEVELS[0]; }
             var rates = { new_mdm: 4, new_fitting: 3.4, maintenance_mdm: 1.6, maintenance_fitting: 1.2 };
             var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');
@@ -3236,8 +3236,8 @@
                     lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
                 lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
-                lines.push('', q('حسب المرحلة ونوع البتر'));
-                lines.push([q('نوع البتر')].concat(STAGE_KEYS.map(function (k) { return q(STAGE_LABELS[k]); })).concat([q('الإجمالي')]).join(','));
+                lines.push('', q('حسب المرحلة ومستوى البتر'));
+                lines.push([q('مستوى البتر')].concat(STAGE_KEYS.map(function (k) { return q(STAGE_LABELS[k]); })).concat([q('الإجمالي')]).join(','));
                 p.byLevel.rows.forEach(function (r) { lines.push([q(r.level)].concat(STAGE_KEYS.map(function (k) { return r.counts[k]; })).concat([r.total]).join(',')); });
                 lines.push([q('الإجمالي')].concat(STAGE_KEYS.map(function (k) { return p.byLevel.totals[k]; })).concat([p.byLevel.total]).join(','));
                 lines.push('', q(p.trendLabel));
@@ -3614,8 +3614,8 @@
                     </div>
 
                     <div className="vs-chart-group">
-                        <p className="vs-group-label">حسب المرحلة ونوع البتر</p>
-                        <ChartCard title="عدد الحالات في كل مرحلة حسب نوع البتر" subtitle={<span dir="ltr">{period.range}</span>}>
+                        <p className="vs-group-label">حسب المرحلة ومستوى البتر</p>
+                        <ChartCard title="عدد الحالات في كل مرحلة حسب مستوى البتر" subtitle={<span dir="ltr">{period.range}</span>}>
                             {period.byLevel.total === 0 ? (
                                 <div className="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>
                             ) : (
@@ -3632,7 +3632,7 @@
                                     </ResponsiveContainer>
                                     <table className="vs-level-table">
                                         <thead>
-                                            <tr><th>نوع البتر</th>{STAGE_KEYS.map(k => <th key={k}><span className="dot" style={{ background: STAGE_COLORS[k] }}></span>{STAGE_LABELS[k]}</th>)}<th>الإجمالي</th></tr>
+                                            <tr><th>مستوى البتر</th>{STAGE_KEYS.map(k => <th key={k}><span className="dot" style={{ background: STAGE_COLORS[k] }}></span>{STAGE_LABELS[k]}</th>)}<th>الإجمالي</th></tr>
                                         </thead>
                                         <tbody>
                                             {period.byLevel.rows.map(r => (
