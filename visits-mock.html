@@ -2691,6 +2691,13 @@
             var BASE_COLS = ['تاريخ حجز الزيارة', 'مهندس / علاج طبيعي', 'فني أطراف', 'التقييم', 'تاريخ التأجيل', 'التواصل', 'الملاحظات', 'ملف القياسات'];
             var FIT_COLS = ['المكونات', 'الاكسسوارات', 'تسليم الجهاز القديم'];
             function isFitting(stage) { return /fitting/.test(stage); }
+            // accessories + components sections: every delivery status except "مؤجل",
+            // plus "تم أخد مقاس" (التقييم الطبي والقياسات) and "تم نهاية الصيانة" (تقييم الصيانة)
+            function showsParts(stage, sid) {
+                if (!sid || +sid === 22) return false;
+                return isFitting(stage) || (stage === 'new_mdm' && +sid === 1) || (stage === 'maintenance_mdm' && +sid === 15);
+            }
+            function historyHasParts(stage) { return isFitting(stage) || stage === 'new_mdm' || stage === 'maintenance_mdm'; }
             function esc(t) { return $('<div>').text(t == null ? '' : t).html(); }
 
             $('#asEngineer').html('<option></option>' + TEAM_DATA['مهندس / علاج طبيعى'].map(function (t) { return '<option>' + esc(t.name) + '</option>'; }).join(''))
@@ -2716,12 +2723,14 @@
                 return row.assessHistory[stage];
             }
             function renderHistory() {
-                var fit = isFitting(modalCtx.stage), cols = BASE_COLS.concat(fit ? FIT_COLS : []).concat(['حذف']);
+                var fit = isFitting(modalCtx.stage), parts = historyHasParts(modalCtx.stage);
+                var cols = BASE_COLS.concat(fit ? FIT_COLS : parts ? FIT_COLS.slice(0, 2) : []).concat(['حذف']);
                 $('#asHistHead').html(cols.map(function (c) { return '<th>' + c + '</th>'; }).join(''));
                 var list = seedHistory(modalCtx.row, modalCtx.stage);
                 $('#asHistBody').html(list.length ? list.map(function (h, i) {
                     var cells = [h.visitDate, h.engineer, h.tech, h.status, h.postponeDate, h.contact, h.notes, h.file];
                     if (fit) cells = cells.concat([h.components, h.accessories, h.oldDevice]);
+                    else if (parts) cells = cells.concat([h.components || '-', h.accessories || '-']);
                     return '<tr>' + cells.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') +
                         '<td><button type="button" class="btn btn-danger btn-xs as-del" data-i="' + i + '"><i class="fa fa-trash"></i></button></td></tr>';
                 }).join('') : '<tr><td colspan="' + cols.length + '">لم يتم العثور علي أي نتائج</td></tr>');
@@ -2735,7 +2744,7 @@
                 $('#assessmentModal .as-details').toggle(!!sid && (!postponed || contact));
                 $('#assessmentModal .as-postpone-only').toggle(postponed);
                 $('#assessmentModal .as-file-row').toggle(!postponed && !isFitting(modalCtx.stage));
-                $('#assessmentModal .as-fitting').toggle(!postponed && isFitting(modalCtx.stage));
+                $('#assessmentModal .as-fitting').toggle(showsParts(modalCtx.stage, sid));
             }
             function resetAssessForm(row) {
                 $('#assessmentModal .btn.active').removeClass('active');
@@ -2826,7 +2835,8 @@
                 if (!$('#asEngineer').val()) return toast('اختر مهندس / علاج طبيعي');
                 if (!$('#asTech').val()) return toast('اختر فني أطراف');
 
-                var acc = sectionValues('acc'), comp = sectionValues('comp');
+                var withParts = showsParts(stage, sid);
+                var acc = withParts ? sectionValues('acc') : [], comp = withParts ? sectionValues('comp') : [];
                 var rec = (row.receptions && row.receptions[2]) || [];
                 var lastOld = rec.length && rec[rec.length - 1].oldDevice;
                 seedHistory(row, stage).push({
@@ -2839,7 +2849,7 @@
                 row.assessments[stage] = { id: sid, date: $('#modalDate').val() };
                 if (postponed) row.assessments[stage].postponeDate = row.postponeDate = $('#modalPostpone').val();
                 if ($('#modalNotes').val()) row.notes = $('#modalNotes').val();
-                if (isFitting(stage) && !postponed) {
+                if (withParts) {
                     if (acc.length) row.accessories = acc.map(function (n) { return { name: n }; });
                     if (comp.length) row.components = comp.map(function (n) { return { name: n }; });
                 }
