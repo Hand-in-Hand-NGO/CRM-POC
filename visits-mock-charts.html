@@ -435,7 +435,7 @@
         .case-docs .docs-count.good { color: #fff; background: #31c860; }
         .case-docs .docs-count.bad { color: #fff; background: #f96a74; }
         .case-docs .docs-alert { color: #d9343f; background: #fdecee; border: 1px solid #f9c5ca; border-radius: 6px; padding: 2px 6px; margin-bottom: 4px; font-weight: bold; white-space: nowrap; }
-        .case-docs .docs-alert .fa { animation: docs-blink 1.2s ease-in-out infinite; }
+        .case-docs .docs-alert .fa, .case-docs .req-blink { animation: docs-blink 1.2s ease-in-out infinite; }
         @keyframes docs-blink { 50% { opacity: .25; } }
         .case-docs .cat-row td { font-weight: bold; padding-top: 6px !important; border-top: 1px solid #e3e6ea !important; }
         .case-docs .docs-list tr.cat-row:first-child td { border-top: 0 !important; padding-top: 1px !important; }
@@ -452,7 +452,8 @@
         .case-docs .docs-toggle:hover td { background: #f3f6f9 !important; }
         .case-docs .cat-arrow { font-size: 9px; width: 10px; color: #8a929c; transition: transform .15s; }
         .case-docs .docs-toggle.open .cat-arrow { transform: rotate(-90deg); }
-        .case-docs .docs-all { font-size: 11px; color: #0093e9; margin: 0 6px; white-space: nowrap; }
+        .case-docs .docs-all { font-size: 20px; line-height: 18px; color: #0093e9; margin: 0 6px; width: 26px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #b9dcf5; border-radius: 6px; background: #f1f8fe; text-decoration: none; }
+        .case-docs .docs-all:hover { background: #0093e9; color: #fff; }
         .case-docs .cat-doc .doc-state { padding-right: 14px !important; }
         .case-docs .doc-actions { text-align: left !important; }
         .case-docs .doc-actions .btn-link { padding: 0 3px; font-size: 12px; line-height: 16px; color: #0093e9; }
@@ -464,7 +465,7 @@
         .postpone-box { display: inline-block; text-align: right; background: #e3ebf1; border-radius: 6px; padding: 4px 8px; margin: 3px 0; font-size: 12px; color: #333; white-space: nowrap; }
         .postpone-box div { line-height: 26px; }
         .postpone-box b { display: inline-block; background: #fff; border: 1px solid #d7dbe0; border-radius: 4px; padding: 0 6px; margin: 0 4px; line-height: 20px; direction: ltr; }
-        .phones-cell { white-space: nowrap; direction: ltr; display: inline-block; line-height: 1.35; }
+        .phones-info .case-value { display: inline-block; margin-bottom: 2px; white-space: nowrap; }
         .order-cell { white-space: nowrap; }
         .order-cell small { display: block; color: gray; margin-top: 2px; }
 
@@ -1228,6 +1229,21 @@
                                         </div>
                                     </div>
 
+
+                                    <!-- Phone -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item">
+                                            <label for="casePhone" class="control-label">رقم الهاتف</label>
+                                            <div class="filter-inline">
+                                                <div class="filter-field">
+                                                    <input type="text" name="casePhone" id="casePhone" class="form-control" placeholder="ابحث برقم الهاتف" inputmode="numeric" dir="ltr" style="text-align:right" />
+                                                </div>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-md btn-danger" id="clearCasePhone" title="مسح"><i class="fa fa-times"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1356,25 +1372,24 @@
                                             <span class="col-lg-4 text-yellow text-bold"><input id="toggle" type="checkbox" autocomplete="off"> اختيار الكل</span>
                                             <span class="col-lg-4"><input name="column" data-column="0" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الطلب</span>
                                             <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الهواتف</span>
-                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
-                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
-                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
-                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
-                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
-                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
-                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="15" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
-                                            <span class="col-lg-4"><input name="column" data-column="17" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
-                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
-                                            <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
+                                            <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="18" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
+                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1866,7 +1881,7 @@
             { name: 'الدخل والأملاك', icon: 'fa-money', docs: ['برينت تأميني', 'بيان معاش', 'مفردات مرتب', 'حيازة زراعية'] },
             { name: 'مستندات دراسية', icon: 'fa-graduation-cap', docs: ['مؤهل دراسي', 'قيد دراسي'] },
             { name: 'إثبات محل الإقامة', icon: 'fa-home', docs: ['إيصال مرافق', 'عقد ايجار'] },
-            { name: 'شهادات الحالة الاجتماعية', icon: 'fa-users', docs: ['شهادة وفاة', 'قسيمة طلاق', 'قسيمة زواج'] }
+            { name: 'الحالة الاجتماعية', icon: 'fa-users', docs: ['شهادة وفاة', 'قسيمة طلاق', 'قسيمة زواج'] }
         ];
         var CASE_DOCS = [], DOC_CAT = [];   // flat list of documents + the category index of each one
         DOC_CATEGORIES.forEach(function (c, ci) { c.docs.forEach(function (d) { c.first = c.first === undefined ? CASE_DOCS.length : c.first; CASE_DOCS.push(d); DOC_CAT.push(ci); }); });
@@ -1959,14 +1974,15 @@
             var missing = DOC_CATEGORIES.length - catsDone;
             var html = '<div class="case-docs" data-id="' + r.id + '">' +
                 '<div class="docs-head"><button type="button" class="btn btn-warning btn-xs attach-download" data-id="' + r.id + '" title="تحميل كل المرفقات في فولدر باسم الحالة"' + (done + extras.length ? '' : ' disabled') + '><i class="fa fa-download"></i> تحميل الكل</button>' +
-                '<a href="#" class="docs-all">' + (Object.keys(open).some(function (k) { return open[k]; }) ? 'قفل الكل' : 'فتح الكل') + '</a>' +
+                (function () { var any = Object.keys(open).some(function (k) { return open[k]; });
+                    return '<a href="#" class="docs-all" title="' + (any ? 'قفل كل الأقسام' : 'فتح كل الأقسام') + '"><i class="fa ' + (any ? 'fa-angle-double-up' : 'fa-angle-double-down') + '"></i></a>'; })() +
                 '<span class="docs-count ' + (missing ? 'bad' : 'good') + '" title="الأقسام المكتملة">' + catsDone + '/' + DOC_CATEGORIES.length + '</span></div>' +
-                (missing ? '<div class="docs-alert"><i class="fa fa-exclamation-triangle"></i> ناقص ' + missing + (missing === 1 ? ' قسم' : ' أقسام') + ' — لازم يترفع مستند</div>' : '') +
+                (missing ? '<div class="docs-alert"><i class="fa fa-exclamation-triangle"></i> ناقص ' + missing + (missing === 1 ? ' قسم' : ' أقسام') + '</div>' : '') +
                 '<table class="docs-list">';
             DOC_CATEGORIES.forEach(function (c, ci) {
                 var up = c.docs.filter(function (d, k) { return docs[c.first + k]; }).length;
                 html += '<tr class="cat-row docs-toggle ' + (up ? 'cat-ok' : 'cat-missing') + (open[ci] ? ' open' : '') + '" data-cat="' + ci + '" title="اضغط لعرض / إخفاء المستندات"><td colspan="3"><i class="fa fa-chevron-left cat-arrow"></i> <i class="fa ' + (up ? 'fa-check-circle' : 'fa-exclamation-circle') + '"></i> ' + c.name +
-                    ' <span class="cat-count">(' + up + '/' + c.docs.length + ')</span>' + (up ? '' : ' <span class="cat-req">مطلوب</span>') + '</td></tr>';
+                    ' <span class="cat-count">(' + up + '/' + c.docs.length + ')</span>' + (up ? '' : ' <span class="cat-req"><i class="fa fa-exclamation-triangle req-blink"></i> مطلوب</span>') + '</td></tr>';
                 c.docs.forEach(function (name, k) {
                     var i = c.first + k, d = docs[i];
                     var cls = d ? 'doc-ok' : up ? 'doc-gray' : 'doc-missing';
@@ -2038,7 +2054,8 @@
             row.openCats[key] = !row.openCats[key];
             $tr.toggleClass('open', row.openCats[key]).nextUntil('.docs-toggle').toggle(row.openCats[key]);
             var any = Object.keys(row.openCats).some(function (k) { return row.openCats[k]; });
-            $tr.closest('.case-docs').find('.docs-all').text(any ? 'قفل الكل' : 'فتح الكل');
+            $tr.closest('.case-docs').find('.docs-all').attr('title', any ? 'قفل كل الأقسام' : 'فتح كل الأقسام')
+                .find('.fa').toggleClass('fa-angle-double-up', any).toggleClass('fa-angle-double-down', !any);
         });
         $(document).on('click', '.case-docs .docs-all', function (e) {
             e.preventDefault(); e.stopPropagation();
@@ -2121,11 +2138,11 @@
         }
         function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
         // value followed by [🔍] (search by it) and [نسخ] (copy it)
-        function caseValue(value) {
+        function caseValue(value, kind) {
             if (!value || value === '-') return value || '-';
             var v = String(value).replace(/"/g, '&quot;');
-            return '<span class="case-value"><span class="case-text">' + value + '</span>' +
-                '<button type="button" class="btn btn-xs case-search" data-value="' + v + '" title="بحث بهذه القيمة"><i class="fa fa-search"></i></button>' +
+            return '<span class="case-value"><span class="case-text"' + (kind === 'phone' ? ' dir="ltr"' : '') + '>' + value + '</span>' +
+                '<button type="button" class="btn btn-xs case-search" data-value="' + v + '"' + (kind ? ' data-kind="' + kind + '"' : '') + ' title="بحث بهذه القيمة"><i class="fa fa-search"></i></button>' +
                 '<button type="button" class="btn btn-primary btn-xs case-copy" data-value="' + v + '" title="نسخ">نسخ</button>' +
                 '</span>';
         }
@@ -2148,11 +2165,11 @@
                     return '<table class="info-table">' +
                         '<tr class="case-row"><td class="titleInfo">الاسم:</td><td class="info">' + caseValue(r.name) + '</td></tr>' +
                         '<tr class="case-row"><td class="titleInfo">الكود:</td><td class="info">' + caseValue(r.code) + '</td></tr>' +
+                        '<tr class="case-row"><td class="titleInfo">الهاتف:</td><td class="info phones-info">' + casePhones(r).map(function (ph) { return caseValue(ph, 'phone'); }).join('<br>') + '</td></tr>' +
                         '<tr><td class="titleInfo">المحافظة:</td><td class="info">' + r.city + '</td></tr>' +
                         '<tr><td class="titleInfo">رقم الهوية:</td><td class="info">' + r.nid + '</td></tr></table>';
                 }
             },
-            { title: 'الهواتف', render: function (r) { return '<span class="phones-cell">' + casePhones(r).join('<br>-<br>') + '</span>'; } },
             { title: 'بيانات التمويل', render: function (r) { return r.funding; } },
             {
                 title: 'بيانات البتر', render: function (r) {
@@ -2208,6 +2225,7 @@
         function filteredRows() {
             var f = formValues();
             var q = $.trim(f.caseNameOrCode || '').toLowerCase();
+            var phoneQ = String(f.casePhone || '').replace(/\D/g, '');
             var cities = f['city[]'] || [];
             var levels = f['amputationLevel[]'] || [];
             var teams = csv(f.responsibleTeam_ids), comps = csv(f.components_ids), statuses = csv(f.status_ids);
@@ -2219,6 +2237,7 @@
 
             return ROWS.filter(function (r) {
                 if (q && r.name.toLowerCase().indexOf(q) === -1 && r.code.toLowerCase().indexOf(q) === -1) return false;
+                if (phoneQ && !casePhones(r).some(function (ph) { return ph.indexOf(phoneQ) !== -1; })) return false;
                 if (cities.length) {
                     var inList = cityList.indexOf(r.city) !== -1 || (wantBlankCity && !r.city);
                     if (allExcept ? inList : !inList) return false;
@@ -2432,7 +2451,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v5_" + userID;
+            var storageKey = "engineering_table_columns_v6_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -2637,10 +2656,12 @@
                 var n = 0;
                 if ($('#selectedResponsibleTeamIds').val()) n++;
                 if ($('#selectedComponentsIds').val()) n++;
+                if ($.trim($('#casePhone').val())) n++;
                 if ($('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom').val() || $('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo').val()) n++;
                 $('.more-filters-count').text(n).toggle(n > 0);
             }
             $('#moreFilters').on('click change input', function () { setTimeout(updateMoreFiltersCount, 0); });
+            $('#clearCasePhone').on('click', function () { $('#casePhone').val(''); setTimeout(updateMoreFiltersCount, 0); });
             $(document).on('click', '#clearResponsibleTeamSelection, #clearComponentsSelection, .remove-date', function () { setTimeout(updateMoreFiltersCount, 0); });
 
             // default: visits booked today
@@ -2893,7 +2914,12 @@
             $('#clearStatusSelection, #clearResponsibleTeamSelection, #clearComponentsSelection').click();
             $('.remove-date-period').click();
 
-            $("#caseNameOrCode").val(value);
+            if ($(this).data('kind') === 'phone') {
+                $('#casePhone').val(value).trigger('input');   // updates the "المزيد من الفلاتر" badge
+                if (!$('#moreFilters').hasClass('in')) $('#moreFilters').collapse('show');
+            } else {
+                $("#caseNameOrCode").val(value);
+            }
             $(".orderCategory [value='all']").parent().click(); // redraws the table
         });
 
@@ -3227,7 +3253,7 @@
             return { rows: rows, totals: totals, total: total };
         }
 
-        // الحجوزات / الحضور / تم التقييم per stage. "تم التقييم" = the same assessments counted in the amputation-level
+        // الحجز / الحضور / تم التقييم per stage. "تم التقييم" = the same assessments counted in the amputation-level
         // table; on top of them: visits that came but had no assessment action, and bookings that did not attend.
         var FUNNEL_EXTRA = (function () {
             var out = [], s = 29;
@@ -3402,8 +3428,8 @@
                     lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
                 lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
-                lines.push('', q('الحجوزات والحضور والتقييم'));
-                lines.push([q('المرحلة'), q('الحجوزات'), q('الحضور'), q('نسبة الحضور'), q('تم التقييم'), q('نسبة التقييم من الحضور')].join(','));
+                lines.push('', q('الحجز والحضور والتقييم'));
+                lines.push([q('المرحلة'), q('الحجز'), q('الحضور'), q('نسبة الحضور'), q('تم التقييم'), q('نسبة التقييم من الحضور')].join(','));
                 p.funnel.rows.concat([{ label: 'الإجمالي', booked: p.funnel.totals.booked, attended: p.funnel.totals.attended, assessed: p.funnel.totals.assessed }]).forEach(function (r) {
                     lines.push([q(r.label), r.booked, r.attended, pctOf(r.attended, r.booked), r.assessed, pctOf(r.assessed, r.attended)].join(','));
                 });
@@ -3787,17 +3813,17 @@
 
                     <div className="vs-chart-group">
                         <p className="vs-group-label">حسب المرحلة</p>
-                        <ChartCard title="الحجوزات والحضور والتقييم" subtitle={<span dir="ltr">{period.range}</span>}>
+                        <ChartCard title="الحجز والحضور والتقييم" subtitle={<span dir="ltr">{period.range}</span>}>
                             <table className="vs-level-table vs-funnel-table">
                                 <thead>
-                                    <tr><th>المرحلة</th><th>الحجوزات</th><th>الحضور</th><th>تم التقييم</th></tr>
+                                    <tr><th>المرحلة</th><th>الحجز</th><th>الحضور</th><th>تم التقييم</th></tr>
                                 </thead>
                                 <tbody>
                                     {period.funnel.rows.map(r => (
                                         <tr key={r.stage} className={r.booked === 0 ? "zero" : ""}>
                                             <td><span className="dot" style={{ background: STAGE_COLORS[r.stage] }}></span>{r.label}</td>
                                             <td>{r.booked.toLocaleString("en-US")}</td>
-                                            <td>{r.attended.toLocaleString("en-US")}<small>{pctOf(r.attended, r.booked)} من الحجوزات</small></td>
+                                            <td>{r.attended.toLocaleString("en-US")}<small>{pctOf(r.attended, r.booked)} من الحجز</small></td>
                                             <td>{r.assessed.toLocaleString("en-US")}<small>{pctOf(r.assessed, r.attended)} من الحضور</small></td>
                                         </tr>
                                     ))}
