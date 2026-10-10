@@ -318,6 +318,10 @@
         }
 
         /* ---- مرفقات الحالة ---- */
+        .receipt-cell { white-space: nowrap; }
+        .receipt-label { font-size: 12px; padding: 3px 7px; border-radius: 3px; }
+        .receipt-print { color: #17a2b8; font-size: 15px; padding: 0 4px; vertical-align: middle; }
+        .receipt-print:hover { color: #0093e9; }
         .case-docs { text-align: right; min-width: 250px; font-size: 11.5px; }
         .case-docs .docs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         .case-docs .attach-download { border-radius: 10px !important; white-space: nowrap; }
@@ -1299,7 +1303,8 @@
                                             <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
                                             <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
                                             <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
+                                            <span class="col-lg-4"><input name="column" data-column="24" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1849,6 +1854,8 @@
             } else if (type === 'application/pdf') {
                 frame.onload = function () { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) { window.open(url); } };
                 frame.src = url;
+            } else if (type === 'text/html') {
+                blob.text().then(function (t) { printDoc(t + '<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script>'); });
             } else if (/^text\//.test(type) || /\.(txt|csv)$/i.test(title)) {
                 blob.text().then(function (t) { printDoc('<pre>' + $('<div>').text(t).html() + '</pre><script>window.onload=function(){window.print();}<\/script>'); });
             } else {
@@ -1907,6 +1914,51 @@
             }
             return html + '</table></div>';
         }
+        // إقرار استلام — from the latest "استقبال" visit of a delivery stage (popup 2); delivered cases without a
+        // visit in this session count as signed (mock). Printing uses the uploaded file, or a printable receipt form.
+        function receiptInfo(row) {
+            var recs = row.receptions && row.receptions[2];
+            if (recs && recs.length) {
+                var last = recs[recs.length - 1];
+                if (last.attend !== undefined && !last.attend) return null;
+                return { signed: !!last.photo, file: last.file || null, date: last.date };
+            }
+            var del = ['new_fitting', 'maintenance_fitting'].map(function (k) { return row.assessments[k]; }).filter(function (a) { return a && +a.id === 3; })[0];
+            return del ? { signed: true, file: null, date: del.date } : null;
+        }
+        function receiptCell(r) {
+            var info = receiptInfo(r);
+            if (!info) return '-';
+            if (!info.signed) return '<span class="label label-danger receipt-label">لا</span>';
+            return '<span class="receipt-cell"><span class="label label-success receipt-label">نعم</span>' +
+                '<button type="button" class="btn btn-link btn-xs receipt-print" data-id="' + r.id + '" title="طباعة إقرار الاستلام"><i class="fa fa-print"></i></button></span>';
+        }
+        function receiptFormHtml(row, info) {
+            function e(t) { return $('<div>').text(t == null ? '' : t).html(); }
+            var comps = row.components.map(function (c) { return c.name; }), accs = row.accessories.map(function (c) { return c.name; });
+            return '<div class="rc">' +
+                '<div class="rc-head"><div><b>مؤسسة هاند إن هاند</b><br><small>قسم التسليم</small></div><h1>إقرار استلام</h1><div class="rc-date">التاريخ: ' + e(moment(info.date).format('DD-MM-YYYY')) + '</div></div>' +
+                '<table class="rc-info"><tr><th>اسم الحالة</th><td>' + e(row.name) + '</td><th>كود الطلب</th><td>' + e(row.code) + '</td></tr>' +
+                '<tr><th>رقم الهوية</th><td>' + e(row.nid) + '</td><th>المحافظة</th><td>' + e(row.city) + '</td></tr>' +
+                '<tr><th>مستوى البتر</th><td>' + e(row.level) + '</td><th>الطرف المبتور</th><td>' + e(row.side) + '</td></tr>' +
+                '<tr><th>نوع الطلب</th><td>' + (row.type === 'new' ? 'طلب جديد' : 'طلب صيانة') + '</td><th>الهاتف</th><td dir="ltr">' + e(casePhones(row)[0]) + '</td></tr></table>' +
+                '<p class="rc-text">أقر أنا الموقع أدناه / <b>' + e(row.name) + '</b> بأنني استلمت الطرف الصناعي الخاص بي من مؤسسة هاند إن هاند بحالة جيدة وكاملة المكونات، ' +
+                'وتم تجربته والتأكد من مناسبته، وتم شرح طريقة الاستخدام والعناية به، وأتعهد بالمحافظة عليه.</p>' +
+                '<table class="rc-items"><tr><th>المكونات</th><th>الاكسسوارات</th></tr><tr><td>' + (comps.map(e).join('<br>') || '-') + '</td><td>' + (accs.map(e).join('<br>') || '-') + '</td></tr></table>' +
+                '<div class="rc-sign"><div>توقيع المستلم<span></span></div><div>توقيع مسؤول التسليم<span></span></div><div>الختم<span></span></div></div></div>' +
+                '<style>body{font-family:"Noto Kufi Arabic",Tahoma,sans-serif;color:#222;margin:0;padding:24px}.rc{max-width:760px;margin:auto;text-align:right}' +
+                '.rc-head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0093e9;padding-bottom:10px;margin-bottom:16px}.rc-head h1{margin:0;font-size:26px;color:#0093e9}' +
+                '.rc-date{font-size:13px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px}th,td{border:1px solid #ccc;padding:7px 8px}th{background:#f2f6fa;width:18%}' +
+                '.rc-items th{width:50%;text-align:center}.rc-items td{vertical-align:top;height:70px}.rc-text{line-height:2;font-size:14px}' +
+                '.rc-sign{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}.rc-sign div{width:30%;text-align:center}.rc-sign span{display:block;border-bottom:1px dotted #555;height:40px}' +
+                '@media print{body{padding:0}}</style>';
+        }
+        $(document).on('click', '.receipt-print', function (e) {
+            e.stopPropagation();
+            var row = findRow($(this).data('id')), info = receiptInfo(row);
+            if (info.file) return printBlob(info.file, info.file.name);
+            printBlob(new Blob([receiptFormHtml(row, info)], { type: 'text/html' }), 'إقرار استلام - ' + row.name);
+        });
         function refreshDocsCell(row) {
             $('.case-docs[data-id="' + row.id + '"]').parent().html(attachmentsCell(row));
         }
@@ -2041,6 +2093,7 @@
             { title: 'تاريخ الحضور', attend: true, render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
             { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } },
+            { title: 'إقرار استلام', render: receiptCell },
             { title: 'مرفقات الحالة', render: attachmentsCell }
         ];
         // the four "تاريخ الحضور" columns are hidden by default (aoColumnDefs in the live page)
@@ -2290,7 +2343,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v4_" + userID;
+            var storageKey = "engineering_table_columns_v5_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -3204,7 +3257,7 @@
                 if (!row.receptions[recKind]) {
                     row.receptions[recKind] = row.attended === null ? [] : [{
                         date: moment.min(moment(row.visitDate), moment()).format('YYYY-MM-DD'), attend: row.attended, timeIn: row.attended ? '09:00:00' : '-', timeOut: row.attended ? '10:24:00' : '-',
-                        photo: false, consentImg: '-', notes: row.notes || '-'
+                        photo: recKind === 2 && !!receiptInfo(row), consentImg: '-', notes: row.notes || '-'
                     }];
                 }
             }
@@ -3300,6 +3353,7 @@
                     notes: $('#recNotes').val() || '-'
                 });
                 var cf = $('#recConsentInput')[0].files[0];
+                if (cf) { var visits = recRow.receptions[recKind]; visits[visits.length - 1].file = cf; }
                 if (cf) recRow.attachments.push({ name: cf.name, type: REC[recKind].col6, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm'), file: cf });
                 recRow.attended = +attend;
                 renderAttachments();
