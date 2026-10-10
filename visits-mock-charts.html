@@ -421,13 +421,26 @@
         .case-docs { text-align: right; min-width: 250px; font-size: 11.5px; }
         .case-docs .docs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         .case-docs .attach-download { border-radius: 10px !important; white-space: nowrap; }
-        .case-docs .docs-count { color: #666; font-weight: bold; direction: ltr; }
         .case-docs .docs-list { width: 100%; border-collapse: collapse; }
         .case-docs .docs-list td { border: 0 !important; padding: 1px 2px !important; text-align: right !important; white-space: nowrap; line-height: 18px; background: transparent !important; }
         .case-docs .doc-state { width: 16px; }
+        .case-docs .docs-count { font-weight: bold; direction: ltr; padding: 0 6px; border-radius: 8px; }
+        .case-docs .docs-count.good { color: #fff; background: #31c860; }
+        .case-docs .docs-count.bad { color: #fff; background: #f96a74; }
+        .case-docs .docs-alert { color: #d9343f; background: #fdecee; border: 1px solid #f9c5ca; border-radius: 6px; padding: 2px 6px; margin-bottom: 4px; font-weight: bold; white-space: nowrap; }
+        .case-docs .docs-alert .fa { animation: docs-blink 1.2s ease-in-out infinite; }
+        @keyframes docs-blink { 50% { opacity: .25; } }
+        .case-docs .cat-row td { font-weight: bold; padding-top: 6px !important; border-top: 1px solid #e3e6ea !important; }
+        .case-docs .docs-list tr.cat-row:first-child td { border-top: 0 !important; padding-top: 1px !important; }
+        .case-docs .cat-ok td { color: #1f9d48; }
+        .case-docs .cat-missing td { color: #e0434e; }
+        .case-docs .cat-count { font-weight: normal; font-size: 10.5px; opacity: .85; }
+        .case-docs .cat-req { background: #f96a74; color: #fff; border-radius: 8px; padding: 0 6px; font-size: 10px; margin-right: 4px; }
+        .case-docs .doc-name { padding-right: 10px !important; }
+        .case-docs .doc-ok .doc-name { color: #1f9d48; font-weight: 600; }
         .case-docs .doc-ok .doc-state .fa-check { color: #31c860; }
-        .case-docs .doc-missing .doc-state .fa { color: #f96a74; }
-        .case-docs .doc-missing .doc-name { color: #999; }
+        .case-docs .doc-gray .doc-name, .case-docs .doc-gray .doc-state .fa { color: #a5abb3; }
+        .case-docs .doc-missing .doc-name, .case-docs .doc-missing .doc-state .fa { color: #f96a74; }
         .case-docs .doc-actions { text-align: left !important; }
         .case-docs .doc-actions .btn-link { padding: 0 3px; font-size: 12px; line-height: 16px; color: #0093e9; }
         .case-docs .doc-actions .doc-del { color: #f96a74; }
@@ -1832,16 +1845,25 @@
         }
         var CATEGORY_STAGE = { 'mdm-new': 'new_mdm', 'fitting-new': 'new_fitting', 'mdm-maintenance': 'maintenance_mdm', 'fitting-maintenance': 'maintenance_fitting' };
 
-        // مرفقات الحالة — the standard case documents (✓ uploaded / ✗ missing) + any other uploaded files.
-        // Each file: download / print / delete; missing ones: add. "تحميل الكل" = zip with a folder named after the case.
-        var CASE_DOCS = ['البطاقة الشخصية', 'شهادة الميلاد', 'باسبور', 'مفوضية', 'التقرير الطبى', 'البرنت التامينى', 'بيان المعاش',
-            'مفردات المرتب', 'الحيازة الزراعية', 'ايصال المرافق او عقد الايجار', 'اثبات القيد الدراسى', 'شهادة الوفاة', 'قسيمة الطلاق'];
+        // مرفقات الحالة — main categories; a category is "done" once at least one of its documents is uploaded
+        var DOC_CATEGORIES = [
+            { name: 'إثبات شخصية', icon: 'fa-id-card-o', docs: ['بطاقة', 'شهادة ميلاد', 'مفوضية', 'باسبور'] },
+            { name: 'مستندات طبية', icon: 'fa-medkit', docs: ['التقرير الطبي', 'اشاعات'] },
+            { name: 'الدخل والأملاك', icon: 'fa-money', docs: ['برينت تأميني', 'بيان معاش', 'مفردات مرتب', 'حيازة زراعية'] },
+            { name: 'مستندات دراسية', icon: 'fa-graduation-cap', docs: ['مؤهل دراسي', 'قيد دراسي'] },
+            { name: 'إثبات محل الإقامة', icon: 'fa-home', docs: ['إيصال مرافق', 'عقد ايجار'] },
+            { name: 'شهادات الحالة الاجتماعية', icon: 'fa-users', docs: ['شهادة وفاة', 'قسيمة طلاق', 'قسيمة زواج'] }
+        ];
+        var CASE_DOCS = [], DOC_CAT = [];   // flat list of documents + the category index of each one
+        DOC_CATEGORIES.forEach(function (c, ci) { c.docs.forEach(function (d) { c.first = c.first === undefined ? CASE_DOCS.length : c.first; CASE_DOCS.push(d); DOC_CAT.push(ci); }); });
         var CURRENT_USER_NAME = 'يوسف محمد';
         function seedDocs(row) {
             if (row.docs) return row.docs;
+            var P = [80, 60, 30, 20, 30, 15];   // chance (%) that a category's first document is already uploaded
             row.docs = CASE_DOCS.map(function (d, i) {
                 var h = ((row.id + 7) * (i + 3) * 2654435761) % 100; // deterministic mock
-                var p = i === 0 ? 85 : i === 4 ? 70 : i < 4 ? 35 : 15;
+                var ci = DOC_CAT[i], first = DOC_CATEGORIES[ci].first === i;
+                var p = first ? P[ci] : P[ci] / 3;
                 return h < p ? { name: d + '.png', by: CURRENT_USER_NAME, date: moment(row.submitDate).add(i % 4, 'day').format('YYYY-MM-DD'), mock: true } : null;
             });
             return row.docs;
@@ -1902,7 +1924,7 @@
             if (!window.JSZip) return toast('تعذر تحميل مكتبة الضغط');
             var folderName = safeName(row.name), zip = new JSZip(), folder = zip.folder(folderName), used = {};
             function unique(n) { if (used[n]) { n = n.replace(/(\.\w+)?$/, ' (' + (++used[n]) + ')$1'); } else used[n] = 1; return n; }
-            docs.forEach(function (d, i) { if (d) jobs.push(fileBlob(row, d, CASE_DOCS[i]).then(function (b) { folder.file(unique(docFileName(i, d)), b); })); });
+            docs.forEach(function (d, i) { if (d) jobs.push(fileBlob(row, d, CASE_DOCS[i]).then(function (b) { folder.folder(safeName(DOC_CATEGORIES[DOC_CAT[i]].name)).file(unique(docFileName(i, d)), b); })); });
             extras.forEach(function (a) { jobs.push(fileBlob(row, a, a.name).then(function (b) { folder.folder('مرفقات أخرى').file(unique(safeName(a.name)), b); })); });
             if (!jobs.length) return toast('لا توجد مرفقات لهذه الحالة');
             return Promise.all(jobs).then(function () { return zip.generateAsync({ type: 'blob' }); })
@@ -1916,15 +1938,27 @@
         function attachmentsCell(r) {
             var docs = seedDocs(r), extras = seedAttachments(r);
             var done = docs.filter(Boolean).length;
+            var catsDone = DOC_CATEGORIES.filter(function (c) { return c.docs.some(function (d, k) { return docs[c.first + k]; }); }).length;
+            var missing = DOC_CATEGORIES.length - catsDone;
             var html = '<div class="case-docs" data-id="' + r.id + '">' +
                 '<div class="docs-head"><button type="button" class="btn btn-warning btn-xs attach-download" data-id="' + r.id + '" title="تحميل كل المرفقات في فولدر باسم الحالة"' + (done + extras.length ? '' : ' disabled') + '><i class="fa fa-download"></i> تحميل الكل</button>' +
-                '<span class="docs-count">' + done + '/' + CASE_DOCS.length + '</span></div><table class="docs-list">';
-            docs.forEach(function (d, i) {
-                html += '<tr class="' + (d ? 'doc-ok' : 'doc-missing') + '"><td class="doc-state"><i class="fa ' + (d ? 'fa-check' : 'fa-times') + '"></i></td>' +
-                    '<td class="doc-name"' + (d ? ' title="' + $('<div>').text(d.name + ' — ' + d.date + ' — ' + d.by).html() + '"' : '') + '>' + CASE_DOCS[i] + '</td><td class="doc-actions">' +
-                    (d ? fileActions(r.id, 'data-doc="' + i + '"')
-                        : '<button type="button" class="btn btn-link btn-xs doc-add" data-id="' + r.id + '" data-doc="' + i + '" title="إضافة"><i class="fa fa-plus-circle"></i> إضافة</button>') +
-                    '</td></tr>';
+                '<span class="docs-count ' + (missing ? 'bad' : 'good') + '" title="الأقسام المكتملة">' + catsDone + '/' + DOC_CATEGORIES.length + '</span></div>' +
+                (missing ? '<div class="docs-alert"><i class="fa fa-exclamation-triangle"></i> ناقص ' + missing + (missing === 1 ? ' قسم' : ' أقسام') + ' — لازم يترفع مستند</div>' : '') +
+                '<table class="docs-list">';
+            DOC_CATEGORIES.forEach(function (c) {
+                var up = c.docs.filter(function (d, k) { return docs[c.first + k]; }).length;
+                html += '<tr class="cat-row ' + (up ? 'cat-ok' : 'cat-missing') + '"><td colspan="3"><i class="fa ' + (up ? 'fa-check-circle' : 'fa-exclamation-circle') + '"></i> ' + c.name +
+                    ' <span class="cat-count">(' + up + '/' + c.docs.length + ')</span>' + (up ? '' : ' <span class="cat-req">مطلوب</span>') + '</td></tr>';
+                c.docs.forEach(function (name, k) {
+                    var i = c.first + k, d = docs[i];
+                    var cls = d ? 'doc-ok' : up ? 'doc-gray' : 'doc-missing';
+                    var icon = d ? 'fa-check' : up ? 'fa-circle-o' : 'fa-times';
+                    html += '<tr class="' + cls + '"><td class="doc-state"><i class="fa ' + icon + '"></i></td>' +
+                        '<td class="doc-name"' + (d ? ' title="' + $('<div>').text(d.name + ' — ' + d.date + ' — ' + d.by).html() + '"' : '') + '>' + name + '</td><td class="doc-actions">' +
+                        (d ? fileActions(r.id, 'data-doc="' + i + '"')
+                            : '<button type="button" class="btn btn-link btn-xs doc-add" data-id="' + r.id + '" data-doc="' + i + '" title="إضافة"><i class="fa fa-plus-circle"></i> إضافة</button>') +
+                        '</td></tr>';
+                });
             });
             if (extras.length) {
                 html += '<tr class="docs-sep"><td colspan="3">مرفقات أخرى</td></tr>';
