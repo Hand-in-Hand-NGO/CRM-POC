@@ -260,6 +260,9 @@
         .vs-cal-grid button:disabled { opacity: .35; cursor: default; }
         .vs-cal-foot { border-top: 1px solid var(--vs-border-soft); margin-top: 8px; padding-top: 8px; text-align: center; }
         .vs-cal-foot button { border: 0; background: none; color: var(--vs-accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .vs-funnel-table td small { display: block; font-size: 10px; color: var(--vs-text-faint); font-weight: normal; margin-top: 1px; }
+        .vs-funnel-table td:first-child .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; }
+        .vs-funnel-table { margin-top: 0; }
         .vs-level-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; font-variant-numeric: tabular-nums; }
         .vs-level-table th, .vs-level-table td { border: 1px solid var(--vs-border); padding: 6px 6px; text-align: center; }
         .vs-level-table th { background: var(--vs-bg); color: var(--vs-text-dim); font-size: 11px; font-weight: 700; }
@@ -3224,6 +3227,42 @@
             return { rows: rows, totals: totals, total: total };
         }
 
+        // الحجوزات / الحضور / تم التقييم per stage. "تم التقييم" = the same assessments counted in the amputation-level
+        // table; on top of them: visits that came but had no assessment action, and bookings that did not attend.
+        var FUNNEL_EXTRA = (function () {
+            var out = [], s = 29;
+            function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+            var noAction = { new_mdm: 1.1, new_fitting: 0.8, maintenance_mdm: 0.7, maintenance_fitting: 0.65 };
+            var noShow = { new_mdm: 1.6, new_fitting: 0.9, maintenance_mdm: 0.8, maintenance_fitting: 0.7 };
+            var d = TODAY.clone().subtract(2, 'years').startOf('year'), stop = TODAY.clone().subtract(35, 'days');
+            for (; d.isBefore(stop); d.add(1, 'day')) {
+                if (d.day() === 5 || d.day() === 6) continue;
+                STAGE_KEYS.forEach(function (k) {
+                    var a = Math.floor(noAction[k] * 2 * r()), b = Math.floor(noShow[k] * 2 * r()), i;
+                    for (i = 0; i < a; i++) out.push({ stage: k, date: d.format('YYYY-MM-DD'), kind: 'noaction' });
+                    for (i = 0; i < b; i++) out.push({ stage: k, date: d.format('YYYY-MM-DD'), kind: 'noshow' });
+                });
+            }
+            return out;
+        })();
+        function funnelBetween(from, to) {
+            var lv = stageLevelBetween(from, to), res = {}, tot = { booked: 0, attended: 0, assessed: 0 };
+            STAGE_KEYS.forEach(function (k) { res[k] = { assessed: lv.totals[k], noaction: 0, noshow: 0 }; });
+            FUNNEL_EXTRA.forEach(function (e) { if (e.date >= from && e.date <= to) res[e.stage][e.kind]++; });
+            ROWS.forEach(function (row) {               // bookings in the table that have no assessment yet
+                var st = currentStage(row);
+                if (!res[st] || !row.visitDate || row.visitDate < from || row.visitDate > to || row.assessments[st]) return;
+                res[st][row.attended === 1 ? 'noaction' : 'noshow']++;
+            });
+            var rows = STAGE_KEYS.map(function (k) {
+                var x = res[k], attended = x.assessed + x.noaction, booked = attended + x.noshow;
+                tot.booked += booked; tot.attended += attended; tot.assessed += x.assessed;
+                return { stage: k, label: STAGE_LABELS[k], booked: booked, attended: attended, assessed: x.assessed };
+            });
+            return { rows: rows, totals: tot };
+        }
+        function pctOf(a, b) { return b ? Math.round(a / b * 100) + '%' : '-'; }
+
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
 
         var STAT_LABELS = { measurements: 'القياسات', deliveries: 'التسليمات', maintenanceAssess: 'تقييم صيانة', maintenanceDeliver: 'تسليم صيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
@@ -3302,6 +3341,7 @@
                 values: countBetween(ev, f, t), target: TARGETS[key] || null,
                 avgDays: avgDaysBetween(f, t),
                 byLevel: stageLevelBetween(f, t),
+                funnel: funnelBetween(f, t),
                 trend: buildTrendBuckets(ev, key === 'week' ? r.to.clone() : trendEnd, meta.unit, meta.count),
                 trendLabel: meta.label + (isCurrent ? '' : ' — حتى ' + trendEnd.format('YYYY-MM-DD'))
             };
@@ -3362,6 +3402,11 @@
                     lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
                 lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
+                lines.push('', q('الحجوزات والحضور والتقييم'));
+                lines.push([q('المرحلة'), q('الحجوزات'), q('الحضور'), q('نسبة الحضور'), q('تم التقييم'), q('نسبة التقييم من الحضور')].join(','));
+                p.funnel.rows.concat([{ label: 'الإجمالي', booked: p.funnel.totals.booked, attended: p.funnel.totals.attended, assessed: p.funnel.totals.assessed }]).forEach(function (r) {
+                    lines.push([q(r.label), r.booked, r.attended, pctOf(r.attended, r.booked), r.assessed, pctOf(r.assessed, r.attended)].join(','));
+                });
                 lines.push('', q('حسب المرحلة ومستوى البتر'));
                 lines.push([q('مستوى البتر')].concat(STAGE_KEYS.map(function (k) { return q(STAGE_LABELS[k]); })).concat([q('الإجمالي')]).join(','));
                 p.byLevel.rows.forEach(function (r) { lines.push([q(r.level)].concat(STAGE_KEYS.map(function (k) { return r.counts[k]; })).concat([r.total]).join(',')); });
@@ -3741,22 +3786,41 @@
                     </div>
 
                     <div className="vs-chart-group">
+                        <p className="vs-group-label">حسب المرحلة</p>
+                        <ChartCard title="الحجوزات والحضور والتقييم" subtitle={<span dir="ltr">{period.range}</span>}>
+                            <table className="vs-level-table vs-funnel-table">
+                                <thead>
+                                    <tr><th>المرحلة</th><th>الحجوزات</th><th>الحضور</th><th>تم التقييم</th></tr>
+                                </thead>
+                                <tbody>
+                                    {period.funnel.rows.map(r => (
+                                        <tr key={r.stage} className={r.booked === 0 ? "zero" : ""}>
+                                            <td><span className="dot" style={{ background: STAGE_COLORS[r.stage] }}></span>{r.label}</td>
+                                            <td>{r.booked.toLocaleString("en-US")}</td>
+                                            <td>{r.attended.toLocaleString("en-US")}<small>{pctOf(r.attended, r.booked)} من الحجوزات</small></td>
+                                            <td>{r.assessed.toLocaleString("en-US")}<small>{pctOf(r.assessed, r.attended)} من الحضور</small></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td>الإجمالي</td>
+                                        <td>{period.funnel.totals.booked.toLocaleString("en-US")}</td>
+                                        <td>{period.funnel.totals.attended.toLocaleString("en-US")}<small>{pctOf(period.funnel.totals.attended, period.funnel.totals.booked)}</small></td>
+                                        <td>{period.funnel.totals.assessed.toLocaleString("en-US")}<small>{pctOf(period.funnel.totals.assessed, period.funnel.totals.attended)}</small></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </ChartCard>
+                    </div>
+
+                    <div className="vs-chart-group">
                         <p className="vs-group-label">حسب المرحلة ومستوى البتر</p>
                         <ChartCard title="عدد الحالات في كل مرحلة حسب مستوى البتر" subtitle={<span dir="ltr">{period.range}</span>}>
                             {period.byLevel.total === 0 ? (
                                 <div className="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>
                             ) : (
                                 <div>
-                                    <ResponsiveContainer width="100%" height={Math.max(180, period.byLevel.rows.filter(r => r.total > 0).length * 34 + 50)}>
-                                        <BarChart layout="vertical" data={period.byLevel.rows.filter(r => r.total > 0).map(r => Object.assign({ name: r.level }, r.counts))} margin={{ left: 10, right: 10 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e5ea" horizontal={false} />
-                                            <XAxis type="number" reversed tick={{ fill: "#6b7280", fontSize: 11, fontFamily: "var(--vs-font-mono)" }} axisLine={{ stroke: "#d6d9df" }} tickLine={false} allowDecimals={false} />
-                                            <YAxis type="category" dataKey="name" orientation="right" width={92} tick={{ fill: "#1a1d23", fontSize: 11, fontFamily: "var(--vs-font-ui)" }} axisLine={false} tickLine={false} />
-                                            <RTooltip content={<ChartTooltip />} cursor={{ fill: "rgba(47,111,237,.06)" }} />
-                                            <Legend wrapperStyle={{ fontSize: 11, fontFamily: "var(--vs-font-ui)" }} />
-                                            {STAGE_KEYS.map(k => <Bar key={k} dataKey={k} name={STAGE_LABELS[k]} stackId="s" fill={STAGE_COLORS[k]} maxBarSize={22} />)}
-                                        </BarChart>
-                                    </ResponsiveContainer>
                                     <table className="vs-level-table">
                                         <thead>
                                             <tr><th>مستوى البتر</th>{STAGE_KEYS.map(k => <th key={k}><span className="dot" style={{ background: STAGE_COLORS[k] }}></span>{STAGE_LABELS[k]}</th>)}<th>الإجمالي</th></tr>
