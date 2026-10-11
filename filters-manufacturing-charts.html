@@ -1110,6 +1110,40 @@
             opacity: .45;
         }
 
+        /* no focus / pressed highlight: a step keeps its own colour after its popup closes */
+        .manufacturingSteps button:focus,
+        .manufacturingSteps button:active,
+        .manufacturingSteps button.active {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .manufacturingSteps button.view:hover,
+        .manufacturingSteps button.view:focus,
+        .manufacturingSteps button.view:active {
+            background-color: #eaf7ff;
+            border-color: #bce7ff;
+            color: #00a1ff;
+        }
+
+        .manufacturingSteps button.edit:hover,
+        .manufacturingSteps button.edit:focus,
+        .manufacturingSteps button.edit:active {
+            background-color: #ffe9bf;
+            border-color: #ffdc74;
+            color: #e98300;
+        }
+
+        /* cycle finished (received from assembly or stopped): all four steps in the same light blue */
+        .manufacturingSteps.finished button,
+        .manufacturingSteps.finished button[disabled] {
+            background-color: #eaf7ff;
+            border-color: #bce7ff;
+            color: #00a1ff;
+            font-weight: normal;
+            opacity: 1;
+        }
+
         .weight-diff.over {
             color: #f96a74;
             font-weight: bold;
@@ -2164,9 +2198,11 @@
                 { cls: 'receivingPrintedParts', label: 'استلام المطبوع', full: 'استلام الأجزاء المطبوعة', edit: idx === 3, reached: idx >= 3 },
                 { cls: 'receivingFromAssembly', label: 'استلام التجميع', full: 'استلام الطرف من التجميع', edit: idx === 4, reached: idx >= 4 }
             ];
-            return '<div class="manufacturingSteps">' + steps.map(function (s) {
+            // after the assembly step (or when the cycle stopped) nothing is highlighted any more
+            var finished = r.closed || idx >= 5;
+            return '<div class="manufacturingSteps' + (finished ? ' finished' : '') + '">' + steps.map(function (s) {
                 var mode = (!r.closed && s.edit) ? 'edit' : (s.reached ? 'view' : '');
-                var icon = mode === 'edit' ? 'fa-pencil' : (mode === 'view' ? 'fa-eye' : 'fa-lock');
+                var icon = mode === 'edit' ? 'fa-pencil' : (mode === 'view' || finished ? 'fa-eye' : 'fa-lock');
                 return '<button type="button" title="' + s.full + '" class="btn btn-xs btn-default ' + s.cls + ' ' + mode + '" data-cyclenumber="' + r.cycleNo + '" data-actionmode="' + mode + '"' +
                     (mode ? '' : ' disabled') + '>' + s.label + ' <i class="fa ' + icon + '"></i></button>';
             }).join('') + '</div>';
@@ -3035,6 +3071,9 @@
             $m.modal('hide');
             redraw();
         });
+
+        // a closed popup leaves no focus highlight on the step button that opened it
+        $(document).on('hidden.bs.modal', '.modal', function () { $('.manufacturingSteps button').blur(); });
 
         $(document).on('click', '.open-file', function () { notify('ملف تجريبى — لا يوجد ملف فعلى فى النسخة التجريبية', 'info'); });
 
