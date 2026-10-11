@@ -440,6 +440,16 @@
         .receipt-label { font-size: 12px; padding: 3px 7px; border-radius: 3px; }
         .receipt-print { color: #17a2b8; font-size: 15px; padding: 0 4px; vertical-align: middle; }
         .receipt-print:hover { color: #0093e9; }
+        .acks-cell { text-align: right; white-space: nowrap; font-size: 12px; min-width: 175px; }
+        .acks-cell .ack-item { display: flex; align-items: center; gap: 4px; line-height: 22px; }
+        .acks-cell .ack-item > .fa { width: 13px; }
+        .acks-cell .ack-ok > .fa, .acks-cell .ack-ok .ack-name { color: #1f9d48; font-weight: 600; }
+        .acks-cell .ack-missing > .fa { color: #f96a74; }
+        .acks-cell .ack-missing .ack-name { color: #e0434e; }
+        .acks-cell .ack-actions { margin-right: auto; }
+        .acks-cell .ack-actions .btn-link { padding: 0 3px; font-size: 12px; color: #0093e9; }
+        .acks-cell .ack-actions .ack-del { color: #f96a74; }
+        .acks-cell .ack-actions .ack-add { color: #31c860; font-size: 11px; }
         .case-docs { text-align: right; min-width: 250px; font-size: 11.5px; }
         .case-docs .docs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         .case-docs .attach-download { border-radius: 10px !important; white-space: nowrap; }
@@ -577,6 +587,7 @@
         #receptionModal .rec-form .rec-file span { color: #666; font-size: 12px; }
         #receptionModal .modal-footer { text-align: left; border-top: 1px solid #e5e5e5; padding: 14px 6px 10px; }
         #receptionModal .modal-footer .btn { border-radius: 0 !important; outline: none !important; }
+        #receptionModal .modal-footer .rec-print-ack { float: right; }
         #receptionModal .rec-time { direction: ltr; text-align: right; }
         #receptionModal .rec-history { margin: 0 6px 14px; }
         #receptionModal .rec-history thead th { background: #f9f9f9; }
@@ -1460,7 +1471,7 @@
                                             <span class="col-lg-4"><input name="column" data-column="17" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
                                             <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
                                             <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرارات</span>
                                             <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
@@ -1650,34 +1661,6 @@
                     <h4 class="modal-title"><i class="fa fa-search"></i> إضافة زيارة <small class="rec-case" style="color:#777"></small></h4>
                 </div>
                 <div class="modal-body">
-                    <div class="panel panel-default rec-attach">
-                        <div class="panel-heading">مرفقات الحالة</div>
-                        <div class="panel-body">
-                            <div class="rec-upload">
-                                <button type="button" class="btn btn-success btn-sm" id="recUploadVideo"><i class="fa fa-cloud-upload"></i> رفع فيديو</button><button type="button" class="btn btn-primary btn-sm" id="recUploadFile"><i class="fa fa-cloud-upload"></i> رفع ملف</button>
-                                <input type="file" id="recVideoInput" accept="video/*" multiple style="display:none">
-                                <input type="file" id="recFileInput" multiple style="display:none">
-                            </div>
-                            <div class="rec-toolbar">
-                                <div>عرض <select class="form-control"><option>20</option><option>50</option><option>100</option></select></div>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-default btn-sm"><i class="fa fa-print"></i> طباعة</button>
-                                    <button type="button" class="btn btn-default btn-sm"><i class="fa fa-file-excel-o"></i> اكسيل</button>
-                                </div>
-                            </div>
-                            <table class="table table-bordered">
-                                <thead><tr><th style="width:40px"></th><th>المرفق</th><th>نوع المرفق</th><th>تم الإضافة بواسطة</th><th>تاريخ الإضافة</th><th>حذف</th></tr></thead>
-                                <tbody id="recAttachBody"></tbody>
-                            </table>
-                            <div class="btn-group rec-pager">
-                                <button type="button" class="btn btn-default btn-sm" disabled>الأخير</button>
-                                <button type="button" class="btn btn-default btn-sm" disabled>&larr; التالي</button>
-                                <button type="button" class="btn btn-default btn-sm" disabled>السابق &rarr;</button>
-                                <button type="button" class="btn btn-default btn-sm" disabled>الأول</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="form-horizontal rec-form">
                         <div class="form-group">
                             <label class="col-sm-2 control-label">حضر؟<span class="req">*</span></label>
@@ -1716,32 +1699,19 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-offset-1 col-sm-4">
-                                <label class="control-label"><input type="checkbox" id="recPhotoConsent"> <span id="recCheckLabel">الموافقة على التصوير</span></label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-sm-offset-2 col-sm-6">
-                                <div class="rec-file">
-                                    <button type="button" class="btn btn-default btn-sm" id="recConsentBtn">إختر صورة إقرار التصنيع</button>
-                                    <span id="recConsentName"></span>
-                                    <input type="file" id="recConsentInput" style="display:none">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
                             <label class="col-sm-2 control-label">الملاحظات</label>
                             <div class="col-sm-3"><textarea id="recNotes" class="form-control" rows="2"></textarea></div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-default rec-print-ack" id="recPrintAck"><i class="fa fa-print"></i> <span id="recPrintLabel">طباعة الإقرار</span></button>
                     <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> إلغاء</button>
                     <button type="button" class="btn btn-success" id="recSave"><i class="fa fa-floppy-o"></i> حفظ</button>
                 </div>
                 <div class="rec-history">
                     <table class="table table-bordered">
-                        <thead><tr><th>التاريخ</th><th>حضر؟</th><th>وقت الدخول</th><th>وقت المغادرة</th><th id="recHistCol5">الموافقة على التصوير</th><th id="recHistCol6">صورة إقرار التصنيع</th><th>الملاحظات</th></tr></thead>
+                        <thead><tr><th>التاريخ</th><th>حضر؟</th><th>وقت الدخول</th><th>وقت المغادرة</th><th>الملاحظات</th></tr></thead>
                         <tbody id="recHistoryBody"></tbody>
                     </table>
                 </div>
@@ -1763,6 +1733,7 @@
     </div>
 
     <input type="file" id="docUploadInput" style="display:none">
+    <input type="file" id="ackUploadInput" accept="image/*,application/pdf" style="display:none">
     <div class="toast-msg" id="toast"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -2097,15 +2068,90 @@
         }
         // إقرار استلام — from the latest "استقبال" visit of a delivery stage (popup 2); delivered cases without a
         // visit in this session count as signed (mock). Printing uses the uploaded file, or a printable receipt form.
-        function receiptInfo(row) {
-            var recs = row.receptions && row.receptions[2];
-            if (recs && recs.length) {
-                var last = recs[recs.length - 1];
-                if (last.attend !== undefined && !last.attend) return null;
-                return { signed: !!last.photo, file: last.file || null, date: last.date };
-            }
+        // ===================== إقرارات: إقرار الاستلام + إقرار التصوير (fixed, separate from مرفقات الحالة) =====================
+        var ACK_TYPES = [{ key: 'receipt', name: 'إقرار الاستلام' }, { key: 'photo', name: 'إقرار التصوير' }];
+        function seedAcks(row) {
+            if (row.acks) return row.acks;
             var del = ['new_fitting', 'maintenance_fitting'].map(function (k) { return row.assessments[k]; }).filter(function (a) { return a && +a.id === 3; })[0];
-            return del ? { signed: row.id % 4 !== 0, file: null, date: del.date } : null;   // mock: ~1 in 4 delivered without a signed receipt
+            var seen = row.assessments.new_mdm || row.assessments.maintenance_mdm;
+            row.acks = {   // mock: most delivered cases have a signed receipt, most assessed cases a photo consent
+                receipt: del && row.id % 4 !== 0 ? { name: 'إقرار الاستلام.png', by: CURRENT_USER_NAME, date: del.date, mock: true } : null,
+                photo: seen && row.id % 3 !== 1 ? { name: 'إقرار التصوير.png', by: CURRENT_USER_NAME, date: seen.date, mock: true } : null
+            };
+            return row.acks;
+        }
+        function ackFormHtml(row, kind) {
+            function e(t) { return $('<div>').text(t == null ? '' : t).html(); }
+            var title = kind === 'receipt' ? 'إقرار استلام' : 'إقرار الموافقة على التصوير';
+            var text = kind === 'receipt'
+                ? 'أقر أنا الموقع أدناه / <b>' + e(row.name) + '</b> بأنني استلمت الطرف الصناعي الخاص بي من مؤسسة هاند إن هاند بحالة جيدة وكاملة المكونات، وتم تجربته والتأكد من مناسبته، وتم شرح طريقة الاستخدام والعناية به، وأتعهد بالمحافظة عليه.'
+                : 'أوافق أنا الموقع أدناه / <b>' + e(row.name) + '</b> على قيام مؤسسة هاند إن هاند بتصويري (صور وفيديو) أثناء مراحل التقييم والقياس والتصنيع والتسليم، واستخدام هذه الصور لأغراض التوثيق الطبي والتوعية، دون أي مقابل مادي.';
+            var items = '';
+            if (kind === 'receipt') {
+                var comps = row.components.map(function (c) { return e(c.name); }), accs = row.accessories.map(function (c) { return e(c.name); });
+                items = '<table class="rc-items"><tr><th>المكونات</th><th>الاكسسوارات</th></tr><tr><td>' + (comps.join('<br>') || '-') + '</td><td>' + (accs.join('<br>') || '-') + '</td></tr></table>';
+            }
+            return '<div class="rc"><div class="rc-head"><div><b>مؤسسة هاند إن هاند</b><br><small>' + (kind === 'receipt' ? 'قسم التسليم' : 'الاستقبال') + '</small></div><h1>' + title + '</h1><div class="rc-date">التاريخ: ' + moment().format('DD-MM-YYYY') + '</div></div>' +
+                '<table class="rc-info"><tr><th>اسم الحالة</th><td>' + e(row.name) + '</td><th>كود الطلب</th><td>' + e(row.code) + '</td></tr>' +
+                '<tr><th>رقم الهوية</th><td>' + e(row.nid) + '</td><th>المحافظة</th><td>' + e(row.city) + '</td></tr>' +
+                '<tr><th>مستوى البتر</th><td>' + e(row.level) + '</td><th>الهاتف</th><td dir="ltr">' + e(casePhones(row)[0]) + '</td></tr></table>' +
+                '<p class="rc-text">' + text + '</p>' + items +
+                '<div class="rc-sign"><div>توقيع ' + (kind === 'receipt' ? 'المستلم' : 'الحالة / ولي الأمر') + '<span></span></div><div>توقيع الموظف المسؤول<span></span></div><div>الختم<span></span></div></div></div>' +
+                '<style>body{font-family:"Noto Kufi Arabic",Tahoma,sans-serif;color:#222;margin:0;padding:24px}.rc{max-width:760px;margin:auto;text-align:right}' +
+                '.rc-head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0093e9;padding-bottom:10px;margin-bottom:16px}.rc-head h1{margin:0;font-size:24px;color:#0093e9}' +
+                '.rc-date{font-size:13px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px}th,td{border:1px solid #ccc;padding:7px 8px}th{background:#f2f6fa;width:18%}' +
+                '.rc-items th{width:50%;text-align:center}.rc-items td{vertical-align:top;height:70px}.rc-text{line-height:2;font-size:14px}' +
+                '.rc-sign{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}.rc-sign div{width:30%;text-align:center}.rc-sign span{display:block;border-bottom:1px dotted #555;height:40px}' +
+                '@media print{body{padding:0}}</style>';
+        }
+        function printAckForm(row, kind) {
+            printBlob(new Blob([ackFormHtml(row, kind)], { type: 'text/html' }), (kind === 'receipt' ? 'إقرار استلام' : 'إقرار التصوير') + ' - ' + row.name);
+        }
+        function acksCell(r) {
+            var acks = seedAcks(r), html = '<div class="acks-cell" data-id="' + r.id + '">';
+            ACK_TYPES.forEach(function (t) {
+                var a = acks[t.key];
+                html += '<div class="ack-item ' + (a ? 'ack-ok' : 'ack-missing') + '"><i class="fa ' + (a ? 'fa-check' : 'fa-times') + '"></i> <span class="ack-name"' +
+                    (a ? ' title="' + $('<div>').text(a.name + ' — ' + a.date).html() + '"' : '') + '>' + t.name + '</span><span class="ack-actions">' +
+                    (a ? '<button type="button" class="btn btn-link btn-xs ack-dl" data-id="' + r.id + '" data-k="' + t.key + '" title="تحميل"><i class="fa fa-download"></i></button>' +
+                        '<button type="button" class="btn btn-link btn-xs ack-print" data-id="' + r.id + '" data-k="' + t.key + '" title="طباعة"><i class="fa fa-print"></i></button>' +
+                        '<button type="button" class="btn btn-link btn-xs ack-del" data-id="' + r.id + '" data-k="' + t.key + '" title="حذف"><i class="fa fa-trash"></i></button>'
+                        : '<button type="button" class="btn btn-link btn-xs ack-add" data-id="' + r.id + '" data-k="' + t.key + '" title="رفع الإقرار"><i class="fa fa-upload"></i> رفع</button>') +
+                    '</span></div>';
+            });
+            return html + '</div>';
+        }
+        function refreshAcksCell(row) { $('.acks-cell[data-id="' + row.id + '"]').parent().html(acksCell(row)); }
+        function ackName(k) { return k === 'receipt' ? 'إقرار الاستلام' : 'إقرار التصوير'; }
+        $(document).on('click', '.ack-dl', function (e) {
+            e.stopPropagation(); var row = findRow($(this).data('id')), k = $(this).data('k'), a = seedAcks(row)[k];
+            fileBlob(row, a, ackName(k)).then(function (b) { saveBlob(b, safeName(ackName(k) + ' - ' + row.name) + (extOf(a.name) || '.png')); });
+        });
+        $(document).on('click', '.ack-print', function (e) {
+            e.stopPropagation(); var row = findRow($(this).data('id')), k = $(this).data('k'), a = seedAcks(row)[k];
+            fileBlob(row, a, ackName(k)).then(function (b) { printBlob(b, a.name); });
+        });
+        $(document).on('click', '.ack-del', function (e) {
+            e.stopPropagation(); var row = findRow($(this).data('id')), k = $(this).data('k');
+            if (!confirm('حذف ' + ackName(k) + ' الخاص بـ ' + row.name + '؟')) return;
+            seedAcks(row)[k] = null; refreshAcksCell(row); toast('تم حذف ' + ackName(k));
+        });
+        var pendingAck = null;
+        $(document).on('click', '.ack-add', function (e) {
+            e.stopPropagation();
+            pendingAck = { row: findRow($(this).data('id')), k: $(this).data('k') };
+            $('#ackUploadInput').val('').click();
+        });
+        $(document).on('change', '#ackUploadInput', function () {
+            var f = this.files[0]; if (!f || !pendingAck) return;
+            seedAcks(pendingAck.row)[pendingAck.k] = { name: f.name, file: f, by: CURRENT_USER_NAME, date: moment().format('YYYY-MM-DD') };
+            refreshAcksCell(pendingAck.row); toast('تم رفع ' + ackName(pendingAck.k)); pendingAck = null;
+        });
+
+        // إقرار الاستلام uploaded => signed (used by the "إقرار الاستلام" filter)
+        function receiptInfo(row) {
+            var a = seedAcks(row).receipt;
+            return a ? { signed: true, file: a.file || null, date: a.date } : null;
         }
         function receiptCell(r) {
             var info = receiptInfo(r);
@@ -2432,7 +2478,7 @@
             { title: 'تاريخ الحضور', attend: true, render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
             { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } },
-            { title: 'إقرار استلام', render: receiptCell },
+            { title: 'إقرارات', render: acksCell },
             { title: 'مرفقات الحالة', render: attachmentsCell }
         ];
         // the four "تاريخ الحضور" columns are hidden by default (aoColumnDefs in the live page)
@@ -2693,7 +2739,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v7_" + userID;
+            var storageKey = "engineering_table_columns_v8_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -3766,9 +3812,8 @@
                 var list = recRow.receptions[recKind];
                 $('#recHistoryBody').html(list.length ? list.map(function (h) {
                     return '<tr><td>' + h.date + '</td><td>' + (h.attend ? 'حضر' : 'لم يحضر') + '</td><td>' + h.timeIn + '</td><td>' + h.timeOut + '</td>' +
-                        '<td>' + (h.photo ? '<span class="label label-success">نعم</span>' : '<span class="label label-danger">لا</span>') + '</td>' +
-                        '<td>' + $('<div>').text(h.consentImg).html() + '</td><td>' + $('<div>').text(h.notes).html() + '</td></tr>';
-                }).join('') : '<tr><td colspan="7">لم يتم العثور علي أي نتائج</td></tr>');
+                        '<td>' + $('<div>').text(h.notes).html() + '</td></tr>';
+                }).join('') : '<tr><td colspan="5">لم يتم العثور علي أي نتائج</td></tr>');
             }
             function setConsent(on) {
                 var $cb = $('#recPhotoConsent');
@@ -3800,7 +3845,7 @@
                 $('#recCheckLabel').text(c.check);
                 $('#recConsentBtn').text(c.file);
                 $('#recConsentInput').attr('accept', c.accept);
-                $('#recHistCol5').text(c.col5);
+                $('#recPrintLabel').text(recKind === 2 ? 'طباعة إقرار الاستلام' : 'طباعة إقرار التصوير');
                 $('#recHistCol6').text(c.col6);
                 ensureReceptionData(row);
                 $('#receptionModal .rec-case').text('— ' + row.name + (row.code !== '-' ? ' (' + row.code + ')' : ''));
@@ -3824,7 +3869,7 @@
                 renderAttachments();
             });
 
-            $('#recConsentBtn').on('click', function () { $('#recConsentInput').click(); });
+            $('#recPrintAck').on('click', function () { printAckForm(recRow, recKind === 2 ? 'receipt' : 'photo'); });
             $('#recConsentInput').on('change', function () { $('#recConsentName').text(this.files[0] ? this.files[0].name : ''); });
 
             $('#recSave').on('click', function () {
@@ -3846,7 +3891,7 @@
                     consentImg: $('#recConsentName').text() || '-',
                     notes: $('#recNotes').val() || '-'
                 });
-                var cf = $('#recConsentInput')[0].files[0];
+                var cf = null;   // the receipt / photo consent is uploaded from the إقرارات column
                 if (cf) { var visits = recRow.receptions[recKind]; visits[visits.length - 1].file = cf; }
                 if (cf) recRow.attachments.push({ name: cf.name, type: REC[recKind].col6, by: CURRENT_USER, date: moment().format('YYYY-MM-DD HH:mm'), file: cf });
                 recRow.attended = +attend;
