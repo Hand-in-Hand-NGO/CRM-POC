@@ -283,9 +283,9 @@
         .vs-level-table td.tot { font-weight: 700; background: var(--vs-bg); }
         .vs-level-table tfoot td { font-weight: 700; background: var(--vs-surface-2); }
         .vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
-        .vs-kpi-grid.vs-kpi-stages { grid-template-columns: repeat(5, 1fr); margin-bottom: 10px; }
+        .vs-kpi-grid.vs-kpi-stages { grid-template-columns: repeat(4, 1fr); margin-bottom: 10px; }
         .vs-kpi-postponed .num { color: #c27c0e; }
-        .vs-kpi-grid.vs-kpi-rest { grid-template-columns: repeat(2, 1fr); }
+        .vs-kpi-grid.vs-kpi-rest { grid-template-columns: repeat(3, 1fr); }
         .vs-kpi-stages .vs-kpi .lbl { line-height: 1.4; }
         .vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
         .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -4113,12 +4113,12 @@
                                 <div className="lbl">{labels[k]}</div>
                             </div>
                         ))}
+                    </div>
+                    <div className="vs-kpi-grid vs-kpi-rest">
                         <div className={`vs-kpi vs-kpi-postponed ${period.postponed === 0 ? "zero" : ""}`}>
                             <div className="num">{period.postponed.toLocaleString("en-US")}</div>
                             <div className="lbl">مؤجل</div>
                         </div>
-                    </div>
-                    <div className="vs-kpi-grid vs-kpi-rest">
                         {keys.slice(4).map(k => (
                             <div key={k} className={`vs-kpi ${period.values[k] === 0 ? "zero" : ""}`}>
                                 <div className="num">{period.values[k].toLocaleString("en-US")}</div>
