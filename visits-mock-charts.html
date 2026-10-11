@@ -283,6 +283,10 @@
         .vs-level-table td.tot { font-weight: 700; background: var(--vs-bg); }
         .vs-level-table tfoot td { font-weight: 700; background: var(--vs-surface-2); }
         .vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+        .vs-kpi-grid.vs-kpi-stages { grid-template-columns: repeat(5, 1fr); margin-bottom: 10px; }
+        .vs-kpi-postponed .num { color: #c27c0e; }
+        .vs-kpi-grid.vs-kpi-rest { grid-template-columns: repeat(2, 1fr); }
+        .vs-kpi-stages .vs-kpi .lbl { line-height: 1.4; }
         .vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
         .vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
         .vs-kpi .lbl { font-size: 11px; color: var(--vs-text-dim); }
@@ -3568,7 +3572,7 @@
 
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
 
-        var STAT_LABELS = { measurements: 'القياسات', deliveries: 'التسليمات', maintenanceAssess: 'تقييم صيانة', maintenanceDeliver: 'تسليم صيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
+        var STAT_LABELS = { measurements: 'التقييم الطبي و القياسات', deliveries: 'تسليم طرف جديد', maintenanceAssess: 'تقييم الصيانة', maintenanceDeliver: 'تسليم الصيانة', rejected: 'رفض الاستلام', remake: 'إعادة تصنيع' };
         var lastStatsData = null; // periods + targets, computed below — the React chart drawer and the Excel export both read from here
 
         // builds N independent (non-overlapping) buckets of the given calendar unit, ending at `t`,
@@ -3645,6 +3649,11 @@
                 avgDays: avgDaysBetween(f, t),
                 byLevel: stageLevelBetween(f, t),
                 funnel: funnelBetween(f, t),
+                postponed: (function () {   // "مؤجل" actions in the period, all four stages
+                    var acts = stageActionsBetween(f, t), n = 0;
+                    STAGE_KEYS.forEach(function (k) { acts[k].forEach(function (a) { if (a.name === 'مؤجل') n += a.count; }); });
+                    return n;
+                })(),
                 trend: buildTrendBuckets(ev, key === 'week' ? r.to.clone() : trendEnd, meta.unit, meta.count),
                 trendLabel: meta.label + (isCurrent ? '' : ' — حتى ' + trendEnd.format('YYYY-MM-DD'))
             };
@@ -3704,6 +3713,7 @@
                     var tg = p.target && p.target[k];
                     lines.push([q(STAT_LABELS[k]), p.values[k], tg != null ? tg : '-', tg ? Math.round(p.values[k] / tg * 100) + '%' : '-'].join(','));
                 });
+                lines.push([q('مؤجل'), p.postponed].join(','));
                 lines.push([q('متوسط أيام المقاس والتسليم'), p.avgDays.avg === null ? '-' : p.avgDays.avg, q(p.avgDays.n + ' حالة')].join(','));
                 lines.push('', q('الحجز والحضور والتقييم'));
                 lines.push([q('المرحلة'), q('الحجز'), q('الحضور'), q('نسبة الحضور'), q('تم التقييم'), q('نسبة التقييم من الحضور')].join(','));
@@ -4048,8 +4058,20 @@
                             onPick={d => setAnchors(Object.assign({}, anchors, { [periodKey]: d }))} />
                     </div>
 
-                    <div className="vs-kpi-grid">
-                        {keys.map(k => (
+                    <div className="vs-kpi-grid vs-kpi-stages">
+                        {keys.slice(0, 4).map(k => (
+                            <div key={k} className={`vs-kpi ${period.values[k] === 0 ? "zero" : ""}`}>
+                                <div className="num">{period.values[k].toLocaleString("en-US")}</div>
+                                <div className="lbl">{labels[k]}</div>
+                            </div>
+                        ))}
+                        <div className={`vs-kpi vs-kpi-postponed ${period.postponed === 0 ? "zero" : ""}`}>
+                            <div className="num">{period.postponed.toLocaleString("en-US")}</div>
+                            <div className="lbl">مؤجل</div>
+                        </div>
+                    </div>
+                    <div className="vs-kpi-grid vs-kpi-rest">
+                        {keys.slice(4).map(k => (
                             <div key={k} className={`vs-kpi ${period.values[k] === 0 ? "zero" : ""}`}>
                                 <div className="num">{period.values[k].toLocaleString("en-US")}</div>
                                 <div className="lbl">{labels[k]}</div>
