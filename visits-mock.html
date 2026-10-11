@@ -403,6 +403,37 @@
         #assessmentModal .as-history th { background: #f9f9f9; text-align: center; white-space: nowrap; }
         #assessmentModal .as-history td { text-align: center; vertical-align: middle; font-size: 12px; }
 
+        /* ---- مقارنة الاكسسوارات والمكونات ---- */
+        .parts-open { margin-top: 4px; border-radius: 10px !important; font-size: 11px; white-space: nowrap; border: 1px solid; background: #fff; }
+        .parts-open .parts-state { display: block; font-weight: bold; }
+        .parts-open.parts-same { color: #1f9d48; border-color: #9fdcb3; background: #effaf3; }
+        .parts-open.parts-diff { color: #d9343f; border-color: #f5b5bb; background: #fdeef0; }
+        .parts-open.parts-pending { color: #8a929c; border-color: #d7dbe0; background: #f6f7f9; }
+        .parts-blink { animation: docs-blink 1.2s ease-in-out infinite; }
+        @keyframes docs-blink { 50% { opacity: .25; } }
+        #partsModal .modal-dialog { width: 640px; }
+        .parts-summary { padding: 8px 12px; border-radius: 8px; font-weight: bold; margin-bottom: 8px; }
+        .parts-summary.same { background: #effaf3; color: #1f9d48; }
+        .parts-summary.diff { background: #fdeef0; color: #d9343f; }
+        .parts-summary.pending { background: #f6f7f9; color: #8a929c; }
+        .parts-legend { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .parts-legend .lg { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 8px 0 3px; vertical-align: middle; }
+        .parts-legend .lg.same { background: #31c860; } .parts-legend .lg.diff { background: #f96a74; } .parts-legend .lg.none { background: #c9ced5; }
+        .parts-table th { text-align: center; background: #f5f6f8; vertical-align: middle !important; }
+        .parts-table th small { display: block; font-weight: normal; color: #999; font-size: 10px; }
+        .parts-table td { text-align: center; vertical-align: middle !important; }
+        .parts-table td.pr-name { text-align: right; font-weight: bold; }
+        .parts-table tr.parts-sec td { background: #eef2f6; text-align: right; font-weight: bold; color: #535252; }
+        .parts-table tr.pr-same td { background: #effaf3; color: #1f9d48; }
+        .parts-table tr.pr-diff td { background: #fdeef0; color: #d9343f; }
+        .parts-table tr.pr-none td, .parts-table tr.pr-pending td { color: #a5abb3; }
+        .parts-table .pr-from { color: #999; font-size: 10px; }
+        .parts-table .pv-none { color: #c0c5cc; }
+        .parts-table .pr-mark .fa { font-size: 15px; }
+        .parts-cell-link { cursor: pointer; display: inline-block; }
+        .parts-cell-link:hover { color: #0093e9; }
+        .parts-cell-link .fa-exchange { color: #0093e9; font-size: 11px; margin-right: 3px; }
+
         /* ---- الاستقبال (reception) ---- */
         .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
         .reception-status { display: block; font-size: 11px; color: gray; margin-top: 3px; }
@@ -1638,6 +1669,19 @@
         </div>
     </div>
 
+    <!-- ===================== مقارنة الاكسسوارات والمكونات ===================== -->
+    <div class="modal fade" id="partsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header-primary">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"><i class="fa fa-exchange"></i> مقارنة الاكسسوارات والمكونات <small class="parts-case" style="color:#777"></small></h4>
+                </div>
+                <div class="modal-body" id="partsBody"></div>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="docUploadInput" style="display:none">
     <div class="toast-msg" id="toast"></div>
 
@@ -2088,14 +2132,126 @@
             return '<div class="postpone-box"><div>عدد ايام التأجيل: <b>' + days + '</b> يوم</div>' +
                 '<div>تاريخ التأجيل: <b>' + moment(a.postponeDate).format('DD-MM-YYYY') + '</b></div></div><br>';
         }
+        // ===================== الاكسسوارات والمكونات: التصميم vs التنفيذ =====================
+        // التصميم = what was ticked at "تم أخد مقاس" (التقييم الطبي والقياسات)
+        // التنفيذ = everything recorded at the manufacturing page (استلام الطرف من التجميع) + "تسليم طرف جديد"
+        var PARTS_CATALOG = [
+            { sec: 'acc', title: 'الاكسسوارات', items: [
+                { name: 'جوانتى سيليكون' }, { name: 'تريكو' },
+                { name: 'بطانة', opts: ['3 مم', '5 مم', '8 مم'] }, { name: 'سكوتش', opts: ['2.5 سم', '4 سم', '5 سم'] }] },
+            { sec: 'comp', title: 'المكونات', items: [
+                { name: 'ذراع', opts: ['ذراع تجميلي', 'ذراع ميكانيكي', 'ذراع كهربائي'] }, { name: 'كف تصنيع داخلي' },
+                { name: 'جوانتي تجميل', opts: ['رجالي', 'حريمي', 'أطفال'] }] }
+        ];
+        function partsHash(id, salt) { return Math.abs(((id + 11) * 2654435761 + salt * 40503) % 1000); }
+        function seedParts(row) {
+            if (row.parts) return row.parts;
+            var parts = row.parts = { design: null, manufacturing: null, delivery: null };
+            var m = row.assessments.new_mdm;
+            if (row.type !== 'new' || !m || +m.id !== 1) return parts;
+            var design = {}, n = 0;
+            PARTS_CATALOG.forEach(function (sec) {
+                sec.items.forEach(function (it) {
+                    n++;
+                    if (partsHash(row.id, n) % 100 < 50) design[sec.sec + ':' + it.name] = it.opts ? it.opts[partsHash(row.id, n + 50) % it.opts.length] : true;
+                });
+            });
+            parts.design = design;
+            if (partsHash(row.id, 99) % 100 < 85) {           // the limb came back from assembly
+                var manu = Object.assign({}, design);
+                if (partsHash(row.id, 98) % 100 < 35) {          // something was changed during manufacturing
+                    var all = []; PARTS_CATALOG.forEach(function (sec) { sec.items.forEach(function (it) { all.push({ key: sec.sec + ':' + it.name, it: it }); }); });
+                    var pick = all[partsHash(row.id, 97) % all.length];
+                    if (manu[pick.key] === undefined) manu[pick.key] = pick.it.opts ? pick.it.opts[0] : true;
+                    else if (pick.it.opts) manu[pick.key] = pick.it.opts[(pick.it.opts.indexOf(manu[pick.key]) + 1) % pick.it.opts.length];
+                    else delete manu[pick.key];
+                }
+                parts.manufacturing = manu;
+            }
+            var f = row.assessments.new_fitting;
+            if (parts.manufacturing && f && +f.id === 3) parts.delivery = Object.assign({}, parts.manufacturing);
+            return parts;
+        }
+        // execution = manufacturing + delivery (a later stage's value wins)
+        function executionParts(parts) {
+            if (!parts.manufacturing && !parts.delivery) return null;
+            var out = {};
+            [['manufacturing', 'التصنيع'], ['delivery', 'تسليم طرف جديد']].forEach(function (src) {
+                var p = parts[src[0]]; if (!p) return;
+                Object.keys(p).forEach(function (k) { out[k] = { v: p[k], from: src[1] }; });
+            });
+            return out;
+        }
+        function compareParts(row) {
+            var parts = seedParts(row);
+            if (!parts.design) return null;
+            var exec = executionParts(parts), diffs = 0, sections = PARTS_CATALOG.map(function (sec) {
+                return { title: sec.title, items: sec.items.map(function (it) {
+                    var k = sec.sec + ':' + it.name, d = parts.design[k], e = exec ? exec[k] : undefined;
+                    var state = (d === undefined && e === undefined) ? 'none' : !exec ? 'pending' : (e && d === e.v) ? 'same' : 'diff';
+                    if (state === 'diff') diffs++;
+                    return { name: it.name, design: d, exec: e, state: state };
+                }) };
+            });
+            return { sections: sections, diffs: diffs, executed: !!exec };
+        }
+        function partsBadge(row) {
+            var c = compareParts(row);
+            if (!c) return '';
+            var cls = !c.executed ? 'pending' : c.diffs ? 'diff' : 'same';
+            var txt = !c.executed ? 'في انتظار التنفيذ' : c.diffs ? c.diffs + (c.diffs === 1 ? ' اختلاف' : ' اختلافات') : 'مطابق';
+            var icon = c.diffs ? '<i class="fa fa-exclamation-triangle parts-blink"></i>' : !c.executed ? '<i class="fa fa-clock-o"></i>' : '<i class="fa fa-check"></i>';
+            return '<button type="button" class="btn btn-xs parts-open parts-' + cls + '" data-id="' + row.id + '" title="مقارنة الاكسسوارات والمكونات (التصميم / التنفيذ)">' +
+                '<i class="fa fa-exchange"></i> الاكسسوارات والمكونات <span class="parts-state">' + icon + ' ' + txt + '</span></button>';
+        }
+        function partsValue(v) { return v === undefined ? '<span class="pv-none">—</span>' : v === true ? '<i class="fa fa-check"></i>' : $('<div>').text(v).html(); }
+        function openPartsModal(row) {
+            var c = compareParts(row);
+            if (!c) return;
+            var html = '<div class="parts-summary ' + (!c.executed ? 'pending' : c.diffs ? 'diff' : 'same') + '">' +
+                (!c.executed ? '<i class="fa fa-clock-o"></i> لم يتم التنفيذ بعد — المعروض هو التصميم فقط'
+                    : c.diffs ? '<i class="fa fa-exclamation-triangle parts-blink"></i> يوجد ' + c.diffs + (c.diffs === 1 ? ' اختلاف' : ' اختلافات') + ' بين التصميم والتنفيذ'
+                        : '<i class="fa fa-check-circle"></i> التنفيذ مطابق للتصميم') + '</div>' +
+                '<div class="parts-legend"><span class="lg same"></span> مطابق <span class="lg diff"></span> مختلف <span class="lg none"></span> غير مستخدم</div>' +
+                '<table class="table table-bordered parts-table"><thead><tr><th>البند</th><th>مكونات واكسسوارات التصميم<small>تم أخد مقاس</small></th>' +
+                '<th>مكونات واكسسوارات التنفيذ<small>التصنيع + تسليم طرف جديد</small></th><th style="width:34px"></th></tr></thead><tbody>';
+            c.sections.forEach(function (sec) {
+                html += '<tr class="parts-sec"><td colspan="4">' + sec.title + '</td></tr>';
+                sec.items.forEach(function (it) {
+                    var mark = it.state === 'same' ? '<i class="fa fa-check-circle"></i>' : it.state === 'diff' ? '<i class="fa fa-exclamation-triangle parts-blink"></i>' : '';
+                    html += '<tr class="pr-' + it.state + '"><td class="pr-name">' + it.name + '</td><td>' + partsValue(it.design) + '</td>' +
+                        '<td>' + (it.exec ? partsValue(it.exec.v) + ' <small class="pr-from">' + it.exec.from + '</small>' : (c.executed ? partsValue(undefined) : '<span class="pv-none">لم يتم بعد</span>')) + '</td><td class="pr-mark">' + mark + '</td></tr>';
+                });
+            });
+            $('#partsModal .parts-case').text(row.name + (row.code !== '-' ? ' (' + row.code + ')' : ''));
+            $('#partsBody').html(html + '</tbody></table>');
+            $('#partsModal').modal('show');
+        }
+        $(document).on('click', '.parts-open', function (e) { e.stopPropagation(); openPartsModal(findRow($(this).data('id'))); });
+        // the add-assessment popup's accessories / components sections -> { 'acc:بطانة': '5 مم', 'acc:تريكو': true, ... }
+        function partsFromForm() {
+            var out = {};
+            $('#assessmentModal [data-sec][data-name]').not('.as-export').each(function () {
+                var k = $(this).data('sec') + ':' + $.trim($(this).data('name'));
+                if ($(this).is(':checkbox')) { if (this.checked) out[k] = true; }
+                else if ($(this).val()) out[k] = $(this).val();
+            });
+            return out;
+        }
+
         function assessmentCell(stage) {
             return function (row) {
                 if (row.type !== stage.split('_')[0]) return '-';
                 var a = row.assessments[stage], html = '';
                 if (a) html += '<span class="assess-label">' + statusName(stage, a.id) + '<small>' + a.date + '</small></span><br>' + postponeBox(a);
                 if (currentStage(row) === stage) html += '<i class="fa fa-plus-square add-assessment" data-id="' + row.id + '" data-stage="' + stage + '" title="إضافة تقييم"></i>';
+                if (stage === 'new_fitting') { var pb = partsBadge(row); if (pb) html += (html ? '<br>' : '') + pb; }
                 return html || '-';
             };
+        }
+        // الاكسسوارات / المكونات cells open the same comparison when the case has a design
+        function partsCellLink(r, content) {
+            return compareParts(r) ? '<span class="parts-cell-link parts-open" data-id="' + r.id + '" title="مقارنة التصميم والتنفيذ">' + content + ' <i class="fa fa-exchange"></i></span>' : content;
         }
         function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
         // value followed by [🔍] (search by it) and [نسخ] (copy it)
@@ -2145,8 +2301,8 @@
             { title: 'الاستقبال', render: receptionCell },
             { title: 'عدد الأيام بين المقاس والتسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
-            { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
-            { title: 'المكونات', render: function (r) { return list(r.components); } },
+            { title: 'الاكسسوارات', render: function (r) { return partsCellLink(r, list(r.accessories)); } },
+            { title: 'المكونات', render: function (r) { return partsCellLink(r, list(r.components)); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
             // only videos really uploaded (رفع فيديو in the reception popup) — nothing is pre-filled
             { title: 'الفيديوهات', render: function (r) { var n = (r.attachments || []).filter(function (a) { return a.type === 'فيديو'; }).length; return n ? '<i class="fa fa-video-camera text-primary"></i> ' + n : '-'; } },
@@ -2207,7 +2363,8 @@
                 if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
                 if (f.isReceipt && f.isReceipt !== '-1') {   // same values as the "إقرار استلام" column
                     var rc = receiptInfo(r);
-                    if (!rc || String(rc.signed ? 1 : 0) !== f.isReceipt) return false;
+                    var signed = !!(rc && rc.signed);   // "لا" = every case without a signed receipt
+                    if (String(signed ? 1 : 0) !== f.isReceipt) return false;
                 }
                 if (categories.length && categories.indexOf('all') === -1 &&
                     !categories.some(function (c) { return currentStage(r) === CATEGORY_STAGE[c]; })) return false;
@@ -3069,6 +3226,11 @@
                 row.assessments[stage] = { id: sid, date: $('#modalDate').val() };
                 if (postponed) row.assessments[stage].postponeDate = row.postponeDate = $('#modalPostpone').val();
                 if ($('#modalNotes').val()) row.notes = $('#modalNotes').val();
+                if (withParts && row.type === 'new' && (stage === 'new_mdm' || stage === 'new_fitting')) {
+                    seedParts(row);
+                    if (stage === 'new_mdm') row.parts.design = partsFromForm();
+                    else row.parts.delivery = partsFromForm();
+                }
                 if (withParts) {
                     if (acc.length) row.accessories = acc.map(function (n) { return { name: n }; });
                     if (comp.length) row.components = comp.map(function (n) { return { name: n }; });
