@@ -535,6 +535,8 @@
         .parts-cell-link .fa-exchange { color: #0093e9; font-size: 11px; margin-right: 3px; }
 
         /* ---- الاستقبال (reception) ---- */
+        .visit-cell { white-space: nowrap; }
+        .visit-cell .visit-date { display: block; margin-bottom: 5px; }
         .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
         .reception-status { display: block; font-size: 11px; color: gray; margin-top: 3px; }
         #receptionModal .modal-dialog { width: 70%; min-width: 900px; }
@@ -1286,6 +1288,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Design vs execution -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item box-content">
+                                            <label for="isPartsMatch" class="control-label">مقارنة التصميم والتنفيذ (المكونات)</label>
+                                            <div class="btn-group btn-group-justified" id="isPartsMatch" data-toggle="buttons">
+                                                <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isPartsMatch" checked="checked"> الكل</label>
+                                                <label class="btn btn-default btn-on"><input type="radio" value="1" name="isPartsMatch"> مطابق</label>
+                                                <label class="btn btn-default btn-off"><input type="radio" value="0" name="isPartsMatch"> غير مطابق</label>
+                                            </div>
+                                        </div>
+                                    </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1416,22 +1429,21 @@
                                             <span class="col-lg-4"><input name="column" data-column="1" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات الحالة</span>
                                             <span class="col-lg-4"><input name="column" data-column="2" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات التمويل</span>
                                             <span class="col-lg-4"><input name="column" data-column="3" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> بيانات البتر</span>
-                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تاريخ حجز الزيارة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاستقبال</span>
-                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
-                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
-                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
-                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="12" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="14" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
-                                            <span class="col-lg-4"><input name="column" data-column="16" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="18" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
-                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
-                                            <span class="col-lg-4"><input name="column" data-column="23" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="4" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> حجز الزيارة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="5" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> عدد الأيام بين المقاس والتسليم</span>
+                                            <span class="col-lg-4"><input name="column" data-column="6" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> لديه طرف ؟</span>
+                                            <span class="col-lg-4"><input name="column" data-column="7" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الاكسسوارات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="8" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> المكونات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="9" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> قطع غيار</span>
+                                            <span class="col-lg-4"><input name="column" data-column="10" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفيديوهات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="11" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> التقييم الطبي و القياسات</span>
+                                            <span class="col-lg-4"><input name="column" data-column="13" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم طرف جديد</span>
+                                            <span class="col-lg-4"><input name="column" data-column="15" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تقييم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="17" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
+                                            <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرار استلام</span>
+                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2032,7 +2044,6 @@
                 (function () { var any = Object.keys(open).some(function (k) { return open[k]; });
                     return '<a href="#" class="docs-all" title="' + (any ? 'قفل كل الأقسام' : 'فتح كل الأقسام') + '"><i class="fa ' + (any ? 'fa-angle-double-up' : 'fa-angle-double-down') + '"></i></a>'; })() +
                 '<span class="docs-count ' + (missing ? 'bad' : 'good') + '" title="الأقسام المكتملة">' + catsDone + '/' + DOC_CATEGORIES.length + '</span></div>' +
-                (missing ? '<div class="docs-alert"><i class="fa fa-exclamation-triangle"></i> ناقص ' + missing + (missing === 1 ? ' قسم' : ' أقسام') + '</div>' : '') +
                 '<table class="docs-list">';
             DOC_CATEGORIES.forEach(function (c, ci) {
                 var up = c.docs.filter(function (d, k) { return docs[c.first + k]; }).length;
@@ -2219,7 +2230,7 @@
                 parts.manufacturing = manu;
             }
             var f = row.assessments.new_fitting;
-            if (parts.manufacturing && f && +f.id === 3) parts.delivery = Object.assign({}, parts.manufacturing);
+            if (f && +f.id === 3) parts.delivery = Object.assign({}, parts.manufacturing || design);
             return parts;
         }
         // execution = manufacturing + delivery (a later stage's value wins)
@@ -2232,9 +2243,10 @@
             });
             return out;
         }
+        // the comparison exists only once "تم التسليم" was recorded in تسليم طرف جديد
         function compareParts(row) {
-            var parts = seedParts(row);
-            if (!parts.design) return null;
+            var parts = seedParts(row), f = row.assessments.new_fitting;
+            if (!parts.design || !f || +f.id !== 3) return null;
             var exec = executionParts(parts), diffs = 0, sections = PARTS_CATALOG.map(function (sec) {
                 return { title: sec.title, items: sec.items.map(function (it) {
                     var k = sec.sec + ':' + it.name, d = parts.design[k], e = exec ? exec[k] : undefined;
@@ -2263,8 +2275,8 @@
                     : c.diffs ? '<i class="fa fa-exclamation-triangle parts-blink"></i> يوجد ' + c.diffs + (c.diffs === 1 ? ' اختلاف' : ' اختلافات') + ' بين التصميم والتنفيذ'
                         : '<i class="fa fa-check-circle"></i> التنفيذ مطابق للتصميم') + '</div>' +
                 '<div class="parts-legend"><span class="lg same"></span> مطابق <span class="lg diff"></span> مختلف <span class="lg none"></span> غير مستخدم</div>' +
-                '<table class="table table-bordered parts-table"><thead><tr><th>البند</th><th>مكونات واكسسوارات التصميم<small>تم أخد مقاس</small></th>' +
-                '<th>مكونات واكسسوارات التنفيذ<small>التصنيع + تسليم طرف جديد</small></th><th style="width:34px"></th></tr></thead><tbody>';
+                '<table class="table table-bordered parts-table"><thead><tr><th>البند</th><th>التصميم<small>تم أخد مقاس</small></th>' +
+                '<th>التنفيذ<small>التصنيع + تسليم طرف جديد</small></th><th style="width:34px"></th></tr></thead><tbody>';
             c.sections.forEach(function (sec) {
                 html += '<tr class="parts-sec"><td colspan="4">' + sec.title + '</td></tr>';
                 sec.items.forEach(function (it) {
@@ -2298,10 +2310,6 @@
                 if (stage === 'new_fitting') { var pb = partsBadge(row); if (pb) html += (html ? '<br>' : '') + pb; }
                 return html || '-';
             };
-        }
-        // الاكسسوارات / المكونات cells open the same comparison when the case has a design
-        function partsCellLink(r, content) {
-            return compareParts(r) ? '<span class="parts-cell-link parts-open" data-id="' + r.id + '" title="مقارنة التصميم والتنفيذ">' + content + ' <i class="fa fa-exchange"></i></span>' : content;
         }
         function attendDate(stage) { return function (row) { var a = row.assessments[stage]; return a ? a.date : '-'; }; }
         // value followed by [🔍] (search by it) and [نسخ] (copy it)
@@ -2347,12 +2355,11 @@
                         '<tr><td class="titleInfo">اخر جراحة:</td><td class="info">' + r.surgeryDate + '</td></tr></table>';
                 }
             },
-            { title: 'تاريخ حجز الزيارة', render: function (r) { return r.visitDate; } },
-            { title: 'الاستقبال', render: receptionCell },
+            { title: 'حجز الزيارة', render: function (r) { var rc = receptionCell(r); return '<div class="visit-cell"><span class="visit-date">' + (r.visitDate || '-') + '</span>' + (rc && rc !== '-' ? rc : '') + '</div>'; } },
             { title: 'عدد الأيام بين المقاس والتسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
-            { title: 'الاكسسوارات', render: function (r) { return partsCellLink(r, list(r.accessories)); } },
-            { title: 'المكونات', render: function (r) { return partsCellLink(r, list(r.components)); } },
+            { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
+            { title: 'المكونات', render: function (r) { return list(r.components); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
             // only videos really uploaded (رفع فيديو in the reception popup) — nothing is pre-filled
             { title: 'الفيديوهات', render: function (r) { var n = (r.attachments || []).filter(function (a) { return a.type === 'فيديو'; }).length; return n ? '<i class="fa fa-video-camera text-primary"></i> ' + n : '-'; } },
@@ -2411,6 +2418,10 @@
                 }
                 if (levels.length && levels.indexOf(r.level) === -1) return false;
                 if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
+                if (f.isPartsMatch && f.isPartsMatch !== '-1') {   // only cases delivered with a design to compare
+                    var pc = compareParts(r);
+                    if (!pc || String(pc.diffs ? 0 : 1) !== f.isPartsMatch) return false;
+                }
                 if (f.isReceipt && f.isReceipt !== '-1') {   // same values as the "إقرار استلام" column
                     var rc = receiptInfo(r);
                     var signed = !!(rc && rc.signed);   // "لا" = every case without a signed receipt
@@ -2623,7 +2634,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v6_" + userID;
+            var storageKey = "engineering_table_columns_v7_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
@@ -2830,6 +2841,7 @@
                 if ($('#selectedComponentsIds').val()) n++;
                 if ($.trim($('#casePhone').val())) n++;
                 if ($('#isReceipt input:checked').val() && $('#isReceipt input:checked').val() !== '-1') n++;
+                if ($('#isPartsMatch input:checked').val() && $('#isPartsMatch input:checked').val() !== '-1') n++;
                 if ($('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom').val() || $('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo').val()) n++;
                 $('.more-filters-count').text(n).toggle(n > 0);
             }
@@ -3081,6 +3093,7 @@
             // reset every filter, then search by this value only
             $("#isAttend").find('.btn-all').click();
             $("#isReceipt").find('.btn-all').click();
+            $("#isPartsMatch").find('.btn-all').click();
             $form.find('input:not(:checkbox):not(:radio)').val('');
             $form.find('input:checkbox, input:radio').prop('checked', false);
             $form.find('select').val(null).trigger('change');
