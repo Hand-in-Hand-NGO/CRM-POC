@@ -3103,11 +3103,12 @@
             var BASE_COLS = ['تاريخ حجز الزيارة', 'مهندس / علاج طبيعي', 'فني أطراف', 'التقييم', 'تاريخ التأجيل', 'التواصل', 'الملاحظات', 'ملف القياسات'];
             var FIT_COLS = ['المكونات', 'الاكسسوارات', 'تسليم الجهاز القديم'];
             function isFitting(stage) { return /fitting/.test(stage); }
-            // accessories + components sections: every delivery status except "مؤجل",
-            // plus "تم أخد مقاس" (التقييم الطبي والقياسات) and "تم نهاية الصيانة" (تقييم الصيانة)
+            // accessories + components sections appear only for:
+            // تم أخد مقاس (التقييم الطبي والقياسات) — تم التسليم (تسليم طرف جديد)
+            // تم نهاية الصيانة (تقييم الصيانة) — تم التسليم (تسليم الصيانة)
+            var PARTS_STATUS = { new_mdm: 1, new_fitting: 3, maintenance_mdm: 15, maintenance_fitting: 3 };
             function showsParts(stage, sid) {
-                if (!sid || +sid === 22) return false;
-                return isFitting(stage) || (stage === 'new_mdm' && +sid === 1) || (stage === 'maintenance_mdm' && +sid === 15);
+                return !!sid && PARTS_STATUS[stage] === +sid;
             }
             function historyHasParts(stage) { return isFitting(stage) || stage === 'new_mdm' || stage === 'maintenance_mdm'; }
             function esc(t) { return $('<div>').text(t == null ? '' : t).html(); }
