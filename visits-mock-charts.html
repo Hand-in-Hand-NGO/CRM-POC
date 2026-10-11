@@ -214,7 +214,7 @@
         }
 
         /* ---- chart-drawer building blocks ---- */
-        .vs-dash-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; flex-wrap: wrap; gap: 10px; }
+        .vs-dash-head { display: flex; flex-direction: column; align-items: flex-start; margin: 0 0 16px; gap: 8px; }
         .vs-period-tabs { display: inline-flex; background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius-sm); padding: 3px; gap: 2px; flex-wrap: wrap; }
         .vs-period-tabs button {
             border: none; background: none; color: var(--vs-text-dim); padding: 7px 14px; border-radius: 5px;
@@ -263,6 +263,17 @@
         .vs-funnel-table td small { display: block; font-size: 10px; color: var(--vs-text-faint); font-weight: normal; margin-top: 1px; }
         .vs-funnel-table td:first-child .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; }
         .vs-funnel-table { margin-top: 0; }
+        .vs-act-cell { position: relative; cursor: help; }
+        .vs-act-cell:hover { background: #eef4ff !important; }
+        .vs-act-pop { display: none; position: absolute; left: 0; top: 100%; z-index: 40; width: 300px; background: #fff; border: 1px solid var(--vs-border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 8px 10px; text-align: right; }
+        .vs-act-cell:hover .vs-act-pop { display: block; }
+        .vs-act-title { font-weight: 700; font-size: 11.5px; color: var(--vs-text); margin-bottom: 6px; }
+        .vs-act-row { display: grid; grid-template-columns: 1fr 28px 38px; gap: 2px 6px; align-items: center; font-size: 11px; margin-bottom: 5px; }
+        .vs-act-row .n { color: var(--vs-text-dim); }
+        .vs-act-row b { text-align: center; color: var(--vs-text); }
+        .vs-act-row .p { color: var(--vs-accent); font-weight: 700; text-align: left; }
+        .vs-act-row .bar { grid-column: 1 / -1; height: 4px; background: var(--vs-surface-2); border-radius: 4px; overflow: hidden; }
+        .vs-act-row .bar i { display: block; height: 100%; background: var(--vs-accent); border-radius: 4px; }
         .vs-level-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; font-variant-numeric: tabular-nums; }
         .vs-level-table th, .vs-level-table td { border: 1px solid var(--vs-border); padding: 6px 6px; text-align: center; }
         .vs-level-table th { background: var(--vs-bg); color: var(--vs-text-dim); font-size: 11px; font-weight: 700; }
@@ -537,6 +548,9 @@
         /* ---- الاستقبال (reception) ---- */
         .visit-cell { white-space: nowrap; }
         .visit-cell .visit-date { display: block; margin-bottom: 5px; }
+        .parts-list { text-align: right; white-space: nowrap; line-height: 1.6; }
+        .parts-list .pl-item b { color: #a8323e; font-weight: bold; }
+        .parts-list .pl-item .fa-check { color: #333; font-size: 11px; }
         .reception-btn { border-radius: 10px !important; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
         .reception-status { display: block; font-size: 11px; color: gray; margin-top: 3px; }
         #receptionModal .modal-dialog { width: 70%; min-width: 900px; }
@@ -2353,6 +2367,25 @@
             }
             return (row.phones = out);
         }
+        // الاكسسوارات / المكونات cells: "name: value" (✓ when the item has no value)
+        var PART_VALUES = {
+            'سوكيت  PP': ['كود الحالة'], 'سوكيت PP': ['كود الحالة'], 'شوكة': ['Female', 'Male'], 'ماسورة': ['بالغين', 'أطفال'],
+            'قدم': ['ثابت مستورد', 'متحرك مستورد', 'ثابت محلي'], 'ركبة': ['ميكانيكية', 'هيدروليك'], 'بطانة': ['3 مم', '5 مم', '8 مم'],
+            'سكوتش': ['2.5 سم', '4 سم', '5 سم'], 'جوانتي تجميل': ['رجالي', 'حريمي', 'أطفال'], 'ذراع': ['ذراع تجميلي', 'ذراع ميكانيكي'],
+            'شراب جيل': ['S', 'M', 'L'], 'سوفت سوكيت TPU': ['S', 'M', 'L']
+        };
+        function partsList(arr, row) {
+            if (!arr || !arr.length) return '-';
+            var html = '';
+            arr.forEach(function (x, i) {
+                var raw = $.trim(x.name), name = raw, val = null, m = /^(.*?)\s*\((.*)\)$/.exec(raw);
+                if (m) { name = m[1]; val = m[2]; }
+                else if (PART_VALUES[raw]) { var o = PART_VALUES[raw]; val = o[Math.abs((row.id * 31 + i * 7 + raw.length) % o.length)]; }
+                html += '<div class="pl-item"><b>' + $('<div>').text(name).html() + ':</b> ' + (val ? $('<div>').text(val).html() : '<i class="fa fa-check"></i>') + '</div>';
+                if (name === 'قدم') html += '<div class="pl-item"><b>مقاس القدم:</b> ' + (22 + row.id % 7) + '</div>';
+            });
+            return '<div class="parts-list">' + html + '</div>';
+        }
         function list(arr) { return arr.length ? arr.map(function (x) { return x.name; }).join('<br>') : '-'; }
 
         var COLUMNS = [
@@ -2380,8 +2413,8 @@
             { title: 'حجز الزيارة', render: function (r) { var rc = receptionCell(r); return '<div class="visit-cell"><span class="visit-date">' + (r.visitDate || '-') + '</span>' + (rc && rc !== '-' ? rc : '') + '</div>'; } },
             { title: 'عدد الأيام بين المقاس والتسليم', render: function (r) { return r.days === null ? '-' : r.days; } },
             { title: 'لديه طرف ؟', render: function (r) { return r.hasLimb; } },
-            { title: 'الاكسسوارات', render: function (r) { return list(r.accessories); } },
-            { title: 'المكونات', render: function (r) { return list(r.components); } },
+            { title: 'الاكسسوارات', render: function (r) { return partsList(r.accessories, r); } },
+            { title: 'المكونات', render: function (r) { return partsList(r.components, r); } },
             { title: 'قطع غيار', render: function (r) { return list(r.spareParts); } },
             // only videos really uploaded (رفع فيديو in the reception popup) — nothing is pre-filled
             { title: 'الفيديوهات', render: function (r) { var n = (r.attachments || []).filter(function (a) { return a.type === 'فيديو'; }).length; return n ? '<i class="fa fa-video-camera text-primary"></i> ' + n : '-'; } },
@@ -3500,8 +3533,37 @@
                 tot.booked += booked; tot.attended += attended; tot.assessed += x.assessed;
                 return { stage: k, label: STAGE_LABELS[k], booked: booked, attended: attended, assessed: x.assessed };
             });
+            var acts = stageActionsBetween(from, to);
+            rows.forEach(function (r) { r.actions = acts[r.stage]; });
             return { rows: rows, totals: tot };
         }
+        // الإجراءات الهندسية behind "تم التقييم": table rows keep their real status; seeded history gets a
+        // deterministic status (main action of the stage most of the time)
+        var MAIN_ACTION = { new_mdm: 1, new_fitting: 3, maintenance_mdm: 15, maintenance_fitting: 3 };
+        function historyAction(stage, i) {
+            var items = STAGES[stage].items, h = Math.abs((i * 2654435761 + 97) % 100);
+            if (h < 55) return MAIN_ACTION[stage];
+            if (h < 70) return 22;
+            var rest = items.filter(function (it) { return it.id !== MAIN_ACTION[stage] && it.id !== 22; });
+            return rest.length ? rest[h % rest.length].id : MAIN_ACTION[stage];
+        }
+        function stageActionsBetween(from, to) {
+            var out = {};
+            STAGE_KEYS.forEach(function (k) { out[k] = {}; });
+            function add(stage, id) { var n = $.trim(statusName(stage, id)); out[stage][n] = (out[stage][n] || 0) + 1; }
+            STAGE_HISTORY.forEach(function (e, i) { if (e.date >= from && e.date <= to) add(e.stage, historyAction(e.stage, i)); });
+            ROWS.forEach(function (row) {
+                STAGE_KEYS.forEach(function (k) { var a = row.assessments[k]; if (a && a.date >= from && a.date <= to) add(k, a.id); });
+            });
+            var res = {};
+            STAGE_KEYS.forEach(function (k) {
+                var total = 0; Object.keys(out[k]).forEach(function (n) { total += out[k][n]; });
+                res[k] = Object.keys(out[k]).map(function (n) { return { name: n, count: out[k][n], pct: total ? Math.round(out[k][n] / total * 100) : 0 }; })
+                    .sort(function (a, b) { return b.count - a.count; });
+            });
+            return res;
+        }
+
         function pctOf(a, b) { return b ? Math.round(a / b * 100) + '%' : '-'; }
 
         function fmt(n) { return n === null || n === undefined ? '-' : Number(n).toLocaleString('en-US'); }
@@ -4039,7 +4101,19 @@
                                             <td><span className="dot" style={{ background: STAGE_COLORS[r.stage] }}></span>{r.label}</td>
                                             <td>{r.booked.toLocaleString("en-US")}</td>
                                             <td>{r.attended.toLocaleString("en-US")}<small>{pctOf(r.attended, r.booked)} من الحجز</small></td>
-                                            <td>{r.assessed.toLocaleString("en-US")}<small>{pctOf(r.assessed, r.attended)} من الحضور</small></td>
+                                            <td className="vs-act-cell">{r.assessed.toLocaleString("en-US")}<small>{pctOf(r.assessed, r.attended)} من الحضور</small>
+                                                {r.actions.length > 0 && (
+                                                    <div className="vs-act-pop">
+                                                        <div className="vs-act-title">الإجراءات الهندسية — {r.label}</div>
+                                                        {r.actions.map(a => (
+                                                            <div className="vs-act-row" key={a.name}>
+                                                                <span className="n">{a.name}</span><b>{a.count}</b><span className="p">{a.pct}%</span>
+                                                                <span className="bar"><i style={{ width: a.pct + "%" }}></i></span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
