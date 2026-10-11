@@ -1471,8 +1471,7 @@
                                             <span class="col-lg-4"><input name="column" data-column="17" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> تسليم الصيانة</span>
                                             <span class="col-lg-4"><input name="column" data-column="19" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> ملاحظات التقييم الهندسى</span>
                                             <span class="col-lg-4"><input name="column" data-column="20" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> الفريق المسؤول</span>
-                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> إقرارات</span>
-                                            <span class="col-lg-4"><input name="column" data-column="22" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
+                                            <span class="col-lg-4"><input name="column" data-column="21" class="toggle-vis" type="checkbox" checked="checked" autocomplete="off"> مرفقات الحالة</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1946,20 +1945,24 @@
             { name: 'الدخل والأملاك', icon: 'fa-money', docs: ['برينت تأميني', 'بيان معاش', 'مفردات مرتب', 'حيازة زراعية'] },
             { name: 'مستندات دراسية', icon: 'fa-graduation-cap', docs: ['مؤهل دراسي', 'قيد دراسي'] },
             { name: 'إثبات محل الإقامة', icon: 'fa-home', docs: ['إيصال مرافق', 'عقد ايجار'] },
-            { name: 'الحالة الاجتماعية', icon: 'fa-users', docs: ['شهادة وفاة', 'قسيمة طلاق', 'قسيمة زواج'] }
+            { name: 'الحالة الاجتماعية', icon: 'fa-users', docs: ['شهادة وفاة', 'قسيمة طلاق', 'قسيمة زواج'] },
+            { name: 'الإقرارات', icon: 'fa-file-text-o', docs: ['إقرار الاستلام', 'إقرار التصوير'] }
         ];
         var CASE_DOCS = [], DOC_CAT = [];   // flat list of documents + the category index of each one
         DOC_CATEGORIES.forEach(function (c, ci) { c.docs.forEach(function (d) { c.first = c.first === undefined ? CASE_DOCS.length : c.first; CASE_DOCS.push(d); DOC_CAT.push(ci); }); });
         var CURRENT_USER_NAME = 'يوسف محمد';
         function seedDocs(row) {
             if (row.docs) return row.docs;
-            var P = [80, 60, 30, 20, 30, 15];   // chance (%) that a category's first document is already uploaded
+            var P = [80, 60, 30, 20, 30, 15, 0];   // chance (%) that a category's first document is already uploaded
             row.docs = CASE_DOCS.map(function (d, i) {
                 var h = ((row.id + 7) * (i + 3) * 2654435761) % 100; // deterministic mock
                 var ci = DOC_CAT[i], first = DOC_CATEGORIES[ci].first === i;
                 var p = first ? P[ci] : P[ci] / 3;
                 return h < p ? { name: d + '.png', by: CURRENT_USER_NAME, date: moment(row.submitDate).add(i % 4, 'day').format('YYYY-MM-DD'), mock: true } : null;
             });
+            var acks = seedAcks(row);   // الإقرارات: signed receipt after delivery, photo consent after assessment
+            row.docs[CASE_DOCS.indexOf('إقرار الاستلام')] = acks.receipt;
+            row.docs[CASE_DOCS.indexOf('إقرار التصوير')] = acks.photo;
             return row.docs;
         }
         function seedAttachments(row) {           // other files uploaded from the reception popup
@@ -2150,7 +2153,7 @@
 
         // إقرار الاستلام uploaded => signed (used by the "إقرار الاستلام" filter)
         function receiptInfo(row) {
-            var a = seedAcks(row).receipt;
+            var a = seedDocs(row)[CASE_DOCS.indexOf('إقرار الاستلام')];
             return a ? { signed: true, file: a.file || null, date: a.date } : null;
         }
         function receiptCell(r) {
@@ -2478,7 +2481,6 @@
             { title: 'تاريخ الحضور', attend: true, render: attendDate('maintenance_fitting') },
             { title: 'ملاحظات التقييم الهندسى', render: function (r) { return r.notes || ''; } },
             { title: 'الفريق المسؤول', render: function (r) { return r.team.length ? list(r.team) : ''; } },
-            { title: 'إقرارات', render: acksCell },
             { title: 'مرفقات الحالة', render: attachmentsCell }
         ];
         // the four "تاريخ الحضور" columns are hidden by default (aoColumnDefs in the live page)
@@ -2739,7 +2741,7 @@
 
             // ---------------------------------------- column visibility ----------------------------------------
             var userID = "184";
-            var storageKey = "engineering_table_columns_v8_" + userID;
+            var storageKey = "engineering_table_columns_v9_" + userID;
 
             var saved = null;
             try { saved = localStorage.getItem(storageKey); } catch (e) { }
