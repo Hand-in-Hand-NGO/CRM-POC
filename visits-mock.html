@@ -1164,7 +1164,7 @@
                                     <!-- Number Of Days -->
                                     <div class="col-lg-3 col-md-6 col-sm-12">
                                         <div class="filter-item">
-                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين أخذ المقاس وجاهزية التسليم</label>
+                                            <label for="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="control-label">عدد الأيام بين المقاس والتسليم</label>
                                             <div class="filter-inline">
                                                 <div class="filter-field">
                                                     <input type="number" min="0" step="1" name="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" id="numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom" class="form-control" value="" placeholder="أكثر من" />
@@ -1191,6 +1191,17 @@
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-md btn-danger" id="clearCasePhone" title="مسح"><i class="fa fa-times"></i></button>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Receipt acknowledgment -->
+                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                        <div class="filter-item box-content">
+                                            <label for="isReceipt" class="control-label">إقرار الاستلام</label>
+                                            <div class="btn-group btn-group-justified" id="isReceipt" data-toggle="buttons">
+                                                <label class="btn btn-default btn-all active"><input type="radio" value="-1" name="isReceipt" checked="checked"> الكل</label>
+                                                <label class="btn btn-default btn-on"><input type="radio" value="1" name="isReceipt"> نعم</label>
+                                                <label class="btn btn-default btn-off"><input type="radio" value="0" name="isReceipt"> لا</label>
                                             </div>
                                         </div>
                                     </div>
@@ -1962,7 +1973,7 @@
                 return { signed: !!last.photo, file: last.file || null, date: last.date };
             }
             var del = ['new_fitting', 'maintenance_fitting'].map(function (k) { return row.assessments[k]; }).filter(function (a) { return a && +a.id === 3; })[0];
-            return del ? { signed: true, file: null, date: del.date } : null;
+            return del ? { signed: row.id % 4 !== 0, file: null, date: del.date } : null;   // mock: ~1 in 4 delivered without a signed receipt
         }
         function receiptCell(r) {
             var info = receiptInfo(r);
@@ -2194,6 +2205,10 @@
                 }
                 if (levels.length && levels.indexOf(r.level) === -1) return false;
                 if (f.isAttend && f.isAttend !== '-1' && String(r.attended) !== f.isAttend) return false;
+                if (f.isReceipt && f.isReceipt !== '-1') {   // same values as the "إقرار استلام" column
+                    var rc = receiptInfo(r);
+                    if (!rc || String(rc.signed ? 1 : 0) !== f.isReceipt) return false;
+                }
                 if (categories.length && categories.indexOf('all') === -1 &&
                     !categories.some(function (c) { return currentStage(r) === CATEGORY_STAGE[c]; })) return false;
                 if (dFrom && (r.days === null || r.days <= +dFrom)) return false;
@@ -2607,6 +2622,7 @@
                 if ($('#selectedResponsibleTeamIds').val()) n++;
                 if ($('#selectedComponentsIds').val()) n++;
                 if ($.trim($('#casePhone').val())) n++;
+                if ($('#isReceipt input:checked').val() && $('#isReceipt input:checked').val() !== '-1') n++;
                 if ($('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryFrom').val() || $('#numberOfDaysBetweenMeasurementTakenAndReadyForDeliveryTo').val()) n++;
                 $('.more-filters-count').text(n).toggle(n > 0);
             }
@@ -2857,6 +2873,7 @@
 
             // reset every filter, then search by this value only
             $("#isAttend").find('.btn-all').click();
+            $("#isReceipt").find('.btn-all').click();
             $form.find('input:not(:checkbox):not(:radio)').val('');
             $form.find('input:checkbox, input:radio').prop('checked', false);
             $form.find('select').val(null).trigger('change');
