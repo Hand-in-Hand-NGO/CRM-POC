@@ -1918,6 +1918,15 @@
             ROWS.push(row);
         }
 
+        // mock: more new orders that were measured and then delivered (so the design / execution comparison has data)
+        ROWS.forEach(function (row) {
+            if (row.type !== 'new' || row.id % 3 !== 0 || row.assessments.new_fitting) return;
+            if (row.assessments.new_mdm && +row.assessments.new_mdm.id !== 1) return;
+            row.assessments.new_mdm = { id: 1, date: TODAY.clone().subtract(25 + row.id % 15, 'days').format('YYYY-MM-DD') };
+            row.assessments.new_fitting = { id: 3, date: TODAY.clone().subtract(row.id % 9, 'days').format('YYYY-MM-DD') };
+            row.days = moment(row.assessments.new_fitting.date).diff(moment(row.assessments.new_mdm.date), 'days');
+        });
+
         // postponed assessments carry their postpone date
         ROWS.forEach(function (row) {
             Object.keys(row.assessments).forEach(function (k) {
@@ -2217,20 +2226,33 @@
                     if (partsHash(row.id, n) % 100 < 50) design[sec.sec + ':' + it.name] = it.opts ? it.opts[partsHash(row.id, n + 50) % it.opts.length] : true;
                 });
             });
+            // a design always has at least a couple of items
+            for (var extra = 0; Object.keys(design).length < 2 && extra < 10; extra++) {
+                var all2 = []; PARTS_CATALOG.forEach(function (sec) { sec.items.forEach(function (it) { all2.push({ key: sec.sec + ':' + it.name, it: it }); }); });
+                var pk = all2[partsHash(row.id, 200 + extra) % all2.length];
+                if (design[pk.key] === undefined) design[pk.key] = pk.it.opts ? pk.it.opts[partsHash(row.id, 300 + extra) % pk.it.opts.length] : true;
+            }
             parts.design = design;
+            var ALL_PARTS = []; PARTS_CATALOG.forEach(function (sec) { sec.items.forEach(function (it) { ALL_PARTS.push({ key: sec.sec + ':' + it.name, it: it }); }); });
+            function mutate(set, salt) {     // add / remove an item or change its value
+                var pick = ALL_PARTS[partsHash(row.id, salt) % ALL_PARTS.length];
+                if (set[pick.key] === undefined) set[pick.key] = pick.it.opts ? pick.it.opts[partsHash(row.id, salt + 1) % pick.it.opts.length] : true;
+                else if (pick.it.opts) set[pick.key] = pick.it.opts[(pick.it.opts.indexOf(set[pick.key]) + 1) % pick.it.opts.length];
+                else delete set[pick.key];
+            }
             if (partsHash(row.id, 99) % 100 < 85) {           // the limb came back from assembly
                 var manu = Object.assign({}, design);
-                if (partsHash(row.id, 98) % 100 < 35) {          // something was changed during manufacturing
-                    var all = []; PARTS_CATALOG.forEach(function (sec) { sec.items.forEach(function (it) { all.push({ key: sec.sec + ':' + it.name, it: it }); }); });
-                    var pick = all[partsHash(row.id, 97) % all.length];
-                    if (manu[pick.key] === undefined) manu[pick.key] = pick.it.opts ? pick.it.opts[0] : true;
-                    else if (pick.it.opts) manu[pick.key] = pick.it.opts[(pick.it.opts.indexOf(manu[pick.key]) + 1) % pick.it.opts.length];
-                    else delete manu[pick.key];
+                if (partsHash(row.id, 98) % 100 < 75) {          // something was changed during manufacturing
+                    mutate(manu, 97);
+                    if (partsHash(row.id, 96) % 100 < 40) mutate(manu, 95);
                 }
                 parts.manufacturing = manu;
             }
             var f = row.assessments.new_fitting;
-            if (f && +f.id === 3) parts.delivery = Object.assign({}, parts.manufacturing || design);
+            if (f && +f.id === 3) {
+                parts.delivery = Object.assign({}, parts.manufacturing || design);
+                if (partsHash(row.id, 90) % 100 < 40) mutate(parts.delivery, 89);   // changed again at delivery
+            }
             return parts;
         }
         // execution = manufacturing + delivery (a later stage's value wins)
