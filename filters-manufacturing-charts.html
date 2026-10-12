@@ -2289,7 +2289,7 @@
             { title: 'حالة التصنيع', render: statusCell },
             { title: 'عدد الأيام بين المقاس وجاهزية التسليم', render: daysCell },
             { title: 'خطوات التصنيع', render: stepButtons },
-            { title: 'الوزن الافتراضى', render: function (r) { return r.defaultWeight ? '<span dir="ltr">' + r.defaultWeight + ' G</span>' : dash(); } },
+            { title: 'الوزن الافتراضى', render: function (r) { return r.defaultWeight ? '<span dir="ltr">' + r.defaultWeight + '<small>g</small></span>' : dash(); } },
             { title: 'الوزن الفعلى', render: function (r) { return r.actualWeight ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : dash(); } },
             {
                 title: 'الفرق بين الوزن الافتراضى والفعلى', render: function (r) {
@@ -2308,7 +2308,7 @@
                 }
             },
             { title: 'خروج الطرف من المخزن', render: outCell },
-            { title: 'عدد محاولات الطباعة', render: function (r) { return '<b>' + r.printTries + '</b><br><small class="text-muted">الحالة: ' + casePrintTries(r) + '</small>'; } },
+            { title: 'عدد محاولات الطباعة', render: function (r) { return '<b>' + r.printTries + '</b>'; } },
             { title: 'عدد دورات التصنيع', render: function (r) { return '<b>' + caseCycles(r) + '</b>'; } },
             { title: 'فريق التصنيع', render: teamCell },
             { title: 'الهالك', render: scrapCell }
@@ -3955,7 +3955,6 @@
                         <PeriodPicker kind={periodKey} anchor={anchor} range={period.range}
                             onPick={v => setAnchors(Object.assign({}, anchors, { [periodKey]: v }))} />
                     </div>
-                    <p className="vs-dash-note">الأرقام حسب فلاتر البحث الحالية (بدون أزرار حالة التصنيع والدورات الفعالة / المتوقفة)</p>
 
                     <div className="vs-kpi-grid">
                         {KPI_CARD_KEYS.map(k => (
@@ -3990,13 +3989,13 @@
                     <div className="vs-chart-group">
                         <p className="vs-group-label">إنتاج فريق التصنيع — <span dir="ltr">{period.range}</span></p>
                         <div className="vs-chart-row-2">
-                            <ChartCard title={<span><i className="fa fa-pencil"></i> التصميمات</span>} subtitle={`${sum(tm.designs)} تصميم حسب مهندس التصميم`}>
+                            <ChartCard title={<span><i className="fa fa-pencil"></i> التصميمات</span>}>
                                 <TeamBars data={tm.designs} color="#2f6fed" unit="تصميم" />
                             </ChartCard>
-                            <ChartCard title={<span><i className="fa fa-wrench"></i> التجميع</span>} subtitle={`${sum(tm.assembly)} طرف حسب فنى التجميع`}>
+                            <ChartCard title={<span><i className="fa fa-wrench"></i> التجميع</span>}>
                                 <TeamBars data={tm.assembly} color="#0d9488" unit="طرف" />
                             </ChartCard>
-                            <ChartCard wide title={<span><i className="fa fa-warning"></i> التالف</span>} subtitle={`${sum(tm.damage)} دورة أُعيد تصنيعها`}>
+                            <ChartCard wide title={<span><i className="fa fa-warning"></i> التالف</span>}>
                                 <TeamBars data={tm.damage} colors={["#7c6ef0", "#ff6a00", "#f96a74"]} unit="طرف" nameWidth={130} showPct />
                             </ChartCard>
                         </div>
@@ -4004,7 +4003,7 @@
 
                     <div className="vs-chart-group">
                         <p className="vs-group-label">الاتجاه عبر الفترات</p>
-                        <ChartCard title="مؤشرات التصنيع حسب الفترة" subtitle={period.trendLabel}>
+                        <ChartCard title="مؤشرات التصنيع حسب الفترة">
                             <ResponsiveContainer width="100%" height={240}>
                                 <LineChart data={period.trend} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#d6d9df" vertical={false} />
