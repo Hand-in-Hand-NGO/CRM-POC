@@ -38,7 +38,7 @@
             background: #fff;
             color: #333;
             margin: 0;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .main-header {
@@ -604,6 +604,32 @@
             margin: 0px 5px;
             border-radius: 10px !important;
         }
+
+        /* ---- same buttons as the visits page ---- */
+        #search-form .btn-group[data-id] > .btn,
+        #search-form .btn-group[data-targetDate] > .btn,
+        #search-form .btn-group[data-targetDateFrom] > .btn {
+            float: none;
+            margin: 0 2px !important;
+            padding: 6px 9px;
+            font-size: 12px;
+        }
+
+        #search-form .btn-group[data-id],
+        #search-form .btn-group[data-targetDate],
+        #search-form .btn-group[data-targetDateFrom] { display: flex; white-space: nowrap; }
+
+        /* المزيد من فلاتر التصنيع: same toggle bar as المزيد من الفلاتر */
+        #search-form .panel-heading[data-target="#myPanel"] {
+            border: 1px solid #cfd3d8 !important;
+            border-radius: 6px !important;
+            background: linear-gradient(#fafafa, #ececec) !important;
+            padding: 7px 12px;
+        }
+        #search-form .panel-heading[data-target="#myPanel"]:hover { background: #e6e6e6 !important; border-color: #bfc4ca !important; }
+        #search-form .panel-heading[data-target="#myPanel"] .panel-title { font-size: 14px; font-weight: normal; color: #333; }
+        #search-form .panel-heading[data-target="#myPanel"] .fa { margin-right: 4px; transition: transform .2s; }
+        #search-form .panel-heading[data-target="#myPanel"][aria-expanded="true"] .fa { transform: rotate(180deg); }
 
         /* ---- compact filters: each field only as wide as its content, buttons right next to it (same order / place) ---- */
         @media (min-width: 992px) {
