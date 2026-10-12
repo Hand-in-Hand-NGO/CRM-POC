@@ -2290,13 +2290,13 @@
             { title: 'عدد الأيام بين المقاس وجاهزية التسليم', render: daysCell },
             { title: 'خطوات التصنيع', render: stepButtons },
             { title: 'الوزن الافتراضى', render: function (r) { return r.defaultWeight ? '<span dir="ltr">' + r.defaultWeight + '<small>g</small></span>' : dash(); } },
-            { title: 'الوزن الفعلى', render: function (r) { return r.actualWeight ? '<span dir="ltr">' + r.actualWeight + ' G</span>' : dash(); } },
+            { title: 'الوزن الفعلى', render: function (r) { return r.actualWeight ? '<span dir="ltr">' + r.actualWeight + '<small>g</small></span>' : dash(); } },
             {
                 title: 'الفرق بين الوزن الافتراضى والفعلى', render: function (r) {
                     var p = weightDiffPct(r);
                     if (p === null) return dash();
                     var g = r.actualWeight - r.defaultWeight;
-                    return '<span class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '">' + '<span dir="ltr">' + signed(g) + ' G</span><br>' +
+                    return '<span class="weight-diff ' + (Math.abs(p) > 10 ? 'over' : 'ok') + '">' + '<span dir="ltr">' + signed(g) + '<small>g</small></span><br>' +
                         '<small dir="ltr">' + signed(p.toFixed(1)) + '%</small></span>';
                 }
             },
