@@ -605,6 +605,19 @@
             border-radius: 10px !important;
         }
 
+        /* ---- compact filters: each field only as wide as its content, buttons right next to it (same order / place) ---- */
+        @media (min-width: 992px) {
+            #search-form .form-group > .col-md-8 > .row { display: flex; flex-wrap: wrap; align-items: center; }
+            #search-form .form-group > .col-md-8 > .row > [class*="col-"] { float: none; }
+            #search-form .form-group > .col-md-8 > .row > .col-lg-8 { width: 290px; flex: none; }            /* dates */
+            #search-form .form-group > .col-md-8 > .row > .col-lg-8:has(#caseNameOrCode) { width: 330px; }  /* name / code */
+            #search-form .form-group > .col-md-8 > .row > .col-sm-5 { width: 150px; flex: none; }           /* from / to numbers */
+            #search-form .form-group > .col-md-8 > .row > .col-sm-2 { width: auto; flex: none; }
+            #search-form .form-group > .col-md-8 > .row > .col-sm-10 { width: 400px; flex: none; }          /* team / start point */
+            #search-form .form-group > .col-md-8 > .row > div:not([class]) .btn-group { float: none !important; }
+            #search-form .form-group > .row.col-md-8 > .col-lg-6 { width: 330px; }                          /* order type / booked */
+        }
+
         /* ---- daterangepicker: one calendar ---- */
         .daterangepicker .cancelBtn,
         .daterangepicker .applyBtn {
