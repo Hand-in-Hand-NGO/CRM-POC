@@ -1,0 +1,2449 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>غرفة العمليات</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+  <style>
+    :root{
+      --bg:#f3f4f7; --surface:#ffffff; --surface-alt:#f8f9fb;
+      --border:#e3e5ea; --border-strong:#cdd1d9;
+      --text:#1b2130; --text-muted:#5b6472; --text-faint:#98a0ac;
+      --brand-meas:#2563eb; --brand-meas-tint:#eaf1ff;
+      --brand-newd:#059669; --brand-newd-tint:#e6f7f1;
+      --brand-eval:#c2660a; --brand-eval-tint:#fdf1e0;
+      --brand-maintd:#7c3aed; --brand-maintd-tint:#f2eafd;
+      --success:#15803d; --success-tint:#e9f7ee;
+      --danger:#c81e3a; --danger-tint:#fceced;
+      --warning:#b45309; --warning-tint:#fdf1e0;
+      --neutral-tint:#eef0f3;
+      --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+      --shadow-sm:0 1px 2px rgba(20,24,34,.06);
+      --shadow-md:0 6px 20px rgba(20,24,34,.12);
+      --shadow-lg:0 16px 48px rgba(20,24,34,.22);
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;height:100%;}
+    .app{
+      font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; width:100%; position:relative;
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:var(--brand-meas);text-decoration:none;}
+    a:hover{color:#1d4ed8;}
+    button{font-family:inherit;}
+    ::selection{background:#c9dcff;}
+
+    /* ---------- top bar ---------- */
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 22px; background:var(--surface); border-bottom:1px solid var(--border);
+    }
+    .brandblock{display:flex; align-items:center; gap:10px;}
+    .brand-mark{
+      width:34px;height:34px;border-radius:9px;background:#101828;
+      display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    }
+    .page-title{font-size:18px;font-weight:800;color:var(--text);}
+    .page-subtitle{font-size:12px;color:var(--text-muted);margin-top:1px;}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .role-pill{
+      display:flex;align-items:center;gap:7px;background:var(--surface-alt);
+      border:1px solid var(--border); border-radius:999px; padding:6px 12px;font-size:12.5px;color:var(--text-muted);
+    }
+    .role-pill b{color:var(--text);font-weight:700;}
+    .role-dot{width:7px;height:7px;border-radius:50%;background:#2563eb;flex:0 0 auto;}
+
+    /* ---------- sub bar : nav + filters ---------- */
+    .subbar{
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+      padding:12px 22px; background:var(--surface); border-bottom:1px solid var(--border);
+    }
+    .view-nav{display:flex;align-items:center;gap:6px;background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:3px;}
+    .view-btn{
+      border:none;background:transparent;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;
+      color:var(--text-muted);cursor:pointer;
+    }
+    .view-btn.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
+    .view-btn.disabled{color:var(--text-faint);cursor:not-allowed;}
+    .week-nav{display:flex;align-items:center;gap:8px;}
+    .nav-arrow{
+      width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);
+    }
+    .nav-arrow:hover{border-color:var(--border-strong);color:var(--text);}
+    .week-label{font-size:13.5px;font-weight:700;color:var(--text);min-width:150px;text-align:center;}
+    .today-btn{
+      border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:7px 12px;
+      font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
+    }
+    .today-btn:hover{border-color:var(--border-strong);color:var(--text);}
+    .type-filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+    .type-filter-label{font-size:12px;color:var(--text-faint);margin-left:2px;}
+    .type-chip{
+      display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid var(--border);
+      background:var(--surface);font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
+    }
+    .type-chip .sw{width:8px;height:8px;border-radius:2px;}
+    .type-chip.active{background:var(--tint);border-color:var(--edge);color:var(--edge);}
+
+    /* ---------- palette ---------- */
+    .palette-row{padding:14px 22px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
+    .palette-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px;}
+    .palette-title{font-size:12.5px;font-weight:700;color:var(--text-muted);}
+    .palette-hint{font-size:11.5px;color:var(--text-faint);}
+    .palette-chips{display:flex;gap:10px;flex-wrap:wrap;}
+    .palette-chip{
+      display:flex;align-items:center;gap:9px;padding:10px 16px;border-radius:12px;border:1.5px dashed var(--edge);
+      background:var(--tint);cursor:grab;user-select:none;min-width:168px;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .palette-chip:active{cursor:grabbing;}
+    .palette-chip:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+    .palette-chip.disabled{opacity:.55;cursor:not-allowed;border-style:solid;}
+    .palette-chip.disabled:hover{transform:none;box-shadow:none;}
+    .palette-ic{width:30px;height:30px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:var(--shadow-sm);}
+    .palette-text{display:flex;flex-direction:column;gap:1px;}
+    .palette-label{font-size:13px;font-weight:700;color:var(--edge);}
+    .palette-sub{font-size:10.5px;color:var(--text-muted);}
+    .lock-badge{margin-right:auto;color:var(--text-faint);}
+
+    /* ---------- calendar ---------- */
+    .calendar-grid{display:flex;gap:0;padding:16px 22px 40px;align-items:flex-start;}
+    .day-col{flex:1 1 0;min-width:0;border-right:1px solid var(--border);padding:0 9px;transition:background .12s ease;}
+    .day-col:first-child{border-right:none;}
+    .day-col.drop-hot .day-body{background:#eef4ff;border-color:#93b8ff;}
+    .day-header{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px;}
+    .day-header-left{display:flex;align-items:center;gap:7px;}
+    .day-name{font-size:12.5px;font-weight:700;color:var(--text-muted);}
+    .day-num{font-size:15px;font-weight:800;color:var(--text);}
+    .today-badge{
+      display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;
+      border-radius:7px;background:#101828;color:#fff;font-size:11px;font-weight:800;
+    }
+    .day-body{
+      min-height:300px;border:1.5px dashed transparent;border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:8px;
+    }
+    .empty-day{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      padding:26px 8px;color:var(--text-faint);text-align:center;flex:1;
+    }
+    .empty-day span{font-size:11.5px;line-height:1.5;}
+
+    .task-card{
+      background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 12px;cursor:pointer;
+      box-shadow:var(--shadow-sm); position:relative; overflow:hidden; transition:opacity .12s ease, box-shadow .12s ease;
+    }
+    .task-card:hover{box-shadow:var(--shadow-md);}
+    .task-card.dim{opacity:.32;}
+    .task-card .bar{position:absolute;top:0;bottom:0;right:0;width:4px;}
+    .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px;}
+    .card-type{display:flex;align-items:center;gap:7px;}
+    .card-ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+    .card-title{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;}
+    .full-badge{
+      font-size:9.5px;font-weight:800;background:var(--success-tint);color:var(--success);border-radius:5px;padding:2px 6px;white-space:nowrap;
+    }
+    .loc-badge{
+      display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);
+      background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;padding:3px 7px;margin-bottom:9px;
+    }
+    .progress-line{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
+    .progress-num{font-size:13px;font-weight:800;color:var(--text);}
+    .progress-tag{font-size:10.5px;color:var(--text-faint);}
+    .progress-track{height:6px;border-radius:99px;background:var(--neutral-tint);overflow:hidden;}
+    .progress-fill{height:100%;border-radius:99px;}
+    .candidates-line{margin-top:8px;font-size:11px;color:var(--text-faint);}
+
+    /* ---------- month view ---------- */
+    .month-wrap{padding:16px 22px 40px;}
+    .month-weekday-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin-bottom:6px;}
+    .month-weekday{text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);padding:6px 0;}
+    .month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;}
+    .month-cell{
+      min-height:96px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:8px;
+      cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:box-shadow .12s ease,border-color .12s ease;
+    }
+    .month-cell:hover{box-shadow:var(--shadow-sm);border-color:var(--border-strong);}
+    .month-cell.dim{background:var(--surface-alt);opacity:.5;}
+    .month-cell.is-today .month-cell-date{
+      background:#101828;color:#fff;border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+    }
+    .month-cell-date{font-size:12.5px;font-weight:800;color:var(--text);}
+    .month-dots{display:flex;flex-wrap:wrap;align-items:center;gap:4px;}
+    .month-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+    .month-more{font-size:10px;font-weight:700;color:var(--text-faint);}
+
+    /* ---------- scrim / overlays ---------- */
+    .scrim{position:fixed;inset:0;background:rgba(15,18,26,.42);z-index:40;}
+    .scrim-top{z-index:60;}
+    .drawer{
+      position:fixed;top:0;bottom:0;right:0;width:420px;max-width:92%;background:var(--surface);
+      box-shadow:var(--shadow-lg);z-index:41;display:flex;flex-direction:column;
+    }
+    .drawer-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);}
+    .drawer-head-left{display:flex;align-items:center;gap:10px;}
+    .drawer-title{font-size:15.5px;font-weight:800;color:var(--text);}
+    .drawer-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+    .icon-btn{
+      width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);flex:0 0 auto;
+    }
+    .icon-btn:hover{border-color:var(--border-strong);color:var(--text);}
+    .icon-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+    .drawer-body{padding:18px 20px 90px;overflow-y:auto;flex:1;}
+    .drawer-foot{
+      position:absolute;bottom:0;right:0;left:0;padding:14px 20px;background:var(--surface);
+      border-top:1px solid var(--border);display:flex;gap:10px;
+    }
+    .drawer{position:fixed;}
+    .drawer-foot-wrap{margin-top:auto;}
+
+    .field{margin-bottom:16px;}
+    .field-label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:7px;}
+    .field-hint{font-size:11px;color:var(--text-faint);margin-top:5px;}
+    .seg{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+    .seg-btn{
+      flex:1;border:none;background:var(--surface);padding:9px 8px;font-size:12.5px;font-weight:700;color:var(--text-muted);
+      cursor:pointer;border-left:1px solid var(--border);
+    }
+    .seg-btn:first-child{border-left:none;}
+    .seg-btn.on{background:#eaf1ff;color:var(--brand-meas);}
+    .text-input, .num-input, .select-input{
+      width:100%;border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--text);
+      background:var(--surface);font-family:inherit;
+    }
+    .text-input:focus, .num-input:focus, .select-input:focus{outline:none;border-color:#93b8ff;box-shadow:0 0 0 3px #eaf1ff;}
+    .readonly-box{
+      display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:9px;
+      padding:9px 11px;font-size:12.5px;color:var(--text-muted);background:var(--surface-alt);
+    }
+    .combo-wrap{position:relative;}
+    .combo-list{
+      position:absolute;top:calc(100% + 4px);right:0;left:0;background:var(--surface);border:1px solid var(--border);
+      border-radius:9px;box-shadow:var(--shadow-md);max-height:190px;overflow-y:auto;z-index:5;
+    }
+    .combo-item{padding:9px 11px;font-size:12.5px;color:var(--text);cursor:pointer;}
+    .combo-item:hover{background:var(--surface-alt);}
+    .combo-empty{padding:10px 11px;font-size:12px;color:var(--text-faint);}
+    .addcases-summary{
+      display:flex;align-items:center;justify-content:space-between;border:1px dashed var(--border-strong);border-radius:9px;
+      padding:10px 12px;font-size:12.5px;color:var(--text-muted);
+    }
+    .link-btn{border:none;background:none;color:var(--brand-meas);font-size:12.5px;font-weight:700;cursor:pointer;padding:0;}
+
+    .btn{
+      border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;border:1px solid transparent;
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    }
+    .btn-primary{background:#101828;color:#fff;}
+    .btn-primary:hover{background:#000;}
+    .btn-primary:disabled{background:#c7cbd3;cursor:not-allowed;}
+    .btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border);}
+    .btn-secondary:hover{border-color:var(--border-strong);}
+    .btn-danger{background:var(--danger);color:#fff;}
+    .btn-danger:hover{background:#a8122c;}
+    .btn-outline-dashed{background:var(--surface);color:var(--text-muted);border:1.5px dashed var(--border-strong);}
+    .btn-outline-dashed:hover{color:var(--text);border-color:var(--text-muted);}
+    .btn-block{width:100%;}
+    .btn-sm{padding:7px 11px;font-size:12px;border-radius:7px;}
+
+    /* ---------- modal ---------- */
+    .modal{
+      position:fixed;top:50%;right:50%;transform:translate(50%,-50%);background:var(--surface);border-radius:14px;
+      box-shadow:var(--shadow-lg);z-index:41;display:flex;flex-direction:column;max-height:88vh;
+    }
+    .modal-lg{width:920px;max-width:94vw;}
+    .modal-sm{width:420px;max-width:92vw;z-index:61;}
+    .modal-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);}
+    .modal-body{padding:16px 22px;overflow-y:auto;flex:1;}
+    .modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-start;}
+
+    .filters-bar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:10px;}
+    .filter-field{display:flex;flex-direction:column;gap:5px;min-width:132px;}
+    .filter-field label{font-size:10.5px;font-weight:700;color:var(--text-faint);}
+    .filter-select, .filter-search{
+      border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12.5px;color:var(--text);
+      background:var(--surface);font-family:inherit;
+    }
+    .filter-search{min-width:190px;}
+    .clear-btn{
+      align-self:flex-end;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);
+      border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;
+    }
+    .clear-btn:hover{color:var(--text);border-color:var(--border-strong);}
+    .chip-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+    .filter-chip{
+      display:flex;align-items:center;gap:6px;background:#eaf1ff;color:var(--brand-meas);border-radius:999px;
+      padding:4px 6px 4px 10px;font-size:11.5px;font-weight:700;
+    }
+    .filter-chip button{border:none;background:rgba(37,99,235,.14);color:var(--brand-meas);border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:10px;line-height:1;}
+
+    .count-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .count-main{font-size:13px;color:var(--text);}
+    .count-main b{font-weight:800;}
+    .count-selected{font-size:12.5px;color:var(--brand-meas);font-weight:700;}
+
+    table.cases-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+    table.cases-table thead th{
+      text-align:right;color:var(--text-faint);font-weight:700;font-size:11px;padding:8px 9px;border-bottom:1px solid var(--border);
+      background:var(--surface-alt);position:sticky;top:0;
+    }
+    table.cases-table tbody td{padding:9px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+    table.cases-table tbody tr:hover{background:var(--surface-alt);}
+    .table-empty{padding:34px 10px;text-align:center;color:var(--text-faint);font-size:12.5px;}
+    input[type="checkbox"]{width:15px;height:15px;accent-color:#101828;cursor:pointer;}
+
+    /* ---------- detail drawer specifics ---------- */
+    .metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+    .metric-box{border:1px solid var(--border);border-radius:9px;padding:9px 8px;text-align:center;background:var(--surface-alt);}
+    .metric-val{font-size:16px;font-weight:800;color:var(--text);}
+    .metric-lbl{font-size:9.5px;color:var(--text-faint);margin-top:2px;}
+    .big-progress-label{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;}
+    .big-progress-num{font-size:15px;font-weight:800;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+    .info-item{border:1px solid var(--border);border-radius:9px;padding:8px 10px;background:var(--surface-alt);}
+    .info-item .k{font-size:10px;color:var(--text-faint);margin-bottom:3px;}
+    .info-item .v{font-size:12.5px;font-weight:700;color:var(--text);}
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin:16px 0 9px;}
+    .section-title{font-size:12.5px;font-weight:800;color:var(--text);}
+    .case-search{border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:12px;width:170px;}
+    .case-row{border:1px solid var(--border);border-radius:10px;padding:10px 11px;margin-bottom:8px;background:var(--surface);}
+    .case-row.locked{background:var(--surface-alt);opacity:.75;}
+    .case-row.inactive{opacity:.55;}
+    .case-row-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+    .case-id-line{display:flex;align-items:center;gap:8px;}
+    .case-code{font-size:10.5px;color:var(--text-faint);font-weight:700;}
+    .case-name{font-size:13px;font-weight:700;color:var(--text);}
+    .case-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
+    .status-tag{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+    .status-tag .dot{width:6px;height:6px;border-radius:50%;}
+    .call-btn{
+      display:flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface);border-radius:8px;
+      padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;
+    }
+    .call-btn:hover{border-color:var(--brand-meas);color:var(--brand-meas);}
+    .outcome-panel{margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;gap:7px;}
+    .outcome-btn{
+      border:1px solid var(--border);background:var(--surface);border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;
+      cursor:pointer;
+    }
+    .alt-wrap{margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);}
+    .alt-title{font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;}
+    .alt-chip{
+      display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+      margin:0 0 6px 6px;font-size:11px;background:var(--surface-alt);
+    }
+    .alt-chip button{border:none;background:#101828;color:#fff;border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:700;cursor:pointer;}
+    .alt-empty{font-size:11px;color:var(--text-faint);}
+    .bulk-bar{
+      display:flex;align-items:center;justify-content:space-between;background:#fceced;border:1px solid #f3b9c3;
+      border-radius:9px;padding:8px 11px;margin-bottom:10px;font-size:12px;color:var(--danger);
+    }
+    .target-edit-row{display:flex;align-items:center;gap:8px;}
+
+    .eval-metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+    .eval-note{font-size:11.5px;color:var(--text-faint);border:1px solid var(--border);border-radius:9px;padding:10px 11px;background:var(--surface-alt);line-height:1.7;}
+
+    .loading-overlay{
+      position:fixed;inset:0;background:var(--bg);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    }
+    .spinner{width:30px;height:30px;border-radius:50%;border:3px solid #dfe2e8;border-top-color:#101828;animation:spin 0.85s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading-text{font-size:12.5px;color:var(--text-muted);font-weight:700;}
+
+    /* =====================================================================
+       Additions: capacity, draft/publish, auto-suggest, call queue, call log,
+       retry rules, call scripts
+       ===================================================================== */
+    .topbar-right{flex-wrap:wrap;justify-content:flex-end;}
+    .top-select{
+      border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:12.5px;font-family:inherit;
+      background:var(--surface-alt);color:var(--text);font-weight:700;
+    }
+    .top-btn{
+      display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);
+      border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
+    }
+    .top-btn:hover{border-color:var(--border-strong);color:var(--text);}
+    .clock-pill{
+      display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--border-strong);border-radius:999px;
+      padding:4px 6px 4px 10px;font-size:12px;color:var(--text-muted);
+    }
+    .clock-pill b{color:var(--text);}
+    .clock-pill button{
+      border:none;background:var(--neutral-tint);border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;
+      color:var(--text-muted);cursor:pointer;font-family:inherit;
+    }
+    .clock-pill button:hover{color:var(--text);}
+
+    .main-tabs{display:flex;gap:4px;background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:3px;}
+    .main-tab{
+      display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:7px 14px;border-radius:8px;
+      font-size:13px;font-weight:800;color:var(--text-muted);cursor:pointer;
+    }
+    .main-tab.active{background:#101828;color:#fff;}
+    .main-tab .count{background:rgba(255,255,255,.18);border-radius:999px;padding:0 7px;font-size:11px;}
+    .main-tab:not(.active) .count{background:var(--neutral-tint);color:var(--text);}
+
+    /* ---------- plan strip (draft / publish) ---------- */
+    .plan-strip{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      padding:10px 22px;background:#fffdf5;border-bottom:1px solid #f3e3b5;font-size:12.5px;color:var(--text-muted);
+    }
+    .plan-strip.ok{background:#f3fbf6;border-bottom-color:#cfead9;}
+    .plan-strip.info{background:var(--surface-alt);border-bottom-color:var(--border);}
+    .plan-stats{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+    .plan-stat{display:inline-flex;align-items:center;gap:6px;}
+    .plan-stat b{color:var(--text);font-weight:800;}
+    .pdot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+    .task-card.draft{border:1.5px dashed var(--border-strong);background:#fcfcfd;}
+    .draft-badge{
+      font-size:9.5px;font-weight:800;background:#fff4d6;color:#8a5a00;border:1px solid #f0d58a;border-radius:5px;padding:1px 6px;white-space:nowrap;
+    }
+    .pub-badge{
+      font-size:9.5px;font-weight:800;background:var(--success-tint);color:var(--success);border-radius:5px;padding:2px 6px;white-space:nowrap;
+    }
+    .card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+    .cand-warn{color:var(--warning);font-weight:700;}
+    .my-line{margin-top:6px;font-size:11px;color:var(--brand-meas);font-weight:700;}
+
+    /* ---------- capacity ---------- */
+    .cap-mini{
+      display:block;margin:0 2px 10px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+      cursor:pointer;
+    }
+    .cap-mini:hover{border-color:var(--border-strong);}
+    .cap-mini-top{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--text-muted);margin-bottom:4px;}
+    .cap-mini-top b{font-size:11px;}
+    .cap-track{height:5px;border-radius:99px;background:var(--neutral-tint);overflow:hidden;}
+    .cap-fill{height:100%;border-radius:99px;}
+    .cap-ok{color:var(--success);} .cap-warn{color:var(--warning);} .cap-over{color:var(--danger);}
+    .bg-ok{background:#22a35a;} .bg-warn{background:#e0a100;} .bg-over{background:var(--danger);}
+    .cap-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .cap-table td{padding:7px 4px;border-bottom:1px solid var(--border);vertical-align:middle;}
+    .cap-table td.num{font-weight:800;white-space:nowrap;text-align:left;}
+    .cap-table .sub{font-size:10.5px;color:var(--text-faint);}
+    .cap-box{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface-alt);margin-bottom:16px;}
+    .cap-box.over{border-color:#f3b9c3;background:#fff7f8;}
+    .cap-box-title{font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+    .cap-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+    .cap-inputs label{display:block;font-size:11.5px;font-weight:700;color:var(--text-muted);margin-bottom:5px;}
+    .warn-list{margin:10px 0 0;padding:0;list-style:none;}
+    .warn-list li{
+      display:flex;justify-content:space-between;gap:10px;border:1px solid #f3b9c3;background:#fff7f8;border-radius:8px;
+      padding:7px 10px;margin-bottom:6px;font-size:12px;color:var(--text);
+    }
+    .warn-list li b{color:var(--danger);}
+
+    /* ---------- recommendation / overbooking ---------- */
+    .reco-box{
+      border:1px solid #cfe0ff;background:#f5f9ff;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--text-muted);line-height:1.8;
+    }
+    .reco-box b{color:var(--text);}
+    .reco-box.lack{border-color:#f0d58a;background:#fffbea;}
+    .reco-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+    .btn-auto{background:#eaf1ff;color:var(--brand-meas);border:1px solid #cfe0ff;}
+    .btn-auto:hover{background:#dde9ff;}
+    .btn-auto:disabled{opacity:.5;cursor:not-allowed;}
+
+    /* ---------- add cases tabs + ranked list ---------- */
+    .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+    .tab{
+      border:none;background:transparent;padding:9px 14px;font-size:13px;font-weight:800;color:var(--text-muted);cursor:pointer;
+      border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px;
+    }
+    .tab.active{color:var(--text);border-bottom-color:#101828;}
+    .rank-num{font-size:11px;font-weight:800;color:var(--text-faint);}
+    .score-cell{min-width:110px;}
+    .score-bar{height:6px;border-radius:99px;background:var(--neutral-tint);overflow:hidden;margin-top:3px;}
+    .score-fill{height:100%;background:#2563eb;border-radius:99px;}
+    .reason{
+      display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px;margin:1px 0 1px 4px;
+      background:#eef4ff;color:#1d4ed8;white-space:nowrap;
+    }
+    .reason.child{background:#fdeef6;color:#b0306f;}
+    .reason.teen{background:#f6effd;color:#7c3aed;}
+    .reason.overdue{background:#fdf1e0;color:#b45309;}
+    .reason.gov{background:#e6f7f1;color:#047857;}
+    .reason.pref{background:#e6f7f1;color:#047857;}
+    .reason.neg{background:#eef0f3;color:#5b6472;}
+    .excluded-note{font-size:11.5px;color:var(--text-faint);margin-top:8px;}
+
+    /* ---------- case rows extras ---------- */
+    .phone-chip{
+      display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:7px;padding:2px 4px 2px 8px;
+      font-size:11.5px;font-weight:700;color:var(--text);background:var(--surface-alt);direction:ltr;
+    }
+    .phone-chip a{color:var(--text);}
+    .copy-btn{
+      border:none;background:var(--surface);border-radius:5px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--text-muted);
+    }
+    .copy-btn:hover{color:var(--brand-meas);}
+    .case-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:var(--text-muted);}
+    .meta-sep{color:var(--border-strong);}
+    .next-call{display:inline-flex;align-items:center;gap:4px;color:var(--warning);font-weight:700;}
+    .assignee{display:inline-flex;align-items:center;gap:4px;}
+    .mini-select{border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:11px;font-family:inherit;background:var(--surface);}
+    .row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;}
+    .ghost-btn{
+      display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface);border-radius:8px;
+      padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
+    }
+    .ghost-btn:hover{color:var(--text);border-color:var(--border-strong);}
+    .call-btn:disabled{opacity:.5;cursor:not-allowed;}
+    .call-btn.primary{background:#101828;color:#fff;border-color:#101828;}
+    .call-btn.primary:hover{background:#000;color:#fff;}
+    .switch-row{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-muted);cursor:pointer;}
+
+    /* ---------- call panel ---------- */
+    .call-panel{margin-top:10px;border:1px solid #cfe0ff;border-radius:10px;background:#fbfdff;padding:11px 12px;}
+    .script-box{border:1px solid var(--border);border-radius:9px;background:var(--surface);padding:10px 11px;margin-bottom:10px;}
+    .script-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:800;color:var(--text);margin-bottom:6px;}
+    .script-talk{font-size:12.5px;line-height:1.9;color:var(--text);white-space:pre-wrap;}
+    .script-sub{font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 4px;}
+    .script-list{margin:0;padding:0 18px 0 0;font-size:12px;line-height:1.8;color:var(--text);}
+    .script-note{font-size:11.5px;color:#8a5a00;background:#fffbea;border-radius:7px;padding:6px 8px;margin-top:8px;line-height:1.7;}
+    .script-loc{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--text);margin-top:8px;line-height:1.7;}
+    .outcome-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+    .outcome-btn.sel{color:#fff !important;}
+    .note-input{
+      width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit;
+      resize:vertical;background:var(--surface);color:var(--text);
+    }
+    .note-input:focus{outline:none;border-color:#93b8ff;box-shadow:0 0 0 3px #eaf1ff;}
+    .rule-hint{font-size:11.5px;color:var(--text-muted);background:var(--surface-alt);border-radius:7px;padding:6px 9px;margin:8px 0;line-height:1.7;}
+    .rule-hint.warn{background:#fff4d6;color:#8a5a00;}
+    .rule-hint.danger{background:#fceced;color:var(--danger);}
+    .panel-foot{display:flex;gap:8px;margin-top:9px;}
+
+    /* ---------- call log ---------- */
+    .log-list{margin-top:9px;border-top:1px dashed var(--border);padding-top:8px;}
+    .log-item{display:flex;gap:9px;padding:6px 0;border-bottom:1px solid var(--neutral-tint);font-size:11.5px;}
+    .log-item:last-child{border-bottom:none;}
+    .log-time{color:var(--text-faint);white-space:nowrap;min-width:92px;}
+    .log-body{flex:1;}
+    .log-who{color:var(--text-muted);}
+    .log-note{color:var(--text);margin-top:2px;line-height:1.6;}
+    .log-legacy{font-size:11px;color:var(--text-faint);padding:4px 0;}
+
+    /* ---------- queue ---------- */
+    .queue-wrap{padding:16px 22px 50px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start;}
+    .queue-wrap.single{grid-template-columns:minmax(0,1fr);}
+    .q-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+    .q-title{font-size:16px;font-weight:800;color:var(--text);}
+    .q-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+    .kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 13px;}
+    .kpi-val{font-size:20px;font-weight:800;color:var(--text);}
+    .kpi-lbl{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+    .q-section{margin-bottom:18px;}
+    .q-section-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:800;color:var(--text);}
+    .q-section-head .cnt{background:var(--neutral-tint);border-radius:999px;padding:1px 9px;font-size:11.5px;}
+    .q-section-head .hint{font-weight:500;font-size:11.5px;color:var(--text-faint);}
+    .q-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:8px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
+    .q-item .bar{position:absolute;top:0;bottom:0;right:0;width:4px;}
+    .q-item.later{background:#fcfcfd;}
+    .q-grid{display:grid;grid-template-columns:34px minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1fr) auto;gap:12px;align-items:center;}
+    .q-rank{font-size:13px;font-weight:800;color:var(--text-faint);text-align:center;}
+    .q-name{font-size:13.5px;font-weight:800;color:var(--text);}
+    .q-line{font-size:11.5px;color:var(--text-muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .task-chip{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;}
+    .q-empty{border:1px dashed var(--border-strong);border-radius:11px;padding:22px;text-align:center;color:var(--text-faint);font-size:12.5px;background:var(--surface);}
+    .side-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:12px;}
+    .side-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+    .agent-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;padding:7px 0;border-bottom:1px solid var(--neutral-tint);font-size:12px;}
+    .agent-row:last-child{border-bottom:none;}
+    .agent-row .nums{display:flex;gap:10px;color:var(--text-muted);font-size:11.5px;}
+    .agent-row .nums b{color:var(--text);}
+    .rules-list{margin:0;padding:0 16px 0 0;font-size:12px;line-height:1.9;color:var(--text-muted);}
+    .rules-list b{color:var(--text);}
+
+    /* ---------- settings / scripts modals ---------- */
+    .set-section{border:1px solid var(--border);border-radius:11px;padding:12px 14px;margin-bottom:12px;}
+    .set-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px;}
+    .set-desc{font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.7;}
+    .set-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .set-grid.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .set-grid label{display:block;font-size:11.5px;font-weight:700;color:var(--text-muted);margin-bottom:5px;}
+    .input-suffix{display:flex;align-items:center;gap:6px;}
+    .input-suffix span{font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
+    .text-area{
+      width:100%;min-height:96px;border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-size:13px;line-height:1.8;
+      font-family:inherit;color:var(--text);resize:vertical;
+    }
+    .text-area:focus{outline:none;border-color:#93b8ff;box-shadow:0 0 0 3px #eaf1ff;}
+    .ph-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .ph{font-size:11px;background:var(--neutral-tint);border-radius:5px;padding:2px 7px;color:var(--text);cursor:pointer;border:none;font-family:inherit;}
+    .ph:hover{background:#dfe3ea;}
+    .preview-box{border:1px dashed var(--border-strong);border-radius:10px;padding:10px 12px;background:var(--surface-alt);}
+
+    .toast{
+      position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
+      padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
+    }
+    .confirm-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px;}
+    .btn-warn{background:#b45309;color:#fff;}
+    .btn-warn:hover{background:#92400e;}
+
+    @media (max-width:1100px){
+      .queue-wrap{grid-template-columns:minmax(0,1fr);}
+      .q-grid{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);}
+      .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// =====================================================================
+// Constants & mock data
+// =====================================================================
+var MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+var WEEKDAYS_AR = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+function startOfDay(d){ var x = new Date(d.getTime()); x.setHours(0,0,0,0); return x; }
+function daysBetween(a, b){ return Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / 86400000); }
+function isSameDate(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+// The calendar is anchored on the Sunday of the real current week.
+var REAL_TODAY = startOfDay(new Date());
+var BASE_SUNDAY = (function(){ var d = new Date(REAL_TODAY.getTime()); d.setDate(d.getDate() - d.getDay()); return d; })();
+var BASE_MONTH = new Date(REAL_TODAY.getFullYear(), REAL_TODAY.getMonth(), 1);
+
+var TASK_TYPES = {
+  measurement: {label:'المقاسات', short:'مقاسات', color:'#2563eb', tint:'#eaf1ff',
+    iconPath:'M4 16 L16 4 L20 8 L8 20 Z M8.7 15.3 L10.3 16.9 M11.6 12.4 L13.2 14 M14.5 9.5 L16.1 11.1'},
+  newDelivery: {label:'التسليمات الجديدة', short:'تسليمات جديدة', color:'#059669', tint:'#e6f7f1',
+    iconPath:'M12 3 L20 7 L20 17 L12 21 L4 17 L4 7 Z M4 7 L12 11 L20 7 M12 11 L12 21'},
+  maintEval: {label:'تقييمات الصيانة', short:'تقييمات صيانة', color:'#c2660a', tint:'#fdf1e0',
+    iconPath:'M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z M6 6h12v14H6z M9 13l2 2 4-4'},
+  maintDelivery: {label:'تسليمات الصيانة', short:'تسليمات صيانة', color:'#7c3aed', tint:'#f2eafd',
+    iconPath:'M14.3 6.4a4 4 0 0 0-5.2 5.2L4 16.7V20h3.3l5.1-5.1a4 4 0 0 0 5.2-5.2l-2.7 2.7-2.3-2.3z'},
+};
+var ORG_ICON_PATH = 'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16';
+var CONVOY_ICON_PATH = 'M3 16V8a1 1 0 0 1 1-1h9v9M13 10h4l3 3v3M3 16a2 2 0 0 0 4 0M13 16a2 2 0 0 0 4 0M3 16h1M17 16h1';
+
+var ICONS = {
+  phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.1a16 16 0 0 0 6 6l1.3-1.4a2 2 0 0 1 2.1-.4c1 .4 2 .6 3 .7a2 2 0 0 1 1.6 2z',
+  copy:'M9 9h11v11H9z M5 15H4V4h11v1',
+  gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
+  script:'M8 3h8l4 4v14H4V3h4z M14 3v5h5 M8 12h8 M8 16h6',
+  clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',
+  user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0',
+  users:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M1 21a8 8 0 0 1 16 0 M17 3.5a4 4 0 0 1 0 7.5 M23 21a8 8 0 0 0-5-7.4',
+  send:'M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z',
+  spark:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
+  list:'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  calendar:'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4',
+  alert:'M12 3l10 18H2z M12 10v4 M12 17h.01',
+  history:'M3 12a9 9 0 1 0 3-6.7L3 8 M3 3v5h5 M12 7v5l3 2',
+  x:'M6 6l12 12M18 6L6 18',
+  lock:'M5 11h14v9H5z M8 11V8a4 4 0 0 1 8 0v3',
+  trash:'M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13',
+  pin:'M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  undo:'M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3',
+  check:'M5 12l5 5L20 7',
+  gauge:'M12 21a9 9 0 1 1 9-9 M12 12l5-4',
+};
+function ic(name, size, color, sw){
+  size = size || 14;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||1.8)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+ICONS[name]+'"></path></svg>';
+}
+function pathIc(d, size, color, sw){
+  size = size || 14;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||1.8)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+d+'"></path></svg>';
+}
+function esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+var GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','أسوان','سوهاج','المنيا','الفيوم','بني سويف','قنا','الأقصر','الشرقية','دمياط','أسيوط','بورسعيد'];
+var FUNDING_OPTIONS = ['تمويل مؤسسة','ممول خاص','مشروع اليونيسف','تمويل ذاتي'];
+var LEVEL_OPTIONS = ['بتر أسفل الركبة','بتر أعلى الركبة','بتر الساعد','بتر أعلى المرفق','بتر أصابع القدم'];
+var AGE_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'child', label:'أقل من 12 سنة', test:function(a){return a<12;}},
+  {key:'teen', label:'12–18 سنة', test:function(a){return a>=12 && a<=18;}},
+  {key:'adult', label:'أكبر من 18 سنة', test:function(a){return a>18;}},
+];
+var ATTEMPTS_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'0', label:'لم يتم التواصل بعد', test:function(a){return a===0;}},
+  {key:'1-2', label:'1–2 محاولة', test:function(a){return a>=1 && a<=2;}},
+  {key:'3+', label:'3 محاولات فأكثر', test:function(a){return a>=3;}},
+];
+var PREF_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'داخل المؤسسة', label:'داخل المؤسسة'},
+  {key:'قافلة', label:'قافلة'},
+  {key:'غير محدد', label:'غير محدد'},
+];
+
+var OUTCOME_DEFS = [
+  {key:'booked', label:'تم الحجز بنجاح', color:'#15803d'},
+  {key:'noAnswer', label:'لم يتم الرد', color:'#c81e3a'},
+  {key:'unavailable', label:'غير متاح / مغلق', color:'#c81e3a'},
+  {key:'notInterested', label:'عدم رغبة الحالة', color:'#5b6472'},
+  {key:'wantsOtherDay', label:'يرغب في يوم آخر', color:'#b45309'},
+];
+var FAILED_OUTCOMES = ['noAnswer','unavailable'];
+function outcomeDef(key){
+  if (key === 'bookedAlt') return {key:'bookedAlt', label:'تم الحجز في موعد آخر', color:'#15803d'};
+  for (var i=0;i<OUTCOME_DEFS.length;i++){ if (OUTCOME_DEFS[i].key===key) return OUTCOME_DEFS[i]; }
+  return {key:key, label:key, color:'#5b6472'};
+}
+
+var AGENTS = [
+  {id:'a1', name:'منة الله سامي'},
+  {id:'a2', name:'أحمد رضا'},
+  {id:'a3', name:'ريهام عادل'},
+];
+function agentName(id){ for (var i=0;i<AGENTS.length;i++){ if (AGENTS[i].id===id) return AGENTS[i].name; } return 'غير مسندة'; }
+
+// stage = which pipeline step the case is waiting for (used for auto-suggest eligibility)
+// wait  = days waiting in that stage ; overdue = days past the scheduled maintenance date
+function mk(id,name,gov,funding,level,age,attempts,pref,stage,wait,overdue){
+  var n = parseInt(id.slice(2),10);
+  var prefixes = ['010','011','012','015'];
+  var tail = String((n*7919 + 13579) % 100000000); while (tail.length<8) tail = '0'+tail;
+  return {id:id, name:name, gov:gov, funding:funding, level:level, age:age, attempts:attempts, pref:pref,
+          stage:stage, waitingDays:wait, maintOverdue:overdue||0, phone: prefixes[n%4] + tail};
+}
+var CASES = [
+  mk('C-1001','هالة عبد الرحمن','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',34,0,'','measurement',120),
+  mk('C-1002','محمود سيد إبراهيم','الجيزة','تمويل مؤسسة','بتر أعلى الركبة',41,1,'داخل المؤسسة','newDelivery',35),
+  mk('C-1003','سارة أحمد فتحي','أسوان','ممول خاص','بتر الساعد',12,0,'قافلة','measurement',90),
+  mk('C-1004','يوسف كمال عبده','سوهاج','تمويل مؤسسة','بتر أعلى المرفق',27,2,'','maintDelivery',40,18),
+  mk('C-1005','نور الهدى محمد','أسوان','مشروع اليونيسف','بتر أسفل الركبة',8,0,'قافلة','measurement',150),
+  mk('C-1006','أحمد جمال توفيق','المنيا','تمويل مؤسسة','بتر أصابع القدم',55,0,'','newDelivery',28),
+  mk('C-1007','منى عبد اللطيف','الفيوم','تمويل ذاتي','بتر أعلى الركبة',19,3,'داخل المؤسسة','measurement',60),
+  mk('C-1008','كريم وليد حسن','أسوان','تمويل مؤسسة','بتر الساعد',30,1,'قافلة','measurement',75),
+  mk('C-1009','إيمان صلاح الدين','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',46,0,'','newDelivery',22),
+  mk('C-1010','عمر خالد فؤاد','الجيزة','ممول خاص','بتر أعلى المرفق',22,0,'داخل المؤسسة','measurement',45),
+  mk('C-1011','رانيا محمود سالم','أسوان','تمويل مؤسسة','بتر أسفل الركبة',15,2,'قافلة','measurement',130),
+  mk('C-1012','حسام الدين طارق','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',60,0,'','maintDelivery',30,9),
+  mk('C-1013','دينا فاروق عزت','بني سويف','مشروع اليونيسف','بتر الساعد',9,1,'داخل المؤسسة','measurement',110),
+  mk('C-1014','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أصابع القدم',38,0,'','maintDelivery',25,3),
+  mk('C-1015','شيماء رضا محمد','الأقصر','تمويل ذاتي','بتر أسفل الركبة',25,0,'قافلة','measurement',55),
+  mk('C-1016','أمير حازم صبري','القاهرة','تمويل مؤسسة','بتر أعلى الركبة',33,4,'','measurement',180),
+  mk('C-1017','هبة الله كريم','الجيزة','تمويل مؤسسة','بتر أعلى المرفق',17,0,'داخل المؤسسة','measurement',70),
+  mk('C-1018','طارق سامي لطفي','المنيا','ممول خاص','بتر الساعد',49,1,'','newDelivery',18),
+  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'قافلة','measurement',85),
+  mk('C-1020','بلال ياسر منير','أسوان','تمويل مؤسسة','بتر أعلى الركبة',21,2,'قافلة','newDelivery',40),
+  mk('C-1021','ياسمين علاء الدين','سوهاج','مشروع اليونيسف','بتر أصابع القدم',13,0,'داخل المؤسسة','maintDelivery',20,14),
+  mk('C-1022','عبد الرحمن فتحي','القاهرة','تمويل مؤسسة','بتر الساعد',44,0,'','newDelivery',12),
+  mk('C-1023','لمياء حسين عبد العزيز','الجيزة','تمويل ذاتي','بتر أسفل الركبة',37,1,'','measurement',95),
+  mk('C-1024','سيف الدين محمد رأفت','أسوان','تمويل مؤسسة','بتر أعلى المرفق',26,0,'قافلة','maintDelivery',35,22),
+  mk('C-1025','مريم أشرف حمدي','أسوان','مشروع اليونيسف','بتر أسفل الركبة',7,0,'قافلة','measurement',140),
+  mk('C-1026','عادل حسني مرسي','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',52,1,'','maintDelivery',60,25),
+  mk('C-1027','جنى محمد صلاح','المنيا','مشروع اليونيسف','بتر الساعد',10,0,'قافلة','measurement',95),
+  mk('C-1028','إسلام فوزي عبده','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',31,0,'','newDelivery',40),
+  mk('C-1029','آية سمير حامد','الجيزة','ممول خاص','بتر أعلى المرفق',16,0,'داخل المؤسسة','maintDelivery',30,12),
+  mk('C-1030','مصطفى رجب علي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',44,0,'','measurement',200),
+  mk('C-1031','رحمة خالد يونس','سوهاج','مشروع اليونيسف','بتر أسفل الركبة',9,0,'قافلة','maintDelivery',50,40),
+  mk('C-1032','فاطمة الزهراء سعيد','القاهرة','تمويل مؤسسة','بتر الساعد',23,0,'داخل المؤسسة','measurement',75),
+  mk('C-1033','زياد هشام كامل','أسوان','تمويل مؤسسة','بتر أصابع القدم',14,0,'قافلة','newDelivery',20),
+  mk('C-1034','سلمى طارق نجيب','المنيا','تمويل ذاتي','بتر أسفل الركبة',36,0,'','measurement',160),
+  mk('C-1035','خالد عبد العليم','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',61,0,'','maintDelivery',45,8),
+  mk('C-1036','روان إيهاب فتحي','الجيزة','مشروع اليونيسف','بتر الساعد',6,0,'داخل المؤسسة','measurement',110),
+  mk('C-1037','حمدي سالم بدوي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',58,3,'','measurement',30),
+  mk('C-1038','ملك أحمد زكي','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',11,0,'','newDelivery',15),
+  mk('C-1039','أنس محمود عطية','المنيا','تمويل مؤسسة','بتر أعلى المرفق',27,0,'','maintDelivery',22,5),
+  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85),
+];
+var CASE_MAP = {};
+CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
+function caseById(id){ return CASE_MAP[id] || null; }
+function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
+
+var DEFAULT_SCRIPTS = {
+  measurement: {
+    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنكلم حضرتك بخصوص {الاسم} عشان نحجز ميعاد أخذ المقاسات للطرف الصناعي يوم {اليوم} {التاريخ} في {المكان}.\nالميعاد ده يناسب حضرتك؟',
+    bring:'البطاقة الشخصية (أو شهادة الميلاد للأطفال)\nأي تقارير طبية خاصة بالبتر\nلبس مريح يسهّل أخذ المقاس',
+    notes:'لو الحالة طفل لازم يحضر معاه ولي الأمر. أكّد إن الجرح ملتئم تمامًا قبل الحجز.'
+  },
+  newDelivery: {
+    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنبشّر حضرتك إن الطرف الصناعي الخاص بـ {الاسم} جاهز للتسليم.\nعايزين نحجز ميعاد التسليم والتجربة يوم {اليوم} {التاريخ} في {المكان}. يناسب حضرتك؟',
+    bring:'البطاقة الشخصية\nإيصال الاستلام إن وجد\nجورب أو لبس مناسب للتجربة',
+    notes:'التسليم بياخد حوالي ساعتين للتجربة والضبط، بلّغ الحالة بكده.'
+  },
+  maintEval: {
+    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنكلم حضرتك بخصوص تقييم صيانة الطرف الخاص بـ {الاسم} يوم {اليوم} {التاريخ} في {المكان}.',
+    bring:'الطرف الصناعي الحالي\nالبطاقة الشخصية',
+    notes:''
+  },
+  maintDelivery: {
+    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nصيانة الطرف الخاص بـ {الاسم} خلصت، وعايزين نحجز ميعاد الاستلام يوم {اليوم} {التاريخ} في {المكان}. يناسب حضرتك؟',
+    bring:'البطاقة الشخصية\nإيصال استلام الطرف للصيانة',
+    notes:'لو الحالة محتاجة تعديل إضافي سجّله في الملاحظة.'
+  },
+};
+var PLACEHOLDERS = ['{الاسم}','{اليوم}','{التاريخ}','{المكان}','{مكان_التجمع}','{موعد_التجمع}','{الموظف}'];
+
+function defaultSettings(){
+  return {
+    rates:{perSpecialist:6, perTechnician:5, perRoom:8},
+    defaultCap:{specialists:2, technicians:4, rooms:3, vehicles:1},
+    retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
+    histRates:{measurement:0.6, newDelivery:0.75, maintDelivery:0.7},
+    orgAddress:'مقر المؤسسة الرئيسي',
+  };
+}
+
+// =====================================================================
+// State
+// =====================================================================
+var S = {
+  role:'مدير النظام', agentId:'a1', mainView:'calendar',
+  weekOffset:0, monthOffset:0, viewMode:'week',
+  activeTypes:['measurement','newDelivery','maintEval','maintDelivery'],
+  tasks:[], bookings:{measurement:{}, newDelivery:{}, maintDelivery:{}},
+  callLog:[], nextCallAt:{}, htrBase:{}, dayCapacity:{},
+  settings: defaultSettings(),
+  scripts: JSON.parse(JSON.stringify(DEFAULT_SCRIPTS)),
+  simOffset:0,
+  overlay:null, createDraft:null, govSearch:'', govDropdownOpen:false,
+  detailTaskId:null, detailCaseSearch:'', detailMineOnly:true, detailBulkSelected:[],
+  editingTarget:false, editingTargetValue:'',
+  addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesFilters:emptyFilters(),
+  confirm:null,
+  callOpen:null, callDraft:{outcome:'', note:''}, logOpen:{},
+  queueAgent:'', capacityDay:null, capDraft:null,
+  settingsDraft:null, scriptsTab:'measurement', scriptsDraft:null,
+  toast:null,
+};
+function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
+
+function now(){ return Date.now() + S.simOffset; }
+function nowDate(){ return new Date(now()); }
+function todayOffset(){ return daysBetween(BASE_SUNDAY, nowDate()); }
+function dateOf(off){ var d = new Date(BASE_SUNDAY.getTime()); d.setDate(d.getDate() + off); return d; }
+function dayLabel(off){ var d = dateOf(off); return WEEKDAYS_AR[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_AR[d.getMonth()]; }
+function fmtTime(ms){
+  var d = new Date(ms); var h = d.getHours(), m = d.getMinutes();
+  return (h%12||12) + ':' + (m<10?'0':'') + m + ' ' + (h<12?'ص':'م');
+}
+function fmtWhen(ms){
+  var d = new Date(ms); var diff = daysBetween(d, nowDate());
+  if (diff===0) return 'اليوم ' + fmtTime(ms);
+  if (diff===1) return 'أمس ' + fmtTime(ms);
+  if (diff===-1) return 'غدًا ' + fmtTime(ms);
+  return d.getDate() + ' ' + MONTHS_AR[d.getMonth()] + ' ' + fmtTime(ms);
+}
+function locLabelFor(t){ return t.loc==='convoy' ? ('قافلة – ' + (t.gov || '—')) : 'داخل المؤسسة'; }
+
+function isAdmin(){ return S.role==='مدير النظام'; }
+function isCC(){ return S.role==='مركز الاتصال'; }
+function actorName(){ return isCC() ? agentName(S.agentId) : S.role; }
+function findTask(id){ for (var i=0;i<S.tasks.length;i++){ if (S.tasks[i].id===id) return S.tasks[i]; } return null; }
+function visibleTasks(){ return isAdmin() ? S.tasks : S.tasks.filter(function(t){ return t.status==='published'; }); }
+
+// =====================================================================
+// Bookings / statuses
+// =====================================================================
+function taskBookedCount(t){
+  if (t.type==='maintEval') return t.evalBooked||0;
+  var map = S.bookings[t.type] || {};
+  return t.candidateIds.filter(function(cid){ return map[cid]===t.id; }).length;
+}
+function seedFailed(cid){ var c = caseById(cid); return c ? c.attempts : 0; }
+function logsFor(cid){ return S.callLog.filter(function(l){ return l.caseId===cid; }); }
+function failedTotal(cid){
+  return seedFailed(cid) + logsFor(cid).filter(function(l){ return FAILED_OUTCOMES.indexOf(l.outcome)!==-1; }).length;
+}
+function attemptsTotal(cid){ return seedFailed(cid) + logsFor(cid).length; }
+function failedToday(cid){
+  var today = nowDate();
+  return logsFor(cid).filter(function(l){ return FAILED_OUTCOMES.indexOf(l.outcome)!==-1 && isSameDate(new Date(l.at), today); }).length;
+}
+function isHardToReach(cid){ return failedTotal(cid) - (S.htrBase[cid]||0) >= S.settings.hardToReachAfter; }
+
+var STATUS_COLORS = {
+  booked:{color:'#15803d', tint:'#e9f7ee'},
+  lockedElsewhere:{color:'#5b6472', tint:'#eef0f3'},
+  noAnswer:{color:'#c81e3a', tint:'#fceced'},
+  unavailable:{color:'#c81e3a', tint:'#fceced'},
+  notInterested:{color:'#98a0ac', tint:'#eef0f3'},
+  wantsOtherDay:{color:'#b45309', tint:'#fdf1e0'},
+  hardToReach:{color:'#9f1239', tint:'#ffe4ec'},
+  pending:{color:'#5b6472', tint:'#eef0f3'},
+};
+function caseStatus(t, cid){
+  var map = S.bookings[t.type] || {};
+  var at = map[cid];
+  if (at === t.id) return {key:'booked', label:'تم الحجز بنجاح'};
+  if (at && at !== t.id) return {key:'lockedElsewhere', label:'تم حجز الحالة في موعد آخر'};
+  var cs = t.callStatus[cid];
+  if (cs === 'notInterested') return {key:'notInterested', label:'عدم رغبة الحالة'};
+  if (isHardToReach(cid)) return {key:'hardToReach', label:'صعب الوصول'};
+  if (cs === 'noAnswer') return {key:'noAnswer', label:'لم يتم الرد'};
+  if (cs === 'unavailable') return {key:'unavailable', label:'غير متاح / مغلق'};
+  if (cs === 'wantsOtherDay') return {key:'wantsOtherDay', label:'يرغب في يوم آخر'};
+  return {key:'pending', label:'لم يتم التواصل بعد'};
+}
+function isOpenStatus(key){ return ['booked','lockedElsewhere','notInterested'].indexOf(key)===-1; }
+function nextCallKey(tid, cid){ return tid + '|' + cid; }
+
+function alternativeTasksFor(t, cid){
+  var tOff = todayOffset();
+  return S.tasks.filter(function(x){
+    return x.id !== t.id && x.type === t.type && x.status==='published' && x.dateOffset >= tOff &&
+      (x.loc==='org' || x.gov===(caseById(cid)||{}).gov);
+  }).map(function(x){
+    var booked = taskBookedCount(x);
+    return {task:x, booked:booked, remaining:x.target-booked};
+  }).filter(function(x){ return x.remaining > 0; }).sort(function(a,b){ return a.task.dateOffset-b.task.dateOffset; });
+}
+
+// =====================================================================
+// Capacity
+// =====================================================================
+function capFor(off){ return Object.assign({}, S.settings.defaultCap, S.dayCapacity[off] || {}); }
+function dayLoad(off, tasks, capOverride){
+  var list = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; });
+  var meas=0, tech=0, room=0, govs={};
+  list.forEach(function(t){
+    var n = t.target || 0;
+    if (t.type==='measurement') meas += n; else tech += n;
+    if (t.loc==='org') room += n; else govs[t.gov || '—'] = 1;
+  });
+  var cap = capOverride || capFor(off), r = S.settings.rates;
+  return [
+    {key:'specialists', label:'الأخصائيين', sub:'المقاسات · '+cap.specialists+' أخصائي × '+r.perSpecialist+' حالة', load:meas, cap:cap.specialists*r.perSpecialist, unit:'حالة'},
+    {key:'technicians', label:'الفنيين', sub:'التسليمات والصيانة · '+cap.technicians+' فني × '+r.perTechnician+' حالة', load:tech, cap:cap.technicians*r.perTechnician, unit:'حالة'},
+    {key:'rooms', label:'الغرف', sub:'داخل المؤسسة · '+cap.rooms+' غرفة × '+r.perRoom+' حالة', load:room, cap:cap.rooms*r.perRoom, unit:'حالة'},
+    {key:'vehicles', label:'عربيات القافلة', sub:'قافلة لكل محافظة في اليوم', load:Object.keys(govs).length, cap:cap.vehicles, unit:'قافلة'},
+  ];
+}
+function loadLevel(x){
+  if (x.load===0) return 'ok';
+  if (x.load > x.cap) return 'over';
+  if (x.cap>0 && x.load/x.cap >= 0.85) return 'warn';
+  return 'ok';
+}
+function dayPct(off){
+  var worst = 0;
+  dayLoad(off).forEach(function(x){
+    if (x.load===0) return;
+    var p = x.cap>0 ? x.load/x.cap : 9.99;
+    if (p > worst) worst = p;
+  });
+  return worst;
+}
+// resources that are over capacity after the change AND got worse because of it
+function newOverloads(off, tasksAfter){
+  var before = dayLoad(off, S.tasks), after = dayLoad(off, tasksAfter);
+  return after.filter(function(x,i){ return x.load > x.cap && x.load > before[i].load; });
+}
+function guardCapacity(off, tasksAfter, onOk, returnTo){
+  var ov = newOverloads(off, tasksAfter);
+  if (!ov.length){ onOk(); return; }
+  S.overlay = 'confirm';
+  S.confirm = {
+    title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn',
+    message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة المتاحة في:',
+    items: ov.map(function(x){ return {label:x.label + ' (' + x.sub + ')', value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+    footnote:'تقدر تزوّد الطاقة من إعدادات اليوم، أو تقلل العدد المستهدف، أو تحفظ رغم التجاوز.',
+    confirmLabel:'حفظ رغم التجاوز', onConfirm:onOk, returnTo:returnTo,
+  };
+  render();
+}
+
+// =====================================================================
+// Auto-suggest / priority
+// =====================================================================
+function recommendedFor(type, target){
+  var r = S.settings.histRates[type];
+  if (!r || !target) return target || 0;
+  return Math.ceil(target / r - 1e-9);
+}
+function priorityOf(ctx, c){
+  var reasons = [], score = 0, eligible = true, why = '';
+  if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
+  else if ((S.bookings[ctx.type]||{})[c.id]){ eligible = false; why = (S.bookings[ctx.type][c.id]===ctx.id ? 'محجوزة في هذه المهمة' : 'محجوزة في موعد آخر'); }
+  else if (ctx.loc==='convoy' && ctx.gov && c.gov!==ctx.gov){ eligible = false; why = 'محافظة مختلفة عن القافلة'; }
+  else if (isHardToReach(c.id)){ eligible = false; why = 'صعب الوصول'; }
+
+  score += Math.min(40, Math.round(c.waitingDays/5));
+  reasons.push({t:'انتظار ' + c.waitingDays + ' يوم', k:'wait'});
+  if (c.age < 12){ score += 25; reasons.push({t:'طفل (' + c.age + ' سنة)', k:'child'}); }
+  else if (c.age <= 18){ score += 10; reasons.push({t:'أقل من 18 سنة', k:'teen'}); }
+  if (ctx.type==='maintDelivery' && c.maintOverdue > 0){
+    score += Math.min(30, c.maintOverdue); reasons.push({t:'صيانة متأخرة ' + c.maintOverdue + ' يوم', k:'overdue'});
+  }
+  if (ctx.loc==='convoy' && ctx.gov && c.gov===ctx.gov){ score += 20; reasons.push({t:'نفس محافظة القافلة', k:'gov'}); }
+  if (c.pref){
+    var want = ctx.loc==='convoy' ? 'قافلة' : 'داخل المؤسسة';
+    if (c.pref===want){ score += 10; reasons.push({t:'يفضّل ' + (want==='قافلة' ? 'القافلة' : 'المؤسسة'), k:'pref'}); }
+    else { score -= 15; reasons.push({t:'يفضّل ' + c.pref, k:'neg'}); }
+  }
+  var f = failedTotal(c.id);
+  if (f > 0){ score -= 4*f; reasons.push({t:f + ' محاولات فاشلة', k:'neg'}); }
+  var tOff = todayOffset();
+  var other = S.tasks.some(function(t){ return t.id!==ctx.id && t.type===ctx.type && t.dateOffset>=tOff && t.candidateIds.indexOf(c.id)!==-1; });
+  if (other){ score -= 20; reasons.push({t:'مرشحة في موعد آخر', k:'neg'}); }
+  return {c:c, score:Math.max(0, Math.min(100, score)), reasons:reasons, eligible:eligible, why:why};
+}
+function rankCases(ctx){
+  return CASES.map(function(c){ return priorityOf(ctx, c); })
+    .filter(function(p){ return p.eligible; })
+    .sort(function(a,b){ return b.score - a.score; });
+}
+function autoPick(ctx, currentIds, wanted){
+  var out = currentIds.slice();
+  rankCases(ctx).forEach(function(p){ if (out.length < wanted && out.indexOf(p.c.id)===-1) out.push(p.c.id); });
+  return out;
+}
+// still-callable candidates in a task (pending / no answer / unavailable, not hard to reach)
+function callableCount(t){
+  return t.candidateIds.filter(function(cid){
+    var k = caseStatus(t, cid).key;
+    return k==='pending' || k==='noAnswer' || k==='unavailable';
+  }).length;
+}
+
+// =====================================================================
+// Assignment to call-center agents
+// =====================================================================
+function agentLoads(){
+  var loads = {}; AGENTS.forEach(function(a){ loads[a.id] = 0; });
+  var tOff = todayOffset();
+  S.tasks.forEach(function(t){
+    if (t.status!=='published' || t.dateOffset < tOff) return;
+    t.candidateIds.forEach(function(cid){
+      var a = t.assignee[cid];
+      if (a && loads[a]!=null && isOpenStatus(caseStatus(t,cid).key)) loads[a]++;
+    });
+  });
+  return loads;
+}
+function autoAssign(t, rebalance){
+  var loads = agentLoads();
+  if (rebalance){
+    t.candidateIds.forEach(function(cid){
+      var a = t.assignee[cid];
+      if (a && isOpenStatus(caseStatus(t,cid).key) && loads[a]!=null) loads[a]--;
+    });
+  }
+  var count = 0;
+  t.candidateIds.forEach(function(cid){
+    if (!isOpenStatus(caseStatus(t,cid).key)) return;
+    if (t.assignee[cid] && !rebalance) return;
+    var best = AGENTS[0].id;
+    AGENTS.forEach(function(a){ if (loads[a.id] < loads[best]) best = a.id; });
+    t.assignee[cid] = best; loads[best]++; count++;
+  });
+  return count;
+}
+
+// =====================================================================
+// Scripts
+// =====================================================================
+function scriptLocation(t){
+  if (t.loc==='convoy'){
+    var s = 'قافلة محافظة ' + (t.gov || '—');
+    if (t.meetingPoint) s += ' – مكان التجمع: ' + t.meetingPoint;
+    if (t.meetingTime) s += ' الساعة ' + fmtClock(t.meetingTime);
+    return s;
+  }
+  return S.settings.orgAddress;
+}
+function fmtClock(hhmm){
+  if (!hhmm) return '';
+  var p = hhmm.split(':'); var h = parseInt(p[0],10), m = p[1] || '00';
+  return (h%12||12) + ':' + m + ' ' + (h<12?'ص':'م');
+}
+function fillScript(text, t, c){
+  var d = dateOf(t.dateOffset);
+  var map = {
+    '{الاسم}': c ? c.name : '{الاسم}',
+    '{اليوم}': WEEKDAYS_AR[d.getDay()],
+    '{التاريخ}': d.getDate() + ' ' + MONTHS_AR[d.getMonth()],
+    '{المكان}': scriptLocation(t),
+    '{مكان_التجمع}': t.meetingPoint || 'غير محدد',
+    '{موعد_التجمع}': t.meetingTime ? fmtClock(t.meetingTime) : 'غير محدد',
+    '{الموظف}': isCC() ? agentName(S.agentId) : 'اسم الموظف',
+  };
+  var out = String(text || '');
+  Object.keys(map).forEach(function(k){ out = out.split(k).join(map[k]); });
+  return out;
+}
+
+// =====================================================================
+// Seed data (relative to today so the demo always looks current)
+// =====================================================================
+(function seed(){
+  var T = todayOffset();
+  function task(id, type, off, loc, gov, target, cands, status, extra){
+    return Object.assign({id:id, type:type, dateOffset:T+off, loc:loc, gov:gov, target:target, candidateIds:cands,
+      callStatus:{}, assignee:{}, status:status, publishedAt: status==='published' ? now()-86400000*2 : null,
+      publishedBy: status==='published' ? 'مدير النظام' : null, meetingPoint:'', meetingTime:''}, extra||{});
+  }
+  S.tasks = [
+    task('t1','measurement',0,'org',null,12,['C-1001','C-1002','C-1003','C-1005','C-1006','C-1007','C-1008','C-1009','C-1011','C-1013','C-1016','C-1017','C-1019','C-1021'],'published'),
+    task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1010','C-1011','C-1015','C-1020','C-1023','C-1024'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', meetingTime:'09:00'}),
+    task('t3','newDelivery',1,'org',null,6,['C-1002','C-1004','C-1006','C-1009','C-1012','C-1018','C-1022'],'published'),
+    task('t9','maintDelivery',1,'org',null,16,['C-1029','C-1012','C-1014','C-1021','C-1039'],'published'),
+    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1026','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', meetingTime:'10:00'}),
+    task('t5','maintEval',4,'org',null,5,[],'published',{evalBooked:3}),
+    task('t6','newDelivery',-4,'org',null,5,['C-1010','C-1017','C-1019'],'published'),
+    task('t7','measurement',9,'convoy','المنيا',10,['C-1006','C-1018'],'draft'),
+    task('t8','maintEval',-10,'org',null,4,[],'published',{evalBooked:2}),
+  ];
+  var b = S.bookings;
+  ['C-1001','C-1006','C-1009','C-1017','C-1021'].forEach(function(c){ b.measurement[c]='t1'; });
+  b.measurement['C-1010']='t2'; b.measurement['C-1024']='t2';
+  ['C-1002','C-1004','C-1006','C-1009','C-1012','C-1018'].forEach(function(c){ b.newDelivery[c]='t3'; });
+  b.maintDelivery['C-1012']='t9';
+
+  S.tasks.forEach(function(t){ if (t.status==='published') autoAssign(t); });
+
+  var n = now(), H = 3600000;
+  // historical "booked" calls (yesterday)
+  var i = 0;
+  S.tasks.forEach(function(t){
+    if (t.type==='maintEval' || t.dateOffset < T) return;
+    t.candidateIds.forEach(function(cid){
+      if ((S.bookings[t.type]||{})[cid]===t.id){
+        S.callLog.push({id:'L'+(++i), taskId:t.id, caseId:cid, agentId:t.assignee[cid]||'a1', at:n-24*H+i*7*60000, outcome:'booked', note:''});
+      }
+    });
+  });
+  function log(tid, cid, outcome, agoMin, note){
+    var t = findTask(tid);
+    S.callLog.push({id:'L'+(++i), taskId:tid, caseId:cid, agentId:t.assignee[cid]||'a1', at:n-agoMin*60000, outcome:outcome, note:note||''});
+    t.callStatus[cid] = outcome;
+  }
+  log('t1','C-1002','noAnswer',180,'الجرس بيضرب ومحدش بيرد');
+  S.nextCallAt[nextCallKey('t1','C-1002')] = n - 60*60000;
+  log('t1','C-1013','noAnswer',30,'');
+  S.nextCallAt[nextCallKey('t1','C-1013')] = n + 90*60000;
+  log('t1','C-1003','wantsOtherDay',95,'تفضّل قافلة أسوان لأنها بعيدة عن القاهرة');
+  log('t1','C-1007','notInterested',140,'ركّبت طرف من جهة أخرى');
+  log('t1','C-1016','unavailable',50,'الرقم مغلق');
+})();
+
+// =====================================================================
+// Actions
+// =====================================================================
+var toastTimer = null;
+function toast(msg){
+  S.toast = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ S.toast = null; render(); }, 3200);
+}
+function tomorrowNine(){ var d = startOfDay(nowDate()); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.getTime(); }
+function nextCallFor(t, cid){
+  var n = S.nextCallAt[nextCallKey(t.id, cid)] || 0;
+  if (failedToday(cid) >= S.settings.maxPerDay) n = Math.max(n, tomorrowNine());
+  return n > now() ? n : 0;
+}
+function canCall(t, cid){
+  if (!isCC()) return false;
+  var a = t.assignee[cid];
+  return !a || a === S.agentId;
+}
+function closeAllOverlays(){
+  S.overlay = null; S.createDraft = null; S.detailTaskId = null; S.addCasesMode = null; S.confirm = null;
+  S.callOpen = null; S.capacityDay = null; S.settingsDraft = null; S.scriptsDraft = null;
+}
+function weekRange(wk){ return [wk*7, wk*7+6]; }
+
+var ACT = {
+  // ---------- header ----------
+  setRole: function(v){
+    S.role = v; closeAllOverlays();
+    if (v==='مركز الاتصال') S.mainView = 'queue';
+    render();
+  },
+  setAgent: function(v){ S.agentId = v; S.callOpen = null; render(); },
+  setMainView: function(v){ S.mainView = v; S.callOpen = null; render(); },
+  simAdvance: function(min){ S.simOffset += parseInt(min,10)*60000; toast('تم تقديم الوقت (محاكاة) إلى ' + fmtTime(now())); render(); },
+  simReset: function(){ S.simOffset = 0; render(); },
+
+  // ---------- calendar navigation ----------
+  onToday: function(){
+    S.weekOffset = Math.floor(todayOffset()/7);
+    var d = nowDate(); S.monthOffset = (d.getFullYear()-BASE_MONTH.getFullYear())*12 + d.getMonth()-BASE_MONTH.getMonth();
+    render();
+  },
+  setViewWeek: function(){ S.viewMode = 'week'; render(); },
+  setViewMonth: function(){ S.viewMode = 'month'; render(); },
+  prevPeriod: function(){ if (S.viewMode==='month') S.monthOffset--; else S.weekOffset--; render(); },
+  nextPeriod: function(){ if (S.viewMode==='month') S.monthOffset++; else S.weekOffset++; render(); },
+  jumpToWeek: function(off){ S.weekOffset = Math.floor(parseInt(off,10)/7); S.viewMode = 'week'; render(); },
+  toggleType: function(type){
+    var has = S.activeTypes.indexOf(type)!==-1;
+    S.activeTypes = has ? S.activeTypes.filter(function(x){ return x!==type; }) : S.activeTypes.concat([type]);
+    if (!S.activeTypes.length) S.activeTypes = Object.keys(TASK_TYPES);
+    render();
+  },
+
+  // ---------- publish ----------
+  publishWeek: function(){
+    var r = weekRange(S.weekOffset);
+    var drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
+    if (!drafts.length) return;
+    var cases = drafts.reduce(function(n,t){ return n + t.candidateIds.length; }, 0);
+    S.overlay = 'confirm';
+    S.confirm = {
+      title:'نشر خطة الأسبوع', tone:'primary',
+      message:'سيتم نشر ' + drafts.length + ' مهمة للكول سنتر وتوزيع ' + cases + ' حالة مرشحة على الموظفين تلقائيًا بالتساوي.',
+      items: drafts.map(function(t){ return {label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset)}; }),
+      confirmLabel:'نشر الآن',
+      onConfirm:function(){
+        drafts.forEach(function(t){ publishOne(t); });
+        S.overlay = null; S.confirm = null;
+        toast('تم نشر ' + drafts.length + ' مهمة وأصبحت ظاهرة للكول سنتر');
+        render();
+      }
+    };
+    render();
+  },
+  publishTask: function(tid){
+    var t = findTask(tid); if (!t) return;
+    publishOne(t); toast('تم نشر المهمة وتوزيع حالاتها على الموظفين'); render();
+  },
+  unpublishTask: function(tid){
+    var t = findTask(tid); if (!t) return;
+    S.overlay = 'confirm';
+    S.confirm = {
+      title:'إرجاع المهمة لمسودة', tone:'warn',
+      message:'المهمة هتختفي من الكول سنتر لحد ما تتنشر تاني. الحجوزات وسجل المكالمات اللي تمت هيفضلوا محفوظين.',
+      confirmLabel:'إرجاع لمسودة', returnTo:'detail',
+      onConfirm:function(){ t.status = 'draft'; S.overlay = 'detail'; S.confirm = null; toast('تم إرجاع المهمة لمسودة'); render(); }
+    };
+    render();
+  },
+
+  // ---------- create drawer ----------
+  closeCreate: function(){ S.overlay = null; S.createDraft = null; S.govDropdownOpen = false; render(); },
+  setCreateLoc: function(loc){ S.createDraft.loc = loc; render(); },
+  setCreateTarget: function(v){ S.createDraft.target = v; render(); },
+  govSearch: function(v){ S.govSearch = v; S.govDropdownOpen = true; render(); },
+  govFocus: function(){ S.govDropdownOpen = true; render(); },
+  pickGov: function(name){ S.createDraft.gov = name; S.govSearch = name; S.govDropdownOpen = false; render(); },
+  setMeetingPoint: function(v){ S.createDraft.meetingPoint = v; render(); },
+  setMeetingTime: function(v){ S.createDraft.meetingTime = v; render(); },
+  autoSuggestDraft: function(){
+    var d = S.createDraft; var target = parseInt(d.target,10)||0;
+    var ctx = {id:'__draft', type:d.type, loc:d.loc, gov:d.gov, dateOffset:d.dateOffset};
+    var before = d.candidateIds.length;
+    d.candidateIds = autoPick(ctx, d.candidateIds, recommendedFor(d.type, target));
+    var added = d.candidateIds.length - before;
+    toast(added>0 ? ('تمت إضافة ' + added + ' حالة بالترشيح التلقائي') : 'لا توجد حالات إضافية مؤهلة للترشيح');
+    render();
+  },
+  createTask: function(publish){
+    var d = S.createDraft; if (!d) return;
+    var target = parseInt(d.target,10)||0;
+    if (target<=0 || (d.loc==='convoy' && !d.gov)) return;
+    var t = {
+      id:'t'+Date.now(), type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
+      target:target, candidateIds: d.type==='maintEval' ? [] : d.candidateIds.slice(), callStatus:{}, assignee:{},
+      evalBooked: d.type==='maintEval' ? 0 : undefined, status:'draft', publishedAt:null, publishedBy:null,
+      meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'') : '', meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '',
+    };
+    guardCapacity(t.dateOffset, S.tasks.concat([t]), function(){
+      S.tasks.push(t);
+      if (publish === '1') publishOne(t);
+      S.overlay = null; S.createDraft = null; S.confirm = null;
+      toast(publish==='1' ? 'تم إنشاء المهمة ونشرها للكول سنتر' : 'تم إنشاء المهمة كمسودة – لن تظهر للكول سنتر قبل النشر');
+      render();
+    }, 'create');
+  },
+
+  // ---------- add cases ----------
+  openAddCasesDraft: function(){
+    S.addCasesMode = {kind:'create'}; S.addCasesSelected = S.createDraft.candidateIds.slice();
+    S.addCasesFilters = emptyFilters(); S.addCasesTab = S.createDraft.type==='maintEval' ? 'manual' : 'auto';
+    S.overlay = 'addCases'; render();
+  },
+  openAddCasesTask: function(tid){
+    var t = findTask(tid);
+    S.addCasesMode = {kind:'existing', taskId:tid}; S.addCasesSelected = t ? t.candidateIds.slice() : [];
+    S.addCasesFilters = emptyFilters(); S.addCasesTab = 'auto';
+    S.overlay = 'addCases'; render();
+  },
+  closeAddCases: function(){
+    var m = S.addCasesMode;
+    S.overlay = (m && m.kind==='existing') ? 'detail' : (S.createDraft ? 'create' : null);
+    S.addCasesMode = null; render();
+  },
+  setAddTab: function(tab){ S.addCasesTab = tab; render(); },
+  toggleCaseSel: function(cid){
+    var i = S.addCasesSelected.indexOf(cid);
+    if (i===-1) S.addCasesSelected.push(cid); else S.addCasesSelected.splice(i,1);
+    render();
+  },
+  toggleSelectAll: function(){
+    var ids = currentAddCasesIds();
+    var all = ids.length>0 && ids.every(function(id){ return S.addCasesSelected.indexOf(id)!==-1; });
+    if (all) S.addCasesSelected = S.addCasesSelected.filter(function(id){ return ids.indexOf(id)===-1; });
+    else ids.forEach(function(id){ if (S.addCasesSelected.indexOf(id)===-1) S.addCasesSelected.push(id); });
+    render();
+  },
+  setFilter: function(v, key){ S.addCasesFilters[key] = v; render(); },
+  clearFilters: function(){ S.addCasesFilters = emptyFilters(); render(); },
+  pickTopN: function(){
+    var ctx = addCasesCtx();
+    S.addCasesSelected = autoPick(ctx, S.addCasesSelected, recommendedFor(ctx.type, ctx.target));
+    render();
+  },
+  confirmAddCases: function(){
+    var m = S.addCasesMode; var sel = S.addCasesSelected.slice(); if (!m) return;
+    if (m.kind==='create'){
+      S.createDraft.candidateIds = sel; S.overlay = 'create';
+    } else {
+      var t = findTask(m.taskId);
+      t.candidateIds = sel;
+      if (t.status==='published'){ var n = autoAssign(t); if (n) toast('تم توزيع ' + n + ' حالة جديدة على الموظفين'); }
+      S.overlay = 'detail';
+    }
+    S.addCasesMode = null; render();
+  },
+
+  // ---------- detail drawer ----------
+  openDetail: function(tid){
+    S.overlay = 'detail'; S.detailTaskId = tid; S.callOpen = null; S.detailCaseSearch = '';
+    S.detailBulkSelected = []; S.editingTarget = false; S.logOpen = {}; render();
+  },
+  closeDetail: function(){ S.overlay = null; S.detailTaskId = null; S.callOpen = null; render(); },
+  detailSearch: function(v){ S.detailCaseSearch = v; render(); },
+  toggleMineOnly: function(){ S.detailMineOnly = !S.detailMineOnly; render(); },
+  deleteTask: function(){
+    var tid = S.detailTaskId;
+    S.overlay = 'confirm';
+    S.confirm = {title:'حذف المهمة', tone:'danger', message:'هل تريد حذف هذه المهمة؟ سيتم فقدان كل بيانات الحالات المرتبطة بها.',
+      confirmLabel:'حذف المهمة', returnTo:'detail',
+      onConfirm:function(){ S.tasks = S.tasks.filter(function(t){ return t.id!==tid; }); S.overlay = null; S.confirm = null; S.detailTaskId = null; render(); }};
+    render();
+  },
+  startEditTarget: function(){ var t = findTask(S.detailTaskId); S.editingTarget = true; S.editingTargetValue = String(t.target); render(); },
+  cancelEditTarget: function(){ S.editingTarget = false; render(); },
+  editTargetVal: function(v){ S.editingTargetValue = v; render(); },
+  saveTarget: function(){
+    var t = findTask(S.detailTaskId); if (!t) return;
+    var nt = parseInt(S.editingTargetValue,10)||0; var booked = taskBookedCount(t);
+    var after = S.tasks.map(function(x){ return x.id===t.id ? Object.assign({}, x, {target:nt}) : x; });
+    var apply = function(){ t.target = nt; S.editingTarget = false; S.overlay = 'detail'; S.confirm = null; render(); };
+    var withCap = function(){ guardCapacity(t.dateOffset, after, apply, 'detail'); };
+    if (nt < booked){
+      S.overlay = 'confirm';
+      S.confirm = {title:'تأكيد التغيير', tone:'primary', message:'العدد المستهدف الجديد (' + nt + ') أقل من العدد المحجوز حاليًا (' + booked + '). هل تريد المتابعة؟',
+        confirmLabel:'تأكيد التغيير', returnTo:'detail', onConfirm:withCap};
+      render();
+    } else withCap();
+  },
+  toggleBulk: function(cid){
+    var i = S.detailBulkSelected.indexOf(cid);
+    if (i===-1) S.detailBulkSelected.push(cid); else S.detailBulkSelected.splice(i,1);
+    render();
+  },
+  removeSelected: function(){
+    var tid = S.detailTaskId, ids = S.detailBulkSelected.slice(); if (!ids.length) return;
+    S.overlay = 'confirm';
+    S.confirm = {title:'إزالة حالات', tone:'danger', message:'هل تريد إزالة ' + ids.length + ' حالة من قائمة المرشحين لهذه المهمة؟',
+      confirmLabel:'إزالة الحالات المحددة', returnTo:'detail',
+      onConfirm:function(){
+        var t = findTask(tid);
+        t.candidateIds = t.candidateIds.filter(function(id){ return ids.indexOf(id)===-1; });
+        S.detailBulkSelected = []; S.overlay = 'detail'; S.confirm = null; render();
+      }};
+    render();
+  },
+  autoFillTask: function(tid){
+    var t = findTask(tid);
+    var need = recommendedFor(t.type, t.target);
+    var before = t.candidateIds.length;
+    t.candidateIds = autoPick(t, t.candidateIds, Math.max(need, before));
+    var added = t.candidateIds.length - before;
+    if (t.status==='published') autoAssign(t);
+    toast(added>0 ? ('تمت إضافة ' + added + ' حالة بالترشيح التلقائي' + (t.status==='published' ? ' وتوزيعها على الموظفين' : '')) : 'لا توجد حالات إضافية مؤهلة');
+    render();
+  },
+  redistribute: function(tid){
+    var t = findTask(tid); var n = autoAssign(t, true);
+    toast('تمت إعادة توزيع ' + n + ' حالة مفتوحة بالتساوي على الموظفين'); render();
+  },
+  assignCase: function(v, key){
+    var p = key.split('|'); var t = findTask(p[0]); if (!t) return;
+    if (v) t.assignee[p[1]] = v; else delete t.assignee[p[1]];
+    render();
+  },
+
+  // ---------- calls ----------
+  openCall: function(tid, cid){
+    if (S.callOpen && S.callOpen.tid===tid && S.callOpen.cid===cid){ S.callOpen = null; render(); return; }
+    S.callOpen = {tid:tid, cid:cid}; S.callDraft = {outcome:'', note:''}; render();
+  },
+  closeCall: function(){ S.callOpen = null; render(); },
+  pickOutcome: function(key){ S.callDraft.outcome = key; render(); },
+  callNote: function(v){ S.callDraft.note = v; render(); },
+  saveCall: function(){
+    var co = S.callOpen; if (!co || !S.callDraft.outcome) return;
+    var t = findTask(co.tid), cid = co.cid, o = S.callDraft.outcome, c = caseById(cid);
+    var key = nextCallKey(t.id, cid);
+    var wasHTR = isHardToReach(cid);
+    S.callLog.push({id:'L'+Date.now(), taskId:t.id, caseId:cid, agentId:S.agentId, at:now(), outcome:o, note:S.callDraft.note.trim()});
+    var msg = '';
+    if (o==='booked'){
+      S.bookings[t.type][cid] = t.id; delete S.nextCallAt[key]; delete t.callStatus[cid];
+      msg = 'تم حجز ' + c.name + ' في ' + dayLabel(t.dateOffset);
+    } else {
+      t.callStatus[cid] = o;
+      if (FAILED_OUTCOMES.indexOf(o)!==-1){
+        if (!wasHTR && isHardToReach(cid)){
+          delete S.nextCallAt[key];
+          msg = 'تم تصنيف ' + c.name + ' "صعب الوصول" بعد ' + failedTotal(cid) + ' محاولات فاشلة';
+        } else if (failedToday(cid) >= S.settings.maxPerDay){
+          S.nextCallAt[key] = tomorrowNine();
+          msg = 'استُنفدت محاولات اليوم (' + S.settings.maxPerDay + ') – الحالة هترجع في قائمتك بكرة ' + fmtTime(tomorrowNine());
+        } else {
+          S.nextCallAt[key] = now() + S.settings.retryMinutes*60000;
+          msg = 'الحالة هترجع في قائمتك تلقائيًا الساعة ' + fmtTime(S.nextCallAt[key]);
+        }
+      } else {
+        delete S.nextCallAt[key];
+        msg = 'تم تسجيل نتيجة المكالمة';
+      }
+    }
+    S.callOpen = null; S.callDraft = {outcome:'', note:''};
+    toast(msg); render();
+  },
+  chooseAlt: function(fromTid, toTid, cid){
+    var from = findTask(fromTid), to = findTask(toTid); cid = cid || (S.callOpen && S.callOpen.cid);
+    if (!from || !to || !cid) return;
+    S.bookings[from.type][cid] = to.id;
+    if (to.candidateIds.indexOf(cid)===-1) to.candidateIds.push(cid);
+    to.assignee[cid] = from.assignee[cid] || S.agentId;
+    delete S.nextCallAt[nextCallKey(from.id, cid)];
+    S.callLog.push({id:'L'+Date.now(), taskId:from.id, caseId:cid, agentId:isCC() ? S.agentId : 'a1', at:now(), outcome:'bookedAlt',
+      note:(S.callDraft.note ? S.callDraft.note.trim() + ' – ' : '') + 'حُجزت في: ' + TASK_TYPES[to.type].short + ' ' + locLabelFor(to) + ' – ' + dayLabel(to.dateOffset)});
+    S.callOpen = null; S.callDraft = {outcome:'', note:''};
+    toast('تم حجز الحالة في ' + dayLabel(to.dateOffset)); render();
+  },
+  toggleLog: function(key){ S.logOpen[key] = !S.logOpen[key]; render(); },
+  copyPhone: function(p){
+    var done = function(){ toast('تم نسخ الرقم ' + fmtPhone(p)); render(); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(done, function(){ legacyCopy(p); done(); }); return; }
+    } catch(e){}
+    legacyCopy(p); done();
+  },
+  reactivate: function(cid){
+    S.htrBase[cid] = failedTotal(cid);
+    toast('تمت إعادة تفعيل الحالة ورجعت لقوائم الاتصال'); render();
+  },
+  setQueueAgent: function(v){ S.queueAgent = v; render(); },
+
+  // ---------- day capacity ----------
+  openCapacity: function(off){
+    off = parseInt(off,10); var c = capFor(off);
+    S.capacityDay = off;
+    S.capDraft = {specialists:String(c.specialists), technicians:String(c.technicians), rooms:String(c.rooms), vehicles:String(c.vehicles)};
+    S.overlay = 'capacity'; render();
+  },
+  closeCapacity: function(){ S.overlay = null; S.capacityDay = null; render(); },
+  capInput: function(v, key){ S.capDraft[key] = v; render(); },
+  capReset: function(){
+    var c = S.settings.defaultCap;
+    S.capDraft = {specialists:String(c.specialists), technicians:String(c.technicians), rooms:String(c.rooms), vehicles:String(c.vehicles)};
+    render();
+  },
+  saveCapacity: function(){
+    var off = S.capacityDay, d = S.capDraft, cap = {};
+    Object.keys(d).forEach(function(k){ cap[k] = Math.max(0, parseInt(d[k],10)||0); });
+    var over = dayLoad(off, S.tasks, cap).filter(function(x){ return x.load > x.cap; });
+    var apply = function(){ S.dayCapacity[off] = cap; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
+    if (!over.length){ apply(); return; }
+    S.overlay = 'confirm';
+    S.confirm = {title:'تحذير: الطاقة أقل من المخطط', tone:'warn',
+      message:'المهام المخططة في ' + dayLabel(off) + ' هتتخطى الطاقة الجديدة في:',
+      items: over.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+      confirmLabel:'حفظ رغم التجاوز', returnTo:'capacity', onConfirm:apply};
+    render();
+  },
+
+  // ---------- settings ----------
+  openSettings: function(){
+    var s = S.settings;
+    S.settingsDraft = {
+      'rates.perSpecialist':String(s.rates.perSpecialist), 'rates.perTechnician':String(s.rates.perTechnician), 'rates.perRoom':String(s.rates.perRoom),
+      'defaultCap.specialists':String(s.defaultCap.specialists), 'defaultCap.technicians':String(s.defaultCap.technicians),
+      'defaultCap.rooms':String(s.defaultCap.rooms), 'defaultCap.vehicles':String(s.defaultCap.vehicles),
+      'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
+      'histRates.measurement':String(Math.round(s.histRates.measurement*100)), 'histRates.newDelivery':String(Math.round(s.histRates.newDelivery*100)),
+      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)), 'orgAddress':s.orgAddress,
+    };
+    S.overlay = 'settings'; render();
+  },
+  closeSettings: function(){ S.overlay = null; S.settingsDraft = null; render(); },
+  setInput: function(v, path){ S.settingsDraft[path] = v; render(); },
+  saveSettings: function(){
+    var d = S.settingsDraft, s = S.settings;
+    function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
+    s.rates = {perSpecialist:int('rates.perSpecialist',1), perTechnician:int('rates.perTechnician',1), perRoom:int('rates.perRoom',1)};
+    s.defaultCap = {specialists:int('defaultCap.specialists',0), technicians:int('defaultCap.technicians',0), rooms:int('defaultCap.rooms',0), vehicles:int('defaultCap.vehicles',0)};
+    s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
+    ['measurement','newDelivery','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
+    s.orgAddress = (d.orgAddress||'').trim() || 'مقر المؤسسة';
+    S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
+  },
+
+  // ---------- scripts ----------
+  openScripts: function(){ S.scriptsDraft = JSON.parse(JSON.stringify(S.scripts)); S.overlay = 'scripts'; render(); },
+  closeScripts: function(){ S.overlay = null; S.scriptsDraft = null; render(); },
+  scriptsTab: function(tab){ S.scriptsTab = tab; render(); },
+  scriptInput: function(v, field){ S.scriptsDraft[S.scriptsTab][field] = v; render(); },
+  insertPh: function(ph){
+    var el = document.querySelector('[data-k="script-talk"]');
+    var cur = S.scriptsDraft[S.scriptsTab].talk || '';
+    var pos = el && el.selectionStart!=null ? el.selectionStart : cur.length;
+    S.scriptsDraft[S.scriptsTab].talk = cur.slice(0,pos) + ph + cur.slice(pos);
+    pendingCaret = {k:'script-talk', pos:pos + ph.length};
+    render();
+  },
+  resetScript: function(){ S.scriptsDraft[S.scriptsTab] = JSON.parse(JSON.stringify(DEFAULT_SCRIPTS[S.scriptsTab])); render(); },
+  saveScripts: function(){ S.scripts = S.scriptsDraft; S.overlay = null; S.scriptsDraft = null; toast('تم حفظ سكريبتات المكالمات'); render(); },
+
+  // ---------- confirm ----------
+  confirmAction: function(){ var cb = S.confirm && S.confirm.onConfirm; if (cb) cb(); else { S.overlay = null; S.confirm = null; render(); } },
+  cancelConfirm: function(){ var r = (S.confirm && S.confirm.returnTo) || null; S.overlay = r; S.confirm = null; render(); },
+};
+
+function publishOne(t){
+  t.status = 'published'; t.publishedAt = now(); t.publishedBy = 'مدير النظام';
+  autoAssign(t);
+}
+function legacyCopy(text){
+  var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
+function openCreate(type, off){
+  S.overlay = 'create';
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target: type==='maintEval' ? '5' : '10', candidateIds:[], meetingPoint:'', meetingTime:'09:00'};
+  S.govSearch = ''; S.govDropdownOpen = false;
+  render();
+}
+function moveTask(tid, off){
+  var t = findTask(tid); if (!t || t.dateOffset===off) return;
+  S.overlay = 'confirm';
+  S.confirm = {title:'نقل المهمة', tone:'primary', message:'هل تريد نقل هذه المهمة إلى يوم ' + dayLabel(off) + '؟' + (t.status==='published' ? ' المهمة منشورة، والكول سنتر هيشوف الموعد الجديد فورًا.' : ''),
+    confirmLabel:'نقل المهمة',
+    onConfirm:function(){
+      var after = S.tasks.map(function(x){ return x.id===tid ? Object.assign({}, x, {dateOffset:off}) : x; });
+      S.confirm = null; S.overlay = null;
+      guardCapacity(off, after, function(){ t.dateOffset = off; S.overlay = null; S.confirm = null; render(); }, null);
+      if (S.overlay !== 'confirm') render();
+    }};
+  render();
+}
+
+// =====================================================================
+// Render helpers
+// =====================================================================
+function A(act, a, b){ return ' data-act="'+act+'"' + (a!=null ? ' data-a="'+esc(a)+'"' : '') + (b!=null ? ' data-b="'+esc(b)+'"' : ''); }
+function statusTag(st){
+  var c = STATUS_COLORS[st.key] || STATUS_COLORS.pending;
+  return '<span class="status-tag" style="background:'+c.tint+';color:'+c.color+';"><span class="dot" style="background:'+c.color+';"></span>'+esc(st.label)+'</span>';
+}
+function phoneChip(c){
+  return '<span class="phone-chip">'+ic('phone',12)+'<a href="tel:'+esc(c.phone)+'">'+esc(fmtPhone(c.phone))+'</a>'+
+    '<button class="copy-btn" title="نسخ الرقم"'+A('copyPhone', c.phone)+'>'+ic('copy',12)+'</button></span>';
+}
+function reasonChips(p, max){
+  return p.reasons.slice(0, max||6).map(function(r){ return '<span class="reason '+r.k+'">'+esc(r.t)+'</span>'; }).join('');
+}
+function levelClass(x){ var l = loadLevel(x); return l==='over' ? 'over' : l==='warn' ? 'warn' : 'ok'; }
+function capTable(loads){
+  return '<table class="cap-table">' + loads.map(function(x){
+    var lv = levelClass(x); var pct = x.cap>0 ? Math.min(100, Math.round(x.load/x.cap*100)) : (x.load>0 ? 100 : 0);
+    return '<tr><td><div style="font-weight:700;">'+esc(x.label)+'</div><div class="sub">'+esc(x.sub)+'</div>'+
+      '<div class="cap-track" style="margin-top:4px;"><div class="cap-fill bg-'+lv+'" style="width:'+pct+'%;"></div></div></td>'+
+      '<td class="num cap-'+lv+'">'+x.load+' من '+x.cap+'</td></tr>';
+  }).join('') + '</table>';
+}
+
+// =====================================================================
+// Top-level render
+// =====================================================================
+var root = null, pendingCaret = null;
+function render(){
+  if (!root) return;
+  var ae = document.activeElement, focusK = null, selS = null, selE = null;
+  if (ae && ae.getAttribute && ae.getAttribute('data-k')){
+    focusK = ae.getAttribute('data-k');
+    try { selS = ae.selectionStart; selE = ae.selectionEnd; } catch(e){}
+  }
+  var scrolls = {};
+  root.querySelectorAll('[data-scroll]').forEach(function(el){ scrolls[el.getAttribute('data-scroll')] = el.scrollTop; });
+  root.innerHTML = renderApp();
+  root.querySelectorAll('[data-scroll]').forEach(function(el){ var v = scrolls[el.getAttribute('data-scroll')]; if (v) el.scrollTop = v; });
+  if (pendingCaret){ focusK = pendingCaret.k; selS = selE = pendingCaret.pos; pendingCaret = null; }
+  if (focusK){
+    var el = root.querySelector('[data-k="'+focusK+'"]');
+    if (el){ el.focus(); try { if (selS!=null) el.setSelectionRange(selS, selE); } catch(e){} }
+  }
+}
+
+function renderApp(){
+  var h = '<div class="app" dir="rtl" lang="ar">';
+  h += renderTopbar();
+  h += renderSubbar();
+  if (S.mainView==='calendar'){
+    h += renderPlanStrip();
+    h += renderPalette();
+    h += S.viewMode==='week' ? renderWeek() : renderMonth();
+  } else {
+    h += renderQueue();
+  }
+  h += renderOverlays();
+  if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
+  h += '</div>';
+  return h;
+}
+
+function renderTopbar(){
+  var roles = ['مدير النظام','مركز الاتصال','عرض فقط'];
+  var h = '<header class="topbar"><div class="brandblock"><div class="brand-mark">'+ic('calendar',18,'#fff')+'</div>'+
+    '<div><div class="page-title">غرفة العمليات</div><div class="page-subtitle">التخطيط التشغيلي لأنشطة الأطراف الصناعية</div></div></div>';
+  h += '<div class="topbar-right">';
+  h += '<span class="clock-pill" title="الوقت الحالي – أزرار المحاكاة لتجربة قواعد إعادة الاتصال فقط">'+ic('clock',13)+' الآن <b>'+fmtTime(now())+'</b>'+
+    '<button'+A('simAdvance','60')+' title="محاكاة: تقديم الوقت ساعة">+ ساعة</button>'+
+    (S.simOffset ? '<button'+A('simReset')+' title="رجوع للوقت الحقيقي">الوقت الحقيقي</button>' : '')+'</span>';
+  if (isAdmin()){
+    h += '<button class="top-btn"'+A('openScripts')+'>'+ic('script',14)+'سكريبتات المكالمات</button>';
+    h += '<button class="top-btn"'+A('openSettings')+'>'+ic('gear',14)+'الإعدادات</button>';
+  } else {
+    h += '<button class="top-btn"'+A('openScripts')+'>'+ic('script',14)+'السكريبتات</button>';
+  }
+  h += '<div class="role-pill"><span class="role-dot"></span>الدور الحالي: <select class="top-select" data-change="setRole">'+
+    roles.map(function(r){ return '<option'+(r===S.role?' selected':'')+'>'+r+'</option>'; }).join('')+'</select></div>';
+  if (isCC()){
+    h += '<div class="role-pill">'+ic('user',13)+' الموظف: <select class="top-select" data-change="setAgent">'+
+      AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(a.id===S.agentId?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></div>';
+  }
+  h += '</div></header>';
+  return h;
+}
+
+function renderSubbar(){
+  var dueCount = queueItems(isCC() ? S.agentId : '').filter(function(x){ return x.group==='due'; }).length;
+  var h = '<div class="subbar"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
+  h += '<div class="main-tabs">'+
+    '<button class="main-tab'+(S.mainView==='calendar'?' active':'')+'"'+A('setMainView','calendar')+'>'+ic('calendar',14)+'التقويم</button>'+
+    '<button class="main-tab'+(S.mainView==='queue'?' active':'')+'"'+A('setMainView','queue')+'>'+ic('list',14)+(isCC() ? 'قائمتي النهارده' : 'قوائم الكول سنتر')+
+    ' <span class="count">'+dueCount+'</span></button></div>';
+  if (S.mainView==='calendar'){
+    var periodLabel;
+    if (S.viewMode==='month'){
+      var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset, 1);
+      periodLabel = MONTHS_AR[md.getMonth()] + ' ' + md.getFullYear();
+    } else {
+      var a = dateOf(S.weekOffset*7), b = dateOf(S.weekOffset*7+6);
+      periodLabel = a.getMonth()===b.getMonth()
+        ? (a.getDate()+' – '+b.getDate()+' '+MONTHS_AR[a.getMonth()]+' '+a.getFullYear())
+        : (a.getDate()+' '+MONTHS_AR[a.getMonth()]+' – '+b.getDate()+' '+MONTHS_AR[b.getMonth()]+' '+b.getFullYear());
+    }
+    h += '<div class="view-nav"><button class="today-btn" style="border:none;background:transparent;"'+A('onToday')+'>اليوم</button>'+
+      '<button class="view-btn'+(S.viewMode==='week'?' active':'')+'"'+A('setViewWeek')+'>أسبوعي</button>'+
+      '<button class="view-btn'+(S.viewMode==='month'?' active':'')+'"'+A('setViewMonth')+'>شهري</button></div>';
+    h += '<div class="week-nav"><button class="nav-arrow" title="السابق"'+A('prevPeriod')+'>'+pathIc('M9 6l6 6-6 6',15,null,2)+'</button>'+
+      '<div class="week-label">'+periodLabel+'</div>'+
+      '<button class="nav-arrow" title="التالي"'+A('nextPeriod')+'>'+pathIc('M15 6l-6 6 6 6',15,null,2)+'</button></div>';
+  }
+  h += '</div>';
+  if (S.mainView==='calendar'){
+    h += '<div class="type-filters"><span class="type-filter-label">نوع المهمة:</span>' + Object.keys(TASK_TYPES).map(function(k){
+      var m = TASK_TYPES[k], on = S.activeTypes.indexOf(k)!==-1;
+      return '<div class="type-chip'+(on?' active':'')+'" style="--tint:'+m.tint+';--edge:'+m.color+';"'+A('toggleType',k)+'><span class="sw" style="background:'+(on?m.color:'#cdd1d9')+';"></span>'+m.short+'</div>';
+    }).join('') + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderPlanStrip(){
+  var r = weekRange(S.weekOffset);
+  var inWeek = S.tasks.filter(function(t){ return t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
+  var drafts = inWeek.filter(function(t){ return t.status==='draft'; }).length;
+  var pub = inWeek.length - drafts;
+  if (!isAdmin()){
+    return '<div class="plan-strip info"><div class="plan-stats">'+ic('lock',13)+
+      '<span>يظهر لك المهام <b style="color:var(--text)">المنشورة فقط</b> من غرفة العمليات. المهام اللي لسه بتتخطط مش هتظهر قبل ما المدير ينشرها.</span></div></div>';
+  }
+  var h = '<div class="plan-strip'+(drafts ? '' : ' ok')+'"><div class="plan-stats">'+
+    '<span class="plan-stat"><span class="pdot" style="background:#15803d"></span>منشورة: <b>'+pub+'</b></span>'+
+    '<span class="plan-stat"><span class="pdot" style="background:#e0a100"></span>مسودة: <b>'+drafts+'</b></span>'+
+    '<span>'+(drafts ? 'المسودات مش ظاهرة للكول سنتر. راجع الخطة وبعدين انشرها.' : 'كل مهام الأسبوع منشورة وظاهرة للكول سنتر.')+'</span></div>';
+  if (drafts) h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13)+' نشر خطة الأسبوع ('+drafts+')</button>';
+  h += '</div>';
+  return h;
+}
+
+function renderPalette(){
+  var admin = isAdmin();
+  var h = '<div class="palette-row"><div class="palette-head"><div class="palette-title">إضافة مهمة جديدة إلى الخطة</div>'+
+    '<div class="palette-hint">اسحب نوع المهمة وأفلته على اليوم المطلوب في التقويم · المهام الجديدة بتتحفظ كمسودة لحد النشر</div></div><div class="palette-chips">';
+  Object.keys(TASK_TYPES).forEach(function(k){
+    var m = TASK_TYPES[k];
+    h += '<div class="palette-chip'+(admin?'':' disabled')+'" style="--tint:'+m.tint+';--edge:'+m.color+';" draggable="'+(admin?'true':'false')+'" data-drag-type="'+k+'">'+
+      '<div class="palette-ic">'+pathIc(m.iconPath,16,m.color,1.7)+'</div><div class="palette-text"><span class="palette-label">'+m.label+'</span>'+
+      '<span class="palette-sub">'+(admin ? 'اسحب لإضافته إلى يوم' : 'للعرض فقط')+'</span></div>'+
+      (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحان لمدير النظام فقط">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
+  });
+  return h + '</div></div>';
+}
+
+function renderWeek(){
+  var h = '<main class="calendar-grid">';
+  var showCap = !isCC();
+  for (var i=0;i<7;i++){
+    var off = S.weekOffset*7 + i, d = dateOf(off), isToday = off===todayOffset();
+    var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
+    h += '<section class="day-col" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
+      (isToday ? '<span class="today-badge">اليوم</span>' : '')+'</div>';
+    if (showCap) h += renderCapMini(off);
+    h += '<div class="day-body">';
+    if (!tasks.length){
+      h += '<div class="empty-day">'+ic('calendar',26,'#c7cbd3',1.6)+'<span>لا توجد مهام مخططة لهذا اليوم</span></div>';
+    }
+    tasks.forEach(function(t){ h += renderTaskCard(t); });
+    h += '</div></section>';
+  }
+  return h + '</main>';
+}
+
+function renderCapMini(off){
+  var loads = dayLoad(off);
+  var pct = dayPct(off);
+  var lv = 'ok';
+  loads.forEach(function(x){ var l = loadLevel(x); if (l==='over') lv = 'over'; else if (l==='warn' && lv!=='over') lv = 'warn'; });
+  var title = loads.map(function(x){ return x.label + ': ' + x.load + ' من ' + x.cap; }).join('\n');
+  var label = lv==='over' ? 'تجاوز الطاقة' : lv==='warn' ? 'قرب الامتلاء' : 'الطاقة';
+  return '<div class="cap-mini" title="'+esc(title)+'\n(اضغط للتفاصيل)"'+A('openCapacity', off)+'>'+
+    '<div class="cap-mini-top"><span>'+ic('gauge',11)+' '+label+'</span><b class="cap-'+lv+'">'+Math.round(Math.min(pct,9.99)*100)+'%</b></div>'+
+    '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+Math.min(100, Math.round(pct*100))+'%;"></div></div></div>';
+}
+
+function renderTaskCard(t){
+  var m = TASK_TYPES[t.type], isEval = t.type==='maintEval';
+  var booked = taskBookedCount(t), pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0;
+  var full = t.target>0 && booked>=t.target;
+  var dim = S.activeTypes.indexOf(t.type)===-1;
+  var admin = isAdmin();
+  var h = '<article class="task-card'+(dim?' dim':'')+(t.status==='draft'?' draft':'')+'" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
+    '<div class="bar" style="background:'+m.color+';"></div><div class="card-top"><div class="card-type"><div class="card-ic" style="background:'+m.tint+';">'+pathIc(m.iconPath,14,m.color)+'</div>'+
+    '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
+    (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '')+
+    (full ? '<span class="full-badge">تم اكتمال العدد المستهدف</span>' : '')+'</div></div>'+
+    '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
+    '<div class="progress-line"><span class="progress-num">'+booked+' من '+t.target+'</span><span class="progress-tag">'+(isEval?'محجوزة':'من العدد المستهدف')+'</span></div>'+
+    '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
+  if (!isEval){
+    var reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
+    var lack = admin && n < reco && !full;
+    h += '<div class="candidates-line">المرشحين: '+n+(admin ? ' · <span class="'+(lack?'cand-warn':'')+'">المُوصى '+reco+'</span>' : '')+'</div>';
+    if (isCC()){
+      var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
+      if (mine) h += '<div class="my-line">'+ic('user',11)+' حالات مسندة لك: '+mine+'</div>';
+    }
+  }
+  return h + '</article>';
+}
+
+function renderMonth(){
+  var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset, 1);
+  var start = new Date(md.getTime()); start.setDate(start.getDate() - md.getDay());
+  var h = '<div class="month-wrap"><div class="month-weekday-row">' + WEEKDAYS_AR.map(function(w){ return '<div class="month-weekday">'+w+'</div>'; }).join('') + '</div><div class="month-grid">';
+  for (var i=0;i<42;i++){
+    var d = new Date(start.getTime()); d.setDate(start.getDate()+i);
+    var off = daysBetween(BASE_SUNDAY, d);
+    var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off && S.activeTypes.indexOf(t.type)!==-1; });
+    var over = !isCC() && dayLoad(off).some(function(x){ return x.load > x.cap; });
+    h += '<div class="month-cell'+(d.getMonth()===md.getMonth()?'':' dim')+(off===todayOffset()?' is-today':'')+'"'+A('jumpToWeek', off)+'>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;"><div class="month-cell-date">'+d.getDate()+'</div>'+
+      (over ? '<span title="تجاوز الطاقة الاستيعابية" class="cap-over">'+ic('alert',13)+'</span>' : '')+'</div><div class="month-dots">';
+    tasks.slice(0,4).forEach(function(t){
+      var c = TASK_TYPES[t.type].color;
+      h += '<span class="month-dot" style="'+(t.status==='draft' ? 'border:1.5px solid '+c+';background:transparent;' : 'background:'+c+';')+'" title="'+esc(TASK_TYPES[t.type].short+' – '+locLabelFor(t)+(t.status==='draft'?' (مسودة)':''))+'"></span>';
+    });
+    if (tasks.length>4) h += '<span class="month-more">+'+(tasks.length-4)+'</span>';
+    h += '</div></div>';
+  }
+  return h + '</div></div>';
+}
+
+// =====================================================================
+// Call queue
+// =====================================================================
+function queueItems(agent){
+  var tOff = todayOffset(), items = [];
+  S.tasks.forEach(function(t){
+    if (t.status!=='published' || t.type==='maintEval' || t.dateOffset < tOff) return;
+    var full = t.target>0 && taskBookedCount(t) >= t.target;
+    t.candidateIds.forEach(function(cid){
+      if (agent && t.assignee[cid]!==agent) return;
+      var st = caseStatus(t, cid);
+      if (!isOpenStatus(st.key)) return;
+      var nxt = nextCallFor(t, cid);
+      var group = st.key==='hardToReach' ? 'htr' : full ? 'full' : st.key==='wantsOtherDay' ? 'other' : nxt ? 'later' : 'due';
+      items.push({t:t, cid:cid, st:st, nxt:nxt, group:group, p:priorityOf(t, caseById(cid))});
+    });
+  });
+  // one row per case: keep the nearest appointment, list the other tasks on it
+  items.sort(function(a,b){ return a.t.dateOffset - b.t.dateOffset; });
+  var byCase = {}, out = [];
+  items.forEach(function(x){
+    var first = byCase[x.cid];
+    if (first){ first.alsoIn.push(x.t); return; }
+    x.alsoIn = []; byCase[x.cid] = x; out.push(x);
+  });
+  return out;
+}
+
+function renderQueue(){
+  var agent = isCC() ? S.agentId : S.queueAgent;
+  var items = queueItems(agent);
+  var groups = {due:[], later:[], other:[], htr:[]};
+  items.forEach(function(x){ if (groups[x.group]) groups[x.group].push(x); });
+  groups.due.sort(function(a,b){ return (a.t.dateOffset-b.t.dateOffset) || (b.p.score-a.p.score); });
+  groups.later.sort(function(a,b){ return a.nxt-b.nxt; });
+  groups.other.sort(function(a,b){ return a.t.dateOffset-b.t.dateOffset; });
+  var today = nowDate();
+  var todayLogs = S.callLog.filter(function(l){ return isSameDate(new Date(l.at), today) && (!agent || l.agentId===agent); });
+  var bookedToday = todayLogs.filter(function(l){ return l.outcome==='booked' || l.outcome==='bookedAlt'; }).length;
+
+  var h = '<div class="queue-wrap'+(isCC() ? '' : '')+'"><div>';
+  h += '<div class="q-head"><div><div class="q-title">'+(isCC() ? 'قائمتي النهارده – ' + esc(agentName(S.agentId)) : 'قوائم الاتصال')+'</div>'+
+    '<div class="q-sub">'+dayLabel(todayOffset())+' · الحالات مرتبة بالأولوية: أقرب موعد، ثم مدة الانتظار والأطفال والصيانة المتأخرة</div></div>';
+  if (!isCC()){
+    h += '<div class="filter-field"><label>الموظف</label><select class="filter-select" data-change="setQueueAgent"><option value="">كل الموظفين</option>'+
+      AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(S.queueAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></div>';
+  }
+  h += '</div>';
+  h += '<div class="kpi-row">'+
+    kpi(groups.due.length, 'مستحق الاتصال الآن')+
+    kpi(groups.later.length, 'معاد اتصال مجدول')+
+    kpi(todayLogs.length, 'مكالمات النهارده')+
+    kpi(bookedToday, 'حجوزات النهارده')+'</div>';
+
+  h += qSection('due', 'اتصل الآن', 'مرتبة بالأولوية', groups.due, 'مفيش حالات مستحقة دلوقتي. الحالات المجدولة هتظهر هنا لوحدها في ميعادها.');
+  h += qSection('later', 'معاد اتصال مجدول', 'بترجع لوحدها بعد ' + retryLabel() + ' من آخر محاولة', groups.later, 'لا توجد حالات مجدولة.');
+  if (groups.other.length) h += qSection('other', 'يرغب في يوم آخر', 'اختار له موعد بديل متاح', groups.other, '');
+  if (groups.htr.length) h += qSection('htr', 'صعب الوصول', 'بعد ' + S.settings.hardToReachAfter + ' محاولات فاشلة – خارج قائمة الاتصال', groups.htr, '');
+  h += '</div>';
+
+  // side column
+  h += '<div>';
+  if (!isCC()){
+    var loads = agentLoads();
+    h += '<div class="side-card"><div class="side-title">'+ic('users',14)+'توزيع الحالات على الموظفين</div>';
+    AGENTS.forEach(function(a){
+      var due = queueItems(a.id).filter(function(x){ return x.group==='due'; }).length;
+      var calls = S.callLog.filter(function(l){ return l.agentId===a.id && isSameDate(new Date(l.at), today); });
+      var bk = calls.filter(function(l){ return l.outcome==='booked' || l.outcome==='bookedAlt'; }).length;
+      h += '<div class="agent-row"><b>'+esc(a.name)+'</b><span class="nums"><span>مفتوحة <b>'+loads[a.id]+'</b></span><span>مستحقة <b>'+due+'</b></span><span>مكالمات <b>'+calls.length+'</b></span><span>حجز <b>'+bk+'</b></span></span></div>';
+    });
+    h += '</div>';
+  }
+  h += '<div class="side-card"><div class="side-title">'+ic('history',14)+'قواعد إعادة الاتصال</div><ul class="rules-list">'+
+    '<li>"لم يتم الرد" أو "مغلق" ← الحالة ترجع للقائمة بعد <b>'+retryLabel()+'</b></li>'+
+    '<li>حد أقصى <b>'+S.settings.maxPerDay+' محاولات</b> للحالة في اليوم، وبعدها ترجع تاني يوم 9 ص</li>'+
+    '<li>بعد <b>'+S.settings.hardToReachAfter+' محاولات فاشلة</b> تتعلم "صعب الوصول" وتخرج من القائمة</li></ul>'+
+    (isAdmin() ? '<button class="ghost-btn" style="margin-top:8px;"'+A('openSettings')+'>'+ic('gear',12)+'تعديل القواعد</button>' : '')+'</div>';
+  h += '</div></div>';
+  return h;
+}
+function kpi(v, l){ return '<div class="kpi"><div class="kpi-val">'+v+'</div><div class="kpi-lbl">'+l+'</div></div>'; }
+function retryLabel(){
+  var m = S.settings.retryMinutes;
+  if (m % 60 === 0) return m===60 ? 'ساعة' : m===120 ? 'ساعتين' : (m/60) + ' ساعات';
+  return m + ' دقيقة';
+}
+function qSection(key, title, hint, list, emptyMsg){
+  var h = '<div class="q-section"><div class="q-section-head">'+title+' <span class="cnt">'+list.length+'</span><span class="hint">'+hint+'</span></div>';
+  if (!list.length) return h + (emptyMsg ? '<div class="q-empty">'+emptyMsg+'</div>' : '') + '</div>';
+  list.forEach(function(x, i){ h += renderQItem(x, key==='due' ? i+1 : null); });
+  return h + '</div>';
+}
+function renderQItem(x, rank){
+  var t = x.t, cid = x.cid, c = caseById(cid), m = TASK_TYPES[t.type];
+  var booked = taskBookedCount(t), key = nextCallKey(t.id, cid);
+  var h = '<div class="q-item'+(x.group==='later'?' later':'')+'"><div class="bar" style="background:'+m.color+';"></div><div class="q-grid">';
+  h += '<div class="q-rank">'+(rank ? '#'+rank : '')+'</div>';
+  h += '<div><div class="q-name">'+esc(c.name)+' <span class="case-code">'+c.id+'</span></div><div class="q-line">'+phoneChip(c)+'</div><div class="q-line">'+reasonChips(x.p,4)+'</div></div>';
+  h += '<div><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,12,m.color)+m.short+'</span>'+
+    '<div class="q-line">'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (النهارده)' : '')+' · '+esc(locLabelFor(t))+'</div>'+
+    '<div class="q-line">محجوز '+booked+' من '+t.target+'</div>'+
+    (x.alsoIn.length ? '<div class="q-line" style="color:var(--warning);">مرشحة كمان في: '+x.alsoIn.map(function(o){ return dayLabel(o.dateOffset)+' ('+esc(locLabelFor(o))+')'; }).join('، ')+'</div>' : '')+'</div>';
+  h += '<div>'+statusTag(x.st)+'<div class="q-line">المحاولات: اليوم '+failedToday(cid)+'/'+S.settings.maxPerDay+' · الإجمالي '+attemptsTotal(cid)+'</div>'+
+    (x.nxt ? '<div class="q-line"><span class="next-call">'+ic('clock',12)+' معاد الاتصال '+fmtWhen(x.nxt)+'</span></div>' : '')+
+    (!isCC() ? '<div class="q-line">'+ic('user',11)+' '+esc(agentName(t.assignee[cid]))+'</div>' : '')+'</div>';
+  h += '<div class="row-actions" style="margin-top:0;flex-direction:column;align-items:stretch;">';
+  if (x.group==='htr'){
+    if (isAdmin()) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
+  } else if (canCall(t, cid)){
+    var open = S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid;
+    h += '<button class="call-btn primary"'+A('openCall', t.id, cid)+(x.nxt ? ' disabled title="الحالة مجدولة لمعاد لاحق"' : '')+'>'+ic('phone',13)+(open ? 'إغلاق' : 'اتصال')+'</button>';
+  }
+  var n = logsFor(cid).length;
+  h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'السجل ('+n+')</button>';
+  h += '</div></div>';
+  if (S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid) h += renderCallPanel(t, cid);
+  if (S.logOpen[key]) h += renderLog(cid);
+  return h + '</div>';
+}
+
+// =====================================================================
+// Call panel, log, script
+// =====================================================================
+function renderScriptBox(t, c){
+  var sc = S.scripts[t.type] || {}, m = TASK_TYPES[t.type];
+  var bring = String(sc.bring||'').split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+  var h = '<div class="script-box"><div class="script-head"><span>'+ic('script',13)+' سكريبت المكالمة – '+m.short+'</span></div>'+
+    '<div class="script-talk">'+esc(fillScript(sc.talk, t, c))+'</div>';
+  if (bring.length) h += '<div class="script-sub">المطلوب إحضاره</div><ul class="script-list">'+bring.map(function(b){ return '<li>'+esc(fillScript(b,t,c))+'</li>'; }).join('')+'</ul>';
+  h += '<div class="script-loc">'+ic('pin',13)+'<span><b>المكان:</b> '+esc(scriptLocation(t))+'</span></div>';
+  if (sc.notes) h += '<div class="script-note">'+ic('alert',12)+' '+esc(fillScript(sc.notes,t,c))+'</div>';
+  return h + '</div>';
+}
+function renderCallPanel(t, cid){
+  var c = caseById(cid), o = S.callDraft.outcome;
+  var h = '<div class="call-panel">' + renderScriptBox(t, c);
+  h += '<div class="script-sub" style="margin-top:0;">نتيجة المكالمة</div><div class="outcome-grid">';
+  OUTCOME_DEFS.forEach(function(d){
+    var sel = o===d.key;
+    h += '<button class="outcome-btn'+(sel?' sel':'')+'" style="color:'+d.color+';border-color:'+d.color+';'+(sel?'background:'+d.color+';':'')+'"'+A('pickOutcome', d.key)+'>'+d.label+'</button>';
+  });
+  h += '</div>';
+  if (FAILED_OUTCOMES.indexOf(o)!==-1){
+    var ftAfter = failedToday(cid) + 1;
+    var willHTR = !isHardToReach(cid) && (failedTotal(cid) + 1 - (S.htrBase[cid]||0)) >= S.settings.hardToReachAfter;
+    if (willHTR) h += '<div class="rule-hint danger">دي المحاولة الفاشلة رقم '+S.settings.hardToReachAfter+' – الحالة هتتعلم "صعب الوصول" وتخرج من قائمة الاتصال.</div>';
+    else if (ftAfter >= S.settings.maxPerDay) h += '<div class="rule-hint warn">دي آخر محاولة النهارده ('+ftAfter+'/'+S.settings.maxPerDay+') – الحالة هترجع في قائمتك بكرة '+fmtTime(tomorrowNine())+'.</div>';
+    else h += '<div class="rule-hint">الحالة هترجع في قائمتك تلقائيًا الساعة '+fmtTime(now()+S.settings.retryMinutes*60000)+' (بعد '+retryLabel()+') – محاولة '+ftAfter+' من '+S.settings.maxPerDay+' النهارده.</div>';
+  }
+  if (o==='booked'){
+    var b = taskBookedCount(t);
+    h += b >= t.target
+      ? '<div class="rule-hint warn">تنبيه: المهمة اكتمل عددها المستهدف ('+b+' من '+t.target+'). تقدر تكمل الحجز كحجز إضافي.</div>'
+      : '<div class="rule-hint">هيتحجز في '+dayLabel(t.dateOffset)+' – '+esc(locLabelFor(t))+' (متبقي '+(t.target-b)+' مكان).</div>';
+  }
+  if (o==='wantsOtherDay'){
+    var alts = alternativeTasksFor(t, cid);
+    h += '<div class="alt-wrap" style="border-top:none;padding-top:0;"><div class="alt-title">مواعيد أخرى متاحة – احجز مباشرة أو احفظ النتيجة والأوبريشن يحدد موعد</div>';
+    h += alts.length ? alts.map(function(a){
+      return '<span class="alt-chip">'+esc(locLabelFor(a.task))+' – '+dayLabel(a.task.dateOffset)+' · المتبقي: '+a.remaining+'<button'+A('chooseAlt', t.id, a.task.id)+' data-c="'+cid+'">حجز في الموعد ده</button></span>';
+    }).join('') : '<span class="alt-empty">لا توجد مواعيد بديلة متاحة حاليًا لهذه الحالة.</span>';
+    h += '</div>';
+  }
+  h += '<textarea class="note-input" placeholder="ملاحظة على المكالمة (اختياري)..." data-k="callnote-'+t.id+'-'+cid+'" data-input="callNote">'+esc(S.callDraft.note)+'</textarea>';
+  h += '<div class="panel-foot"><button class="btn btn-primary btn-sm"'+A('saveCall')+(o?'':' disabled')+'>حفظ نتيجة المكالمة</button><button class="btn btn-secondary btn-sm"'+A('closeCall')+'>إلغاء</button></div>';
+  return h + '</div>';
+}
+function renderLog(cid){
+  var logs = logsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
+  var h = '<div class="log-list">';
+  if (!logs.length && !seedFailed(cid)) h += '<div class="log-legacy">لا توجد مكالمات مسجلة.</div>';
+  logs.forEach(function(l){
+    var d = outcomeDef(l.outcome), t = findTask(l.taskId);
+    h += '<div class="log-item"><div class="log-time">'+fmtWhen(l.at)+'</div><div class="log-body">'+
+      '<span class="status-tag" style="background:#f4f5f7;color:'+d.color+';"><span class="dot" style="background:'+d.color+';"></span>'+d.label+'</span> '+
+      '<span class="log-who">· '+esc(agentName(l.agentId))+(t ? ' · ' + TASK_TYPES[t.type].short + ' ' + dayLabel(t.dateOffset) : '')+'</span>'+
+      (l.note ? '<div class="log-note">'+esc(l.note)+'</div>' : '')+'</div></div>';
+  });
+  if (seedFailed(cid)) h += '<div class="log-legacy">+ '+seedFailed(cid)+' محاولات سابقة قبل تفعيل سجل المكالمات</div>';
+  return h + '</div>';
+}
+
+// =====================================================================
+// Overlays
+// =====================================================================
+function renderOverlays(){
+  switch (S.overlay){
+    case 'create': return S.createDraft ? renderCreate() : '';
+    case 'addCases': return S.addCasesMode ? renderAddCases() : '';
+    case 'detail': return renderDetail();
+    case 'confirm':
+      var under = S.confirm && S.confirm.returnTo;
+      return (under==='detail' ? renderDetail() : under==='create' && S.createDraft ? renderCreate() : under==='capacity' ? renderCapacity() : '') + renderConfirm();
+    case 'capacity': return renderCapacity();
+    case 'settings': return renderSettings();
+    case 'scripts': return renderScripts();
+  }
+  return '';
+}
+function drawerHead(m, title, sub, extra, closeAct){
+  return '<div class="drawer-head"><div class="drawer-head-left"><div class="card-ic" style="background:'+m.tint+';width:32px;height:32px;">'+pathIc(m.iconPath,16,m.color)+'</div>'+
+    '<div><div class="drawer-title">'+title+'</div><div class="drawer-sub">'+sub+'</div></div></div><div style="display:flex;gap:6px;">'+(extra||'')+
+    '<button class="icon-btn"'+A(closeAct)+'>'+ic('x',15,null,2)+'</button></div></div>';
+}
+
+function renderCreate(){
+  var d = S.createDraft, m = TASK_TYPES[d.type], isEval = d.type==='maintEval';
+  var target = parseInt(d.target,10)||0;
+  var canCreate = target>0 && (d.loc==='org' || !!d.gov);
+  var h = '<div class="scrim"'+A('closeCreate')+'></div><aside class="drawer">' + drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', 'closeCreate');
+  h += '<div class="drawer-body" data-scroll="create">';
+  h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
+    '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
+    '<button class="seg-btn'+(d.loc==='convoy'?' on':'')+'"'+A('setCreateLoc','convoy')+'>قافلة</button></div></div>';
+  if (d.loc==='convoy'){
+    var q = (S.govSearch||'').trim();
+    var opts = GOVERNORATES.filter(function(g){ return !q || g.indexOf(q)!==-1; }).slice(0,8);
+    h += '<div class="field"><label class="field-label">المحافظة</label><div class="combo-wrap">'+
+      '<input class="text-input" placeholder="ابحث عن محافظة..." value="'+esc(S.govSearch)+'" data-k="gov" data-input="govSearch"'+A('govFocus')+'/>';
+    if (S.govDropdownOpen){
+      h += '<div class="combo-list">'+opts.map(function(g){ return '<div class="combo-item"'+A('pickGov', g)+'>'+g+'</div>'; }).join('')+
+        (opts.length ? '' : '<div class="combo-empty">لا توجد محافظات مطابقة</div>')+'</div>';
+    }
+    h += '</div></div>';
+    h += '<div class="cap-inputs"><div><label>مكان تجمّع القافلة</label><input class="text-input" placeholder="مثال: مستشفى المحافظة – البوابة الرئيسية" value="'+esc(d.meetingPoint)+'" data-k="mp" data-input="setMeetingPoint"/></div>'+
+      '<div><label>موعد التجمّع</label><input class="text-input" type="time" value="'+esc(d.meetingTime)+'" data-k="mt" data-input="setMeetingTime"/></div></div>';
+  }
+  h += '<div class="field"><label class="field-label">'+(isEval?'عدد المواعيد المتاحة':'العدد المستهدف')+'</label>'+
+    '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>'+
+    '<div class="field-hint">'+(isEval?'إجمالي عدد مواعيد التقييم المتاحة في هذا اليوم.':'هذا هو الهدف التشغيلي، وليس الحد الأقصى لعدد الحالات المرشحة.')+'</div>';
+  if (!isEval && target>0){
+    var rate = S.settings.histRates[d.type], reco = recommendedFor(d.type, target);
+    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' نسبة الحجز التاريخية لـ'+m.short+' <b>'+Math.round(rate*100)+'%</b>، فعشان توصل لـ <b>'+target+'</b> حجز يُنصح بحوالي <b>'+reco+'</b> حالة مرشحة.</div>';
+  }
+  h += '</div>';
+  if (!isEval){
+    var n = d.candidateIds.length, reco2 = recommendedFor(d.type, target);
+    var avail = rankCases({id:'__draft', type:d.type, loc:d.loc, gov:d.gov, dateOffset:d.dateOffset}).filter(function(p){ return d.candidateIds.indexOf(p.c.id)===-1; }).length;
+    var canAdd = Math.min(Math.max(0, reco2-n), avail);
+    h += '<div class="field"><label class="field-label">الحالات المرشحة</label>';
+    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+(target ? ' من '+reco2+' مُوصى بيها' : '')+'</span><button class="link-btn"'+A('openAddCasesDraft')+'>مراجعة وتعديل</button></div>';
+    h += '<div style="display:flex;gap:8px;margin-top:8px;">'+
+      '<button class="btn btn-auto btn-sm" style="flex:1;"'+A('autoSuggestDraft')+((d.loc==='convoy' && !d.gov) || !canAdd ? ' disabled' : '')+'>'+ic('spark',13)+' ترشيح تلقائي'+(canAdd ? ' (+'+canAdd+')' : '')+'</button>'+
+      '<button class="btn btn-outline-dashed btn-sm" style="flex:1;"'+A('openAddCasesDraft')+'>+ اختيار يدوي</button></div>';
+    h += '<div class="field-hint">الترشيح التلقائي بيرتب الحالات حسب: مدة الانتظار، الأطفال، الصيانة المتأخرة، ونفس المحافظة لو قافلة.'+(d.loc==='convoy' && !d.gov ? ' <b>اختار المحافظة الأول.</b>' : (target && n<reco2 && !avail ? ' <b>مفيش حالات مؤهلة أكتر – تقدر تضيف يدويًا.</b>' : ''))+'</div></div>';
+  }
+  // capacity after adding
+  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
+  var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
+  var anyOver = loads.some(function(x){ return x.load > x.cap; });
+  h += '<div class="cap-box'+(anyOver?' over':'')+'"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+' بعد إضافة المهمة'+
+    (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
+  h += '</div><div class="drawer-foot">'+
+    '<button class="btn btn-primary"'+A('createTask','0')+(canCreate?'':' disabled')+'>إنشاء كمسودة</button>'+
+    '<button class="btn btn-secondary"'+A('createTask','1')+(canCreate?'':' disabled')+'>'+ic('send',13)+' إنشاء ونشر</button>'+
+    '<button class="btn btn-secondary"'+A('closeCreate')+'>إلغاء</button></div></aside>';
+  return h;
+}
+
+function addCasesCtx(){
+  var m = S.addCasesMode;
+  if (m.kind==='create'){
+    var d = S.createDraft;
+    return {id:'__draft', type:d.type, loc:d.loc, gov:d.gov, dateOffset:d.dateOffset, target:parseInt(d.target,10)||0};
+  }
+  var t = findTask(m.taskId);
+  return {id:t.id, type:t.type, loc:t.loc, gov:t.gov, dateOffset:t.dateOffset, target:t.target};
+}
+function filteredCases(){
+  var f = S.addCasesFilters;
+  var ab = AGE_BUCKETS.filter(function(b){ return b.key===f.age; })[0];
+  var tb = ATTEMPTS_BUCKETS.filter(function(b){ return b.key===f.attempts; })[0];
+  return CASES.filter(function(c){
+    if (f.gov && c.gov!==f.gov) return false;
+    if (f.funding && c.funding!==f.funding) return false;
+    if (f.level && c.level!==f.level) return false;
+    if (f.pref && (c.pref || 'غير محدد')!==f.pref) return false;
+    if (ab && ab.test && !ab.test(c.age)) return false;
+    if (tb && tb.test && !tb.test(attemptsTotal(c.id))) return false;
+    var q = (f.q||'').trim();
+    if (q && c.name.indexOf(q)===-1 && c.id.indexOf(q)===-1) return false;
+    return true;
+  });
+}
+function autoRows(){
+  var ctx = addCasesCtx(), ranked = rankCases(ctx);
+  var ids = ranked.map(function(p){ return p.c.id; });
+  var extra = S.addCasesSelected.filter(function(id){ return ids.indexOf(id)===-1; }).map(function(id){ var p = priorityOf(ctx, caseById(id)); p.manual = true; return p; });
+  return ranked.concat(extra);
+}
+function currentAddCasesIds(){
+  return (S.addCasesTab==='auto' ? autoRows().map(function(p){ return p.c.id; }) : filteredCases().map(function(c){ return c.id; }));
+}
+function renderAddCases(){
+  var ctx = addCasesCtx(), m = TASK_TYPES[ctx.type], sel = S.addCasesSelected;
+  var h = '<div class="scrim"'+A('closeAddCases')+'></div><div class="modal modal-lg"><div class="modal-head"><div><div class="drawer-title">إضافة حالات</div>'+
+    '<div class="drawer-sub">لـ '+m.short+' – '+dayLabel(ctx.dateOffset)+' · '+esc(ctx.loc==='convoy' ? 'قافلة '+(ctx.gov||'') : 'داخل المؤسسة')+'</div></div>'+
+    '<button class="icon-btn"'+A('closeAddCases')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="addcases">';
+  h += '<div class="tabs"><button class="tab'+(S.addCasesTab==='auto'?' active':'')+'"'+A('setAddTab','auto')+'>'+ic('spark',13)+'ترشيح تلقائي بالأولوية</button>'+
+    '<button class="tab'+(S.addCasesTab==='manual'?' active':'')+'"'+A('setAddTab','manual')+'>'+ic('list',13)+'بحث وفلترة يدوي</button></div>';
+  var ids = currentAddCasesIds();
+  var allSel = ids.length>0 && ids.every(function(id){ return sel.indexOf(id)!==-1; });
+  if (S.addCasesTab==='auto'){
+    var reco = recommendedFor(ctx.type, ctx.target), rate = S.settings.histRates[ctx.type];
+    var lack = sel.length < reco;
+    h += '<div class="reco-box'+(lack?' lack':'')+'" style="margin:0 0 12px;"><div class="reco-row"><div>العدد المستهدف <b>'+ctx.target+'</b> · نسبة الحجز التاريخية <b>'+Math.round(rate*100)+'%</b> ← المُوصى به <b>'+reco+'</b> مرشح · المحدد حاليًا <b>'+sel.length+'</b>'+
+      (lack ? ' · ناقص <b>'+(reco-sel.length)+'</b>' : ' ✓')+'</div>'+
+      '<button class="btn btn-auto btn-sm"'+A('pickTopN')+(lack?'':' disabled')+'>'+ic('spark',13)+' تحديد الأعلى أولوية حتى '+reco+'</button></div></div>';
+    var rows = autoRows();
+    h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:380px;overflow-y:auto;" data-scroll="autotbl"><table class="cases-table"><thead><tr>'+
+      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>#</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>السن</th><th>الأولوية</th><th>سبب الترشيح</th></tr></thead><tbody>';
+    rows.forEach(function(p, i){
+      var c = p.c;
+      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td class="rank-num">'+(p.manual?'—':(i+1))+'</td><td>'+c.id+'</td>'+
+        '<td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.age+'</td>'+
+        '<td class="score-cell"><b>'+(p.manual?'—':p.score)+'</b>'+(p.manual?'':'<div class="score-bar"><div class="score-fill" style="width:'+p.score+'%;"></div></div>')+'</td>'+
+        '<td>'+(p.manual ? '<span class="reason '+(p.why==='محجوزة في هذه المهمة'?'pref':'neg')+'">'+(p.why ? esc(p.why) : 'مضافة يدويًا')+'</span>' : reasonChips(p))+'</td></tr>';
+    });
+    h += '</tbody></table>'+(rows.length ? '' : '<div class="table-empty">لا توجد حالات مؤهلة للترشيح التلقائي لهذه المهمة</div>')+'</div>';
+    var ex = {}; CASES.forEach(function(c){ var p = priorityOf(ctx, c); if (!p.eligible) ex[p.why] = (ex[p.why]||0)+1; });
+    var exTxt = Object.keys(ex).map(function(k){ return ex[k] + ' ' + k; }).join(' · ');
+    if (exTxt) h += '<div class="excluded-note">مستبعد من الترشيح: '+esc(exTxt)+'. تقدر تضيفهم من "بحث وفلترة يدوي".</div>';
+  } else {
+    var f = S.addCasesFilters;
+    function opts(list, cur){ return '<option value="">الكل</option>' + list.map(function(v){ return '<option'+(cur===v?' selected':'')+'>'+v+'</option>'; }).join(''); }
+    function bopts(list, cur){ return list.map(function(b){ return '<option value="'+b.key+'"'+(cur===b.key?' selected':'')+'>'+b.label+'</option>'; }).join(''); }
+    h += '<div class="filters-bar">'+
+      '<div class="filter-field"><label>بحث</label><input class="filter-search" placeholder="الاسم أو الكود..." value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/></div>'+
+      '<div class="filter-field"><label>المحافظة</label><select class="filter-select" data-change="setFilter" data-a="gov">'+opts(GOVERNORATES,f.gov)+'</select></div>'+
+      '<div class="filter-field"><label>التمويل</label><select class="filter-select" data-change="setFilter" data-a="funding">'+opts(FUNDING_OPTIONS,f.funding)+'</select></div>'+
+      '<div class="filter-field"><label>مستوى البتر</label><select class="filter-select" data-change="setFilter" data-a="level">'+opts(LEVEL_OPTIONS,f.level)+'</select></div>'+
+      '<div class="filter-field"><label>السن</label><select class="filter-select" data-change="setFilter" data-a="age">'+bopts(AGE_BUCKETS,f.age)+'</select></div>'+
+      '<div class="filter-field"><label>محاولات التواصل</label><select class="filter-select" data-change="setFilter" data-a="attempts">'+bopts(ATTEMPTS_BUCKETS,f.attempts)+'</select></div>'+
+      '<div class="filter-field"><label>مكان الزيارة المفضل</label><select class="filter-select" data-change="setFilter" data-a="pref">'+bopts(PREF_BUCKETS,f.pref)+'</select></div>'+
+      '<button class="clear-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>';
+    var list = filteredCases();
+    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة مطابقة للفلاتر الحالية</div><div class="count-selected">تم تحديد '+sel.filter(function(id){ return ids.indexOf(id)!==-1; }).length+' من '+list.length+'</div></div>';
+    h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:360px;overflow-y:auto;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
+      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th><th>السن</th><th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th>الأولوية</th></tr></thead><tbody>';
+    list.forEach(function(c){
+      var p = priorityOf(ctx, c);
+      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td>'+c.id+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td><td>'+attemptsTotal(c.id)+'</td><td>'+(c.pref||'غير محدد')+'</td>'+
+        '<td>'+(p.eligible ? '<b>'+p.score+'</b>' : '<span class="reason neg" title="'+esc(p.why)+'">'+esc(p.why)+'</span>')+'</td></tr>';
+    });
+    h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
+  }
+  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+'>حفظ الحالات المحددة ('+sel.length+')</button><button class="btn btn-secondary"'+A('closeAddCases')+'>إلغاء</button></div></div>';
+  return h;
+}
+
+// =====================================================================
+// Task detail drawer
+// =====================================================================
+function renderDetail(){
+  var t = findTask(S.detailTaskId); if (!t) return '';
+  var m = TASK_TYPES[t.type], isEval = t.type==='maintEval', admin = isAdmin();
+  var booked = taskBookedCount(t), remaining = Math.max(0, t.target-booked);
+  var pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0, full = t.target>0 && booked>=t.target;
+  var extra = '';
+  if (admin){
+    extra += t.status==='draft'
+      ? '<button class="btn btn-primary btn-sm"'+A('publishTask', t.id)+'>'+ic('send',12)+' نشر</button>'
+      : '<button class="icon-btn" title="إرجاع لمسودة"'+A('unpublishTask', t.id)+'>'+ic('undo',15)+'</button>';
+    extra += '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>';
+  }
+  var sub = dayLabel(t.dateOffset) + ' · ' + (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '<span class="pub-badge">منشورة</span>');
+  var h = '<div class="scrim"'+A('closeDetail')+'></div><aside class="drawer" style="width:520px;">' + drawerHead(m, m.label, sub, extra, 'closeDetail');
+  h += '<div class="drawer-body" data-scroll="detail">';
+  if (admin && t.status==='draft'){
+    h += '<div class="rule-hint warn" style="margin-top:0;margin-bottom:14px;">'+ic('lock',12)+' المهمة دي مسودة ومش ظاهرة للكول سنتر. لما تخلص تخطيطها اضغط "نشر" وهتتوزع حالاتها على الموظفين تلقائيًا.</div>';
+  } else if (t.publishedAt && admin){
+    h += '<div class="field-hint" style="margin:-4px 0 12px;">نُشرت بواسطة '+esc(t.publishedBy)+' – '+fmtWhen(t.publishedAt)+'</div>';
+  }
+  h += '<div class="info-grid"><div class="info-item"><div class="k">مكان الزيارة</div><div class="v">'+esc(locLabelFor(t))+'</div></div>'+
+    '<div class="info-item"><div class="k">المحافظة</div><div class="v">'+esc(t.loc==='convoy' ? (t.gov||'—') : '—')+'</div></div>';
+  if (t.loc==='convoy'){
+    h += '<div class="info-item"><div class="k">مكان التجمّع</div><div class="v">'+esc(t.meetingPoint || 'غير محدد')+'</div></div>'+
+      '<div class="info-item"><div class="k">موعد التجمّع</div><div class="v">'+esc(t.meetingTime ? fmtClock(t.meetingTime) : 'غير محدد')+'</div></div>';
+  }
+  h += '</div>';
+
+  if (!isCC()){
+    var loads = dayLoad(t.dateOffset), over = loads.filter(function(x){ return x.load > x.cap; });
+    h += '<div class="cap-box'+(over.length?' over':'')+'" style="padding:8px 12px;"><div class="reco-row"><span class="cap-box-title" style="margin:0;">'+ic('gauge',13)+' طاقة اليوم: '+
+      (over.length ? '<span class="cap-over">تجاوز في '+over.map(function(x){ return x.label; }).join('، ')+'</span>' : '<span class="cap-ok">ضمن الطاقة</span>')+'</span>'+
+      '<button class="link-btn"'+A('openCapacity', t.dateOffset)+'>التفاصيل</button></div></div>';
+  }
+
+  var targetEdit = '';
+  if (admin){
+    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">'+(isEval?'تعديل إجمالي المواعيد':'تعديل العدد المستهدف')+'</label>' + (S.editingTarget
+      ? '<div class="target-edit-row"><input class="num-input" type="number" min="0" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
+        '<button class="btn btn-primary btn-sm"'+A('saveTarget')+'>حفظ</button><button class="btn btn-secondary btn-sm"'+A('cancelEditTarget')+'>إلغاء</button></div>'
+      : '<button class="btn btn-secondary btn-sm"'+A('startEditTarget')+'>تعديل العدد</button>') + '</div>';
+  }
+
+  if (isEval){
+    h += '<div class="eval-metric-row"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">إجمالي المواعيد</div></div>'+
+      '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">المواعيد المحجوزة</div></div>'+
+      '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المواعيد المتبقية</div></div></div>'+
+      '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">'+(full ? 'مكتمل — لا توجد مواعيد متاحة' : 'متبقي '+remaining+' من إجمالي '+t.target+' مواعيد')+'</div>' + targetEdit +
+      '<div class="eval-note">تُدار عمليات حجز مواعيد تقييم الصيانة من صفحات المتابعات وطلب الصيانة المرتبطة. هذا العرض يوضّح فقط حالة الإتاحة الحالية.</div>';
+    return h + '</div></aside>';
+  }
+
+  h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">العدد المستهدف</div></div>'+
+    '<div class="metric-box"><div class="metric-val">'+t.candidateIds.length+'</div><div class="metric-lbl">الحالات المرشحة</div></div>'+
+    '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">تم الحجز</div></div>'+
+    '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المتبقي</div></div></div>'+
+    '<div class="big-progress-label"><span style="font-size:11.5px;color:var(--text-muted);">التقدم</span><span class="big-progress-num">'+booked+' من '+t.target+'</span></div>'+
+    '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>'+
+    (full ? '<div style="margin-bottom:6px;"><span class="full-badge">تم اكتمال العدد المستهدف</span></div>' : '');
+
+  // overbooking recommendation
+  if (!full && !isCC()){
+    var rate = S.settings.histRates[t.type], reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
+    var callable = callableCount(t), expected = Math.floor(callable * rate);
+    var lack = n < reco || expected < remaining;
+    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' نسبة الحجز التاريخية لـ'+m.short+' <b>'+Math.round(rate*100)+'%</b> ← المُوصى به <b>'+reco+'</b> مرشح للهدف ده، والموجود <b>'+n+'</b>.'+
+      '<br>متبقي <b>'+remaining+'</b> حجز، وفيه <b>'+callable+'</b> حالة لسه ممكن الاتصال بيها (متوقع يتحجز منهم حوالي '+expected+').'+
+      (lack ? '<br><b style="color:#8a5a00">غالبًا المرشحين مش هيكفوا يوصلوا للهدف.</b>' : '');
+    if (admin && lack){
+      h += '<div style="margin-top:6px;"><button class="btn btn-auto btn-sm"'+A('autoFillTask', t.id)+'>'+ic('spark',13)+' استكمال بالترشيح التلقائي</button></div>';
+    }
+    h += '</div>';
+  }
+  h += targetEdit;
+
+  // cases
+  var q = (S.detailCaseSearch||'').trim();
+  var ids = t.candidateIds.filter(function(cid){
+    var c = caseById(cid);
+    if (q && !(c && (c.name.indexOf(q)!==-1 || c.id.indexOf(q)!==-1))) return false;
+    if (isCC() && S.detailMineOnly && t.assignee[cid]!==S.agentId) return false;
+    return true;
+  });
+  h += '<div class="section-head"><span class="section-title">الحالات ('+t.candidateIds.length+')</span>'+
+    '<input class="case-search" placeholder="بحث بالاسم أو الكود" value="'+esc(S.detailCaseSearch)+'" data-k="dsearch" data-input="detailSearch"/></div>';
+  if (isCC()){
+    h += '<label class="switch-row" style="margin-bottom:10px;"><input type="checkbox"'+(S.detailMineOnly?' checked':'')+A('toggleMineOnly')+'/> حالاتي فقط</label>';
+  }
+  if (admin){
+    h += '<div style="display:flex;gap:8px;margin-bottom:10px;"><button class="btn btn-outline-dashed btn-sm" style="flex:1;"'+A('openAddCasesTask', t.id)+'>+ إضافة حالات</button>'+
+      (t.status==='published' ? '<button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button>' : '')+'</div>';
+    if (t.status==='published'){
+      var per = {}; AGENTS.forEach(function(a){ per[a.id] = 0; });
+      t.candidateIds.forEach(function(cid){ var a = t.assignee[cid]; if (a && per[a]!=null && isOpenStatus(caseStatus(t,cid).key)) per[a]++; });
+      h += '<div class="field-hint" style="margin:-4px 0 10px;">الحالات المفتوحة لكل موظف: '+AGENTS.map(function(a){ return esc(a.name)+' ('+per[a.id]+')'; }).join(' · ')+'</div>';
+    }
+  }
+  if (admin && S.detailBulkSelected.length){
+    h += '<div class="bulk-bar"><span>تم تحديد '+S.detailBulkSelected.length+' حالة</span><button class="btn btn-danger btn-sm"'+A('removeSelected')+'>إزالة الحالات المحددة</button></div>';
+  }
+  ids.forEach(function(cid){ h += renderCaseRow(t, cid); });
+  if (!ids.length) h += '<div class="table-empty">'+(isCC() && S.detailMineOnly ? 'لا توجد حالات مسندة لك في هذه المهمة' : 'لا توجد حالات مطابقة')+'</div>';
+  return h + '</div></aside>';
+}
+
+function renderCaseRow(t, cid){
+  var c = caseById(cid), st = caseStatus(t, cid), admin = isAdmin(), key = nextCallKey(t.id, cid);
+  var open = isOpenStatus(st.key);
+  var h = '<div class="case-row'+(st.key==='lockedElsewhere'?' locked':'')+(st.key==='notInterested'?' inactive':'')+'"><div class="case-row-top"><div><div class="case-id-line">';
+  if (admin && st.key!=='booked' && st.key!=='lockedElsewhere') h += '<input type="checkbox"'+(S.detailBulkSelected.indexOf(cid)!==-1?' checked':'')+A('toggleBulk', cid)+'/>';
+  h += '<span class="case-code">'+c.id+'</span><span class="case-name">'+esc(c.name)+'</span></div>'+
+    '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+statusTag(st)+'</div>';
+  h += '<div class="case-meta">'+phoneChip(c)+'<span class="meta-sep">|</span>';
+  if (admin && t.status==='published' && open){
+    h += '<span class="assignee">'+ic('user',11)+'<select class="mini-select" data-change="assignCase" data-a="'+t.id+'|'+cid+'"><option value="">غير مسندة</option>'+
+      AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.assignee[cid]===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></span>';
+  } else if (t.status==='published'){
+    h += '<span class="assignee">'+ic('user',11)+esc(agentName(t.assignee[cid]))+'</span>';
+  }
+  h += '<span class="meta-sep">|</span><span>المحاولات: اليوم '+failedToday(cid)+'/'+S.settings.maxPerDay+' · الإجمالي '+attemptsTotal(cid)+'</span>';
+  var nxt = open && st.key!=='hardToReach' ? nextCallFor(t, cid) : 0;
+  if (nxt) h += '<span class="next-call">'+ic('clock',12)+' معاد الاتصال '+fmtWhen(nxt)+'</span>';
+  h += '</div><div class="row-actions">';
+  var callOpen = S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid;
+  if (open && st.key!=='hardToReach' && canCall(t, cid) && t.status==='published' && t.dateOffset>=todayOffset()){
+    h += '<button class="call-btn"'+A('openCall', t.id, cid)+(nxt?' disabled title="الحالة مجدولة لمعاد لاحق"':'')+'>'+ic('phone',13)+(callOpen?'إغلاق':'اتصال')+'</button>';
+  }
+  h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'سجل المكالمات ('+logsFor(cid).length+')</button>';
+  if (st.key==='hardToReach' && admin) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
+  h += '</div>';
+  if (st.key==='wantsOtherDay' && !callOpen && (admin || canCall(t,cid))){
+    var alts = alternativeTasksFor(t, cid);
+    h += '<div class="alt-wrap"><div class="alt-title">مواعيد أخرى متاحة</div>' + (alts.length ? alts.map(function(a){
+      return '<span class="alt-chip">'+esc(locLabelFor(a.task))+' – '+dayLabel(a.task.dateOffset)+' · السعة المتبقية: '+a.remaining+'<button'+A('chooseAlt', t.id, a.task.id)+' data-c="'+cid+'">اختيار موعد آخر</button></span>';
+    }).join('') : '<span class="alt-empty">لا توجد مواعيد بديلة متاحة حاليًا لهذه الحالة.</span>') + '</div>';
+  }
+  if (callOpen) h += renderCallPanel(t, cid);
+  if (S.logOpen[key]) h += renderLog(cid);
+  return h + '</div>';
+}
+
+// =====================================================================
+// Confirm / capacity / settings / scripts
+// =====================================================================
+function renderConfirm(){
+  var c = S.confirm; if (!c) return '';
+  var cls = c.tone==='danger' ? 'btn btn-danger' : c.tone==='warn' ? 'btn btn-warn' : 'btn btn-primary';
+  var icon = c.tone==='warn' || c.tone==='danger' ? ic('alert',16, c.tone==='danger' ? '#c81e3a' : '#b45309') : '';
+  var h = '<div class="scrim scrim-top"'+A('cancelConfirm')+'></div><div class="modal modal-sm" style="width:480px;"><div class="modal-head"><div class="confirm-title">'+icon+esc(c.title||'تأكيد الإجراء')+'</div></div>'+
+    '<div class="modal-body"><div style="font-size:13px;color:var(--text);line-height:1.8;">'+esc(c.message)+'</div>';
+  if (c.items && c.items.length){
+    h += '<ul class="warn-list"'+(c.tone==='primary' ? ' style="--x:0"' : '')+'>'+c.items.map(function(it){
+      return '<li'+(c.tone==='primary' ? ' style="border-color:var(--border);background:var(--surface-alt);"' : '')+'><span>'+esc(it.label)+'</span><b'+(c.tone==='primary' ? ' style="color:var(--text)"' : '')+'>'+esc(it.value)+'</b></li>';
+    }).join('')+'</ul>';
+  }
+  if (c.footnote) h += '<div class="field-hint" style="margin-top:8px;line-height:1.7;">'+esc(c.footnote)+'</div>';
+  h += '</div><div class="modal-foot"><button class="'+cls+'"'+A('confirmAction')+'>'+esc(c.confirmLabel)+'</button><button class="btn btn-secondary"'+A('cancelConfirm')+'>إلغاء</button></div></div>';
+  return h;
+}
+
+function renderCapacity(){
+  var off = S.capacityDay, admin = isAdmin(), d = S.capDraft, cap = {};
+  Object.keys(d).forEach(function(k){ cap[k] = Math.max(0, parseInt(d[k],10)||0); });
+  var loads = dayLoad(off, S.tasks, cap);
+  var tasks = S.tasks.filter(function(t){ return t.dateOffset===off; });
+  var custom = !!S.dayCapacity[off];
+  var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
+    '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
+  var fields = [['specialists','الأخصائيين المتاحين'],['technicians','الفنيين المتاحين'],['rooms','الغرف المتاحة'],['vehicles','عربيات القافلة']];
+  h += '<div class="cap-inputs">' + fields.map(function(f){
+    return '<div><label>'+f[1]+'</label>' + (admin ? '<input class="num-input" type="number" min="0" value="'+esc(d[f[0]])+'" data-k="cap-'+f[0]+'" data-input="capInput" data-a="'+f[0]+'"/>' : '<div class="readonly-box">'+cap[f[0]]+'</div>') + '</div>';
+  }).join('') + '</div>';
+  h += '<div class="cap-box">'+capTable(loads)+'</div>';
+  h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
+  if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
+  tasks.forEach(function(t){
+    var m = TASK_TYPES[t.type];
+    h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>المستهدف <b>'+t.target+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
+  });
+  h += '<div class="field-hint" style="margin-top:10px;">معدلات التحويل (حالة لكل أخصائي/فني/غرفة) بتتعدل من الإعدادات.</div></div>';
+  h += '<div class="modal-foot">' + (admin ? '<button class="btn btn-primary"'+A('saveCapacity')+'>حفظ طاقة اليوم</button><button class="btn btn-secondary"'+A('capReset')+'>الافتراضي</button>' : '') +
+    '<button class="btn btn-secondary"'+A('closeCapacity')+'>'+(admin?'إلغاء':'إغلاق')+'</button></div></div>';
+  return h;
+}
+
+function setNum(path, label, suffix){
+  return '<div><label>'+label+'</label><div class="input-suffix"><input class="num-input" type="number" min="0" value="'+esc(S.settingsDraft[path])+'" data-k="set-'+path+'" data-input="setInput" data-a="'+path+'"/>'+(suffix?'<span>'+suffix+'</span>':'')+'</div></div>';
+}
+function renderSettings(){
+  if (!isAdmin()) return '';
+  var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div>'+
+    '<div class="drawer-sub">الطاقة الاستيعابية · قواعد إعادة الاتصال · نسب الحجز</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
+  h += '<div class="set-section"><div class="set-title">الطاقة الافتراضية لكل يوم</div><div class="set-desc">بتتطبق على كل الأيام، وتقدر تغيّرها ليوم معيّن من شريط الطاقة في التقويم.</div><div class="set-grid four">'+
+    setNum('defaultCap.specialists','الأخصائيين','')+setNum('defaultCap.technicians','الفنيين','')+setNum('defaultCap.rooms','الغرف','')+setNum('defaultCap.vehicles','عربيات القافلة','')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title">معدلات الطاقة</div><div class="set-desc">عدد الحالات اللي يقدر يخدمها كل مورد في اليوم، وعلى أساسها بيتحسب الحمل والتحذير.</div><div class="set-grid">'+
+    setNum('rates.perSpecialist','الأخصائي (مقاسات)','حالة/يوم')+setNum('rates.perTechnician','الفني (تسليمات وصيانة)','حالة/يوم')+setNum('rates.perRoom','الغرفة (داخل المؤسسة)','حالة/يوم')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title">قواعد إعادة الاتصال</div><div class="set-desc">بعد "لم يتم الرد" أو "مغلق" الحالة بترجع لقائمة الموظف لوحدها.</div><div class="set-grid">'+
+    setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid">'+
+    setNum('histRates.measurement','المقاسات','%')+setNum('histRates.newDelivery','التسليمات الجديدة','%')+setNum('histRates.maintDelivery','تسليمات الصيانة','%')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title">عنوان المؤسسة</div><div class="set-desc">بيظهر في سكريبت المكالمة مكان {المكان} للمهام داخل المؤسسة.</div>'+
+    '<input class="text-input" value="'+esc(S.settingsDraft.orgAddress)+'" data-k="set-org" data-input="setInput" data-a="orgAddress"/></div>';
+  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
+  return h;
+}
+
+function renderScripts(){
+  var admin = isAdmin(), tab = S.scriptsTab, src = admin ? S.scriptsDraft : S.scripts, sc = src[tab], m = TASK_TYPES[tab];
+  var h = '<div class="scrim"'+A('closeScripts')+'></div><div class="modal" style="width:820px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">سكريبتات المكالمات</div>'+
+    '<div class="drawer-sub">'+(admin ? 'المدير بيحدد يقول الموظف إيه، والحالة تجيب معاها إيه، لكل نوع مهمة' : 'للاطلاع – التعديل متاح لمدير النظام')+'</div></div><button class="icon-btn"'+A('closeScripts')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="scripts">';
+  h += '<div class="tabs">'+Object.keys(TASK_TYPES).map(function(k){
+    return '<button class="tab'+(k===tab?' active':'')+'"'+A('scriptsTab',k)+'><span class="pdot" style="background:'+TASK_TYPES[k].color+'"></span>'+TASK_TYPES[k].short+'</button>';
+  }).join('')+'</div>';
+  // preview context: next published task of this type, or a sample
+  var tOff = todayOffset();
+  var sample = S.tasks.filter(function(t){ return t.type===tab && t.dateOffset>=tOff; }).sort(function(a,b){ return a.dateOffset-b.dateOffset; })[0] ||
+    {type:tab, dateOffset:tOff+1, loc:'org', gov:null, meetingPoint:'', meetingTime:''};
+  var sampleCase = caseById(sample.candidateIds && sample.candidateIds[0]) || CASES[0];
+  if (admin){
+    h += '<div class="field"><label class="field-label">نص المكالمة</label><textarea class="text-area" data-k="script-talk" data-input="scriptInput" data-a="talk">'+esc(sc.talk)+'</textarea>'+
+      '<div class="ph-legend"><span class="field-hint" style="margin:0;">إدراج متغير:</span>'+PLACEHOLDERS.map(function(p){ return '<button class="ph"'+A('insertPh', p)+'>'+p+'</button>'; }).join('')+'</div></div>';
+    h += '<div class="cap-inputs"><div><label>المطلوب إحضاره (سطر لكل بند)</label><textarea class="text-area" data-k="script-bring" data-input="scriptInput" data-a="bring">'+esc(sc.bring)+'</textarea></div>'+
+      '<div><label>ملاحظات للموظف</label><textarea class="text-area" data-k="script-notes" data-input="scriptInput" data-a="notes">'+esc(sc.notes)+'</textarea></div></div>';
+  }
+  var saved = S.scripts; S.scripts = src;
+  h += '<div class="section-title" style="margin-bottom:8px;">'+(admin ? 'معاينة كما سيظهر للموظف' : m.label)+'</div><div class="preview-box">'+renderScriptBox(sample, sampleCase)+'</div>';
+  S.scripts = saved;
+  h += '</div><div class="modal-foot">'+(admin ? '<button class="btn btn-primary"'+A('saveScripts')+'>حفظ السكريبتات</button><button class="btn btn-secondary"'+A('resetScript')+'>استعادة النص الافتراضي</button>' : '')+
+    '<button class="btn btn-secondary"'+A('closeScripts')+'>'+(admin?'إلغاء':'إغلاق')+'</button></div></div>';
+  return h;
+}
+
+// =====================================================================
+// Events
+// =====================================================================
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]');
+  if (!el || !root || !root.contains(el)) return;
+  if (el.disabled) return;
+  var fn = ACT[el.getAttribute('data-act')];
+  if (fn) fn(el.getAttribute('data-a'), el.getAttribute('data-b'), el.getAttribute('data-c'));
+});
+document.addEventListener('input', function(e){
+  var el = e.target;
+  if (!el.getAttribute || !el.getAttribute('data-input')) return;
+  var fn = ACT[el.getAttribute('data-input')];
+  if (fn) fn(el.value, el.getAttribute('data-a'));
+});
+document.addEventListener('change', function(e){
+  var el = e.target;
+  if (!el.getAttribute || !el.getAttribute('data-change')) return;
+  var fn = ACT[el.getAttribute('data-change')];
+  if (fn) fn(el.value, el.getAttribute('data-a'));
+});
+document.addEventListener('keydown', function(e){
+  if (e.key==='Escape' && S.overlay){
+    if (S.overlay==='confirm') ACT.cancelConfirm();
+    else if (S.overlay==='addCases') ACT.closeAddCases();
+    else { closeAllOverlays(); render(); }
+  }
+});
+
+// ---------- drag & drop (DOM-only hover state, no re-render while dragging) ----------
+var drag = null;
+document.addEventListener('dragstart', function(e){
+  if (!isAdmin()) return;
+  var tEl = e.target.closest && e.target.closest('[data-drag-type],[data-drag-task]');
+  if (!tEl) return;
+  drag = tEl.hasAttribute('data-drag-type') ? {type:tEl.getAttribute('data-drag-type')} : {task:tEl.getAttribute('data-drag-task')};
+  try { e.dataTransfer.setData('text/plain', 'x'); e.dataTransfer.effectAllowed = 'move'; } catch(err){}
+});
+document.addEventListener('dragover', function(e){
+  if (!drag) return;
+  var col = e.target.closest && e.target.closest('[data-drop-day]');
+  if (!col) return;
+  e.preventDefault();
+  document.querySelectorAll('.day-col.drop-hot').forEach(function(x){ if (x!==col) x.classList.remove('drop-hot'); });
+  col.classList.add('drop-hot');
+});
+document.addEventListener('drop', function(e){
+  if (!drag) return;
+  var col = e.target.closest && e.target.closest('[data-drop-day]');
+  e.preventDefault();
+  var d = drag; drag = null;
+  document.querySelectorAll('.day-col.drop-hot').forEach(function(x){ x.classList.remove('drop-hot'); });
+  if (!col) return;
+  var off = parseInt(col.getAttribute('data-drop-day'),10);
+  if (d.type) openCreate(d.type, off); else if (d.task) moveTask(d.task, off);
+});
+document.addEventListener('dragend', function(){
+  drag = null;
+  document.querySelectorAll('.day-col.drop-hot').forEach(function(x){ x.classList.remove('drop-hot'); });
+});
+
+// =====================================================================
+// Init
+// =====================================================================
+root = document.getElementById('root');
+render();
+// keep clocks / countdowns fresh without disturbing typing
+setInterval(function(){
+  var ae = document.activeElement;
+  if (ae && (ae.tagName==='TEXTAREA' || ae.tagName==='INPUT') && ae.type!=='checkbox') return;
+  render();
+}, 30000);
+
+</script>
+</body>
+</html>
