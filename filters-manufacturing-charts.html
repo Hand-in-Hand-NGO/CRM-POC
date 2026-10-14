@@ -1182,6 +1182,19 @@
             color: #e98300;
         }
 
+        /* دورة تصنيع جديدة: close the current cycle and start a new one */
+        .manufacturingSteps button.new-cycle-btn,
+        .manufacturingSteps.finished button.new-cycle-btn {
+            background: #fff;
+            border: 1px dashed #f96a74;
+            color: #f96a74;
+            font-weight: normal;
+            text-align: center;
+        }
+        .manufacturingSteps button.new-cycle-btn:hover,
+        .manufacturingSteps.finished button.new-cycle-btn:hover { background: #fff0f1; color: #e0505b; border-color: #e0505b; }
+        .manufacturingSteps button.new-cycle-btn .fa { float: none; margin: 0 0 0 3px; }
+
         /* cycle finished (received from assembly or stopped): all four steps in the same light blue */
         .manufacturingSteps.finished button,
         .manufacturingSteps.finished button[disabled] {
@@ -2253,7 +2266,10 @@
                 var icon = mode === 'edit' ? 'fa-pencil' : (mode === 'view' || finished ? 'fa-eye' : 'fa-lock');
                 return '<button type="button" title="' + s.full + '" class="btn btn-xs btn-default ' + s.cls + ' ' + mode + '" data-cyclenumber="' + r.cycleNo + '" data-actionmode="' + mode + '"' +
                     (mode ? '' : ' disabled') + '>' + s.label + ' <i class="fa ' + icon + '"></i></button>';
-            }).join('') + '</div>';
+            }).join('') +
+                // close this cycle (whatever its stage) and open a new one
+                (r.closed ? '' : '<button type="button" class="btn btn-xs new-cycle-btn" title="إغلاق هذه الدورة وفتح دورة تصنيع جديدة"><i class="fa fa-refresh"></i> دورة تصنيع جديدة</button>') +
+                '</div>';
         }
 
         function statusCell(r) {
@@ -3118,6 +3134,31 @@
             notify('تم الحفظ بنجاح');
             $m.modal('hide');
             redraw();
+        });
+
+        // ---------------------------------------- دورة تصنيع جديدة (from any stage) ----------------------------------------
+        $(document).on('click', '.new-cycle-btn', function () {
+            var r = rowById($(this).closest('tr').attr('id'));
+            if (!r || r.closed) return;
+            Swal.fire({
+                title: 'دورة تصنيع جديدة',
+                html: 'سيتم إغلاق الدورة رقم <b>' + r.cycleNo + '</b> (' + STATUS_LABELS[r.status] + ') وفتح دورة تصنيع جديدة من "جاهز للتصميم"<br><br><b>نقطة بداية الدورة الجديدة</b>',
+                input: 'select',
+                inputOptions: START_POINTS,
+                inputPlaceholder: 'اختر نقطة البداية',
+                showCancelButton: true,
+                confirmButtonText: 'إغلاق وفتح دورة جديدة',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#31c860',
+                cancelButtonColor: '#f96a74',
+                reverseButtons: true,
+                inputValidator: function (v) { return v ? null : 'اختر نقطة بداية الدورة الجديدة'; }
+            }).then(function (res) {
+                if (!res.isConfirmed) return;
+                restartCycle(r, res.value, 'design_ready', 'إغلاق الدورة وفتح دورة تصنيع جديدة');
+                notify('تم إغلاق الدورة رقم ' + r.cycleNo + ' وفتح دورة تصنيع جديدة');
+                redraw();
+            });
         });
 
         // a closed popup leaves no focus highlight on the step button that opened it
