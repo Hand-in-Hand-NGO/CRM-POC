@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>غرفة العمليات</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap">
   <style>
     :root{
       --bg:#f3f4f7; --surface:#ffffff; --surface-alt:#f8f9fb;
@@ -688,6 +689,102 @@
       .convoy-grid{grid-template-columns:1fr;}
     }
 
+    /* =====================================================================
+       Call-center statistics drawer — same visual system as the visits page
+       dashboard (vs- variables, KPI grid, chart cards, period tabs)
+       ===================================================================== */
+    :root{
+      --vs-bg:#f5f6f8; --vs-bg-raised:#ffffff; --vs-surface:#ffffff; --vs-surface-2:#eef0f3;
+      --vs-border:#e2e5ea; --vs-border-soft:#ececf0; --vs-text:#1a1d23; --vs-text-dim:#62697a; --vs-text-faint:#97a0ad;
+      --vs-accent:#2f6fed; --vs-accent-hover:#2559c9; --vs-green:#15803d; --vs-radius-sm:6px; --vs-radius:10px;
+      --vs-font-ui:'Droid Arabic Kufi','Noto Kufi Arabic',Tahoma,Arial,sans-serif; --vs-font-mono:var(--vs-font-ui);
+    }
+    .stats-toggle{
+      position:fixed;top:120px;left:0;width:26px;height:30px;background:var(--vs-accent);color:#fff;border:0;border-radius:0 4px 4px 0;
+      z-index:39;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    .stats-toggle:hover{background:var(--vs-accent-hover);}
+    .stats-toggle.open{left:min(640px, calc(100vw - 80px));}
+    .stats-panel{
+      position:fixed;top:0;left:0;width:640px;max-width:calc(100vw - 80px);height:100vh;background:var(--vs-bg-raised);
+      border:1px solid var(--vs-border);box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:39;font-family:var(--vs-font-ui);color:var(--vs-text);
+      display:flex;flex-direction:column;overflow:hidden;animation:vsSlide .25s ease;
+    }
+    @keyframes vsSlide{from{transform:translateX(-100%);}to{transform:translateX(0);}}
+    .stats-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--vs-border-soft);background:var(--vs-bg-raised);flex:none;}
+    .stats-title{font-weight:700;font-size:15.5px;color:var(--vs-text);display:flex;align-items:center;gap:8px;}
+    .stats-head .vs-btn{
+      display:inline-flex;align-items:center;gap:5px;border:1px solid var(--vs-border);background:var(--vs-bg-raised);color:var(--vs-text-dim);
+      border-radius:var(--vs-radius-sm);padding:6px 11px;font-size:12px;font-family:inherit;cursor:pointer;margin-right:4px;
+    }
+    .stats-head .vs-btn.green{background:#00a65a;border-color:#008d4c;color:#fff;}
+    .stats-body-scroll{flex:1 1 auto;overflow-y:auto;padding:18px;}
+    .vs-dash-head{display:flex;flex-direction:column;align-items:flex-start;margin:0 0 16px;gap:8px;}
+    .vs-period-tabs{display:inline-flex;background:var(--vs-bg);border:1px solid var(--vs-border);border-radius:var(--vs-radius-sm);padding:3px;gap:2px;flex-wrap:wrap;}
+    .vs-period-tabs button{border:none;background:none;color:var(--vs-text-dim);padding:7px 14px;border-radius:5px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+    .vs-period-tabs button:hover{color:var(--vs-text);}
+    .vs-period-tabs button.active{background:var(--vs-accent);color:#fff;}
+    .vs-picker{display:inline-flex;align-items:center;gap:4px;}
+    .vs-picker-btn,.vs-step{border:1px solid var(--vs-border);background:var(--vs-bg-raised);color:var(--vs-text);border-radius:var(--vs-radius-sm);font-family:inherit;font-size:12px;height:30px;cursor:pointer;}
+    .vs-picker-btn{padding:0 10px;font-weight:600;cursor:default;display:inline-flex;align-items:center;gap:6px;}
+    .vs-step{width:30px;color:var(--vs-text-dim);display:inline-flex;align-items:center;justify-content:center;}
+    .vs-step:hover:not(:disabled){border-color:var(--vs-accent);}
+    .vs-step:disabled{opacity:.35;cursor:default;}
+    .vs-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+    .vs-kpi-grid.last{margin-bottom:22px;}
+    .vs-kpi{background:var(--vs-bg);border:1px solid var(--vs-border);border-radius:var(--vs-radius);padding:12px 10px;display:flex;flex-direction:column;gap:5px;}
+    .vs-kpi .num{font-family:var(--vs-font-mono);font-size:20px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+    .vs-kpi .num small{font-size:12px;font-weight:600;color:var(--vs-text-dim);}
+    .vs-kpi .lbl{font-size:11px;color:var(--vs-text-dim);line-height:1.4;}
+    .vs-kpi.zero .num{color:var(--vs-text-faint);}
+    .vs-kpi.good .num{color:var(--vs-green);}
+    .vs-kpi.warn .num{color:#c27c0e;}
+    .vs-kpi.bad .num{color:#dc2626;}
+    .vs-group-label{font-size:11px;font-weight:700;color:var(--vs-text-faint);letter-spacing:.5px;margin:0 0 10px;}
+    .vs-chart-group{margin-bottom:22px;}
+    .vs-chart-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .vs-chart-card{background:var(--vs-surface);border:1px solid var(--vs-border);border-radius:var(--vs-radius);padding:16px;}
+    .vs-chart-card-head{margin-bottom:10px;}
+    .vs-chart-card-head h4{margin:0;font-size:13.5px;font-weight:700;}
+    .vs-chart-card-head p.sub{margin:3px 0 0;font-size:11.5px;color:var(--vs-text-dim);}
+    .vs-chart-empty{display:flex;align-items:center;justify-content:center;height:160px;color:var(--vs-text-faint);font-size:12.5px;}
+    .vs-level-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;}
+    .vs-level-table th,.vs-level-table td{border:1px solid var(--vs-border);padding:6px 6px;text-align:center;}
+    .vs-level-table th{background:var(--vs-bg);color:var(--vs-text-dim);font-size:11px;font-weight:700;}
+    .vs-level-table td:first-child{text-align:right;font-weight:600;white-space:nowrap;}
+    .vs-level-table td small{display:block;font-size:10px;color:var(--vs-text-faint);font-weight:normal;margin-top:1px;}
+    .vs-level-table tfoot td{font-weight:700;background:var(--vs-surface-2);}
+    .vs-level-table .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;}
+    .vs-act-row{display:grid;grid-template-columns:1fr 44px 46px;gap:2px 6px;align-items:center;font-size:12px;margin-bottom:8px;}
+    .vs-act-row .n{color:var(--vs-text-dim);display:flex;align-items:center;gap:6px;}
+    .vs-act-row b{text-align:center;color:var(--vs-text);}
+    .vs-act-row .p{color:var(--vs-accent);font-weight:700;text-align:left;}
+    .vs-act-row .bar{grid-column:1 / -1;height:6px;background:var(--vs-surface-2);border-radius:4px;overflow:hidden;}
+    .vs-act-row .bar i{display:block;height:100%;border-radius:4px;}
+    .vs-target-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+    .vs-target-card{background:var(--vs-bg);border:1px solid var(--vs-border);border-radius:var(--vs-radius);padding:12px;}
+    .vs-target-card .name{font-size:12px;font-weight:700;color:var(--vs-text);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+    .vs-target-card .row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;font-size:11.5px;color:var(--vs-text-dim);}
+    .vs-target-card .row b{color:var(--vs-text);font-size:12.5px;font-weight:700;}
+    .vs-bar-track{height:7px;border-radius:999px;background:var(--vs-surface-2);overflow:hidden;margin:7px 0 5px;}
+    .vs-bar-fill{height:100%;border-radius:999px;background:var(--vs-accent);}
+    .vs-bar-fill.ok{background:var(--vs-green);}
+    .vs-pct-badge{font-size:12.5px;font-weight:700;color:var(--vs-accent);}
+    .vs-pct-badge.ok{color:var(--vs-green);}
+    .vs-svg{width:100%;display:block;direction:ltr;overflow:visible;}
+    .vs-svg text{font-family:var(--vs-font-ui);font-size:10.5px;fill:#6b7280;}
+    .vs-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--vs-text-dim);margin-top:6px;}
+    .vs-legend span{display:inline-flex;align-items:center;gap:5px;}
+    .vs-legend i{width:10px;height:10px;border-radius:2px;display:inline-block;}
+    .vs-tooltip{
+      position:fixed;z-index:95;pointer-events:none;background:var(--vs-bg-raised);border:1px solid var(--vs-border);border-radius:var(--vs-radius-sm);
+      padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.1);font-size:12px;direction:rtl;font-family:var(--vs-font-ui);color:var(--vs-text);white-space:nowrap;
+    }
+    .vs-tooltip .t-label{font-weight:700;margin-bottom:4px;}
+    .vs-tooltip .t-row{display:flex;align-items:center;gap:6px;}
+    .vs-tooltip .t-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+    [data-tip]{cursor:default;}
+    @media (max-width:700px){ .vs-kpi-grid{grid-template-columns:repeat(2,1fr);} .vs-chart-row-2,.vs-target-grid{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
@@ -897,7 +994,7 @@ var S = {
   overlay:null, createDraft:null, govSearch:'', govDropdownOpen:false,
   detailTaskId:null, detailCaseSearch:'', detailMineOnly:true, detailBulkSelected:[],
   editingTarget:false, editingTargetValue:'',
-  addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesPrio:[], poolOpen:null, poolSearch:'', poolSort:'', addCasesFilters:emptyFilters(),
+  addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesPrio:[], poolOpen:null, poolSearch:'', poolSort:'', dashOpen:false, dashPeriod:'month', dashStep:0, dashAgent:'', addCasesFilters:emptyFilters(),
   confirm:null,
   callOpen:null, callDraft:{}, logOpen:{}, bookTimes:{},
   queueAgent:'', capacityDay:null, capDraft:null,
@@ -1752,6 +1849,7 @@ function renderApp(){
   h += renderOverlays();
   h += renderCallModal();
   h += renderPoolModal();
+  h += renderDash();
   if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
   h += '</div>';
   return h;
@@ -2655,6 +2753,309 @@ document.addEventListener('dragend', function(){
   drag = null;
   document.querySelectorAll('.day-col.drop-hot').forEach(function(x){ x.classList.remove('drop-hot'); });
 });
+
+// =====================================================================
+// Call-center statistics drawer (same visual system as the visits page)
+// =====================================================================
+var DASH_TYPE_COLORS = {measurement:'#2f6fed', newDelivery:'#15803d', maintEval:'#f96a74', maintDelivery:'#ff6a00'};
+var DASH_OUTCOME_COLORS = {booked:'#15803d', wantsOtherDay:'#c27c0e', notInterested:'#97a0ad', noAnswer:'#dc2626', unavailable:'#f97316'};
+var DASH_PERIODS = [['today','اليوم'],['week','الأسبوع'],['month','الشهر'],['quarter','ربع سنوي'],['year','سنوية']];
+var DASH_HOURS = [9,10,11,12,13,14,15,16];
+
+// mock history of earlier calls (stands in for the server) — per agent profile, answer rate by hour
+var CALL_HISTORY = (function(){
+  var out = [], s = 11;
+  function r(){ s = (s*9301 + 49297) % 233280; return s/233280; }
+  var prof = {a1:{calls:38, book:.62, show:.84}, a2:{calls:44, book:.52, show:.78}, a3:{calls:31, book:.45, show:.72}};
+  var types = ['measurement','measurement','measurement','measurement','newDelivery','newDelivery','newDelivery','maintEval','maintEval','maintDelivery'];
+  var ans = {9:.48, 10:.6, 11:.72, 12:.74, 13:.66, 14:.58, 15:.52, 16:.42};
+  var T = daysBetween(BASE_SUNDAY, REAL_TODAY);
+  var nowH = new Date().getHours();
+  for (var d = T-400; d <= T; d++){
+    var wd = dateOf(d).getDay(); if (wd===5) continue;
+    AGENTS.forEach(function(a){
+      var p = prof[a.id], n = Math.round(p.calls*(0.75 + r()*0.5)*(wd===6 ? 0.6 : 1));
+      for (var i=0;i<n;i++){
+        var h = 9 + Math.floor(r()*8), type = types[Math.floor(r()*types.length)];
+        if (d===T && h >= nowH) continue;
+        var incoming = r() < 0.07, outcome;
+        if (!incoming && r() > ans[h]) outcome = r() < 0.72 ? 'noAnswer' : 'unavailable';
+        else { var x = r(); outcome = x < p.book ? 'booked' : x < p.book + 0.18 ? 'wantsOtherDay' : 'notInterested'; }
+        var e = {d:d, h:h, agentId:a.id, type:type, outcome:outcome, incoming:incoming, att:null};
+        if (outcome==='booked'){ var vd = d + 2 + Math.floor(r()*6); if (vd < T) e.att = r() < p.show ? 'attended' : 'noShow'; }
+        out.push(e);
+      }
+    });
+  }
+  return out;
+})();
+function liveCallEvents(){
+  return S.callLog.map(function(l){
+    var t = findTask(l.taskId), dt = new Date(l.at), bt = l.bookTid ? findTask(l.bookTid) : t;
+    var o = l.outcome==='bookedAlt' ? 'booked' : l.outcome;
+    var e = {d:daysBetween(BASE_SUNDAY, dt), h:dt.getHours(), agentId:l.agentId, type:t ? t.type : 'measurement', outcome:o, incoming:l.callType==='وارد', att:null};
+    if (o==='booked' && bt){ var a = S.attendance[nextCallKey(bt.id, l.caseId)]; e.att = a ? a.status : null; }
+    return e;
+  });
+}
+function dashRange(kind, step){
+  var today = startOfDay(nowDate()), from, to;
+  if (kind==='today'){ from = new Date(today.getTime()); from.setDate(from.getDate()+step); to = new Date(from.getTime()); }
+  else if (kind==='week'){ from = new Date(today.getTime()); from.setDate(from.getDate()-from.getDay()+7*step); to = new Date(from.getTime()); to.setDate(to.getDate()+6); }
+  else if (kind==='month'){ from = new Date(today.getFullYear(), today.getMonth()+step, 1); to = new Date(from.getFullYear(), from.getMonth()+1, 0); }
+  else if (kind==='quarter'){ var q = Math.floor(today.getMonth()/3) + step; from = new Date(today.getFullYear(), q*3, 1); to = new Date(from.getFullYear(), from.getMonth()+3, 0); }
+  else { from = new Date(today.getFullYear()+step, 0, 1); to = new Date(from.getFullYear(), 11, 31); }
+  var f = daysBetween(BASE_SUNDAY, from), tt = Math.min(daysBetween(BASE_SUNDAY, to), daysBetween(BASE_SUNDAY, today));
+  return {from:f, to:tt, label: f===tt ? isoDate(f) : isoDate(f) + ' - ' + isoDate(tt)};
+}
+// buckets for the trend chart
+function dashBuckets(kind, R){
+  var out = [];
+  if (kind==='today') return DASH_HOURS.map(function(h){ return {label:h+':00', test:function(e){ return e.h===h; }}; });
+  if (kind==='week' || kind==='month'){
+    for (var d = R.from; d <= R.to; d++) (function(d){ var dd = dateOf(d); out.push({label: kind==='week' ? WEEKDAYS_AR[dd.getDay()] : String(dd.getDate()), test:function(e){ return e.d===d; }}); })(d);
+    return out;
+  }
+  if (kind==='quarter'){
+    for (var w = R.from; w <= R.to; w += 7) (function(w){ out.push({label:shortDate(w), test:function(e){ return e.d>=w && e.d<w+7; }}); })(w);
+    return out;
+  }
+  var y = dateOf(R.from).getFullYear();
+  for (var m = 0; m < 12; m++) (function(m){
+    var a = daysBetween(BASE_SUNDAY, new Date(y, m, 1)), b = daysBetween(BASE_SUNDAY, new Date(y, m+1, 0));
+    if (a <= R.to) out.push({label:MONTHS_AR[m], test:function(e){ return e.d>=a && e.d<=b; }});
+  })(m);
+  return out;
+}
+function pct(a, b){ return b ? Math.round(a/b*1000)/10 : 0; }
+function nfmt(n){ return Number(n).toLocaleString('en-US'); }
+function summarize(ev){
+  var s = {calls:ev.length, answered:0, booked:0, incoming:0, attended:0, noShow:0, byOutcome:{}, byType:{}};
+  Object.keys(DASH_OUTCOME_COLORS).forEach(function(k){ s.byOutcome[k] = 0; });
+  Object.keys(TASK_TYPES).forEach(function(k){ s.byType[k] = {calls:0, booked:0}; });
+  ev.forEach(function(e){
+    if (FAILED_OUTCOMES.indexOf(e.outcome)===-1) s.answered++;
+    if (e.incoming) s.incoming++;
+    s.byOutcome[e.outcome] = (s.byOutcome[e.outcome]||0) + 1;
+    if (s.byType[e.type]) s.byType[e.type].calls++;
+    if (e.outcome==='booked'){ s.booked++; if (s.byType[e.type]) s.byType[e.type].booked++; if (e.att==='attended') s.attended++; else if (e.att==='noShow') s.noShow++; }
+  });
+  return s;
+}
+function dashData(){
+  var R = dashRange(S.dashPeriod, S.dashStep);
+  var all = CALL_HISTORY.concat(liveCallEvents()).filter(function(e){ return e.d>=R.from && e.d<=R.to; });
+  var ev = S.dashAgent ? all.filter(function(e){ return e.agentId===S.dashAgent; }) : all;
+  var sum = summarize(ev);
+  var agents = AGENTS.map(function(a){
+    var ae = all.filter(function(e){ return e.agentId===a.id; });
+    var days = {}; ae.forEach(function(e){ days[e.d] = 1; });
+    var s = summarize(ae); s.agent = a; s.days = Object.keys(days).length; return s;
+  });
+  var buckets = dashBuckets(S.dashPeriod, R).map(function(b){
+    var be = ev.filter(b.test);
+    return {label:b.label, calls:be.length, booked:be.filter(function(e){ return e.outcome==='booked'; }).length};
+  });
+  var hours = DASH_HOURS.map(function(h){
+    var he = ev.filter(function(e){ return e.h===h && !e.incoming; });
+    var ans = he.filter(function(e){ return FAILED_OUTCOMES.indexOf(e.outcome)===-1; }).length;
+    return {label:h+':00', calls:he.length, rate:pct(ans, he.length)};
+  });
+  return {R:R, sum:sum, agents:agents, buckets:buckets, hours:hours};
+}
+
+// ---------- tiny SVG charts (Recharts look) ----------
+function niceMax(v){ if (v<=0) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), n = v/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p; }
+function tipHtml(label, rows){
+  return '<div class="t-label">'+esc(label)+'</div>' + rows.map(function(r){ return '<div class="t-row"><span class="t-dot" style="background:'+r[2]+'"></span><span>'+esc(r[0])+': <b>'+esc(r[1])+'</b></span></div>'; }).join('');
+}
+function svgFrame(W, H, pl, pb, pt, max, unit){
+  var h = '', n = 4;
+  for (var i=0;i<=n;i++){
+    var y = pt + (H-pt-pb) * (1 - i/n), v = max*i/n;
+    h += '<line x1="'+pl+'" x2="'+(W-6)+'" y1="'+y+'" y2="'+y+'" stroke="#e2e5ea" stroke-dasharray="3 3"/>';
+    h += '<text x="'+(pl-6)+'" y="'+(y+3.5)+'" text-anchor="end">'+(Math.round(v*10)/10)+(unit||'')+'</text>';
+  }
+  h += '<line x1="'+pl+'" x2="'+(W-6)+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" stroke="#d6d9df"/>';
+  return h;
+}
+function xLabels(cats, W, H, pl, pb){
+  var step = (W-pl-6)/cats.length, every = Math.ceil(cats.length/12), h = '';
+  cats.forEach(function(c, i){ if (i % every===0) h += '<text x="'+(pl+step*(i+0.5))+'" y="'+(H-pb+15)+'" text-anchor="middle">'+esc(c)+'</text>'; });
+  return h;
+}
+function svgBars(cats, series, opts){
+  opts = opts || {};
+  var W = opts.w || 560, H = opts.h || 200, pl = 38, pb = 24, pt = 8;
+  var max = opts.max || niceMax(Math.max.apply(null, [0].concat(series.map(function(s){ return Math.max.apply(null, s.values); }))));
+  var h = '<svg class="vs-svg" viewBox="0 0 '+W+' '+H+'">' + svgFrame(W, H, pl, pb, pt, max, opts.unit);
+  var gw = (W-pl-6)/cats.length, bw = Math.min(30, gw*0.72/series.length);
+  cats.forEach(function(c, i){
+    var x0 = pl + gw*i + (gw - bw*series.length)/2;
+    var tip = esc(tipHtml(c, series.map(function(s){ return [s.name, (opts.fmt ? opts.fmt(s.values[i], i) : nfmt(s.values[i])), s.color]; })));
+    h += '<rect x="'+(pl+gw*i)+'" y="'+pt+'" width="'+gw+'" height="'+(H-pt-pb)+'" fill="transparent" data-tip="'+tip+'"/>';
+    series.forEach(function(s, k){
+      var v = s.values[i], bh = (H-pt-pb) * v/max;
+      h += '<rect x="'+(x0+bw*k)+'" y="'+(H-pb-bh)+'" width="'+(bw-2)+'" height="'+Math.max(0,bh)+'" rx="3" fill="'+s.color+'" data-tip="'+tip+'"/>';
+    });
+  });
+  return h + xLabels(cats, W, H, pl, pb) + '</svg>' + legend(series);
+}
+function svgLine(cats, series, opts){
+  opts = opts || {};
+  var W = 560, H = opts.h || 220, pl = 38, pb = 24, pt = 8;
+  var max = niceMax(Math.max.apply(null, [0].concat(series.map(function(s){ return Math.max.apply(null, s.values); }))));
+  var h = '<svg class="vs-svg" viewBox="0 0 '+W+' '+H+'">' + svgFrame(W, H, pl, pb, pt, max);
+  var step = (W-pl-6)/cats.length;
+  function X(i){ return pl + step*(i+0.5); }
+  function Y(v){ return H-pb - (H-pt-pb)*v/max; }
+  series.forEach(function(s){
+    h += '<polyline fill="none" stroke="'+s.color+'" stroke-width="2.2" points="'+s.values.map(function(v,i){ return X(i)+','+Y(v); }).join(' ')+'"/>';
+    if (cats.length <= 31) s.values.forEach(function(v,i){ h += '<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="3" fill="#fff" stroke="'+s.color+'" stroke-width="2"/>'; });
+  });
+  cats.forEach(function(c, i){
+    var tip = esc(tipHtml(c, series.map(function(s){ return [s.name, nfmt(s.values[i]), s.color]; })));
+    h += '<rect x="'+(pl+step*i)+'" y="'+pt+'" width="'+step+'" height="'+(H-pt-pb)+'" fill="transparent" data-tip="'+tip+'"/>';
+  });
+  return h + xLabels(cats, W, H, pl, pb) + '</svg>' + legend(series);
+}
+function legend(series){
+  if (series.length < 2) return '';
+  return '<div class="vs-legend">'+series.map(function(s){ return '<span><i style="background:'+s.color+'"></i>'+esc(s.name)+'</span>'; }).join('')+'</div>';
+}
+function chartCard(title, sub, body){
+  return '<div class="vs-chart-card"><div class="vs-chart-card-head"><h4>'+title+'</h4>'+(sub ? '<p class="sub"><span dir="ltr">'+sub+'</span></p>' : '')+'</div>'+body+'</div>';
+}
+function kpiBox(num, lbl, cls){ return '<div class="vs-kpi '+(cls||'')+'"><div class="num">'+num+'</div><div class="lbl">'+lbl+'</div></div>'; }
+
+function renderDash(){
+  if (isCC()) return '';
+  var h = '<button class="stats-toggle'+(S.dashOpen?' open':'')+'" title="إحصائيات الكول سنتر"'+A('toggleDash')+'>'+pathIc(S.dashOpen ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6',15,'#fff',2.4)+'</button>';
+  if (!S.dashOpen) return h;
+  var D = dashData(), s = D.sum, R = D.R;
+  h += '<div class="stats-panel"><div class="stats-head"><span class="stats-title">'+ic('gauge',17,'#2f6fed')+' إحصائيات الكول سنتر</span><span>'+
+    '<button class="vs-btn" title="تحديث"'+A('dashRefresh')+'>'+ic('history',13)+'</button>'+
+    '<button class="vs-btn green"'+A('dashExport')+'>'+ic('list',13,'#fff')+' تصدير إلى Excel</button></span></div>';
+  h += '<div class="stats-body-scroll" data-scroll="dash">';
+  // period + agent
+  h += '<div class="vs-dash-head"><div class="vs-period-tabs">'+DASH_PERIODS.map(function(p){
+    return '<button class="'+(S.dashPeriod===p[0]?'active':'')+'"'+A('dashSetPeriod', p[0])+'>'+p[1]+'</button>';
+  }).join('')+'</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><div class="vs-picker">'+
+    '<button class="vs-step" title="الفترة السابقة"'+A('dashStepBy','-1')+'>'+pathIc('M9 6l6 6-6 6',13,null,2)+'</button>'+
+    '<span class="vs-picker-btn">'+ic('calendar',13,'#2f6fed')+' <span dir="ltr">'+R.label+'</span></span>'+
+    '<button class="vs-step" title="الفترة التالية"'+A('dashStepBy','1')+(S.dashStep>=0?' disabled':'')+'>'+pathIc('M15 6l-6 6 6 6',13,null,2)+'</button></div>'+
+    '<select class="vs-picker-btn" style="cursor:pointer;" data-change="dashAgent"><option value="">كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(S.dashAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></div></div>';
+
+  // KPIs
+  var att = s.attended + s.noShow, attRate = pct(s.attended, att), bookRate = pct(s.booked, s.calls), ansRate = pct(s.answered, s.calls);
+  h += '<div class="vs-kpi-grid">'+
+    kpiBox(nfmt(s.calls), 'إجمالي المكالمات', s.calls ? '' : 'zero')+
+    kpiBox(nfmt(s.booked), 'تم الحجز', s.booked ? 'good' : 'zero')+
+    kpiBox(ansRate+'<small>%</small>', 'نسبة الرد', s.calls ? '' : 'zero')+
+    kpiBox(bookRate+'<small>%</small>', 'نسبة الحجز من المكالمات', s.calls ? '' : 'zero')+'</div>';
+  h += '<div class="vs-kpi-grid last">'+
+    kpiBox(attRate+'<small>%</small>', 'نسبة الحضور من الحجز ('+nfmt(att)+')', att ? (attRate>=80?'good':'warn') : 'zero')+
+    kpiBox(nfmt(s.noShow), 'لم يحضر', s.noShow ? 'bad' : 'zero')+
+    kpiBox(s.booked ? (Math.round(s.calls/s.booked*10)/10) : '-', 'مكالمات لكل حجز', s.booked ? '' : 'zero')+
+    kpiBox(nfmt(s.incoming), 'مكالمات واردة', s.incoming ? '' : 'zero')+'</div>';
+
+  // live now
+  var q = queueItems(S.dashAgent || '');
+  function cnt(g){ return q.filter(function(x){ return x.group===g; }).length; }
+  h += '<div class="vs-chart-group"><p class="vs-group-label">الوضع الآن</p><div class="vs-kpi-grid" style="margin-bottom:0;">'+
+    kpiBox(nfmt(cnt('due')), 'مستحق الاتصال الآن', cnt('due') ? '' : 'zero')+
+    kpiBox(nfmt(cnt('later')), 'معاد اتصال مجدول', cnt('later') ? '' : 'zero')+
+    kpiBox(nfmt(cnt('other')), 'يرغب في يوم آخر', cnt('other') ? 'warn' : 'zero')+
+    kpiBox(nfmt(cnt('htr')), 'صعب الوصول', cnt('htr') ? 'bad' : 'zero')+'</div></div>';
+
+  // booked vs target for the coming 7 days
+  var tOff = todayOffset(), tgt = {};
+  Object.keys(TASK_TYPES).forEach(function(k){ tgt[k] = {target:0, booked:0}; });
+  S.tasks.forEach(function(t){ if (t.status==='published' && t.dateOffset>=tOff && t.dateOffset<tOff+7){ tgt[t.type].target += t.target; tgt[t.type].booked += taskBookedCount(t); } });
+  h += '<div class="vs-chart-group"><p class="vs-group-label">الحجز مقابل المستهدف</p>'+chartCard('المحجوز من المستهدف – الـ 7 أيام الجاية', isoDate(tOff)+' - '+isoDate(tOff+6),
+    '<div class="vs-target-grid">'+Object.keys(TASK_TYPES).map(function(k){
+      var x = tgt[k], p = pct(x.booked, x.target), ok = p >= 100;
+      return '<div class="vs-target-card"><div class="name"><span class="vs-level-table"><span class="dot" style="background:'+DASH_TYPE_COLORS[k]+'"></span></span>'+TASK_TYPES[k].label+'</div>'+
+        '<div class="row"><span>المحجوز</span><b>'+nfmt(x.booked)+'</b></div><div class="row"><span>المستهدف</span><b>'+nfmt(x.target)+'</b></div>'+
+        '<div class="vs-bar-track"><div class="vs-bar-fill'+(ok?' ok':'')+'" style="width:'+Math.min(100,p)+'%"></div></div><span class="vs-pct-badge'+(ok?' ok':'')+'">'+(x.target ? p+'%' : '-')+'</span></div>';
+    }).join('')+'</div>')+'</div>';
+
+  // agents
+  var tot = summarize(CALL_HISTORY.concat(liveCallEvents()).filter(function(e){ return e.d>=R.from && e.d<=R.to; }));
+  h += '<div class="vs-chart-group"><p class="vs-group-label">حسب الموظف</p>'+chartCard('أداء موظفي الكول سنتر', R.label,
+    '<table class="vs-level-table"><thead><tr><th>الموظف</th><th>المكالمات</th><th>متوسط / يوم</th><th>الرد</th><th>الحجز</th><th>الحضور</th></tr></thead><tbody>'+
+    D.agents.map(function(a){
+      var at = a.attended + a.noShow;
+      return '<tr'+(S.dashAgent===a.agent.id?' style="background:#eef4ff;"':'')+'><td>'+esc(a.agent.name)+'</td><td>'+nfmt(a.calls)+'</td><td>'+(a.days ? Math.round(a.calls/a.days) : 0)+'</td>'+
+        '<td>'+pct(a.answered,a.calls)+'%</td><td>'+nfmt(a.booked)+'<small>'+pct(a.booked,a.calls)+'% من المكالمات</small></td><td>'+pct(a.attended,at)+'%<small>'+nfmt(a.attended)+' من '+nfmt(at)+'</small></td></tr>';
+    }).join('')+'</tbody><tfoot><tr><td>الإجمالي</td><td>'+nfmt(tot.calls)+'</td><td>-</td><td>'+pct(tot.answered,tot.calls)+'%</td><td>'+nfmt(tot.booked)+'<small>'+pct(tot.booked,tot.calls)+'%</small></td><td>'+pct(tot.attended, tot.attended+tot.noShow)+'%</td></tr></tfoot></table>')+'</div>';
+
+  // outcomes + by type
+  var outcomes = Object.keys(DASH_OUTCOME_COLORS).map(function(k){ return {k:k, n:s.byOutcome[k]||0}; });
+  var outBody = s.calls ? outcomes.map(function(o){
+    var p = pct(o.n, s.calls);
+    return '<div class="vs-act-row"><span class="n"><i style="width:8px;height:8px;border-radius:50%;display:inline-block;background:'+DASH_OUTCOME_COLORS[o.k]+'"></i>'+outcomeDef(o.k).label+'</span><b>'+nfmt(o.n)+'</b><span class="p">'+p+'%</span>'+
+      '<span class="bar"><i style="width:'+p+'%;background:'+DASH_OUTCOME_COLORS[o.k]+'"></i></span></div>';
+  }).join('') : '<div class="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>';
+  var types = Object.keys(TASK_TYPES);
+  var typeBody = s.calls ? svgBars(types.map(function(k){ return TASK_TYPES[k].short; }), [
+      {name:'المكالمات', color:'#c9d6f5', values:types.map(function(k){ return s.byType[k].calls; })},
+      {name:'تم الحجز', color:'#2f6fed', values:types.map(function(k){ return s.byType[k].booked; })}], {h:220, w:300}) : '<div class="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>';
+  h += '<div class="vs-chart-group"><p class="vs-group-label">نتايج المكالمات</p><div class="vs-chart-row-2">'+
+    chartCard('استجابة المكالمات', R.label, outBody)+chartCard('المكالمات والحجز حسب نوع الزيارة', R.label, typeBody)+'</div></div>';
+
+  // best time to call
+  h += '<div class="vs-chart-group"><p class="vs-group-label">أفضل وقت للاتصال</p>'+chartCard('نسبة الرد حسب الساعة', R.label,
+    D.hours.some(function(x){ return x.calls; }) ? svgBars(D.hours.map(function(x){ return x.label; }), [{name:'نسبة الرد', color:'#0d9488', values:D.hours.map(function(x){ return x.rate; })}],
+      {h:190, max:100, unit:'%', fmt:function(v, i){ return v+'% من '+nfmt(D.hours[i].calls)+' مكالمة'; }}) : '<div class="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>')+'</div>';
+
+  // trend
+  h += '<div class="vs-chart-group"><p class="vs-group-label">الاتجاه عبر الفترة</p>'+chartCard('المكالمات والحجوزات', R.label,
+    s.calls ? svgLine(D.buckets.map(function(b){ return b.label; }), [
+      {name:'المكالمات', color:'#2f6fed', values:D.buckets.map(function(b){ return b.calls; })},
+      {name:'تم الحجز', color:'#15803d', values:D.buckets.map(function(b){ return b.booked; })}]) : '<div class="vs-chart-empty">لا توجد بيانات في هذه الفترة</div>')+'</div>';
+
+  return h + '</div></div>';
+}
+
+function dashCsv(){
+  var D = dashData(), s = D.sum;
+  function q(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
+  var rows = [[q('إحصائيات الكول سنتر'), q(D.R.label)], [], [q('المؤشر'), q('القيمة')],
+    [q('إجمالي المكالمات'), s.calls], [q('تم الحجز'), s.booked], [q('نسبة الرد %'), pct(s.answered, s.calls)], [q('نسبة الحجز %'), pct(s.booked, s.calls)],
+    [q('نسبة الحضور %'), pct(s.attended, s.attended+s.noShow)], [q('لم يحضر'), s.noShow], [q('مكالمات واردة'), s.incoming], [],
+    [q('الموظف'), q('المكالمات'), q('نسبة الرد %'), q('الحجز'), q('نسبة الحجز %'), q('نسبة الحضور %')]];
+  D.agents.forEach(function(a){ rows.push([q(a.agent.name), a.calls, pct(a.answered,a.calls), a.booked, pct(a.booked,a.calls), pct(a.attended, a.attended+a.noShow)]); });
+  rows.push([]); rows.push([q('استجابة المكالمة'), q('العدد'), q('%')]);
+  Object.keys(DASH_OUTCOME_COLORS).forEach(function(k){ rows.push([q(outcomeDef(k).label), s.byOutcome[k]||0, pct(s.byOutcome[k]||0, s.calls)]); });
+  return '﻿' + rows.map(function(r){ return r.join(','); }).join('\r\n');
+}
+Object.assign(ACT, {
+  toggleDash: function(){ S.dashOpen = !S.dashOpen; render(); },
+  dashSetPeriod: function(k){ S.dashPeriod = k; S.dashStep = 0; render(); },
+  dashStepBy: function(n){ S.dashStep = Math.min(0, S.dashStep + parseInt(n,10)); render(); },
+  dashAgent: function(v){ S.dashAgent = v; render(); },
+  dashRefresh: function(){ toast('تم تحديث الإحصائيات'); render(); },
+  dashExport: function(){
+    var blob = new Blob([dashCsv()], {type:'text/csv;charset=utf-8'}), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'call-center-stats-' + isoDate(todayOffset()) + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  },
+});
+// chart tooltips
+(function(){
+  var tip = null;
+  document.addEventListener('mousemove', function(e){
+    var el = e.target.closest && e.target.closest('[data-tip]');
+    if (!el){ if (tip) tip.style.display = 'none'; return; }
+    if (!tip){ tip = document.createElement('div'); tip.className = 'vs-tooltip'; document.body.appendChild(tip); }
+    tip.innerHTML = el.getAttribute('data-tip'); tip.style.display = 'block';
+    var x = e.clientX + 14, y = e.clientY + 14, w = tip.offsetWidth, hh = tip.offsetHeight;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+    if (y + hh > window.innerHeight - 8) y = e.clientY - hh - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+})();
 
 // =====================================================================
 // Init
