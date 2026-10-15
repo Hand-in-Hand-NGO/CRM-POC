@@ -788,8 +788,7 @@ var PLACEHOLDERS = ['{الاسم}','{اليوم}','{التاريخ}','{المك�
 
 function defaultSettings(){
   return {
-    rates:{perSpecialist:6, perTechnician:5, perRoom:8},
-    defaultCap:{specialists:2, technicians:4, rooms:3, vehicles:1},
+    dailyCapacity:20,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     histRates:{measurement:0.6, newDelivery:0.75, maintDelivery:0.7},
     orgAddress:'مقر المؤسسة الرئيسي',
@@ -904,22 +903,12 @@ function alternativeTasksFor(t, cid){
 // =====================================================================
 // Capacity
 // =====================================================================
-function capFor(off){ return Object.assign({}, S.settings.defaultCap, S.dayCapacity[off] || {}); }
+function capFor(off){ return S.dayCapacity[off]!=null ? S.dayCapacity[off] : S.settings.dailyCapacity; }
 function dayLoad(off, tasks, capOverride){
-  var list = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; });
-  var meas=0, tech=0, room=0, govs={};
-  list.forEach(function(t){
-    var n = t.target || 0;
-    if (t.type==='measurement') meas += n; else tech += n;
-    if (t.loc==='org') room += n; else govs[t.gov || '—'] = 1;
-  });
-  var cap = capOverride || capFor(off), r = S.settings.rates;
-  return [
-    {key:'specialists', label:'الأخصائيين', sub:'المقاسات · '+cap.specialists+' أخصائي × '+r.perSpecialist+' حالة', load:meas, cap:cap.specialists*r.perSpecialist, unit:'حالة'},
-    {key:'technicians', label:'الفنيين', sub:'التسليمات والصيانة · '+cap.technicians+' فني × '+r.perTechnician+' حالة', load:tech, cap:cap.technicians*r.perTechnician, unit:'حالة'},
-    {key:'rooms', label:'الغرف', sub:'داخل المؤسسة · '+cap.rooms+' غرفة × '+r.perRoom+' حالة', load:room, cap:cap.rooms*r.perRoom, unit:'حالة'},
-    {key:'vehicles', label:'عربيات القافلة', sub:'قافلة لكل محافظة في اليوم', load:Object.keys(govs).length, cap:cap.vehicles, unit:'قافلة'},
-  ];
+  var load = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; })
+    .reduce(function(n,t){ return n + (t.target || 0); }, 0);
+  var cap = capOverride!=null ? capOverride : capFor(off);
+  return [{key:'bookings', label:'الحجوزات', sub:'مجموع الأعداد المستهدفة لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
 }
 function loadLevel(x){
   if (x.load===0) return 'ok';
@@ -947,8 +936,8 @@ function guardCapacity(off, tasksAfter, onOk, returnTo){
   S.overlay = 'confirm';
   S.confirm = {
     title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn',
-    message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة المتاحة في:',
-    items: ov.map(function(x){ return {label:x.label + ' (' + x.sub + ')', value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+    message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة الاستيعابية للحجوزات:',
+    items: ov.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
     footnote:'تقدر تزوّد الطاقة من إعدادات اليوم، أو تقلل العدد المستهدف، أو تحفظ رغم التجاوز.',
     confirmLabel:'حفظ رغم التجاوز', onConfirm:onOk, returnTo:returnTo,
   };
@@ -1447,25 +1436,23 @@ var ACT = {
   openCapacity: function(off){
     off = parseInt(off,10); var c = capFor(off);
     S.capacityDay = off;
-    S.capDraft = {specialists:String(c.specialists), technicians:String(c.technicians), rooms:String(c.rooms), vehicles:String(c.vehicles)};
+    S.capDraft = String(c);
     S.overlay = 'capacity'; render();
   },
   closeCapacity: function(){ S.overlay = null; S.capacityDay = null; render(); },
-  capInput: function(v, key){ S.capDraft[key] = v; render(); },
+  capInput: function(v){ S.capDraft = v; render(); },
   capReset: function(){
-    var c = S.settings.defaultCap;
-    S.capDraft = {specialists:String(c.specialists), technicians:String(c.technicians), rooms:String(c.rooms), vehicles:String(c.vehicles)};
+    S.capDraft = String(S.settings.dailyCapacity);
     render();
   },
   saveCapacity: function(){
-    var off = S.capacityDay, d = S.capDraft, cap = {};
-    Object.keys(d).forEach(function(k){ cap[k] = Math.max(0, parseInt(d[k],10)||0); });
+    var off = S.capacityDay, cap = Math.max(0, parseInt(S.capDraft,10)||0);
     var over = dayLoad(off, S.tasks, cap).filter(function(x){ return x.load > x.cap; });
     var apply = function(){ S.dayCapacity[off] = cap; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
     if (!over.length){ apply(); return; }
     S.overlay = 'confirm';
     S.confirm = {title:'تحذير: الطاقة أقل من المخطط', tone:'warn',
-      message:'المهام المخططة في ' + dayLabel(off) + ' هتتخطى الطاقة الجديدة في:',
+      message:'المهام المخططة في ' + dayLabel(off) + ' هتتخطى الطاقة الجديدة:',
       items: over.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
       confirmLabel:'حفظ رغم التجاوز', returnTo:'capacity', onConfirm:apply};
     render();
@@ -1475,9 +1462,7 @@ var ACT = {
   openSettings: function(){
     var s = S.settings;
     S.settingsDraft = {
-      'rates.perSpecialist':String(s.rates.perSpecialist), 'rates.perTechnician':String(s.rates.perTechnician), 'rates.perRoom':String(s.rates.perRoom),
-      'defaultCap.specialists':String(s.defaultCap.specialists), 'defaultCap.technicians':String(s.defaultCap.technicians),
-      'defaultCap.rooms':String(s.defaultCap.rooms), 'defaultCap.vehicles':String(s.defaultCap.vehicles),
+      'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'histRates.measurement':String(Math.round(s.histRates.measurement*100)), 'histRates.newDelivery':String(Math.round(s.histRates.newDelivery*100)),
       'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)), 'orgAddress':s.orgAddress,
@@ -1489,8 +1474,7 @@ var ACT = {
   saveSettings: function(){
     var d = S.settingsDraft, s = S.settings;
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
-    s.rates = {perSpecialist:int('rates.perSpecialist',1), perTechnician:int('rates.perTechnician',1), perRoom:int('rates.perRoom',1)};
-    s.defaultCap = {specialists:int('defaultCap.specialists',0), technicians:int('defaultCap.technicians',0), rooms:int('defaultCap.rooms',0), vehicles:int('defaultCap.vehicles',0)};
+    s.dailyCapacity = int('dailyCapacity',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     ['measurement','newDelivery','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
     s.orgAddress = (d.orgAddress||'').trim() || 'مقر المؤسسة';
@@ -2299,17 +2283,15 @@ function renderConfirm(){
 }
 
 function renderCapacity(){
-  var off = S.capacityDay, admin = isAdmin(), d = S.capDraft, cap = {};
-  Object.keys(d).forEach(function(k){ cap[k] = Math.max(0, parseInt(d[k],10)||0); });
+  var off = S.capacityDay, admin = isAdmin(), cap = Math.max(0, parseInt(S.capDraft,10)||0);
   var loads = dayLoad(off, S.tasks, cap);
   var tasks = S.tasks.filter(function(t){ return t.dateOffset===off; });
-  var custom = !!S.dayCapacity[off];
+  var custom = S.dayCapacity[off]!=null;
   var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
     '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
-  var fields = [['specialists','الأخصائيين المتاحين'],['technicians','الفنيين المتاحين'],['rooms','الغرف المتاحة'],['vehicles','عربيات القافلة']];
-  h += '<div class="cap-inputs">' + fields.map(function(f){
-    return '<div><label>'+f[1]+'</label>' + (admin ? '<input class="num-input" type="number" min="0" value="'+esc(d[f[0]])+'" data-k="cap-'+f[0]+'" data-input="capInput" data-a="'+f[0]+'"/>' : '<div class="readonly-box">'+cap[f[0]]+'</div>') + '</div>';
-  }).join('') + '</div>';
+  h += '<div class="field"><label class="field-label">الطاقة الاستيعابية للحجوزات في اليوم ده</label>' + (admin
+    ? '<div class="input-suffix"><input class="num-input" type="number" min="0" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حجز/يوم</span></div>'
+    : '<div class="readonly-box">'+cap+' حجز/يوم</div>') + '</div>';
   h += '<div class="cap-box">'+capTable(loads)+'</div>';
   h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
   if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
@@ -2317,7 +2299,7 @@ function renderCapacity(){
     var m = TASK_TYPES[t.type];
     h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>المستهدف <b>'+t.target+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
   });
-  h += '<div class="field-hint" style="margin-top:10px;">معدلات التحويل (حالة لكل أخصائي/فني/غرفة) بتتعدل من الإعدادات.</div></div>';
+  h += '<div class="field-hint" style="margin-top:10px;">الطاقة الافتراضية لكل الأيام بتتعدل من الإعدادات.</div></div>';
   h += '<div class="modal-foot">' + (admin ? '<button class="btn btn-primary"'+A('saveCapacity')+'>حفظ طاقة اليوم</button><button class="btn btn-secondary"'+A('capReset')+'>الافتراضي</button>' : '') +
     '<button class="btn btn-secondary"'+A('closeCapacity')+'>'+(admin?'إلغاء':'إغلاق')+'</button></div></div>';
   return h;
@@ -2328,13 +2310,10 @@ function setNum(path, label, suffix){
 }
 function renderSettings(){
   if (!isAdmin()) return '';
-  var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div>'+
-    '<div class="drawer-sub">الطاقة الاستيعابية · قواعد إعادة الاتصال · نسب الحجز</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
-  h += '<div class="set-section"><div class="set-title">الطاقة الافتراضية لكل يوم</div><div class="set-desc">بتتطبق على كل الأيام، وتقدر تغيّرها ليوم معيّن من شريط الطاقة في التقويم.</div><div class="set-grid four">'+
-    setNum('defaultCap.specialists','الأخصائيين','')+setNum('defaultCap.technicians','الفنيين','')+setNum('defaultCap.rooms','الغرف','')+setNum('defaultCap.vehicles','عربيات القافلة','')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title">معدلات الطاقة</div><div class="set-desc">عدد الحالات اللي يقدر يخدمها كل مورد في اليوم، وعلى أساسها بيتحسب الحمل والتحذير.</div><div class="set-grid">'+
-    setNum('rates.perSpecialist','الأخصائي (مقاسات)','حالة/يوم')+setNum('rates.perTechnician','الفني (تسليمات وصيانة)','حالة/يوم')+setNum('rates.perRoom','الغرفة (داخل المؤسسة)','حالة/يوم')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title">قواعد إعادة الاتصال</div><div class="set-desc">بعد "لم يتم الرد" أو "مغلق" الحالة بترجع لقائمة الموظف لوحدها.</div><div class="set-grid">'+
+  var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">معدلات الطاقة</div><div class="set-grid">'+
+    setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
   h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid">'+
     setNum('histRates.measurement','المقاسات','%')+setNum('histRates.newDelivery','التسليمات الجديدة','%')+setNum('histRates.maintDelivery','تسليمات الصيانة','%')+'</div></div>';
