@@ -1046,7 +1046,6 @@ function guardCapacity(off, tasksAfter, onOk, returnTo){
     title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn',
     message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة الاستيعابية للحجوزات:',
     items: ov.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
-    footnote:'تقدر تزوّد الطاقة من إعدادات اليوم، أو تقلل العدد المستهدف، أو تحفظ رغم التجاوز.',
     confirmLabel:'حفظ رغم التجاوز', onConfirm:onOk, returnTo:returnTo,
   };
   render();
@@ -1761,7 +1760,7 @@ function renderApp(){
 function renderTopbar(){
   var roles = ['مدير النظام','مركز الاتصال','عرض فقط'];
   var h = '<header class="topbar"><div class="brandblock"><div class="brand-mark">'+ic('calendar',18,'#fff')+'</div>'+
-    '<div><div class="page-title">غرفة العمليات</div><div class="page-subtitle">التخطيط التشغيلي لأنشطة الأطراف الصناعية</div></div></div>';
+    '<div><div class="page-title">غرفة العمليات</div></div></div>';
   h += '<div class="topbar-right">';
   h += '<span class="clock-pill" title="الوقت الحالي – أزرار المحاكاة لتجربة قواعد إعادة الاتصال فقط">'+ic('clock',13)+' الآن <b>'+fmtTime(now())+'</b>'+
     '<button'+A('simAdvance','60')+' title="محاكاة: تقديم الوقت ساعة">+ ساعة</button>'+
@@ -1860,14 +1859,10 @@ function renderPlanStrip(){
   var inWeek = S.tasks.filter(function(t){ return t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
   var drafts = inWeek.filter(function(t){ return t.status==='draft'; }).length;
   var pub = inWeek.length - drafts;
-  if (!isAdmin()){
-    return '<div class="plan-strip info"><div class="plan-stats">'+ic('lock',13)+
-      '<span>يظهر لك المهام <b style="color:var(--text)">المنشورة فقط</b> من غرفة العمليات. المهام اللي لسه بتتخطط مش هتظهر قبل ما المدير ينشرها.</span></div></div>';
-  }
+  if (!isAdmin()) return '';
   var h = '<div class="plan-strip'+(drafts ? '' : ' ok')+'"><div class="plan-stats">'+
     '<span class="plan-stat"><span class="pdot" style="background:#15803d"></span>منشورة: <b>'+pub+'</b></span>'+
-    '<span class="plan-stat"><span class="pdot" style="background:#e0a100"></span>مسودة: <b>'+drafts+'</b></span>'+
-    '<span>'+(drafts ? 'المسودات مش ظاهرة للكول سنتر. راجع الخطة وبعدين انشرها.' : 'كل مهام الأسبوع منشورة وظاهرة للكول سنتر.')+'</span></div>';
+    '<span class="plan-stat"><span class="pdot" style="background:#e0a100"></span>مسودة: <b>'+drafts+'</b></span>'+'</div>';
   if (drafts) h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13)+' نشر خطة الأسبوع ('+drafts+')</button>';
   h += '</div>';
   return h;
@@ -1876,12 +1871,12 @@ function renderPlanStrip(){
 function renderPalette(){
   var admin = isAdmin();
   var h = '<div class="palette-row"><div class="palette-head"><div class="palette-title">إضافة حجز جديد إلى الخطة</div>'+
-    '<div class="palette-hint">اسحب نوع الحجز وأفلته على اليوم، أو اضغط + جنب اليوم · ينفع أكتر من نوع في نفس اليوم · المهام الجديدة بتتحفظ كمسودة لحد النشر</div></div><div class="palette-chips">';
+    '</div><div class="palette-chips">';
   Object.keys(TASK_TYPES).forEach(function(k){
     var m = TASK_TYPES[k];
     h += '<div class="palette-chip'+(admin?'':' disabled')+'" style="--tint:'+m.tint+';--edge:'+m.color+';" draggable="'+(admin?'true':'false')+'" data-drag-type="'+k+'">'+
       '<div class="palette-ic">'+pathIc(m.iconPath,16,m.color,1.7)+'</div><div class="palette-text"><span class="palette-label">'+m.label+'</span>'+
-      '<span class="palette-sub">'+(admin ? 'اسحب لإضافته إلى يوم' : 'للعرض فقط')+'</span></div>'+
+      '</div>'+
       (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحان لمدير النظام فقط">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
   });
   return h + '</div></div>';
@@ -1914,7 +1909,7 @@ function renderCapMini(off){
   loads.forEach(function(x){ var l = loadLevel(x); if (l==='over') lv = 'over'; else if (l==='warn' && lv!=='over') lv = 'warn'; });
   var title = loads.map(function(x){ return x.label + ': ' + x.load + ' من ' + x.cap; }).join('\n');
   var label = lv==='over' ? 'تجاوز الطاقة' : lv==='warn' ? 'قرب الامتلاء' : 'الطاقة';
-  return '<div class="cap-mini" title="'+esc(title)+'\n(اضغط للتفاصيل)"'+A('openCapacity', off)+'>'+
+  return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
     '<div class="cap-mini-top"><span>'+ic('gauge',11)+' '+label+'</span><b class="cap-'+lv+'">'+Math.round(Math.min(pct,9.99)*100)+'%</b></div>'+
     '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+Math.min(100, Math.round(pct*100))+'%;"></div></div></div>';
 }
@@ -2023,7 +2018,7 @@ function renderQueue(){
 
   var h = '<div class="queue-wrap'+(isCC() ? '' : '')+'"><div>';
   h += '<div class="q-head"><div><div class="q-title">'+(isCC() ? 'قائمتي النهارده – ' + esc(agentName(S.agentId)) : 'قوائم الاتصال')+'</div>'+
-    '<div class="q-sub">'+dayLabel(todayOffset())+' · الترتيب: أولوية الاتصال اللي حددها الأوبريشن، ثم أقرب موعد، ثم درجة الترشيح</div></div>';
+    '<div class="q-sub">'+dayLabel(todayOffset())+'</div></div>';
   if (!isCC()){
     h += '<div class="filter-field"><label>الموظف</label><select class="filter-select" data-change="setQueueAgent"><option value="">كل الموظفين</option>'+
       AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(S.queueAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></div>';
@@ -2035,10 +2030,10 @@ function renderQueue(){
     kpi(todayLogs.length, 'مكالمات النهارده')+
     kpi(bookedToday, 'حجوزات النهارده')+'</div>';
 
-  h += qSection('due', 'اتصل الآن', 'مرتبة بالأولوية', groups.due, 'مفيش حالات مستحقة دلوقتي. الحالات المجدولة هتظهر هنا لوحدها في ميعادها.');
-  h += qSection('later', 'معاد اتصال مجدول', 'بترجع لوحدها بعد ' + retryLabel() + ' من آخر محاولة', groups.later, 'لا توجد حالات مجدولة.');
-  if (groups.other.length) h += qSection('other', 'يرغب في يوم آخر', 'اختار له موعد بديل متاح', groups.other, '');
-  if (groups.htr.length) h += qSection('htr', 'صعب الوصول', 'بعد ' + S.settings.hardToReachAfter + ' محاولات فاشلة – خارج قائمة الاتصال', groups.htr, '');
+  h += qSection('due', 'اتصل الآن', '', groups.due, 'لا توجد حالات مستحقة');
+  h += qSection('later', 'معاد اتصال مجدول', '', groups.later, 'لا توجد حالات مجدولة');
+  if (groups.other.length) h += qSection('other', 'يرغب في يوم آخر', '', groups.other, '');
+  if (groups.htr.length) h += qSection('htr', 'صعب الوصول', '', groups.htr, '');
   h += '</div>';
 
   // side column
@@ -2054,11 +2049,6 @@ function renderQueue(){
     });
     h += '</div>';
   }
-  h += '<div class="side-card"><div class="side-title">'+ic('history',14)+'قواعد إعادة الاتصال</div><ul class="rules-list">'+
-    '<li>"لم يتم الرد" أو "مغلق" ← الحالة ترجع للقائمة بعد <b>'+retryLabel()+'</b></li>'+
-    '<li>حد أقصى <b>'+S.settings.maxPerDay+' محاولات</b> للحالة في اليوم، وبعدها ترجع تاني يوم 9 ص</li>'+
-    '<li>بعد <b>'+S.settings.hardToReachAfter+' محاولات فاشلة</b> تتعلم "صعب الوصول" وتخرج من القائمة</li></ul>'+
-    (isAdmin() ? '<button class="ghost-btn" style="margin-top:8px;"'+A('openSettings')+'>'+ic('gear',12)+'تعديل القواعد</button>' : '')+'</div>';
   h += '</div></div>';
   return h;
 }
@@ -2073,7 +2063,7 @@ function renderAgentFocus(){
     '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
   if (!seq.length){
     h += '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">مفيش مكالمة مستحقة دلوقتي</div>'+
-      (later.length ? '<div class="q-sub">المكالمة الجاية '+fmtWhen(later[0].nxt)+' – هتظهر هنا لوحدها في ميعادها.</div>' : '<div class="q-sub">خلصت كل حالاتك 👏</div>')+'</div>';
+      (later.length ? '<div class="q-sub">المكالمة الجاية '+fmtWhen(later[0].nxt)+'</div>' : '')+'</div>';
     return h + '</div>';
   }
   var x = seq[0], t = x.t, cid = x.cid, c = caseById(cid), m = TASK_TYPES[t.type], booked = taskBookedCount(t), key = nextCallKey(t.id, cid);
@@ -2092,7 +2082,6 @@ function renderAgentFocus(){
     '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'السجل ('+logsFor(cid).length+')</button></div>';
   if (S.logOpen[key]) h += renderLog(cid);
   h += '</div>';
-  h += '<div class="focus-hint">بعد ما تحفظ نتيجة المكالمة، الحالة اللي بعدها هتظهر هنا لوحدها حسب الأولوية.</div>';
   return h + '</div>';
 }
 function kpi(v, l){ return '<div class="kpi"><div class="kpi-val">'+v+'</div><div class="kpi-lbl">'+l+'</div></div>'; }
@@ -2102,7 +2091,7 @@ function retryLabel(){
   return m + ' دقيقة';
 }
 function qSection(key, title, hint, list, emptyMsg){
-  var h = '<div class="q-section"><div class="q-section-head">'+title+' <span class="cnt">'+list.length+'</span><span class="hint">'+hint+'</span></div>';
+  var h = '<div class="q-section"><div class="q-section-head">'+title+' <span class="cnt">'+list.length+'</span></div>';
   if (!list.length) return h + (emptyMsg ? '<div class="q-empty">'+emptyMsg+'</div>' : '') + '</div>';
   list.forEach(function(x, i){ h += renderQItem(x, key==='due' ? i+1 : null); });
   return h + '</div>';
@@ -2151,7 +2140,7 @@ function renderConvoyBox(t){
       ? '<a href="'+esc(url)+'" target="_blank" rel="noopener">فتح على الخريطة</a> <button class="copy-btn" title="نسخ اللينك لإرساله للحالة"'+A('copyText', url)+'>'+ic('copy',12)+'</button>'
       : '<span class="missing">لم يُحدد</span>')+'</div></div></div>';
   if (t.convoyNotes) h += '<div class="convoy-notes">'+ic('alert',12)+' '+esc(t.convoyNotes)+'</div>';
-  if (miss.length) h += '<div class="rule-hint warn" style="margin-bottom:0;">الأوبريشن لسه ما حددش: '+miss.join('، ')+'. ارجع لغرفة العمليات قبل ما تأكد الميعاد مع الحالة.</div>';
+  if (miss.length) h += '<div class="rule-hint warn" style="margin-bottom:0;">ناقص: '+miss.join('، ')+'</div>';
   return h + '</div>';
 }
 function convoyFields(d, act, kp){
@@ -2175,7 +2164,7 @@ function renderCallModal(){
     '<span class="cms-muted">'+esc(c.gov)+' · '+esc(c.level)+' · '+c.age+' سنة</span></div>';
   h += renderConvoyBox(t);
   var nxt = nextCallFor(t, cid);
-  if (nxt && !incoming) h += '<div class="rule-hint warn">الحالة مجدولة لمعاد اتصال '+fmtWhen(nxt)+'. لو الحالة هي اللي اتصلت، اختار نوع المكالمة "وارد".</div>';
+  if (nxt && !incoming) h += '<div class="rule-hint warn">مجدولة لمعاد اتصال '+fmtWhen(nxt)+'</div>';
 
   // form
   h += '<div class="cms-form">';
@@ -2194,15 +2183,14 @@ function renderCallModal(){
   if (FAILED_OUTCOMES.indexOf(o)!==-1){
     var ftAfter = failedToday(cid) + 1;
     var willHTR = !isHardToReach(cid) && (failedTotal(cid) + 1 - (S.htrBase[cid]||0)) >= S.settings.hardToReachAfter;
-    if (willHTR) h += '<div class="rule-hint danger">دي المحاولة الفاشلة رقم '+S.settings.hardToReachAfter+' – الحالة هتتعلم "صعب الوصول" وتخرج من قائمة الاتصال.</div>';
-    else if (ftAfter >= S.settings.maxPerDay) h += '<div class="rule-hint warn">دي آخر محاولة النهارده ('+ftAfter+'/'+S.settings.maxPerDay+') – الحالة هترجع في قائمتك بكرة '+fmtTime(tomorrowNine())+'.</div>';
-    else h += '<div class="rule-hint">الحالة هترجع في قائمتك تلقائيًا الساعة '+fmtTime(now()+S.settings.retryMinutes*60000)+' (بعد '+retryLabel()+') – محاولة '+ftAfter+' من '+S.settings.maxPerDay+' النهارده.</div>';
+    if (willHTR) h += '<div class="rule-hint danger">هتتعلم صعب الوصول</div>';
+    else if (ftAfter >= S.settings.maxPerDay) h += '<div class="rule-hint warn">آخر محاولة اليوم · إعادة الاتصال بكرة '+fmtTime(tomorrowNine())+'</div>';
+    else h += '<div class="rule-hint">إعادة الاتصال '+fmtTime(now()+S.settings.retryMinutes*60000)+' · محاولة '+ftAfter+'/'+S.settings.maxPerDay+'</div>';
   }
   if (booking){
     var bt = findTask(d.bookTid) || t, b = taskBookedCount(bt);
-    if (b >= bt.target) h += '<div class="rule-hint warn">تنبيه: الموعد ده اكتمل عدده المستهدف ('+b+' من '+bt.target+'). تقدر تكمل الحجز كحجز إضافي.</div>';
+    if (b >= bt.target) h += '<div class="rule-hint warn">الموعد اكتمل ('+b+' من '+bt.target+')</div>';
   }
-  if (o==='wantsOtherDay') h += '<div class="rule-hint">لو الحالة وافقت على موعد تاني متاح، اختار "تم الحجز بنجاح" وغيّر تاريخ الحجز. غير كده الأوبريشن هيشوف إنها عايزة يوم آخر.</div>';
   h += '<div class="cms-actions"><button class="cms-btn cms-add"'+A('saveCall')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('closeCall')+'>'+ic('x',12,'#fff',3)+' إلغاء</button></div>';
   h += '</div>';
 
@@ -2266,7 +2254,7 @@ function renderCreate(){
   h += '<div class="field"><label class="field-label">نوع الحجز</label><div class="type-seg">'+Object.keys(TASK_TYPES).map(function(k){
     var tm = TASK_TYPES[k], on = k===d.type;
     return '<button class="type-seg-btn'+(on?' on':'')+'" style="--edge:'+tm.color+';--tint:'+tm.tint+';"'+A('setCreateType', k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.short+'</button>';
-  }).join('')+'</div><div class="field-hint">بيظهر في صفحة الزيارات في عمود «'+m.label+'» · الاستقبال: استقبال '+m.reception+'</div></div>';
+  }).join('')+'</div></div>';
   h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
     '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
     '<button class="seg-btn'+(d.loc==='convoy'?' on':'')+'"'+A('setCreateLoc','convoy')+'>قافلة</button></div></div>';
@@ -2283,11 +2271,10 @@ function renderCreate(){
     h += convoyFields(d, 'setConvoyField', 'c');
   }
   h += '<div class="field"><label class="field-label">العدد المستهدف</label>'+
-    '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>'+
-    '<div class="field-hint">هذا هو الهدف التشغيلي، وليس الحد الأقصى لعدد الحالات المرشحة.</div>';
+    '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>';
   if (target>0){
     var rate = S.settings.histRates[d.type], reco = recommendedFor(d.type, target);
-    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' نسبة الحجز التاريخية لـ'+m.short+' <b>'+Math.round(rate*100)+'%</b>، فعشان توصل لـ <b>'+target+'</b> حجز يُنصح بحوالي <b>'+reco+'</b> حالة مرشحة.</div>';
+    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' المُوصى: <b>'+reco+'</b> مرشح · نسبة الحجز <b>'+Math.round(rate*100)+'%</b></div>';
   }
   h += '</div>';
   {
@@ -2299,7 +2286,7 @@ function renderCreate(){
     h += '<div style="display:flex;gap:8px;margin-top:8px;">'+
       '<button class="btn btn-auto btn-sm" style="flex:1;"'+A('autoSuggestDraft')+((d.loc==='convoy' && !d.gov) || !canAdd ? ' disabled' : '')+'>'+ic('spark',13)+' ترشيح تلقائي'+(canAdd ? ' (+'+canAdd+')' : '')+'</button>'+
       '<button class="btn btn-outline-dashed btn-sm" style="flex:1;"'+A('openAddCasesDraft')+'>+ اختيار يدوي</button></div>';
-    h += '<div class="field-hint">الترشيح التلقائي بيرتب الحالات حسب: مدة الانتظار، الأطفال، الصيانة المتأخرة، ونفس المحافظة لو قافلة.'+(d.loc==='convoy' && !d.gov ? ' <b>اختار المحافظة الأول.</b>' : (target && n<reco2 && !avail ? ' <b>مفيش حالات مؤهلة أكتر – تقدر تضيف يدويًا.</b>' : ''))+'</div></div>';
+    h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
   // capacity after adding
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
@@ -2368,7 +2355,7 @@ function renderAddCases(){
       '<button class="btn btn-auto btn-sm"'+A('pickTopN')+(lack?'':' disabled')+'>'+ic('spark',13)+' تحديد الأعلى أولوية حتى '+reco+'</button></div></div>';
     var rows = autoRows();
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:380px;overflow-y:auto;" data-scroll="autotbl"><table class="cases-table"><thead><tr>'+
-      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th title="الحالات اللي الكول سنتر يكلمها الأول">أولوية الاتصال</th><th>#</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>السن</th><th>درجة الترشيح</th><th>سبب الترشيح</th></tr></thead><tbody>';
+      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>أولوية الاتصال</th><th>#</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>السن</th><th>درجة الترشيح</th><th>سبب الترشيح</th></tr></thead><tbody>';
     rows.forEach(function(p, i){
       var c = p.c;
       h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td style="text-align:center;">'+prioStar(S.addCasesPrio.indexOf(c.id)!==-1, 'togglePrio', c.id)+'</td><td class="rank-num">'+(p.manual?'—':(i+1))+'</td><td dir="ltr" style="text-align:right;">'+c.code+'</td>'+
@@ -2379,7 +2366,7 @@ function renderAddCases(){
     h += '</tbody></table>'+(rows.length ? '' : '<div class="table-empty">لا توجد حالات مؤهلة للترشيح التلقائي لهذه المهمة</div>')+'</div>';
     var ex = {}; CASES.forEach(function(c){ var p = priorityOf(ctx, c); if (!p.eligible) ex[p.why] = (ex[p.why]||0)+1; });
     var exTxt = Object.keys(ex).map(function(k){ return ex[k] + ' ' + k; }).join(' · ');
-    if (exTxt) h += '<div class="excluded-note">مستبعد من الترشيح: '+esc(exTxt)+'. تقدر تضيفهم من "بحث وفلترة يدوي".</div>';
+    if (exTxt) h += '<div class="excluded-note">مستبعد: '+esc(exTxt)+'</div>';
   } else {
     var f = S.addCasesFilters;
     function opts(list, cur){ return '<option value="">الكل</option>' + list.map(function(v){ return '<option'+(cur===v?' selected':'')+'>'+v+'</option>'; }).join(''); }
@@ -2396,7 +2383,7 @@ function renderAddCases(){
     var list = filteredCases();
     h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة مطابقة للفلاتر الحالية</div><div class="count-selected">تم تحديد '+sel.filter(function(id){ return ids.indexOf(id)!==-1; }).length+' من '+list.length+'</div></div>';
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:360px;overflow-y:auto;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
-      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th title="الحالات اللي الكول سنتر يكلمها الأول">أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th><th>السن</th><th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th>درجة الترشيح</th></tr></thead><tbody>';
+      '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th><th>السن</th><th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th>درجة الترشيح</th></tr></thead><tbody>';
     list.forEach(function(c){
       var p = priorityOf(ctx, c);
       h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td style="text-align:center;">'+prioStar(S.addCasesPrio.indexOf(c.id)!==-1, 'togglePrio', c.id)+'</td><td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td><td>'+attemptsTotal(c.id)+'</td><td>'+(c.pref||'غير محدد')+'</td>'+
@@ -2404,7 +2391,7 @@ function renderAddCases(){
     });
     h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
   }
-  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+'>حفظ الحالات المحددة ('+sel.length+')</button><span class="field-hint" style="align-self:center;">★ = أولوية اتصال ('+S.addCasesPrio.filter(function(x){ return sel.indexOf(x)!==-1; }).length+') – الكول سنتر هيكلمهم الأول</span><button class="btn btn-secondary"'+A('closeAddCases')+'>إلغاء</button></div></div>';
+  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+'>حفظ الحالات المحددة ('+sel.length+')</button><span class="field-hint" style="align-self:center;">★ '+S.addCasesPrio.filter(function(x){ return sel.indexOf(x)!==-1; }).length+'</span><button class="btn btn-secondary"'+A('closeAddCases')+'>إلغاء</button></div></div>';
   return h;
 }
 
@@ -2426,16 +2413,12 @@ function renderDetail(){
   var sub = dayLabel(t.dateOffset) + ' · ' + (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '<span class="pub-badge">منشورة</span>');
   var h = '<div class="scrim"'+A('closeDetail')+'></div><aside class="drawer" style="width:520px;">' + drawerHead(m, m.label, sub, extra, 'closeDetail');
   h += '<div class="drawer-body" data-scroll="detail">';
-  if (admin && t.status==='draft'){
-    h += '<div class="rule-hint warn" style="margin-top:0;margin-bottom:14px;">'+ic('lock',12)+' المهمة دي مسودة ومش ظاهرة للكول سنتر. لما تخلص تخطيطها اضغط "نشر" وهتتوزع حالاتها على الموظفين تلقائيًا.</div>';
-  } else if (t.publishedAt && admin){
+  if (t.publishedAt && admin && t.status!=='draft'){
     h += '<div class="field-hint" style="margin:-4px 0 12px;">نُشرت بواسطة '+esc(t.publishedBy)+' – '+fmtWhen(t.publishedAt)+'</div>';
   }
   h += '<div class="info-grid"><div class="info-item"><div class="k">مكان الزيارة</div><div class="v">'+esc(locLabelFor(t))+'</div></div>'+
     '<div class="info-item"><div class="k">المحافظة</div><div class="v">'+esc(t.loc==='convoy' ? (t.gov||'—') : '—')+'</div></div>';
   h += '</div>';
-  h += '<div class="visits-link">'+ic('list',13)+'<span>الحجوزات بتنزل في <b>صفحة الزيارات</b>: تاريخ حجز الزيارة <b dir="ltr">'+isoDate(t.dateOffset)+'</b> · عمود «'+m.label+'» · زرار الاستقبال: <b>استقبال '+m.reception+'</b>'+
-    (t.dateOffset <= todayOffset() ? ' · نتيجة الحضور بترجع هنا من الاستقبال' : '')+'</span></div>';
   if (t.loc==='convoy'){
     if (admin && S.convoyEdit){
       h += '<div class="convoy-box">' + convoyFields(S.convoyEdit, 'convoyInput', 'e') +
@@ -2475,9 +2458,7 @@ function renderDetail(){
     var rate = S.settings.histRates[t.type], reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
     var callable = callableCount(t), expected = Math.floor(callable * rate);
     var lack = n < reco || expected < remaining;
-    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' نسبة الحجز التاريخية لـ'+m.short+' <b>'+Math.round(rate*100)+'%</b> ← المُوصى به <b>'+reco+'</b> مرشح للهدف ده، والموجود <b>'+n+'</b>.'+
-      '<br>متبقي <b>'+remaining+'</b> حجز، وفيه <b>'+callable+'</b> حالة لسه ممكن الاتصال بيها (متوقع يتحجز منهم حوالي '+expected+').'+
-      (lack ? '<br><b style="color:#8a5a00">غالبًا المرشحين مش هيكفوا يوصلوا للهدف.</b>' : '');
+    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' المُوصى: <b>'+reco+'</b> مرشح · الموجود: <b>'+n+'</b> · ممكن الاتصال بيهم: <b>'+callable+'</b>';
     if (admin && lack){
       h += '<div style="margin-top:6px;"><button class="btn btn-auto btn-sm"'+A('autoFillTask', t.id)+'>'+ic('spark',13)+' استكمال بالترشيح التلقائي</button></div>';
     }
@@ -2504,7 +2485,7 @@ function renderDetail(){
     if (t.status==='published'){
       var per = {}; AGENTS.forEach(function(a){ per[a.id] = 0; });
       t.candidateIds.forEach(function(cid){ var a = t.assignee[cid]; if (a && per[a]!=null && isOpenStatus(caseStatus(t,cid).key)) per[a]++; });
-      h += '<div class="field-hint" style="margin:-4px 0 10px;">الحالات المفتوحة لكل موظف: '+AGENTS.map(function(a){ return esc(a.name)+' ('+per[a.id]+')'; }).join(' · ')+'</div>';
+      h += '<div class="field-hint" style="margin:-4px 0 10px;">'+AGENTS.map(function(a){ return esc(a.name)+' ('+per[a.id]+')'; }).join(' · ')+'</div>';
     }
   }
   if (admin && S.detailBulkSelected.length){
@@ -2589,7 +2570,7 @@ function renderCapacity(){
     var m = TASK_TYPES[t.type];
     h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>المستهدف <b>'+t.target+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
   });
-  h += '<div class="field-hint" style="margin-top:10px;">الطاقة الافتراضية لكل الأيام بتتعدل من الإعدادات.</div></div>';
+  h += '</div>';
   h += '<div class="modal-foot">' + (admin ? '<button class="btn btn-primary"'+A('saveCapacity')+'>حفظ طاقة اليوم</button><button class="btn btn-secondary"'+A('capReset')+'>الافتراضي</button>' : '') +
     '<button class="btn btn-secondary"'+A('closeCapacity')+'>'+(admin?'إلغاء':'إغلاق')+'</button></div></div>';
   return h;
@@ -2605,7 +2586,7 @@ function renderSettings(){
     setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid four">'+
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">نسب الحجز التاريخية</div><div class="set-grid four">'+
     setNum('histRates.measurement','تقييم طبي وقياسات','%')+setNum('histRates.newDelivery','تسليم طرف جديد','%')+setNum('histRates.maintEval','تقييم صيانة','%')+setNum('histRates.maintDelivery','تسليم صيانة','%')+'</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
