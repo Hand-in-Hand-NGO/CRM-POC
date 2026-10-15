@@ -2959,15 +2959,6 @@ function renderDash(){
     kpiBox(s.booked ? (Math.round(s.calls/s.booked*10)/10) : '-', 'مكالمات لكل حجز', s.booked ? '' : 'zero')+
     kpiBox(nfmt(s.incoming), 'مكالمات واردة', s.incoming ? '' : 'zero')+'</div>';
 
-  // live now
-  var q = queueItems(S.dashAgent || '');
-  function cnt(g){ return q.filter(function(x){ return x.group===g; }).length; }
-  h += '<div class="vs-chart-group"><p class="vs-group-label">الوضع الآن</p><div class="vs-kpi-grid" style="margin-bottom:0;">'+
-    kpiBox(nfmt(cnt('due')), 'مستحق الاتصال الآن', cnt('due') ? '' : 'zero')+
-    kpiBox(nfmt(cnt('later')), 'معاد اتصال مجدول', cnt('later') ? '' : 'zero')+
-    kpiBox(nfmt(cnt('other')), 'يرغب في يوم آخر', cnt('other') ? 'warn' : 'zero')+
-    kpiBox(nfmt(cnt('htr')), 'صعب الوصول', cnt('htr') ? 'bad' : 'zero')+'</div></div>';
-
   // booked vs target for the coming 7 days
   var tOff = todayOffset(), tgt = {};
   Object.keys(TASK_TYPES).forEach(function(k){ tgt[k] = {target:0, booked:0}; });
