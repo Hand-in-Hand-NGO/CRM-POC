@@ -1465,7 +1465,7 @@ var ACT = {
       'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'histRates.measurement':String(Math.round(s.histRates.measurement*100)), 'histRates.newDelivery':String(Math.round(s.histRates.newDelivery*100)),
-      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)), 'orgAddress':s.orgAddress,
+      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)),
     };
     S.overlay = 'settings'; render();
   },
@@ -1477,7 +1477,6 @@ var ACT = {
     s.dailyCapacity = int('dailyCapacity',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     ['measurement','newDelivery','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
-    s.orgAddress = (d.orgAddress||'').trim() || 'مقر المؤسسة';
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
@@ -2317,8 +2316,6 @@ function renderSettings(){
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
   h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid">'+
     setNum('histRates.measurement','المقاسات','%')+setNum('histRates.newDelivery','التسليمات الجديدة','%')+setNum('histRates.maintDelivery','تسليمات الصيانة','%')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title">عنوان المؤسسة</div><div class="set-desc">بيظهر في سكريبت المكالمة مكان {المكان} للمهام داخل المؤسسة.</div>'+
-    '<input class="text-input" value="'+esc(S.settingsDraft.orgAddress)+'" data-k="set-org" data-input="setInput" data-a="orgAddress"/></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
