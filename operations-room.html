@@ -356,7 +356,7 @@
 
     /* =====================================================================
        Additions: capacity, draft/publish, auto-suggest, call queue, call log,
-       retry rules, call scripts
+       retry rules, convoy info
        ===================================================================== */
     .topbar-right{flex-wrap:wrap;justify-content:flex-end;}
     .top-select{
@@ -502,13 +502,18 @@
 
     /* ---------- call panel ---------- */
     .call-panel{margin-top:10px;border:1px solid #cfe0ff;border-radius:10px;background:#fbfdff;padding:11px 12px;}
-    .script-box{border:1px solid var(--border);border-radius:9px;background:var(--surface);padding:10px 11px;margin-bottom:10px;}
-    .script-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:800;color:var(--text);margin-bottom:6px;}
-    .script-talk{font-size:12.5px;line-height:1.9;color:var(--text);white-space:pre-wrap;}
     .script-sub{font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 4px;}
-    .script-list{margin:0;padding:0 18px 0 0;font-size:12px;line-height:1.8;color:var(--text);}
-    .script-note{font-size:11.5px;color:#8a5a00;background:#fffbea;border-radius:7px;padding:6px 8px;margin-top:8px;line-height:1.7;}
-    .script-loc{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--text);margin-top:8px;line-height:1.7;}
+    .convoy-box{border:1px solid #e4d7fb;border-radius:10px;background:#faf7ff;padding:10px 12px;margin-bottom:14px;}
+    .call-panel .convoy-box{margin-bottom:10px;}
+    .convoy-box.org{background:var(--surface);border-color:var(--border);}
+    .convoy-head{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#5b21b6;margin-bottom:8px;}
+    .convoy-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);}
+    .convoy-grid{display:grid;grid-template-columns:110px minmax(0,1.4fr) minmax(0,1fr);gap:8px;}
+    .convoy-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 9px;}
+    .convoy-item .k{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--text-faint);margin-bottom:3px;}
+    .convoy-item .v{font-size:12.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .convoy-notes{font-size:12px;color:#8a5a00;background:#fffbea;border-radius:7px;padding:7px 9px;margin-top:8px;line-height:1.7;}
+    .missing{color:var(--danger);font-weight:700;}
     .outcome-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
     .outcome-btn.sel{color:#fff !important;}
     .note-input{
@@ -563,7 +568,7 @@
     .rules-list{margin:0;padding:0 16px 0 0;font-size:12px;line-height:1.9;color:var(--text-muted);}
     .rules-list b{color:var(--text);}
 
-    /* ---------- settings / scripts modals ---------- */
+    /* ---------- settings modal ---------- */
     .set-section{border:1px solid var(--border);border-radius:11px;padding:12px 14px;margin-bottom:12px;}
     .set-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px;}
     .set-desc{font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.7;}
@@ -577,11 +582,6 @@
       font-family:inherit;color:var(--text);resize:vertical;
     }
     .text-area:focus{outline:none;border-color:#93b8ff;box-shadow:0 0 0 3px #eaf1ff;}
-    .ph-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-    .ph{font-size:11px;background:var(--neutral-tint);border-radius:5px;padding:2px 7px;color:var(--text);cursor:pointer;border:none;font-family:inherit;}
-    .ph:hover{background:#dfe3ea;}
-    .preview-box{border:1px dashed var(--border-strong);border-radius:10px;padding:10px 12px;background:var(--surface-alt);}
-
     .toast{
       position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
       padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
@@ -594,6 +594,7 @@
       .queue-wrap{grid-template-columns:minmax(0,1fr);}
       .q-grid{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);}
       .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .convoy-grid{grid-template-columns:1fr;}
     }
 
   </style>
@@ -762,36 +763,11 @@ CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
 function caseById(id){ return CASE_MAP[id] || null; }
 function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
 
-var DEFAULT_SCRIPTS = {
-  measurement: {
-    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنكلم حضرتك بخصوص {الاسم} عشان نحجز ميعاد أخذ المقاسات للطرف الصناعي يوم {اليوم} {التاريخ} في {المكان}.\nالميعاد ده يناسب حضرتك؟',
-    bring:'البطاقة الشخصية (أو شهادة الميلاد للأطفال)\nأي تقارير طبية خاصة بالبتر\nلبس مريح يسهّل أخذ المقاس',
-    notes:'لو الحالة طفل لازم يحضر معاه ولي الأمر. أكّد إن الجرح ملتئم تمامًا قبل الحجز.'
-  },
-  newDelivery: {
-    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنبشّر حضرتك إن الطرف الصناعي الخاص بـ {الاسم} جاهز للتسليم.\nعايزين نحجز ميعاد التسليم والتجربة يوم {اليوم} {التاريخ} في {المكان}. يناسب حضرتك؟',
-    bring:'البطاقة الشخصية\nإيصال الاستلام إن وجد\nجورب أو لبس مناسب للتجربة',
-    notes:'التسليم بياخد حوالي ساعتين للتجربة والضبط، بلّغ الحالة بكده.'
-  },
-  maintEval: {
-    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nبنكلم حضرتك بخصوص تقييم صيانة الطرف الخاص بـ {الاسم} يوم {اليوم} {التاريخ} في {المكان}.',
-    bring:'الطرف الصناعي الحالي\nالبطاقة الشخصية',
-    notes:''
-  },
-  maintDelivery: {
-    talk:'السلام عليكم، مع حضرتك {الموظف} من مؤسسة هاند إن هاند.\nصيانة الطرف الخاص بـ {الاسم} خلصت، وعايزين نحجز ميعاد الاستلام يوم {اليوم} {التاريخ} في {المكان}. يناسب حضرتك؟',
-    bring:'البطاقة الشخصية\nإيصال استلام الطرف للصيانة',
-    notes:'لو الحالة محتاجة تعديل إضافي سجّله في الملاحظة.'
-  },
-};
-var PLACEHOLDERS = ['{الاسم}','{اليوم}','{التاريخ}','{المكان}','{مكان_التجمع}','{موعد_التجمع}','{الموظف}'];
-
 function defaultSettings(){
   return {
     dailyCapacity:20,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     histRates:{measurement:0.6, newDelivery:0.75, maintDelivery:0.7},
-    orgAddress:'مقر المؤسسة الرئيسي',
   };
 }
 
@@ -805,7 +781,6 @@ var S = {
   tasks:[], bookings:{measurement:{}, newDelivery:{}, maintDelivery:{}},
   callLog:[], nextCallAt:{}, htrBase:{}, dayCapacity:{},
   settings: defaultSettings(),
-  scripts: JSON.parse(JSON.stringify(DEFAULT_SCRIPTS)),
   simOffset:0,
   overlay:null, createDraft:null, govSearch:'', govDropdownOpen:false,
   detailTaskId:null, detailCaseSearch:'', detailMineOnly:true, detailBulkSelected:[],
@@ -814,7 +789,7 @@ var S = {
   confirm:null,
   callOpen:null, callDraft:{outcome:'', note:''}, logOpen:{},
   queueAgent:'', capacityDay:null, capDraft:null,
-  settingsDraft:null, scriptsTab:'measurement', scriptsDraft:null,
+  settingsDraft:null, convoyEdit:null,
   toast:null,
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
@@ -1032,37 +1007,22 @@ function autoAssign(t, rebalance){
 }
 
 // =====================================================================
-// Scripts
+// Convoy info (set by operations, shown to the call center)
 // =====================================================================
-function scriptLocation(t){
-  if (t.loc==='convoy'){
-    var s = 'قافلة محافظة ' + (t.gov || '—');
-    if (t.meetingPoint) s += ' – مكان التجمع: ' + t.meetingPoint;
-    if (t.meetingTime) s += ' الساعة ' + fmtClock(t.meetingTime);
-    return s;
-  }
-  return S.settings.orgAddress;
-}
 function fmtClock(hhmm){
   if (!hhmm) return '';
   var p = hhmm.split(':'); var h = parseInt(p[0],10), m = p[1] || '00';
   return (h%12||12) + ':' + m + ' ' + (h<12?'ص':'م');
 }
-function fillScript(text, t, c){
-  var d = dateOf(t.dateOffset);
-  var map = {
-    '{الاسم}': c ? c.name : '{الاسم}',
-    '{اليوم}': WEEKDAYS_AR[d.getDay()],
-    '{التاريخ}': d.getDate() + ' ' + MONTHS_AR[d.getMonth()],
-    '{المكان}': scriptLocation(t),
-    '{مكان_التجمع}': t.meetingPoint || 'غير محدد',
-    '{موعد_التجمع}': t.meetingTime ? fmtClock(t.meetingTime) : 'غير محدد',
-    '{الموظف}': isCC() ? agentName(S.agentId) : 'اسم الموظف',
-  };
-  var out = String(text || '');
-  Object.keys(map).forEach(function(k){ out = out.split(k).join(map[k]); });
-  return out;
+function convoyMissing(t){
+  if (t.loc!=='convoy') return [];
+  var miss = [];
+  if (!t.meetingPoint) miss.push('مكان الحضور');
+  if (!safeUrl(t.mapUrl)) miss.push('اللوكيشن');
+  if (!t.meetingTime) miss.push('ميعاد الحضور');
+  return miss;
 }
+function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
 
 // =====================================================================
 // Seed data (relative to today so the demo always looks current)
@@ -1072,14 +1032,14 @@ function fillScript(text, t, c){
   function task(id, type, off, loc, gov, target, cands, status, extra){
     return Object.assign({id:id, type:type, dateOffset:T+off, loc:loc, gov:gov, target:target, candidateIds:cands,
       callStatus:{}, assignee:{}, status:status, publishedAt: status==='published' ? now()-86400000*2 : null,
-      publishedBy: status==='published' ? 'مدير النظام' : null, meetingPoint:'', meetingTime:''}, extra||{});
+      publishedBy: status==='published' ? 'مدير النظام' : null, meetingPoint:'', mapUrl:'', meetingTime:'', convoyNotes:''}, extra||{});
   }
   S.tasks = [
     task('t1','measurement',0,'org',null,12,['C-1001','C-1002','C-1003','C-1005','C-1006','C-1007','C-1008','C-1009','C-1011','C-1013','C-1016','C-1017','C-1019','C-1021'],'published'),
-    task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1010','C-1011','C-1015','C-1020','C-1023','C-1024'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', meetingTime:'09:00'}),
+    task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1010','C-1011','C-1015','C-1020','C-1023','C-1024'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', mapUrl:'https://maps.google.com/?q=Aswan+University+Hospital', meetingTime:'09:00', convoyNotes:'الحالات تحضر معاها البطاقة وأي تقارير طبية. الأطفال لازم يكون معاهم ولي أمر.'}),
     task('t3','newDelivery',1,'org',null,6,['C-1002','C-1004','C-1006','C-1009','C-1012','C-1018','C-1022'],'published'),
     task('t9','maintDelivery',1,'org',null,16,['C-1029','C-1012','C-1014','C-1021','C-1039'],'published'),
-    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1026','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', meetingTime:'10:00'}),
+    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1026','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', mapUrl:'https://maps.google.com/?q=Sohag+Youth+Center', meetingTime:'10:00', convoyNotes:''}),
     task('t5','maintEval',4,'org',null,5,[],'published',{evalBooked:3}),
     task('t6','newDelivery',-4,'org',null,5,['C-1010','C-1017','C-1019'],'published'),
     task('t7','measurement',9,'convoy','المنيا',10,['C-1006','C-1018'],'draft'),
@@ -1140,7 +1100,7 @@ function canCall(t, cid){
 }
 function closeAllOverlays(){
   S.overlay = null; S.createDraft = null; S.detailTaskId = null; S.addCasesMode = null; S.confirm = null;
-  S.callOpen = null; S.capacityDay = null; S.settingsDraft = null; S.scriptsDraft = null;
+  S.callOpen = null; S.capacityDay = null; S.settingsDraft = null; S.convoyEdit = null;
 }
 function weekRange(wk){ return [wk*7, wk*7+6]; }
 
@@ -1218,8 +1178,6 @@ var ACT = {
   govSearch: function(v){ S.govSearch = v; S.govDropdownOpen = true; render(); },
   govFocus: function(){ S.govDropdownOpen = true; render(); },
   pickGov: function(name){ S.createDraft.gov = name; S.govSearch = name; S.govDropdownOpen = false; render(); },
-  setMeetingPoint: function(v){ S.createDraft.meetingPoint = v; render(); },
-  setMeetingTime: function(v){ S.createDraft.meetingTime = v; render(); },
   autoSuggestDraft: function(){
     var d = S.createDraft; var target = parseInt(d.target,10)||0;
     var ctx = {id:'__draft', type:d.type, loc:d.loc, gov:d.gov, dateOffset:d.dateOffset};
@@ -1237,7 +1195,8 @@ var ACT = {
       id:'t'+Date.now(), type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
       target:target, candidateIds: d.type==='maintEval' ? [] : d.candidateIds.slice(), callStatus:{}, assignee:{},
       evalBooked: d.type==='maintEval' ? 0 : undefined, status:'draft', publishedAt:null, publishedBy:null,
-      meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'') : '', meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '',
+      meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
+      meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '', convoyNotes: d.loc==='convoy' ? (d.convoyNotes||'').trim() : '',
     };
     guardCapacity(t.dateOffset, S.tasks.concat([t]), function(){
       S.tasks.push(t);
@@ -1300,7 +1259,7 @@ var ACT = {
 
   // ---------- detail drawer ----------
   openDetail: function(tid){
-    S.overlay = 'detail'; S.detailTaskId = tid; S.callOpen = null; S.detailCaseSearch = '';
+    S.overlay = 'detail'; S.detailTaskId = tid; S.callOpen = null; S.convoyEdit = null; S.detailCaseSearch = '';
     S.detailBulkSelected = []; S.editingTarget = false; S.logOpen = {}; render();
   },
   closeDetail: function(){ S.overlay = null; S.detailTaskId = null; S.callOpen = null; render(); },
@@ -1480,21 +1439,27 @@ var ACT = {
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
-  // ---------- scripts ----------
-  openScripts: function(){ S.scriptsDraft = JSON.parse(JSON.stringify(S.scripts)); S.overlay = 'scripts'; render(); },
-  closeScripts: function(){ S.overlay = null; S.scriptsDraft = null; render(); },
-  scriptsTab: function(tab){ S.scriptsTab = tab; render(); },
-  scriptInput: function(v, field){ S.scriptsDraft[S.scriptsTab][field] = v; render(); },
-  insertPh: function(ph){
-    var el = document.querySelector('[data-k="script-talk"]');
-    var cur = S.scriptsDraft[S.scriptsTab].talk || '';
-    var pos = el && el.selectionStart!=null ? el.selectionStart : cur.length;
-    S.scriptsDraft[S.scriptsTab].talk = cur.slice(0,pos) + ph + cur.slice(pos);
-    pendingCaret = {k:'script-talk', pos:pos + ph.length};
+  // ---------- convoy info ----------
+  setConvoyField: function(v, field){ S.createDraft[field] = v; render(); },
+  startConvoyEdit: function(){
+    var t = findTask(S.detailTaskId);
+    S.convoyEdit = {meetingPoint:t.meetingPoint||'', mapUrl:t.mapUrl||'', meetingTime:t.meetingTime||'', convoyNotes:t.convoyNotes||''};
     render();
   },
-  resetScript: function(){ S.scriptsDraft[S.scriptsTab] = JSON.parse(JSON.stringify(DEFAULT_SCRIPTS[S.scriptsTab])); render(); },
-  saveScripts: function(){ S.scripts = S.scriptsDraft; S.overlay = null; S.scriptsDraft = null; toast('تم حفظ سكريبتات المكالمات'); render(); },
+  convoyInput: function(v, field){ S.convoyEdit[field] = v; render(); },
+  cancelConvoyEdit: function(){ S.convoyEdit = null; render(); },
+  saveConvoy: function(){
+    var t = findTask(S.detailTaskId), e = S.convoyEdit;
+    t.meetingPoint = e.meetingPoint.trim(); t.mapUrl = e.mapUrl.trim(); t.meetingTime = e.meetingTime; t.convoyNotes = e.convoyNotes.trim();
+    S.convoyEdit = null;
+    toast(t.status==='published' ? 'تم حفظ بيانات القافلة وظهرت للكول سنتر' : 'تم حفظ بيانات القافلة');
+    render();
+  },
+  copyText: function(text){
+    var done = function(){ toast('تم نسخ اللينك'); render(); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text); done(); }); return; } } catch(e){}
+    legacyCopy(text); done();
+  },
 
   // ---------- confirm ----------
   confirmAction: function(){ var cb = S.confirm && S.confirm.onConfirm; if (cb) cb(); else { S.overlay = null; S.confirm = null; render(); } },
@@ -1513,7 +1478,7 @@ function legacyCopy(text){
 }
 function openCreate(type, off){
   S.overlay = 'create';
-  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target: type==='maintEval' ? '5' : '10', candidateIds:[], meetingPoint:'', meetingTime:'09:00'};
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target: type==='maintEval' ? '5' : '10', candidateIds:[], meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
   S.govSearch = ''; S.govDropdownOpen = false;
   render();
 }
@@ -1604,10 +1569,7 @@ function renderTopbar(){
     '<button'+A('simAdvance','60')+' title="محاكاة: تقديم الوقت ساعة">+ ساعة</button>'+
     (S.simOffset ? '<button'+A('simReset')+' title="رجوع للوقت الحقيقي">الوقت الحقيقي</button>' : '')+'</span>';
   if (isAdmin()){
-    h += '<button class="top-btn"'+A('openScripts')+'>'+ic('script',14)+'سكريبتات المكالمات</button>';
     h += '<button class="top-btn"'+A('openSettings')+'>'+ic('gear',14)+'الإعدادات</button>';
-  } else {
-    h += '<button class="top-btn"'+A('openScripts')+'>'+ic('script',14)+'السكريبتات</button>';
   }
   h += '<div class="role-pill"><span class="role-dot"></span>الدور الحالي: <select class="top-select" data-change="setRole">'+
     roles.map(function(r){ return '<option'+(r===S.role?' selected':'')+'>'+r+'</option>'; }).join('')+'</select></div>';
@@ -1728,6 +1690,7 @@ function renderTaskCard(t){
     '<div class="bar" style="background:'+m.color+';"></div><div class="card-top"><div class="card-type"><div class="card-ic" style="background:'+m.tint+';">'+pathIc(m.iconPath,14,m.color)+'</div>'+
     '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
     (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '')+
+    (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
     (full ? '<span class="full-badge">تم اكتمال العدد المستهدف</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
     '<div class="progress-line"><span class="progress-num">'+booked+' من '+t.target+'</span><span class="progress-tag">'+(isEval?'محجوزة':'من العدد المستهدف')+'</span></div>'+
@@ -1867,6 +1830,7 @@ function renderQItem(x, rank){
   h += '<div><div class="q-name">'+esc(c.name)+' <span class="case-code">'+c.id+'</span></div><div class="q-line">'+phoneChip(c)+'</div><div class="q-line">'+reasonChips(x.p,4)+'</div></div>';
   h += '<div><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,12,m.color)+m.short+'</span>'+
     '<div class="q-line">'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (النهارده)' : '')+' · '+esc(locLabelFor(t))+'</div>'+
+    (t.loc==='convoy' ? '<div class="q-line">'+ic('clock',11)+' الحضور '+(t.meetingTime ? fmtClock(t.meetingTime) : '<span class="missing">لم يُحدد</span>')+(t.meetingPoint ? ' · '+esc(t.meetingPoint) : '')+'</div>' : '')+
     '<div class="q-line">محجوز '+booked+' من '+t.target+'</div>'+
     (x.alsoIn.length ? '<div class="q-line" style="color:var(--warning);">مرشحة كمان في: '+x.alsoIn.map(function(o){ return dayLabel(o.dateOffset)+' ('+esc(locLabelFor(o))+')'; }).join('، ')+'</div>' : '')+'</div>';
   h += '<div>'+statusTag(x.st)+'<div class="q-line">المحاولات: اليوم '+failedToday(cid)+'/'+S.settings.maxPerDay+' · الإجمالي '+attemptsTotal(cid)+'</div>'+
@@ -1888,21 +1852,36 @@ function renderQItem(x, rank){
 }
 
 // =====================================================================
-// Call panel, log, script
+// Call panel, log
 // =====================================================================
-function renderScriptBox(t, c){
-  var sc = S.scripts[t.type] || {}, m = TASK_TYPES[t.type];
-  var bring = String(sc.bring||'').split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
-  var h = '<div class="script-box"><div class="script-head"><span>'+ic('script',13)+' سكريبت المكالمة – '+m.short+'</span></div>'+
-    '<div class="script-talk">'+esc(fillScript(sc.talk, t, c))+'</div>';
-  if (bring.length) h += '<div class="script-sub">المطلوب إحضاره</div><ul class="script-list">'+bring.map(function(b){ return '<li>'+esc(fillScript(b,t,c))+'</li>'; }).join('')+'</ul>';
-  h += '<div class="script-loc">'+ic('pin',13)+'<span><b>المكان:</b> '+esc(scriptLocation(t))+'</span></div>';
-  if (sc.notes) h += '<div class="script-note">'+ic('alert',12)+' '+esc(fillScript(sc.notes,t,c))+'</div>';
+function renderConvoyBox(t){
+  if (t.loc!=='convoy'){
+    return '<div class="convoy-box org"><div class="convoy-row">'+pathIc(ORG_ICON_PATH,14)+'<span><b>الحضور:</b> داخل المؤسسة – '+dayLabel(t.dateOffset)+'</span></div></div>';
+  }
+  var miss = convoyMissing(t), url = safeUrl(t.mapUrl);
+  var h = '<div class="convoy-box"><div class="convoy-head">'+pathIc(CONVOY_ICON_PATH,15,'#7c3aed')+' بيانات القافلة – '+esc(t.gov||'')+' · '+dayLabel(t.dateOffset)+'</div>';
+  h += '<div class="convoy-grid">'+
+    '<div class="convoy-item"><div class="k">'+ic('clock',12)+' ميعاد الحضور</div><div class="v">'+(t.meetingTime ? fmtClock(t.meetingTime) : '<span class="missing">لم يُحدد</span>')+'</div></div>'+
+    '<div class="convoy-item"><div class="k">'+ic('pin',12)+' مكان الحضور</div><div class="v">'+(t.meetingPoint ? esc(t.meetingPoint) : '<span class="missing">لم يُحدد</span>')+'</div></div>'+
+    '<div class="convoy-item"><div class="k">'+ic('pin',12)+' اللوكيشن</div><div class="v">'+(url
+      ? '<a href="'+esc(url)+'" target="_blank" rel="noopener">فتح على الخريطة</a> <button class="copy-btn" title="نسخ اللينك لإرساله للحالة"'+A('copyText', url)+'>'+ic('copy',12)+'</button>'
+      : '<span class="missing">لم يُحدد</span>')+'</div></div></div>';
+  if (t.convoyNotes) h += '<div class="convoy-notes">'+ic('alert',12)+' '+esc(t.convoyNotes)+'</div>';
+  if (miss.length) h += '<div class="rule-hint warn" style="margin-bottom:0;">الأوبريشن لسه ما حددش: '+miss.join('، ')+'. ارجع لغرفة العمليات قبل ما تأكد الميعاد مع الحالة.</div>';
   return h + '</div>';
+}
+function convoyFields(d, act, kp){
+  return '<div class="convoy-head" style="margin-bottom:8px;">'+pathIc(CONVOY_ICON_PATH,15,'#7c3aed')+' بيانات القافلة للكول سنتر</div>'+
+    '<div class="cap-inputs">'+
+    '<div><label>ميعاد الحضور</label><input class="text-input" type="time" value="'+esc(d.meetingTime)+'" data-k="'+kp+'-time" data-input="'+act+'" data-a="meetingTime"/></div>'+
+    '<div><label>مكان الحضور</label><input class="text-input" placeholder="مثال: مستشفى المحافظة – البوابة الرئيسية" value="'+esc(d.meetingPoint)+'" data-k="'+kp+'-place" data-input="'+act+'" data-a="meetingPoint"/></div></div>'+
+    '<div class="field"><label class="field-label" style="font-size:11.5px;color:var(--text-muted);">اللوكيشن (لينك خرائط جوجل)</label><input class="text-input" dir="ltr" placeholder="https://maps.google.com/..." value="'+esc(d.mapUrl)+'" data-k="'+kp+'-map" data-input="'+act+'" data-a="mapUrl"/>'+
+    (d.mapUrl && !safeUrl(d.mapUrl) ? '<div class="field-hint" style="color:var(--danger);">اللينك لازم يبدأ بـ https://</div>' : '')+'</div>'+
+    '<div class="field"><label class="field-label" style="font-size:11.5px;color:var(--text-muted);">ملاحظات للكول سنتر (اختياري)</label><textarea class="note-input" placeholder="مثال: الحالات تحضر معاها البطاقة..." data-k="'+kp+'-notes" data-input="'+act+'" data-a="convoyNotes">'+esc(d.convoyNotes)+'</textarea></div>';
 }
 function renderCallPanel(t, cid){
   var c = caseById(cid), o = S.callDraft.outcome;
-  var h = '<div class="call-panel">' + renderScriptBox(t, c);
+  var h = '<div class="call-panel">' + renderConvoyBox(t);
   h += '<div class="script-sub" style="margin-top:0;">نتيجة المكالمة</div><div class="outcome-grid">';
   OUTCOME_DEFS.forEach(function(d){
     var sel = o===d.key;
@@ -1962,7 +1941,6 @@ function renderOverlays(){
       return (under==='detail' ? renderDetail() : under==='create' && S.createDraft ? renderCreate() : under==='capacity' ? renderCapacity() : '') + renderConfirm();
     case 'capacity': return renderCapacity();
     case 'settings': return renderSettings();
-    case 'scripts': return renderScripts();
   }
   return '';
 }
@@ -1991,8 +1969,7 @@ function renderCreate(){
         (opts.length ? '' : '<div class="combo-empty">لا توجد محافظات مطابقة</div>')+'</div>';
     }
     h += '</div></div>';
-    h += '<div class="cap-inputs"><div><label>مكان تجمّع القافلة</label><input class="text-input" placeholder="مثال: مستشفى المحافظة – البوابة الرئيسية" value="'+esc(d.meetingPoint)+'" data-k="mp" data-input="setMeetingPoint"/></div>'+
-      '<div><label>موعد التجمّع</label><input class="text-input" type="time" value="'+esc(d.meetingTime)+'" data-k="mt" data-input="setMeetingTime"/></div></div>';
+    h += convoyFields(d, 'setConvoyField', 'c');
   }
   h += '<div class="field"><label class="field-label">'+(isEval?'عدد المواعيد المتاحة':'العدد المستهدف')+'</label>'+
     '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>'+
@@ -2142,11 +2119,16 @@ function renderDetail(){
   }
   h += '<div class="info-grid"><div class="info-item"><div class="k">مكان الزيارة</div><div class="v">'+esc(locLabelFor(t))+'</div></div>'+
     '<div class="info-item"><div class="k">المحافظة</div><div class="v">'+esc(t.loc==='convoy' ? (t.gov||'—') : '—')+'</div></div>';
-  if (t.loc==='convoy'){
-    h += '<div class="info-item"><div class="k">مكان التجمّع</div><div class="v">'+esc(t.meetingPoint || 'غير محدد')+'</div></div>'+
-      '<div class="info-item"><div class="k">موعد التجمّع</div><div class="v">'+esc(t.meetingTime ? fmtClock(t.meetingTime) : 'غير محدد')+'</div></div>';
-  }
   h += '</div>';
+  if (t.loc==='convoy'){
+    if (admin && S.convoyEdit){
+      h += '<div class="convoy-box">' + convoyFields(S.convoyEdit, 'convoyInput', 'e') +
+        '<div class="panel-foot" style="margin-top:0;"><button class="btn btn-primary btn-sm"'+A('saveConvoy')+'>حفظ بيانات القافلة</button><button class="btn btn-secondary btn-sm"'+A('cancelConvoyEdit')+'>إلغاء</button></div></div>';
+    } else {
+      h += renderConvoyBox(t);
+      if (admin) h += '<div style="margin:-6px 0 14px;"><button class="ghost-btn"'+A('startConvoyEdit')+'>'+pathIc(CONVOY_ICON_PATH,12)+' تعديل بيانات القافلة</button></div>';
+    }
+  }
 
   if (!isCC()){
     var loads = dayLoad(t.dateOffset), over = loads.filter(function(x){ return x.load > x.cap; });
@@ -2263,7 +2245,7 @@ function renderCaseRow(t, cid){
 }
 
 // =====================================================================
-// Confirm / capacity / settings / scripts
+// Confirm / capacity / settings
 // =====================================================================
 function renderConfirm(){
   var c = S.confirm; if (!c) return '';
@@ -2317,32 +2299,6 @@ function renderSettings(){
   h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid">'+
     setNum('histRates.measurement','المقاسات','%')+setNum('histRates.newDelivery','التسليمات الجديدة','%')+setNum('histRates.maintDelivery','تسليمات الصيانة','%')+'</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
-  return h;
-}
-
-function renderScripts(){
-  var admin = isAdmin(), tab = S.scriptsTab, src = admin ? S.scriptsDraft : S.scripts, sc = src[tab], m = TASK_TYPES[tab];
-  var h = '<div class="scrim"'+A('closeScripts')+'></div><div class="modal" style="width:820px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">سكريبتات المكالمات</div>'+
-    '<div class="drawer-sub">'+(admin ? 'المدير بيحدد يقول الموظف إيه، والحالة تجيب معاها إيه، لكل نوع مهمة' : 'للاطلاع – التعديل متاح لمدير النظام')+'</div></div><button class="icon-btn"'+A('closeScripts')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="scripts">';
-  h += '<div class="tabs">'+Object.keys(TASK_TYPES).map(function(k){
-    return '<button class="tab'+(k===tab?' active':'')+'"'+A('scriptsTab',k)+'><span class="pdot" style="background:'+TASK_TYPES[k].color+'"></span>'+TASK_TYPES[k].short+'</button>';
-  }).join('')+'</div>';
-  // preview context: next published task of this type, or a sample
-  var tOff = todayOffset();
-  var sample = S.tasks.filter(function(t){ return t.type===tab && t.dateOffset>=tOff; }).sort(function(a,b){ return a.dateOffset-b.dateOffset; })[0] ||
-    {type:tab, dateOffset:tOff+1, loc:'org', gov:null, meetingPoint:'', meetingTime:''};
-  var sampleCase = caseById(sample.candidateIds && sample.candidateIds[0]) || CASES[0];
-  if (admin){
-    h += '<div class="field"><label class="field-label">نص المكالمة</label><textarea class="text-area" data-k="script-talk" data-input="scriptInput" data-a="talk">'+esc(sc.talk)+'</textarea>'+
-      '<div class="ph-legend"><span class="field-hint" style="margin:0;">إدراج متغير:</span>'+PLACEHOLDERS.map(function(p){ return '<button class="ph"'+A('insertPh', p)+'>'+p+'</button>'; }).join('')+'</div></div>';
-    h += '<div class="cap-inputs"><div><label>المطلوب إحضاره (سطر لكل بند)</label><textarea class="text-area" data-k="script-bring" data-input="scriptInput" data-a="bring">'+esc(sc.bring)+'</textarea></div>'+
-      '<div><label>ملاحظات للموظف</label><textarea class="text-area" data-k="script-notes" data-input="scriptInput" data-a="notes">'+esc(sc.notes)+'</textarea></div></div>';
-  }
-  var saved = S.scripts; S.scripts = src;
-  h += '<div class="section-title" style="margin-bottom:8px;">'+(admin ? 'معاينة كما سيظهر للموظف' : m.label)+'</div><div class="preview-box">'+renderScriptBox(sample, sampleCase)+'</div>';
-  S.scripts = saved;
-  h += '</div><div class="modal-foot">'+(admin ? '<button class="btn btn-primary"'+A('saveScripts')+'>حفظ السكريبتات</button><button class="btn btn-secondary"'+A('resetScript')+'>استعادة النص الافتراضي</button>' : '')+
-    '<button class="btn btn-secondary"'+A('closeScripts')+'>'+(admin?'إلغاء':'إغلاق')+'</button></div></div>';
   return h;
 }
 
