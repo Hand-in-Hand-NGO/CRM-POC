@@ -597,6 +597,45 @@
       display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;line-height:1;padding:0;
     }
     .day-add:hover{color:var(--text);border-color:var(--text-muted);}
+    .cms-modal{
+      position:fixed;top:40px;left:50%;transform:translateX(-50%);width:1000px;max-width:96vw;max-height:calc(100vh - 80px);
+      background:#fff;border-radius:6px;box-shadow:0 5px 15px rgba(0,0,0,.5);z-index:61;display:flex;flex-direction:column;overflow:hidden;
+    }
+    .cms-head{
+      display:flex;align-items:center;justify-content:space-between;padding:10px 15px;
+      background:linear-gradient(90deg, rgba(211,241,248,1) 0%, rgba(255,249,228,1) 34%, rgba(186,234,230,1) 100%);
+    }
+    .cms-title{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:700;color:#535252;}
+    .cms-close{border:none;background:transparent;cursor:pointer;padding:2px;opacity:.75;}
+    .cms-close:hover{opacity:1;}
+    .cms-body{padding:16px 18px 18px;overflow-y:auto;}
+    .cms-case{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:12px;}
+    .cms-muted{color:#777;font-size:12px;}
+    .cms-form{border-bottom:1px solid #eee;padding-bottom:14px;margin-bottom:16px;}
+    .cms-row{display:grid;grid-template-columns:130px minmax(0,1fr) 110px minmax(0,1fr);gap:10px 14px;align-items:start;margin-bottom:12px;}
+    .cms-label{font-size:13px;font-weight:700;color:#333;padding-top:7px;}
+    .cms-label .req{color:#dd4b39;}
+    .cms-field.wide{grid-column:span 3;max-width:480px;}
+    .cms-input{
+      width:100%;border:1px solid #d2d6de;border-radius:0;padding:6px 10px;font-size:13px;font-family:inherit;color:#555;background:#fff;
+      min-height:34px;
+    }
+    .cms-input:focus{outline:none;border-color:#3c8dbc;}
+    .cms-input:disabled{background:#eee;color:#999;cursor:not-allowed;}
+    textarea.cms-input{resize:vertical;}
+    .cms-actions{display:flex;gap:6px;justify-content:center;margin-top:6px;}
+    .cms-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid transparent;border-radius:3px;padding:6px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;}
+    .cms-add{background:#00a65a;border-color:#008d4c;}
+    .cms-add:hover{background:#008d4c;}
+    .cms-cancel{background:#f56b7b;border-color:#e45a6a;}
+    .cms-cancel:hover{background:#dd4b39;}
+    .cms-table{width:100%;border-collapse:collapse;font-size:12.5px;border:1px solid #ddd;}
+    .cms-table th{background:#fff;border:1px solid #ddd;padding:8px;text-align:right;font-weight:700;color:#333;}
+    .cms-table td{border:1px solid #ddd;padding:7px 8px;color:#333;vertical-align:top;}
+    .cms-table tbody tr:nth-child(odd){background:#f9f9f9;}
+    .cms-empty{text-align:center;color:#555;}
+    .cms-modal .convoy-box{margin-bottom:12px;}
+    @media (max-width:800px){ .cms-row{grid-template-columns:1fr;} .cms-field.wide{grid-column:auto;} }
     .toast{
       position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
       padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
@@ -823,7 +862,7 @@ var S = {
   editingTarget:false, editingTargetValue:'',
   addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesFilters:emptyFilters(),
   confirm:null,
-  callOpen:null, callDraft:{outcome:'', note:''}, logOpen:{},
+  callOpen:null, callDraft:{}, logOpen:{}, bookTimes:{},
   queueAgent:'', capacityDay:null, capDraft:null,
   settingsDraft:null, convoyEdit:null,
   toast:null,
@@ -1136,7 +1175,7 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.tasks.forEach(function(t){
     t.candidateIds.forEach(function(cid){
       if ((S.bookings[t.type]||{})[cid]===t.id){
-        S.callLog.push({id:'L'+(++i), taskId:t.id, caseId:cid, agentId:t.assignee[cid]||'a1', at:Math.min(n-24*H, dateOf(t.dateOffset).getTime()-2*24*H)+i*7*60000, outcome:'booked', note:''});
+        S.callLog.push({id:'L'+(++i), taskId:t.id, caseId:cid, agentId:t.assignee[cid]||'a1', at:Math.min(n-24*H, dateOf(t.dateOffset).getTime()-2*24*H)+i*7*60000, outcome:'booked', note:'تم تأكيد الميعاد مع الحالة', callType:'صادر', bookTid:t.id});
       }
     });
   });
@@ -1412,25 +1451,41 @@ var ACT = {
 
   // ---------- calls ----------
   openCall: function(tid, cid){
-    if (S.callOpen && S.callOpen.tid===tid && S.callOpen.cid===cid){ S.callOpen = null; render(); return; }
-    S.callOpen = {tid:tid, cid:cid}; S.callDraft = {outcome:'', note:''}; render();
+    var t = findTask(tid);
+    S.callOpen = {tid:tid, cid:cid};
+    S.callDraft = {callType:'صادر', outcome:'', bookTid:tid, bookTime: t && t.loc==='convoy' ? (t.meetingTime||'') : '', note:''};
+    render();
   },
   closeCall: function(){ S.callOpen = null; render(); },
-  pickOutcome: function(key){ S.callDraft.outcome = key; render(); },
-  callNote: function(v){ S.callDraft.note = v; render(); },
+  setCallField: function(v, field){
+    S.callDraft[field] = v;
+    if (field==='callType' && v==='وارد' && FAILED_OUTCOMES.indexOf(S.callDraft.outcome)!==-1) S.callDraft.outcome = '';
+    if (field==='bookTid'){ var bt = findTask(v); if (bt && bt.loc==='convoy' && bt.meetingTime) S.callDraft.bookTime = bt.meetingTime; }
+    render();
+  },
   saveCall: function(){
-    var co = S.callOpen; if (!co || !S.callDraft.outcome) return;
-    var t = findTask(co.tid), cid = co.cid, o = S.callDraft.outcome, c = caseById(cid);
+    var co = S.callOpen, d = S.callDraft; if (!co) return;
+    if (!d.callType) { toast('اختار نوع المكالمة'); return render(); }
+    if (!d.outcome) { toast('اختار استجابة المكالمة'); return render(); }
+    if (!d.note.trim()) { toast('اكتب نتيجة التواصل'); return render(); }
+    var t = findTask(co.tid), cid = co.cid, o = d.outcome, c = caseById(cid);
     var key = nextCallKey(t.id, cid);
     var wasHTR = isHardToReach(cid);
-    S.callLog.push({id:'L'+Date.now(), taskId:t.id, caseId:cid, agentId:S.agentId, at:now(), outcome:o, note:S.callDraft.note.trim()});
+    var entry = {id:'L'+Date.now(), taskId:t.id, caseId:cid, agentId:S.agentId, at:now(), outcome:o, note:d.note.trim(), callType:d.callType};
     var msg = '';
     if (o==='booked'){
-      S.bookings[t.type][cid] = t.id; delete S.nextCallAt[key]; delete t.callStatus[cid];
-      msg = 'تم حجز ' + c.name + ' في ' + dayLabel(t.dateOffset);
+      var to = findTask(d.bookTid) || t;
+      S.bookings[t.type][cid] = to.id;
+      if (to.candidateIds.indexOf(cid)===-1) to.candidateIds.push(cid);
+      if (!to.assignee[cid]) to.assignee[cid] = t.assignee[cid] || S.agentId;
+      if (d.bookTime) S.bookTimes[nextCallKey(to.id, cid)] = d.bookTime;
+      delete S.nextCallAt[key]; delete t.callStatus[cid];
+      entry.bookTid = to.id; entry.bookTime = d.bookTime;
+      msg = 'تم حجز ' + c.name + ' في ' + dayLabel(to.dateOffset) + (d.bookTime ? ' الساعة ' + fmtClock(d.bookTime) : '');
     } else {
       t.callStatus[cid] = o;
       if (FAILED_OUTCOMES.indexOf(o)!==-1){
+        S.callLog.push(entry); entry = null;
         if (!wasHTR && isHardToReach(cid)){
           delete S.nextCallAt[key];
           msg = 'تم تصنيف ' + c.name + ' "صعب الوصول" بعد ' + failedTotal(cid) + ' محاولات فاشلة';
@@ -1443,22 +1498,21 @@ var ACT = {
         }
       } else {
         delete S.nextCallAt[key];
-        msg = 'تم تسجيل نتيجة المكالمة';
+        msg = 'تم تسجيل الاتصال';
       }
     }
-    S.callOpen = null; S.callDraft = {outcome:'', note:''};
+    if (entry) S.callLog.push(entry);
+    S.callOpen = null;
     toast(msg); render();
   },
   chooseAlt: function(fromTid, toTid, cid){
-    var from = findTask(fromTid), to = findTask(toTid); cid = cid || (S.callOpen && S.callOpen.cid);
-    if (!from || !to || !cid) return;
+    var from = findTask(fromTid), to = findTask(toTid); if (!from || !to || !cid) return;
     S.bookings[from.type][cid] = to.id;
     if (to.candidateIds.indexOf(cid)===-1) to.candidateIds.push(cid);
     to.assignee[cid] = from.assignee[cid] || S.agentId;
     delete S.nextCallAt[nextCallKey(from.id, cid)];
-    S.callLog.push({id:'L'+Date.now(), taskId:from.id, caseId:cid, agentId:isCC() ? S.agentId : 'a1', at:now(), outcome:'bookedAlt',
-      note:(S.callDraft.note ? S.callDraft.note.trim() + ' – ' : '') + 'حُجزت في: ' + TASK_TYPES[to.type].short + ' ' + locLabelFor(to) + ' – ' + dayLabel(to.dateOffset)});
-    S.callOpen = null; S.callDraft = {outcome:'', note:''};
+    S.callLog.push({id:'L'+Date.now(), taskId:from.id, caseId:cid, agentId:isCC() ? S.agentId : 'a1', at:now(), outcome:'booked', callType:'صادر',
+      bookTid:to.id, note:'حُجزت في موعد بديل: ' + locLabelFor(to) + ' – ' + dayLabel(to.dateOffset)});
     toast('تم حجز الحالة في ' + dayLabel(to.dateOffset)); render();
   },
   toggleLog: function(key){ S.logOpen[key] = !S.logOpen[key]; render(); },
@@ -1639,6 +1693,7 @@ function renderApp(){
     h += renderQueue();
   }
   h += renderOverlays();
+  h += renderCallModal();
   if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
   h += '</div>';
   return h;
@@ -1937,12 +1992,11 @@ function renderQItem(x, rank){
     if (isAdmin()) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
   } else if (canCall(t, cid)){
     var open = S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid;
-    h += '<button class="call-btn primary"'+A('openCall', t.id, cid)+(x.nxt ? ' disabled title="الحالة مجدولة لمعاد لاحق"' : '')+'>'+ic('phone',13)+(open ? 'إغلاق' : 'اتصال')+'</button>';
+    h += '<button class="call-btn primary"'+A('openCall', t.id, cid)+(x.nxt ? ' title="مجدولة لمعاد لاحق – تقدر تسجل مكالمة واردة"' : '')+'>'+ic('phone',13)+'اتصال'+'</button>';
   }
   var n = logsFor(cid).length;
   h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'السجل ('+n+')</button>';
   h += '</div></div>';
-  if (S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid) h += renderCallPanel(t, cid);
   if (S.logOpen[key]) h += renderLog(cid);
   return h + '</div>';
 }
@@ -1975,15 +2029,34 @@ function convoyFields(d, act, kp){
     (d.mapUrl && !safeUrl(d.mapUrl) ? '<div class="field-hint" style="color:var(--danger);">اللينك لازم يبدأ بـ https://</div>' : '')+'</div>'+
     '<div class="field"><label class="field-label" style="font-size:11.5px;color:var(--text-muted);">ملاحظات للكول سنتر (اختياري)</label><textarea class="note-input" placeholder="مثال: الحالات تحضر معاها البطاقة..." data-k="'+kp+'-notes" data-input="'+act+'" data-a="convoyNotes">'+esc(d.convoyNotes)+'</textarea></div>';
 }
-function renderCallPanel(t, cid){
-  var c = caseById(cid), o = S.callDraft.outcome;
-  var h = '<div class="call-panel">' + renderConvoyBox(t);
-  h += '<div class="script-sub" style="margin-top:0;">نتيجة المكالمة</div><div class="outcome-grid">';
-  OUTCOME_DEFS.forEach(function(d){
-    var sel = o===d.key;
-    h += '<button class="outcome-btn'+(sel?' sel':'')+'" style="color:'+d.color+';border-color:'+d.color+';'+(sel?'background:'+d.color+';':'')+'"'+A('pickOutcome', d.key)+'>'+d.label+'</button>';
-  });
-  h += '</div>';
+function renderCallModal(){
+  var co = S.callOpen; if (!co) return '';
+  var t = findTask(co.tid), cid = co.cid, c = caseById(cid), d = S.callDraft, m = TASK_TYPES[t.type], o = d.outcome;
+  var incoming = d.callType==='وارد';
+  var h = '<div class="scrim scrim-top"'+A('closeCall')+'></div><div class="cms-modal">';
+  h += '<div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' '+esc(m.label)+' – حجز لحالة '+esc(c.name)+'</div>'+
+    '<button class="cms-close" title="إغلاق"'+A('closeCall')+'>'+ic('x',15,'#535252',2.4)+'</button></div>';
+  h += '<div class="cms-body" data-scroll="callmodal">';
+  h += '<div class="cms-case"><span><b>'+esc(c.name)+'</b> <span class="case-code" dir="ltr">'+c.code+'</span></span>'+phoneChip(c)+
+    '<span class="cms-muted">'+esc(c.gov)+' · '+esc(c.level)+' · '+c.age+' سنة</span></div>';
+  h += renderConvoyBox(t);
+  var nxt = nextCallFor(t, cid);
+  if (nxt && !incoming) h += '<div class="rule-hint warn">الحالة مجدولة لمعاد اتصال '+fmtWhen(nxt)+'. لو الحالة هي اللي اتصلت، اختار نوع المكالمة "وارد".</div>';
+
+  // form
+  h += '<div class="cms-form">';
+  h += '<div class="cms-row"><label class="cms-label">نوع المكالمة <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="setCallField" data-a="callType">'+
+    ['صادر','وارد'].map(function(v){ return '<option'+(d.callType===v?' selected':'')+'>'+v+'</option>'; }).join('')+'</select></div>'+
+    '<label class="cms-label">استجابة المكالمة <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="setCallField" data-a="outcome"><option value="">اختر</option>'+
+    OUTCOME_DEFS.filter(function(x){ return !incoming || FAILED_OUTCOMES.indexOf(x.key)===-1; }).map(function(x){ return '<option value="'+x.key+'"'+(o===x.key?' selected':'')+'>'+x.label+'</option>'; }).join('')+'</select></div></div>';
+  var booking = o==='booked';
+  var opts = [{task:t, remaining:t.target-taskBookedCount(t)}].concat(alternativeTasksFor(t, cid));
+  h += '<div class="cms-row"><label class="cms-label">تاريخ الحجز'+(booking?' <span class="req">*</span>':'')+'</label><div class="cms-field"><select class="cms-input" data-change="setCallField" data-a="bookTid"'+(booking?'':' disabled')+'>'+
+    opts.map(function(a){ return '<option value="'+a.task.id+'"'+(d.bookTid===a.task.id?' selected':'')+'>'+isoDate(a.task.dateOffset)+' – '+dayLabel(a.task.dateOffset)+' – '+esc(locLabelFor(a.task))+' (متبقي '+Math.max(0,a.remaining)+')</option>'; }).join('')+'</select></div>'+
+    '<label class="cms-label">وقت الحجز</label><div class="cms-field"><input class="cms-input" type="time" value="'+esc(d.bookTime)+'" data-k="call-time" data-input="setCallField" data-a="bookTime"'+(booking?'':' disabled')+'/></div></div>';
+  h += '<div class="cms-row"><label class="cms-label">نتيجة التواصل <span class="req">*</span></label><div class="cms-field wide"><textarea class="cms-input" rows="3" placeholder="نتيجة التواصل" data-k="call-note" data-input="setCallField" data-a="note">'+esc(d.note)+'</textarea></div></div>';
+
+  // rule hints
   if (FAILED_OUTCOMES.indexOf(o)!==-1){
     var ftAfter = failedToday(cid) + 1;
     var willHTR = !isHardToReach(cid) && (failedTotal(cid) + 1 - (S.htrBase[cid]||0)) >= S.settings.hardToReachAfter;
@@ -1991,23 +2064,27 @@ function renderCallPanel(t, cid){
     else if (ftAfter >= S.settings.maxPerDay) h += '<div class="rule-hint warn">دي آخر محاولة النهارده ('+ftAfter+'/'+S.settings.maxPerDay+') – الحالة هترجع في قائمتك بكرة '+fmtTime(tomorrowNine())+'.</div>';
     else h += '<div class="rule-hint">الحالة هترجع في قائمتك تلقائيًا الساعة '+fmtTime(now()+S.settings.retryMinutes*60000)+' (بعد '+retryLabel()+') – محاولة '+ftAfter+' من '+S.settings.maxPerDay+' النهارده.</div>';
   }
-  if (o==='booked'){
-    var b = taskBookedCount(t);
-    h += b >= t.target
-      ? '<div class="rule-hint warn">تنبيه: المهمة اكتمل عددها المستهدف ('+b+' من '+t.target+'). تقدر تكمل الحجز كحجز إضافي.</div>'
-      : '<div class="rule-hint">هيتحجز في '+dayLabel(t.dateOffset)+' – '+esc(locLabelFor(t))+' (متبقي '+(t.target-b)+' مكان).</div>';
+  if (booking){
+    var bt = findTask(d.bookTid) || t, b = taskBookedCount(bt);
+    if (b >= bt.target) h += '<div class="rule-hint warn">تنبيه: الموعد ده اكتمل عدده المستهدف ('+b+' من '+bt.target+'). تقدر تكمل الحجز كحجز إضافي.</div>';
   }
-  if (o==='wantsOtherDay'){
-    var alts = alternativeTasksFor(t, cid);
-    h += '<div class="alt-wrap" style="border-top:none;padding-top:0;"><div class="alt-title">مواعيد أخرى متاحة – احجز مباشرة أو احفظ النتيجة والأوبريشن يحدد موعد</div>';
-    h += alts.length ? alts.map(function(a){
-      return '<span class="alt-chip">'+esc(locLabelFor(a.task))+' – '+dayLabel(a.task.dateOffset)+' · المتبقي: '+a.remaining+'<button'+A('chooseAlt', t.id, a.task.id)+' data-c="'+cid+'">حجز في الموعد ده</button></span>';
-    }).join('') : '<span class="alt-empty">لا توجد مواعيد بديلة متاحة حاليًا لهذه الحالة.</span>';
-    h += '</div>';
-  }
-  h += '<textarea class="note-input" placeholder="ملاحظة على المكالمة (اختياري)..." data-k="callnote-'+t.id+'-'+cid+'" data-input="callNote">'+esc(S.callDraft.note)+'</textarea>';
-  h += '<div class="panel-foot"><button class="btn btn-primary btn-sm"'+A('saveCall')+(o?'':' disabled')+'>حفظ نتيجة المكالمة</button><button class="btn btn-secondary btn-sm"'+A('closeCall')+'>إلغاء</button></div>';
-  return h + '</div>';
+  if (o==='wantsOtherDay') h += '<div class="rule-hint">لو الحالة وافقت على موعد تاني متاح، اختار "تم الحجز بنجاح" وغيّر تاريخ الحجز. غير كده الأوبريشن هيشوف إنها عايزة يوم آخر.</div>';
+  h += '<div class="cms-actions"><button class="cms-btn cms-add"'+A('saveCall')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('closeCall')+'>'+ic('x',12,'#fff',3)+' إلغاء</button></div>';
+  h += '</div>';
+
+  // history table
+  var logs = logsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
+  h += '<table class="cms-table"><thead><tr><th>نوع المكالمة</th><th>استجابة المكالمة</th><th>تاريخ الحجز</th><th>وقت الحجز</th><th>تم الاتصال فى</th><th>تم الاتصال بواسطة</th><th>نتيجة التواصل</th></tr></thead><tbody>';
+  if (!logs.length) h += '<tr><td colspan="7" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>';
+  logs.forEach(function(l){
+    var od = outcomeDef(l.outcome), bt = l.bookTid ? findTask(l.bookTid) : null;
+    h += '<tr><td>'+esc(l.callType||'صادر')+'</td><td><span style="color:'+od.color+';font-weight:700;">'+od.label+'</span></td>'+
+      '<td dir="ltr" style="text-align:right;">'+(bt ? isoDate(bt.dateOffset) : '-')+'</td><td>'+(l.bookTime ? fmtClock(l.bookTime) : '-')+'</td>'+
+      '<td>'+fmtWhen(l.at)+'</td><td>'+esc(agentName(l.agentId))+'</td><td>'+(l.note ? esc(l.note) : '-')+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  if (seedFailed(cid)) h += '<div class="log-legacy">+ '+seedFailed(cid)+' محاولات سابقة قبل تفعيل سجل المكالمات</div>';
+  return h + '</div></div>';
 }
 function renderLog(cid){
   var logs = logsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
@@ -2017,7 +2094,7 @@ function renderLog(cid){
     var d = outcomeDef(l.outcome), t = findTask(l.taskId);
     h += '<div class="log-item"><div class="log-time">'+fmtWhen(l.at)+'</div><div class="log-body">'+
       '<span class="status-tag" style="background:#f4f5f7;color:'+d.color+';"><span class="dot" style="background:'+d.color+';"></span>'+d.label+'</span> '+
-      '<span class="log-who">· '+esc(agentName(l.agentId))+(t ? ' · ' + TASK_TYPES[t.type].short + ' ' + dayLabel(t.dateOffset) : '')+'</span>'+
+      '<span class="log-who">· '+esc(agentName(l.agentId))+(t ? ' · ' + TASK_TYPES[t.type].short + ' ' + dayLabel(l.bookTid && findTask(l.bookTid) ? findTask(l.bookTid).dateOffset : t.dateOffset) : '')+(l.callType==='وارد' ? ' · وارد' : '')+'</span>'+
       (l.note ? '<div class="log-note">'+esc(l.note)+'</div>' : '')+'</div></div>';
   });
   if (seedFailed(cid)) h += '<div class="log-legacy">+ '+seedFailed(cid)+' محاولات سابقة قبل تفعيل سجل المكالمات</div>';
@@ -2321,7 +2398,7 @@ function renderCaseRow(t, cid){
   h += '</div><div class="row-actions">';
   var callOpen = S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid;
   if (open && st.key!=='hardToReach' && canCall(t, cid) && t.status==='published' && t.dateOffset>=todayOffset()){
-    h += '<button class="call-btn"'+A('openCall', t.id, cid)+(nxt?' disabled title="الحالة مجدولة لمعاد لاحق"':'')+'>'+ic('phone',13)+(callOpen?'إغلاق':'اتصال')+'</button>';
+    h += '<button class="call-btn"'+A('openCall', t.id, cid)+'>'+ic('phone',13)+'اتصال'+'</button>';
   }
   h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'سجل المكالمات ('+logsFor(cid).length+')</button>';
   if (st.key==='hardToReach' && admin) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
@@ -2332,7 +2409,6 @@ function renderCaseRow(t, cid){
       return '<span class="alt-chip">'+esc(locLabelFor(a.task))+' – '+dayLabel(a.task.dateOffset)+' · السعة المتبقية: '+a.remaining+'<button'+A('chooseAlt', t.id, a.task.id)+' data-c="'+cid+'">اختيار موعد آخر</button></span>';
     }).join('') : '<span class="alt-empty">لا توجد مواعيد بديلة متاحة حاليًا لهذه الحالة.</span>') + '</div>';
   }
-  if (callOpen) h += renderCallPanel(t, cid);
   if (S.logOpen[key]) h += renderLog(cid);
   return h + '</div>';
 }
@@ -2418,6 +2494,7 @@ document.addEventListener('change', function(e){
   if (fn) fn(el.value, el.getAttribute('data-a'));
 });
 document.addEventListener('keydown', function(e){
+  if (e.key==='Escape' && S.callOpen){ ACT.closeCall(); return; }
   if (e.key==='Escape' && S.overlay){
     if (S.overlay==='confirm') ACT.cancelConfirm();
     else if (S.overlay==='addCases') ACT.closeAddCases();
