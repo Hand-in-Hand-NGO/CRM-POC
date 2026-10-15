@@ -344,8 +344,6 @@
     }
     .target-edit-row{display:flex;align-items:center;gap:8px;}
 
-    .eval-metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
-    .eval-note{font-size:11.5px;color:var(--text-faint);border:1px solid var(--border);border-radius:9px;padding:10px 11px;background:var(--surface-alt);line-height:1.7;}
 
     .loading-overlay{
       position:fixed;inset:0;background:var(--bg);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
@@ -407,7 +405,8 @@
     .pub-badge{
       font-size:9.5px;font-weight:800;background:var(--success-tint);color:var(--success);border-radius:5px;padding:2px 6px;white-space:nowrap;
     }
-    .card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+    .card-badges{display:flex;flex-wrap:wrap;gap:4px;}
+    .task-card .card-top{flex-wrap:wrap;}
     .cand-warn{color:var(--warning);font-weight:700;}
     .my-line{margin-top:6px;font-size:11px;color:var(--brand-meas);font-weight:700;}
 
@@ -582,6 +581,22 @@
       font-family:inherit;color:var(--text);resize:vertical;
     }
     .text-area:focus{outline:none;border-color:#93b8ff;box-shadow:0 0 0 3px #eaf1ff;}
+    .type-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .type-seg-btn{
+      display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:9px;
+      padding:8px 10px;font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;
+    }
+    .type-seg-btn.on{background:var(--tint);border-color:var(--edge);color:var(--edge);}
+    .visits-link{
+      display:flex;align-items:flex-start;gap:7px;font-size:11.5px;line-height:1.8;color:var(--text-muted);
+      background:#f0f7ff;border:1px dashed #b9d3ff;border-radius:9px;padding:8px 10px;margin-bottom:14px;
+    }
+    .visits-link b{color:var(--text);}
+    .day-add{
+      width:22px;height:22px;border-radius:7px;border:1px dashed var(--border-strong);background:var(--surface);color:var(--text-muted);
+      display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;line-height:1;padding:0;
+    }
+    .day-add:hover{color:var(--text);border-color:var(--text-muted);}
     .toast{
       position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
       padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
@@ -618,13 +633,13 @@ var BASE_SUNDAY = (function(){ var d = new Date(REAL_TODAY.getTime()); d.setDate
 var BASE_MONTH = new Date(REAL_TODAY.getFullYear(), REAL_TODAY.getMonth(), 1);
 
 var TASK_TYPES = {
-  measurement: {label:'المقاسات', short:'مقاسات', color:'#2563eb', tint:'#eaf1ff',
+  measurement: {label:'التقييم الطبي والقياسات', short:'تقييم طبي وقياسات', stage:'new_mdm', reception:1, order:'new', color:'#2563eb', tint:'#eaf1ff',
     iconPath:'M4 16 L16 4 L20 8 L8 20 Z M8.7 15.3 L10.3 16.9 M11.6 12.4 L13.2 14 M14.5 9.5 L16.1 11.1'},
-  newDelivery: {label:'التسليمات الجديدة', short:'تسليمات جديدة', color:'#059669', tint:'#e6f7f1',
+  newDelivery: {label:'تسليم طرف جديد', short:'تسليم طرف جديد', stage:'new_fitting', reception:2, order:'new', color:'#059669', tint:'#e6f7f1',
     iconPath:'M12 3 L20 7 L20 17 L12 21 L4 17 L4 7 Z M4 7 L12 11 L20 7 M12 11 L12 21'},
-  maintEval: {label:'تقييمات الصيانة', short:'تقييمات صيانة', color:'#c2660a', tint:'#fdf1e0',
+  maintEval: {label:'تقييم الصيانة', short:'تقييم صيانة', stage:'maintenance_mdm', reception:1, order:'maintenance', color:'#c2660a', tint:'#fdf1e0',
     iconPath:'M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z M6 6h12v14H6z M9 13l2 2 4-4'},
-  maintDelivery: {label:'تسليمات الصيانة', short:'تسليمات صيانة', color:'#7c3aed', tint:'#f2eafd',
+  maintDelivery: {label:'تسليم الصيانة', short:'تسليم صيانة', stage:'maintenance_fitting', reception:2, order:'maintenance', color:'#7c3aed', tint:'#f2eafd',
     iconPath:'M14.3 6.4a4 4 0 0 0-5.2 5.2L4 16.7V20h3.3l5.1-5.1a4 4 0 0 0 5.2-5.2l-2.7 2.7-2.3-2.3z'},
 };
 var ORG_ICON_PATH = 'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16';
@@ -665,8 +680,8 @@ function esc(s){
 }
 
 var GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','أسوان','سوهاج','المنيا','الفيوم','بني سويف','قنا','الأقصر','الشرقية','دمياط','أسيوط','بورسعيد'];
-var FUNDING_OPTIONS = ['تمويل مؤسسة','ممول خاص','مشروع اليونيسف','تمويل ذاتي'];
-var LEVEL_OPTIONS = ['بتر أسفل الركبة','بتر أعلى الركبة','بتر الساعد','بتر أعلى المرفق','بتر أصابع القدم'];
+var FUNDING_OPTIONS = ['بدون','متبرع فردي','مؤسسة مصر الخير','بنك الطعام'];
+var LEVEL_OPTIONS = ['تحت الركبة','فوق الركبة','تحت الكوع','فوق الكوع','مشط القدم'];
 var AGE_BUCKETS = [
   {key:'', label:'الكل'},
   {key:'child', label:'أقل من 12 سنة', test:function(a){return a<12;}},
@@ -709,13 +724,26 @@ function agentName(id){ for (var i=0;i<AGENTS.length;i++){ if (AGENTS[i].id===id
 
 // stage = which pipeline step the case is waiting for (used for auto-suggest eligibility)
 // wait  = days waiting in that stage ; overdue = days past the scheduled maintenance date
-function mk(id,name,gov,funding,level,age,attempts,pref,stage,wait,overdue){
+var LEVEL_MAP = {'بتر أسفل الركبة':'تحت الركبة','بتر أعلى الركبة':'فوق الركبة','بتر الساعد':'تحت الكوع','بتر أعلى المرفق':'فوق الكوع','بتر أصابع القدم':'مشط القدم'};
+var FUNDING_MAP = {'تمويل مؤسسة':'بدون','ممول خاص':'متبرع فردي','مشروع اليونيسف':'مؤسسة مصر الخير','تمويل ذاتي':'بنك الطعام'};
+var CODE_PREFIX = {'تحت الركبة':'BK','فوق الركبة':'AK','تحت الكوع':'BE','فوق الكوع':'AE','مشط القدم':'FT'};
+// stage   = which of the 4 visits-page columns the case is waiting for (= task type)
+// wait    = days waiting in that stage ; overdue = days past the scheduled maintenance date
+// extra   = ready (limb back from manufacturing / maintenance finished, for the 2 delivery stages),
+//           postponed {until, contact, reason} (engineering "مؤجل" from the visits page),
+//           noShow (day offset of a missed visit recorded by reception)
+function mk(id,name,gov,funding,level,age,attempts,pref,stage,wait,overdue,extra){
   var n = parseInt(id.slice(2),10);
   var prefixes = ['010','011','012','015'];
   var tail = String((n*7919 + 13579) % 100000000); while (tail.length<8) tail = '0'+tail;
-  return {id:id, name:name, gov:gov, funding:funding, level:level, age:age, attempts:attempts, pref:pref,
-          stage:stage, waitingDays:wait, maintOverdue:overdue||0, phone: prefixes[n%4] + tail};
+  level = LEVEL_MAP[level] || level;
+  var c = {id:id, name:name, gov:gov, funding:FUNDING_MAP[funding] || funding, level:level, age:age, attempts:attempts, pref:pref,
+          stage:stage, order:TASK_TYPES[stage].order, waitingDays:wait, maintOverdue:overdue||0, phone: prefixes[n%4] + tail,
+          code:(CODE_PREFIX[level]||'BK') + String(10 + n % 90) + String(100 + (n*37) % 900),
+          ready: stage==='newDelivery' || stage==='maintDelivery' ? true : null, postponed:null, noShow:null};
+  return Object.assign(c, extra || {});
 }
+var T0 = daysBetween(BASE_SUNDAY, REAL_TODAY);
 var CASES = [
   mk('C-1001','هالة عبد الرحمن','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',34,0,'','measurement',120),
   mk('C-1002','محمود سيد إبراهيم','الجيزة','تمويل مؤسسة','بتر أعلى الركبة',41,1,'داخل المؤسسة','newDelivery',35),
@@ -731,32 +759,40 @@ var CASES = [
   mk('C-1012','حسام الدين طارق','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',60,0,'','maintDelivery',30,9),
   mk('C-1013','دينا فاروق عزت','بني سويف','مشروع اليونيسف','بتر الساعد',9,1,'داخل المؤسسة','measurement',110),
   mk('C-1014','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أصابع القدم',38,0,'','maintDelivery',25,3),
-  mk('C-1015','شيماء رضا محمد','الأقصر','تمويل ذاتي','بتر أسفل الركبة',25,0,'قافلة','measurement',55),
+  mk('C-1015','شيماء رضا محمد','الأقصر','تمويل ذاتي','بتر أسفل الركبة',25,0,'','measurement',55),
   mk('C-1016','أمير حازم صبري','القاهرة','تمويل مؤسسة','بتر أعلى الركبة',33,4,'','measurement',180),
   mk('C-1017','هبة الله كريم','الجيزة','تمويل مؤسسة','بتر أعلى المرفق',17,0,'داخل المؤسسة','measurement',70),
   mk('C-1018','طارق سامي لطفي','المنيا','ممول خاص','بتر الساعد',49,1,'','newDelivery',18),
-  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'قافلة','measurement',85),
-  mk('C-1020','بلال ياسر منير','أسوان','تمويل مؤسسة','بتر أعلى الركبة',21,2,'قافلة','newDelivery',40),
+  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0-2, contact:'org', reason:'لحين التئام الجرح'}}),
+  mk('C-1020','بلال ياسر منير','أسوان','تمويل مؤسسة','بتر أعلى الركبة',21,2,'قافلة','newDelivery',40,0,{ready:false}),
   mk('C-1021','ياسمين علاء الدين','سوهاج','مشروع اليونيسف','بتر أصابع القدم',13,0,'داخل المؤسسة','maintDelivery',20,14),
   mk('C-1022','عبد الرحمن فتحي','القاهرة','تمويل مؤسسة','بتر الساعد',44,0,'','newDelivery',12),
   mk('C-1023','لمياء حسين عبد العزيز','الجيزة','تمويل ذاتي','بتر أسفل الركبة',37,1,'','measurement',95),
   mk('C-1024','سيف الدين محمد رأفت','أسوان','تمويل مؤسسة','بتر أعلى المرفق',26,0,'قافلة','maintDelivery',35,22),
   mk('C-1025','مريم أشرف حمدي','أسوان','مشروع اليونيسف','بتر أسفل الركبة',7,0,'قافلة','measurement',140),
-  mk('C-1026','عادل حسني مرسي','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',52,1,'','maintDelivery',60,25),
+  mk('C-1026','عادل حسني مرسي','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',52,1,'','maintDelivery',60,25,{ready:false}),
   mk('C-1027','جنى محمد صلاح','المنيا','مشروع اليونيسف','بتر الساعد',10,0,'قافلة','measurement',95),
-  mk('C-1028','إسلام فوزي عبده','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',31,0,'','newDelivery',40),
+  mk('C-1028','إسلام فوزي عبده','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',31,0,'','newDelivery',40,0,{noShow:T0-4}),
   mk('C-1029','آية سمير حامد','الجيزة','ممول خاص','بتر أعلى المرفق',16,0,'داخل المؤسسة','maintDelivery',30,12),
   mk('C-1030','مصطفى رجب علي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',44,0,'','measurement',200),
   mk('C-1031','رحمة خالد يونس','سوهاج','مشروع اليونيسف','بتر أسفل الركبة',9,0,'قافلة','maintDelivery',50,40),
-  mk('C-1032','فاطمة الزهراء سعيد','القاهرة','تمويل مؤسسة','بتر الساعد',23,0,'داخل المؤسسة','measurement',75),
-  mk('C-1033','زياد هشام كامل','أسوان','تمويل مؤسسة','بتر أصابع القدم',14,0,'قافلة','newDelivery',20),
+  mk('C-1032','فاطمة الزهراء سعيد','القاهرة','تمويل مؤسسة','بتر الساعد',23,0,'داخل المؤسسة','measurement',75,0,{postponed:{until:T0+3, contact:'case', reason:'سفر الحالة'}}),
+  mk('C-1033','زياد هشام كامل','أسوان','تمويل مؤسسة','بتر أصابع القدم',14,0,'قافلة','newDelivery',20,0,{ready:false}),
   mk('C-1034','سلمى طارق نجيب','المنيا','تمويل ذاتي','بتر أسفل الركبة',36,0,'','measurement',160),
   mk('C-1035','خالد عبد العليم','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',61,0,'','maintDelivery',45,8),
   mk('C-1036','روان إيهاب فتحي','الجيزة','مشروع اليونيسف','بتر الساعد',6,0,'داخل المؤسسة','measurement',110),
   mk('C-1037','حمدي سالم بدوي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',58,3,'','measurement',30),
   mk('C-1038','ملك أحمد زكي','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',11,0,'','newDelivery',15),
   mk('C-1039','أنس محمود عطية','المنيا','تمويل مؤسسة','بتر أعلى المرفق',27,0,'','maintDelivery',22,5),
-  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85),
+  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0+12, contact:'org', reason:'انتظار عملية جراحية'}}),
+  mk('C-1041','سامي فؤاد عبد الحميد','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',45,0,'','maintEval',20,4),
+  mk('C-1042','نادية حسن البنا','الجيزة','ممول خاص','بتر أعلى الركبة',52,0,'','maintEval',30,10,{noShow:T0-10}),
+  mk('C-1043','كريم عادل سالم','القاهرة','تمويل مؤسسة','بتر الساعد',29,0,'داخل المؤسسة','maintEval',15),
+  mk('C-1044','هالة سعيد مراد','الإسكندرية','مشروع اليونيسف','بتر أسفل الركبة',38,1,'','maintEval',45,20),
+  mk('C-1045','عمرو طه إسماعيل','الشرقية','تمويل مؤسسة','بتر أعلى الركبة',61,0,'','maintEval',60,35),
+  mk('C-1046','ليلى ماهر عزت','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',9,0,'داخل المؤسسة','maintEval',25),
+  mk('C-1047','فارس أيمن جاد','سوهاج','تمويل مؤسسة','بتر أعلى المرفق',14,0,'قافلة','maintEval',40,10),
+  mk('C-1048','محمد رضا حنفي','أسوان','تمويل ذاتي','بتر أسفل الركبة',47,0,'قافلة','maintEval',70,15),
 ];
 var CASE_MAP = {};
 CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
@@ -767,7 +803,7 @@ function defaultSettings(){
   return {
     dailyCapacity:20,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
-    histRates:{measurement:0.6, newDelivery:0.75, maintDelivery:0.7},
+    histRates:{measurement:0.6, newDelivery:0.75, maintEval:0.65, maintDelivery:0.7},
   };
 }
 
@@ -778,7 +814,7 @@ var S = {
   role:'مدير النظام', agentId:'a1', mainView:'calendar',
   weekOffset:0, monthOffset:0, viewMode:'week',
   activeTypes:['measurement','newDelivery','maintEval','maintDelivery'],
-  tasks:[], bookings:{measurement:{}, newDelivery:{}, maintDelivery:{}},
+  tasks:[], bookings:{measurement:{}, newDelivery:{}, maintEval:{}, maintDelivery:{}}, attendance:{},
   callLog:[], nextCallAt:{}, htrBase:{}, dayCapacity:{},
   settings: defaultSettings(),
   simOffset:0,
@@ -810,6 +846,8 @@ function fmtWhen(ms){
   if (diff===-1) return 'غدًا ' + fmtTime(ms);
   return d.getDate() + ' ' + MONTHS_AR[d.getMonth()] + ' ' + fmtTime(ms);
 }
+function shortDate(off){ var d = dateOf(off); return d.getDate() + ' ' + MONTHS_AR[d.getMonth()]; }
+function isoDate(off){ var d = dateOf(off); return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
 function locLabelFor(t){ return t.loc==='convoy' ? ('قافلة – ' + (t.gov || '—')) : 'داخل المؤسسة'; }
 
 function isAdmin(){ return S.role==='مدير النظام'; }
@@ -822,7 +860,6 @@ function visibleTasks(){ return isAdmin() ? S.tasks : S.tasks.filter(function(t)
 // Bookings / statuses
 // =====================================================================
 function taskBookedCount(t){
-  if (t.type==='maintEval') return t.evalBooked||0;
   var map = S.bookings[t.type] || {};
   return t.candidateIds.filter(function(cid){ return map[cid]===t.id; }).length;
 }
@@ -841,6 +878,8 @@ function isHardToReach(cid){ return failedTotal(cid) - (S.htrBase[cid]||0) >= S.
 var STATUS_COLORS = {
   booked:{color:'#15803d', tint:'#e9f7ee'},
   lockedElsewhere:{color:'#5b6472', tint:'#eef0f3'},
+  attended:{color:'#15803d', tint:'#d9f2e2'},
+  noShow:{color:'#9f1239', tint:'#ffe4ec'},
   noAnswer:{color:'#c81e3a', tint:'#fceced'},
   unavailable:{color:'#c81e3a', tint:'#fceced'},
   notInterested:{color:'#98a0ac', tint:'#eef0f3'},
@@ -851,7 +890,12 @@ var STATUS_COLORS = {
 function caseStatus(t, cid){
   var map = S.bookings[t.type] || {};
   var at = map[cid];
-  if (at === t.id) return {key:'booked', label:'تم الحجز بنجاح'};
+  var att = S.attendance[nextCallKey(t.id, cid)];
+  if (att && att.status==='attended') return {key:'attended', label:'حضر' + (att.timeIn ? ' – دخول ' + fmtClock(att.timeIn) : '')};
+  if (att && att.status==='noShow') return {key:'noShow', label:'لم يحضر'};
+  if (at === t.id) return t.dateOffset <= todayOffset()
+    ? {key:'booked', label: t.dateOffset < todayOffset() ? 'محجوز – لم يُسجل حضور' : 'محجوز – في انتظار الاستقبال'}
+    : {key:'booked', label:'تم الحجز بنجاح'};
   if (at && at !== t.id) return {key:'lockedElsewhere', label:'تم حجز الحالة في موعد آخر'};
   var cs = t.callStatus[cid];
   if (cs === 'notInterested') return {key:'notInterested', label:'عدم رغبة الحالة'};
@@ -861,7 +905,20 @@ function caseStatus(t, cid){
   if (cs === 'wantsOtherDay') return {key:'wantsOtherDay', label:'يرغب في يوم آخر'};
   return {key:'pending', label:'لم يتم التواصل بعد'};
 }
-function isOpenStatus(key){ return ['booked','lockedElsewhere','notInterested'].indexOf(key)===-1; }
+function isOpenStatus(key){ return ['booked','lockedElsewhere','notInterested','attended','noShow'].indexOf(key)===-1; }
+// a booking still "holds" the case unless reception marked it as no-show
+function activeBooking(type, cid){
+  var tid = (S.bookings[type]||{})[cid];
+  if (!tid) return null;
+  var att = S.attendance[nextCallKey(tid, cid)];
+  if (att && att.status==='noShow') return null;
+  return {tid:tid, attended: !!(att && att.status==='attended')};
+}
+function hasNoShow(cid){
+  var c = caseById(cid);
+  if (c && c.noShow!=null) return true;
+  return Object.keys(S.attendance).some(function(k){ return k.split('|')[1]===cid && S.attendance[k].status==='noShow'; });
+}
 function nextCallKey(tid, cid){ return tid + '|' + cid; }
 
 function alternativeTasksFor(t, cid){
@@ -930,15 +987,25 @@ function recommendedFor(type, target){
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
-  else if ((S.bookings[ctx.type]||{})[c.id]){ eligible = false; why = (S.bookings[ctx.type][c.id]===ctx.id ? 'محجوزة في هذه المهمة' : 'محجوزة في موعد آخر'); }
+  else if (activeBooking(ctx.type, c.id)){
+    var ab = activeBooking(ctx.type, c.id);
+    eligible = false; why = ab.attended ? 'تمت الزيارة (حضر)' : (ab.tid===ctx.id ? 'محجوزة في هذه المهمة' : 'محجوزة في موعد آخر');
+  }
+  else if (c.ready===false){ eligible = false; why = ctx.type==='newDelivery' ? 'الطرف لسه في التصنيع' : 'الصيانة لسه ما خلصتش'; }
+  else if (c.postponed && c.postponed.contact==='case'){ eligible = false; why = 'مؤجل – الحالة هتتواصل مع المؤسسة'; }
+  else if (c.postponed && c.postponed.until > ctx.dateOffset){ eligible = false; why = 'مؤجل هندسيًا حتى ' + shortDate(c.postponed.until); }
   else if (ctx.loc==='convoy' && ctx.gov && c.gov!==ctx.gov){ eligible = false; why = 'محافظة مختلفة عن القافلة'; }
   else if (isHardToReach(c.id)){ eligible = false; why = 'صعب الوصول'; }
 
   score += Math.min(40, Math.round(c.waitingDays/5));
-  reasons.push({t:'انتظار ' + c.waitingDays + ' يوم', k:'wait'});
+  reasons.push({t:(c.ready ? 'جاهز من ' : 'انتظار ') + c.waitingDays + ' يوم', k:'wait'});
+  if (c.postponed && c.postponed.contact==='org' && c.postponed.until <= ctx.dateOffset){
+    score += 15; reasons.push({t:'انتهى التأجيل الهندسي (' + c.postponed.reason + ')', k:'overdue'});
+  }
+  if (hasNoShow(c.id)){ score += 10; reasons.push({t:'لم يحضر موعد سابق', k:'child'}); }
   if (c.age < 12){ score += 25; reasons.push({t:'طفل (' + c.age + ' سنة)', k:'child'}); }
   else if (c.age <= 18){ score += 10; reasons.push({t:'أقل من 18 سنة', k:'teen'}); }
-  if (ctx.type==='maintDelivery' && c.maintOverdue > 0){
+  if ((ctx.type==='maintDelivery' || ctx.type==='maintEval') && c.maintOverdue > 0){
     score += Math.min(30, c.maintOverdue); reasons.push({t:'صيانة متأخرة ' + c.maintOverdue + ' يوم', k:'overdue'});
   }
   if (ctx.loc==='convoy' && ctx.gov && c.gov===ctx.gov){ score += 20; reasons.push({t:'نفس محافظة القافلة', k:'gov'}); }
@@ -1035,21 +1102,31 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
       publishedBy: status==='published' ? 'مدير النظام' : null, meetingPoint:'', mapUrl:'', meetingTime:'', convoyNotes:''}, extra||{});
   }
   S.tasks = [
-    task('t1','measurement',0,'org',null,12,['C-1001','C-1002','C-1003','C-1005','C-1006','C-1007','C-1008','C-1009','C-1011','C-1013','C-1016','C-1017','C-1019','C-1021'],'published'),
-    task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1010','C-1011','C-1015','C-1020','C-1023','C-1024'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', mapUrl:'https://maps.google.com/?q=Aswan+University+Hospital', meetingTime:'09:00', convoyNotes:'الحالات تحضر معاها البطاقة وأي تقارير طبية. الأطفال لازم يكون معاهم ولي أمر.'}),
-    task('t3','newDelivery',1,'org',null,6,['C-1002','C-1004','C-1006','C-1009','C-1012','C-1018','C-1022'],'published'),
+    task('t1','measurement',0,'org',null,12,['C-1001','C-1007','C-1010','C-1013','C-1015','C-1016','C-1017','C-1023','C-1036'],'published'),
+    task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1011','C-1037'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', mapUrl:'https://maps.google.com/?q=Aswan+University+Hospital', meetingTime:'09:00', convoyNotes:'الحالات تحضر معاها البطاقة وأي تقارير طبية. الأطفال لازم يكون معاهم ولي أمر.'}),
+    task('t3','newDelivery',1,'org',null,6,['C-1002','C-1006','C-1009','C-1018','C-1022'],'published'),
     task('t9','maintDelivery',1,'org',null,16,['C-1029','C-1012','C-1014','C-1021','C-1039'],'published'),
-    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1026','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', mapUrl:'https://maps.google.com/?q=Sohag+Youth+Center', meetingTime:'10:00', convoyNotes:''}),
-    task('t5','maintEval',4,'org',null,5,[],'published',{evalBooked:3}),
-    task('t6','newDelivery',-4,'org',null,5,['C-1010','C-1017','C-1019'],'published'),
-    task('t7','measurement',9,'convoy','المنيا',10,['C-1006','C-1018'],'draft'),
-    task('t8','maintEval',-10,'org',null,4,[],'published',{evalBooked:2}),
+    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', mapUrl:'https://maps.google.com/?q=Sohag+Youth+Center', meetingTime:'10:00', convoyNotes:''}),
+    task('t5','maintEval',4,'org',null,5,['C-1043','C-1044','C-1046'],'published'),
+    task('t6','newDelivery',-4,'org',null,5,['C-1028','C-1038'],'published'),
+    task('t7','measurement',9,'convoy','المنيا',10,['C-1027'],'draft'),
+    task('t8','maintEval',-10,'org',null,4,['C-1041','C-1042'],'published'),
   ];
   var b = S.bookings;
-  ['C-1001','C-1006','C-1009','C-1017','C-1021'].forEach(function(c){ b.measurement[c]='t1'; });
-  b.measurement['C-1010']='t2'; b.measurement['C-1024']='t2';
-  ['C-1002','C-1004','C-1006','C-1009','C-1012','C-1018'].forEach(function(c){ b.newDelivery[c]='t3'; });
+  b.maintEval = {};
+  ['C-1001','C-1017','C-1023','C-1036'].forEach(function(c){ b.measurement[c]='t1'; });
+  b.measurement['C-1008']='t2';
+  ['C-1002','C-1006','C-1009'].forEach(function(c){ b.newDelivery[c]='t3'; });
   b.maintDelivery['C-1012']='t9';
+  b.maintEval['C-1043']='t5';
+  b.newDelivery['C-1028']='t6'; b.newDelivery['C-1038']='t6';
+  b.maintEval['C-1041']='t8'; b.maintEval['C-1042']='t8';
+  // reception results recorded on the visits page (حضر / لم يحضر)
+  S.attendance[nextCallKey('t6','C-1028')] = {status:'noShow'};
+  S.attendance[nextCallKey('t6','C-1038')] = {status:'attended', timeIn:'10:20'};
+  S.attendance[nextCallKey('t8','C-1041')] = {status:'attended', timeIn:'09:45'};
+  S.attendance[nextCallKey('t8','C-1042')] = {status:'noShow'};
+  S.attendance[nextCallKey('t1','C-1001')] = {status:'attended', timeIn:'09:10'};
 
   S.tasks.forEach(function(t){ if (t.status==='published') autoAssign(t); });
 
@@ -1057,10 +1134,9 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   // historical "booked" calls (yesterday)
   var i = 0;
   S.tasks.forEach(function(t){
-    if (t.type==='maintEval' || t.dateOffset < T) return;
     t.candidateIds.forEach(function(cid){
       if ((S.bookings[t.type]||{})[cid]===t.id){
-        S.callLog.push({id:'L'+(++i), taskId:t.id, caseId:cid, agentId:t.assignee[cid]||'a1', at:n-24*H+i*7*60000, outcome:'booked', note:''});
+        S.callLog.push({id:'L'+(++i), taskId:t.id, caseId:cid, agentId:t.assignee[cid]||'a1', at:Math.min(n-24*H, dateOf(t.dateOffset).getTime()-2*24*H)+i*7*60000, outcome:'booked', note:''});
       }
     });
   });
@@ -1069,11 +1145,11 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
     S.callLog.push({id:'L'+(++i), taskId:tid, caseId:cid, agentId:t.assignee[cid]||'a1', at:n-agoMin*60000, outcome:outcome, note:note||''});
     t.callStatus[cid] = outcome;
   }
-  log('t1','C-1002','noAnswer',180,'الجرس بيضرب ومحدش بيرد');
-  S.nextCallAt[nextCallKey('t1','C-1002')] = n - 60*60000;
+  log('t1','C-1010','noAnswer',180,'الجرس بيضرب ومحدش بيرد');
+  S.nextCallAt[nextCallKey('t1','C-1010')] = n - 60*60000;
   log('t1','C-1013','noAnswer',30,'');
   S.nextCallAt[nextCallKey('t1','C-1013')] = n + 90*60000;
-  log('t1','C-1003','wantsOtherDay',95,'تفضّل قافلة أسوان لأنها بعيدة عن القاهرة');
+  log('t1','C-1015','wantsOtherDay',95,'تفضّل ميعاد الأسبوع الجاي');
   log('t1','C-1007','notInterested',140,'ركّبت طرف من جهة أخرى');
   log('t1','C-1016','unavailable',50,'الرقم مغلق');
 })();
@@ -1174,6 +1250,14 @@ var ACT = {
   // ---------- create drawer ----------
   closeCreate: function(){ S.overlay = null; S.createDraft = null; S.govDropdownOpen = false; render(); },
   setCreateLoc: function(loc){ S.createDraft.loc = loc; render(); },
+  setCreateType: function(type){
+    var d = S.createDraft; if (d.type===type) return;
+    var had = d.candidateIds.length;
+    d.type = type; d.candidateIds = [];
+    if (had) toast('تم تغيير نوع الحجز – الحالات المرشحة اتمسحت لأنها خاصة بالنوع السابق');
+    render();
+  },
+  openCreateDay: function(off){ openCreate('measurement', parseInt(off,10)); },
   setCreateTarget: function(v){ S.createDraft.target = v; render(); },
   govSearch: function(v){ S.govSearch = v; S.govDropdownOpen = true; render(); },
   govFocus: function(){ S.govDropdownOpen = true; render(); },
@@ -1193,8 +1277,8 @@ var ACT = {
     if (target<=0 || (d.loc==='convoy' && !d.gov)) return;
     var t = {
       id:'t'+Date.now(), type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
-      target:target, candidateIds: d.type==='maintEval' ? [] : d.candidateIds.slice(), callStatus:{}, assignee:{},
-      evalBooked: d.type==='maintEval' ? 0 : undefined, status:'draft', publishedAt:null, publishedBy:null,
+      target:target, candidateIds: d.candidateIds.slice(), callStatus:{}, assignee:{},
+      status:'draft', publishedAt:null, publishedBy:null,
       meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
       meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '', convoyNotes: d.loc==='convoy' ? (d.convoyNotes||'').trim() : '',
     };
@@ -1210,7 +1294,7 @@ var ACT = {
   // ---------- add cases ----------
   openAddCasesDraft: function(){
     S.addCasesMode = {kind:'create'}; S.addCasesSelected = S.createDraft.candidateIds.slice();
-    S.addCasesFilters = emptyFilters(); S.addCasesTab = S.createDraft.type==='maintEval' ? 'manual' : 'auto';
+    S.addCasesFilters = emptyFilters(); S.addCasesTab = 'auto';
     S.overlay = 'addCases'; render();
   },
   openAddCasesTask: function(tid){
@@ -1424,7 +1508,7 @@ var ACT = {
       'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'histRates.measurement':String(Math.round(s.histRates.measurement*100)), 'histRates.newDelivery':String(Math.round(s.histRates.newDelivery*100)),
-      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)),
+      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)), 'histRates.maintEval':String(Math.round(s.histRates.maintEval*100)),
     };
     S.overlay = 'settings'; render();
   },
@@ -1435,7 +1519,7 @@ var ACT = {
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
     s.dailyCapacity = int('dailyCapacity',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
-    ['measurement','newDelivery','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
+    ['measurement','newDelivery','maintEval','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
@@ -1478,7 +1562,7 @@ function legacyCopy(text){
 }
 function openCreate(type, off){
   S.overlay = 'create';
-  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target: type==='maintEval' ? '5' : '10', candidateIds:[], meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', candidateIds:[], meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
   S.govSearch = ''; S.govDropdownOpen = false;
   render();
 }
@@ -1637,8 +1721,8 @@ function renderPlanStrip(){
 
 function renderPalette(){
   var admin = isAdmin();
-  var h = '<div class="palette-row"><div class="palette-head"><div class="palette-title">إضافة مهمة جديدة إلى الخطة</div>'+
-    '<div class="palette-hint">اسحب نوع المهمة وأفلته على اليوم المطلوب في التقويم · المهام الجديدة بتتحفظ كمسودة لحد النشر</div></div><div class="palette-chips">';
+  var h = '<div class="palette-row"><div class="palette-head"><div class="palette-title">إضافة حجز جديد إلى الخطة</div>'+
+    '<div class="palette-hint">اسحب نوع الحجز وأفلته على اليوم، أو اضغط + جنب اليوم · ينفع أكتر من نوع في نفس اليوم · المهام الجديدة بتتحفظ كمسودة لحد النشر</div></div><div class="palette-chips">';
   Object.keys(TASK_TYPES).forEach(function(k){
     var m = TASK_TYPES[k];
     h += '<div class="palette-chip'+(admin?'':' disabled')+'" style="--tint:'+m.tint+';--edge:'+m.color+';" draggable="'+(admin?'true':'false')+'" data-drag-type="'+k+'">'+
@@ -1656,7 +1740,8 @@ function renderWeek(){
     var off = S.weekOffset*7 + i, d = dateOf(off), isToday = off===todayOffset();
     var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
     h += '<section class="day-col" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
-      (isToday ? '<span class="today-badge">اليوم</span>' : '')+'</div>';
+      '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
+      (isAdmin() && off >= todayOffset() ? '<button class="day-add" title="إضافة حجز لهذا اليوم"'+A('openCreateDay', off)+'>+</button>' : '')+'</span></div>';
     if (showCap) h += renderCapMini(off);
     h += '<div class="day-body">';
     if (!tasks.length){
@@ -1680,8 +1765,16 @@ function renderCapMini(off){
     '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+Math.min(100, Math.round(pct*100))+'%;"></div></div></div>';
 }
 
+function attendanceCounts(t){
+  var out = {attended:0, noShow:0, pending:0};
+  t.candidateIds.forEach(function(cid){
+    var k = caseStatus(t, cid).key;
+    if (k==='attended') out.attended++; else if (k==='noShow') out.noShow++; else if (k==='booked') out.pending++;
+  });
+  return out;
+}
 function renderTaskCard(t){
-  var m = TASK_TYPES[t.type], isEval = t.type==='maintEval';
+  var m = TASK_TYPES[t.type];
   var booked = taskBookedCount(t), pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0;
   var full = t.target>0 && booked>=t.target;
   var dim = S.activeTypes.indexOf(t.type)===-1;
@@ -1693,16 +1786,19 @@ function renderTaskCard(t){
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
     (full ? '<span class="full-badge">تم اكتمال العدد المستهدف</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
-    '<div class="progress-line"><span class="progress-num">'+booked+' من '+t.target+'</span><span class="progress-tag">'+(isEval?'محجوزة':'من العدد المستهدف')+'</span></div>'+
+    '<div class="progress-line"><span class="progress-num">'+booked+' من '+t.target+'</span><span class="progress-tag">من العدد المستهدف</span></div>'+
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
-  if (!isEval){
+  if (t.dateOffset <= todayOffset() && booked){
+    var a = attendanceCounts(t);
+    h += '<div class="candidates-line">الاستقبال: <span class="cap-ok">حضر '+a.attended+'</span> · <span class="cap-over">لم يحضر '+a.noShow+'</span>'+(a.pending ? ' · لسه '+a.pending : '')+'</div>';
+  } else {
     var reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
     var lack = admin && n < reco && !full;
     h += '<div class="candidates-line">المرشحين: '+n+(admin ? ' · <span class="'+(lack?'cand-warn':'')+'">المُوصى '+reco+'</span>' : '')+'</div>';
-    if (isCC()){
-      var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
-      if (mine) h += '<div class="my-line">'+ic('user',11)+' حالات مسندة لك: '+mine+'</div>';
-    }
+  }
+  if (isCC()){
+    var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
+    if (mine) h += '<div class="my-line">'+ic('user',11)+' حالات مسندة لك: '+mine+'</div>';
   }
   return h + '</article>';
 }
@@ -1735,7 +1831,7 @@ function renderMonth(){
 function queueItems(agent){
   var tOff = todayOffset(), items = [];
   S.tasks.forEach(function(t){
-    if (t.status!=='published' || t.type==='maintEval' || t.dateOffset < tOff) return;
+    if (t.status!=='published' || t.dateOffset < tOff) return;
     var full = t.target>0 && taskBookedCount(t) >= t.target;
     t.candidateIds.forEach(function(cid){
       if (agent && t.assignee[cid]!==agent) return;
@@ -1827,7 +1923,7 @@ function renderQItem(x, rank){
   var booked = taskBookedCount(t), key = nextCallKey(t.id, cid);
   var h = '<div class="q-item'+(x.group==='later'?' later':'')+'"><div class="bar" style="background:'+m.color+';"></div><div class="q-grid">';
   h += '<div class="q-rank">'+(rank ? '#'+rank : '')+'</div>';
-  h += '<div><div class="q-name">'+esc(c.name)+' <span class="case-code">'+c.id+'</span></div><div class="q-line">'+phoneChip(c)+'</div><div class="q-line">'+reasonChips(x.p,4)+'</div></div>';
+  h += '<div><div class="q-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span></div><div class="q-line">'+phoneChip(c)+'</div><div class="q-line">'+reasonChips(x.p,4)+'</div></div>';
   h += '<div><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,12,m.color)+m.short+'</span>'+
     '<div class="q-line">'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (النهارده)' : '')+' · '+esc(locLabelFor(t))+'</div>'+
     (t.loc==='convoy' ? '<div class="q-line">'+ic('clock',11)+' الحضور '+(t.meetingTime ? fmtClock(t.meetingTime) : '<span class="missing">لم يُحدد</span>')+(t.meetingPoint ? ' · '+esc(t.meetingPoint) : '')+'</div>' : '')+
@@ -1951,11 +2047,15 @@ function drawerHead(m, title, sub, extra, closeAct){
 }
 
 function renderCreate(){
-  var d = S.createDraft, m = TASK_TYPES[d.type], isEval = d.type==='maintEval';
+  var d = S.createDraft, m = TASK_TYPES[d.type];
   var target = parseInt(d.target,10)||0;
   var canCreate = target>0 && (d.loc==='org' || !!d.gov);
   var h = '<div class="scrim"'+A('closeCreate')+'></div><aside class="drawer">' + drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', 'closeCreate');
   h += '<div class="drawer-body" data-scroll="create">';
+  h += '<div class="field"><label class="field-label">نوع الحجز</label><div class="type-seg">'+Object.keys(TASK_TYPES).map(function(k){
+    var tm = TASK_TYPES[k], on = k===d.type;
+    return '<button class="type-seg-btn'+(on?' on':'')+'" style="--edge:'+tm.color+';--tint:'+tm.tint+';"'+A('setCreateType', k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.short+'</button>';
+  }).join('')+'</div><div class="field-hint">بيظهر في صفحة الزيارات في عمود «'+m.label+'» · الاستقبال: استقبال '+m.reception+'</div></div>';
   h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
     '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
     '<button class="seg-btn'+(d.loc==='convoy'?' on':'')+'"'+A('setCreateLoc','convoy')+'>قافلة</button></div></div>';
@@ -1971,15 +2071,15 @@ function renderCreate(){
     h += '</div></div>';
     h += convoyFields(d, 'setConvoyField', 'c');
   }
-  h += '<div class="field"><label class="field-label">'+(isEval?'عدد المواعيد المتاحة':'العدد المستهدف')+'</label>'+
+  h += '<div class="field"><label class="field-label">العدد المستهدف</label>'+
     '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>'+
-    '<div class="field-hint">'+(isEval?'إجمالي عدد مواعيد التقييم المتاحة في هذا اليوم.':'هذا هو الهدف التشغيلي، وليس الحد الأقصى لعدد الحالات المرشحة.')+'</div>';
-  if (!isEval && target>0){
+    '<div class="field-hint">هذا هو الهدف التشغيلي، وليس الحد الأقصى لعدد الحالات المرشحة.</div>';
+  if (target>0){
     var rate = S.settings.histRates[d.type], reco = recommendedFor(d.type, target);
     h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' نسبة الحجز التاريخية لـ'+m.short+' <b>'+Math.round(rate*100)+'%</b>، فعشان توصل لـ <b>'+target+'</b> حجز يُنصح بحوالي <b>'+reco+'</b> حالة مرشحة.</div>';
   }
   h += '</div>';
-  if (!isEval){
+  {
     var n = d.candidateIds.length, reco2 = recommendedFor(d.type, target);
     var avail = rankCases({id:'__draft', type:d.type, loc:d.loc, gov:d.gov, dateOffset:d.dateOffset}).filter(function(p){ return d.candidateIds.indexOf(p.c.id)===-1; }).length;
     var canAdd = Math.min(Math.max(0, reco2-n), avail);
@@ -2024,7 +2124,7 @@ function filteredCases(){
     if (ab && ab.test && !ab.test(c.age)) return false;
     if (tb && tb.test && !tb.test(attemptsTotal(c.id))) return false;
     var q = (f.q||'').trim();
-    if (q && c.name.indexOf(q)===-1 && c.id.indexOf(q)===-1) return false;
+    if (q && c.name.indexOf(q)===-1 && c.code.toUpperCase().indexOf(q.toUpperCase())===-1 && c.phone.indexOf(q)===-1) return false;
     return true;
   });
 }
@@ -2057,7 +2157,7 @@ function renderAddCases(){
       '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>#</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>السن</th><th>الأولوية</th><th>سبب الترشيح</th></tr></thead><tbody>';
     rows.forEach(function(p, i){
       var c = p.c;
-      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td class="rank-num">'+(p.manual?'—':(i+1))+'</td><td>'+c.id+'</td>'+
+      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td class="rank-num">'+(p.manual?'—':(i+1))+'</td><td dir="ltr" style="text-align:right;">'+c.code+'</td>'+
         '<td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.age+'</td>'+
         '<td class="score-cell"><b>'+(p.manual?'—':p.score)+'</b>'+(p.manual?'':'<div class="score-bar"><div class="score-fill" style="width:'+p.score+'%;"></div></div>')+'</td>'+
         '<td>'+(p.manual ? '<span class="reason '+(p.why==='محجوزة في هذه المهمة'?'pref':'neg')+'">'+(p.why ? esc(p.why) : 'مضافة يدويًا')+'</span>' : reasonChips(p))+'</td></tr>';
@@ -2071,7 +2171,7 @@ function renderAddCases(){
     function opts(list, cur){ return '<option value="">الكل</option>' + list.map(function(v){ return '<option'+(cur===v?' selected':'')+'>'+v+'</option>'; }).join(''); }
     function bopts(list, cur){ return list.map(function(b){ return '<option value="'+b.key+'"'+(cur===b.key?' selected':'')+'>'+b.label+'</option>'; }).join(''); }
     h += '<div class="filters-bar">'+
-      '<div class="filter-field"><label>بحث</label><input class="filter-search" placeholder="الاسم أو الكود..." value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/></div>'+
+      '<div class="filter-field"><label>بحث</label><input class="filter-search" placeholder="الاسم أو الكود أو الهاتف..." value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/></div>'+
       '<div class="filter-field"><label>المحافظة</label><select class="filter-select" data-change="setFilter" data-a="gov">'+opts(GOVERNORATES,f.gov)+'</select></div>'+
       '<div class="filter-field"><label>التمويل</label><select class="filter-select" data-change="setFilter" data-a="funding">'+opts(FUNDING_OPTIONS,f.funding)+'</select></div>'+
       '<div class="filter-field"><label>مستوى البتر</label><select class="filter-select" data-change="setFilter" data-a="level">'+opts(LEVEL_OPTIONS,f.level)+'</select></div>'+
@@ -2085,7 +2185,7 @@ function renderAddCases(){
       '<th style="width:34px;"><input type="checkbox"'+(allSel?' checked':'')+A('toggleSelectAll')+'/></th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th><th>السن</th><th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th>الأولوية</th></tr></thead><tbody>';
     list.forEach(function(c){
       var p = priorityOf(ctx, c);
-      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td>'+c.id+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td><td>'+attemptsTotal(c.id)+'</td><td>'+(c.pref||'غير محدد')+'</td>'+
+      h += '<tr><td><input type="checkbox"'+(sel.indexOf(c.id)!==-1?' checked':'')+A('toggleCaseSel', c.id)+'/></td><td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td><td>'+attemptsTotal(c.id)+'</td><td>'+(c.pref||'غير محدد')+'</td>'+
         '<td>'+(p.eligible ? '<b>'+p.score+'</b>' : '<span class="reason neg" title="'+esc(p.why)+'">'+esc(p.why)+'</span>')+'</td></tr>';
     });
     h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
@@ -2099,7 +2199,7 @@ function renderAddCases(){
 // =====================================================================
 function renderDetail(){
   var t = findTask(S.detailTaskId); if (!t) return '';
-  var m = TASK_TYPES[t.type], isEval = t.type==='maintEval', admin = isAdmin();
+  var m = TASK_TYPES[t.type], admin = isAdmin();
   var booked = taskBookedCount(t), remaining = Math.max(0, t.target-booked);
   var pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0, full = t.target>0 && booked>=t.target;
   var extra = '';
@@ -2120,6 +2220,8 @@ function renderDetail(){
   h += '<div class="info-grid"><div class="info-item"><div class="k">مكان الزيارة</div><div class="v">'+esc(locLabelFor(t))+'</div></div>'+
     '<div class="info-item"><div class="k">المحافظة</div><div class="v">'+esc(t.loc==='convoy' ? (t.gov||'—') : '—')+'</div></div>';
   h += '</div>';
+  h += '<div class="visits-link">'+ic('list',13)+'<span>الحجوزات بتنزل في <b>صفحة الزيارات</b>: تاريخ حجز الزيارة <b dir="ltr">'+isoDate(t.dateOffset)+'</b> · عمود «'+m.label+'» · زرار الاستقبال: <b>استقبال '+m.reception+'</b>'+
+    (t.dateOffset <= todayOffset() ? ' · نتيجة الحضور بترجع هنا من الاستقبال' : '')+'</span></div>';
   if (t.loc==='convoy'){
     if (admin && S.convoyEdit){
       h += '<div class="convoy-box">' + convoyFields(S.convoyEdit, 'convoyInput', 'e') +
@@ -2139,21 +2241,12 @@ function renderDetail(){
 
   var targetEdit = '';
   if (admin){
-    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">'+(isEval?'تعديل إجمالي المواعيد':'تعديل العدد المستهدف')+'</label>' + (S.editingTarget
+    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">تعديل العدد المستهدف</label>' + (S.editingTarget
       ? '<div class="target-edit-row"><input class="num-input" type="number" min="0" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
         '<button class="btn btn-primary btn-sm"'+A('saveTarget')+'>حفظ</button><button class="btn btn-secondary btn-sm"'+A('cancelEditTarget')+'>إلغاء</button></div>'
       : '<button class="btn btn-secondary btn-sm"'+A('startEditTarget')+'>تعديل العدد</button>') + '</div>';
   }
 
-  if (isEval){
-    h += '<div class="eval-metric-row"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">إجمالي المواعيد</div></div>'+
-      '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">المواعيد المحجوزة</div></div>'+
-      '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المواعيد المتبقية</div></div></div>'+
-      '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>'+
-      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">'+(full ? 'مكتمل — لا توجد مواعيد متاحة' : 'متبقي '+remaining+' من إجمالي '+t.target+' مواعيد')+'</div>' + targetEdit +
-      '<div class="eval-note">تُدار عمليات حجز مواعيد تقييم الصيانة من صفحات المتابعات وطلب الصيانة المرتبطة. هذا العرض يوضّح فقط حالة الإتاحة الحالية.</div>';
-    return h + '</div></aside>';
-  }
 
   h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">العدد المستهدف</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+t.candidateIds.length+'</div><div class="metric-lbl">الحالات المرشحة</div></div>'+
@@ -2182,12 +2275,12 @@ function renderDetail(){
   var q = (S.detailCaseSearch||'').trim();
   var ids = t.candidateIds.filter(function(cid){
     var c = caseById(cid);
-    if (q && !(c && (c.name.indexOf(q)!==-1 || c.id.indexOf(q)!==-1))) return false;
+    if (q && !(c && (c.name.indexOf(q)!==-1 || c.code.toUpperCase().indexOf(q.toUpperCase())!==-1 || c.phone.indexOf(q)!==-1))) return false;
     if (isCC() && S.detailMineOnly && t.assignee[cid]!==S.agentId) return false;
     return true;
   });
   h += '<div class="section-head"><span class="section-title">الحالات ('+t.candidateIds.length+')</span>'+
-    '<input class="case-search" placeholder="بحث بالاسم أو الكود" value="'+esc(S.detailCaseSearch)+'" data-k="dsearch" data-input="detailSearch"/></div>';
+    '<input class="case-search" placeholder="الاسم أو الكود أو الهاتف" value="'+esc(S.detailCaseSearch)+'" data-k="dsearch" data-input="detailSearch"/></div>';
   if (isCC()){
     h += '<label class="switch-row" style="margin-bottom:10px;"><input type="checkbox"'+(S.detailMineOnly?' checked':'')+A('toggleMineOnly')+'/> حالاتي فقط</label>';
   }
@@ -2213,7 +2306,7 @@ function renderCaseRow(t, cid){
   var open = isOpenStatus(st.key);
   var h = '<div class="case-row'+(st.key==='lockedElsewhere'?' locked':'')+(st.key==='notInterested'?' inactive':'')+'"><div class="case-row-top"><div><div class="case-id-line">';
   if (admin && st.key!=='booked' && st.key!=='lockedElsewhere') h += '<input type="checkbox"'+(S.detailBulkSelected.indexOf(cid)!==-1?' checked':'')+A('toggleBulk', cid)+'/>';
-  h += '<span class="case-code">'+c.id+'</span><span class="case-name">'+esc(c.name)+'</span></div>'+
+  h += '<span class="case-code" dir="ltr">'+c.code+'</span><span class="case-name">'+esc(c.name)+'</span></div>'+
     '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+statusTag(st)+'</div>';
   h += '<div class="case-meta">'+phoneChip(c)+'<span class="meta-sep">|</span>';
   if (admin && t.status==='published' && open){
@@ -2296,8 +2389,8 @@ function renderSettings(){
     setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid">'+
-    setNum('histRates.measurement','المقاسات','%')+setNum('histRates.newDelivery','التسليمات الجديدة','%')+setNum('histRates.maintDelivery','تسليمات الصيانة','%')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title">نسب الحجز التاريخية</div><div class="set-desc">نسبة الحالات اللي بتتحجز فعلًا من المرشحين. بتتحسب منها توصية عدد المرشحين (الهدف ÷ النسبة). في النسخة النهائية هتتحسب تلقائيًا من سجل المكالمات.</div><div class="set-grid four">'+
+    setNum('histRates.measurement','تقييم طبي وقياسات','%')+setNum('histRates.newDelivery','تسليم طرف جديد','%')+setNum('histRates.maintEval','تقييم صيانة','%')+setNum('histRates.maintDelivery','تسليم صيانة','%')+'</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
