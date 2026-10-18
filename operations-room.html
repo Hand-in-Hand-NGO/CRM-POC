@@ -2352,9 +2352,16 @@ function renderCreate(){
   }
   h += '<div class="field"><label class="field-label">العدد المستهدف</label>'+
     '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>';
+  // capacity after adding
+  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
+  var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
+  var anyOver = loads.some(function(x){ return x.load > x.cap; });
+  h += '<div class="cap-box'+(anyOver?' over':'')+'" style="margin-top:10px;margin-bottom:0;"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+' بعد إضافة المهمة'+
+    (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
+  h += '';
   if (target>0){
     var rate = S.settings.histRates[d.type], reco = recommendedFor(d.type, target);
-    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' المُوصى: <b>'+reco+'</b> مرشح · نسبة الحجز <b>'+Math.round(rate*100)+'%</b></div>';
+    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' مطلوب حجز <b>'+reco+'</b> حالة</div>';
   }
   h += '</div>';
   {
@@ -2364,12 +2371,6 @@ function renderCreate(){
     if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>+ إضافة حالات</button>';
     h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
-  // capacity after adding
-  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
-  var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
-  var anyOver = loads.some(function(x){ return x.load > x.cap; });
-  h += '<div class="cap-box'+(anyOver?' over':'')+'"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+' بعد إضافة المهمة'+
-    (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
   h += '</div><div class="drawer-foot">'+
     '<button class="btn btn-primary"'+A('createTask','0')+(canCreate?'':' disabled')+'>إنشاء كمسودة</button>'+
     '<button class="btn btn-secondary"'+A('createTask','1')+(canCreate?'':' disabled')+'>'+ic('send',13)+' إنشاء ونشر</button>'+
