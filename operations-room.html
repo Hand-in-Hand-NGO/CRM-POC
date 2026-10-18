@@ -674,6 +674,23 @@
     .focus-call:hover{background:#116632;}
     .focus-hint{text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px;}
     @media (max-width:900px){ .pools-row{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    .inb-bar{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+    .inb-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;}
+    .inb-search{flex:1;border-radius:8px;}
+    .inb-results{position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:20;max-height:340px;overflow-y:auto;}
+    .inb-item{display:flex;align-items:center;gap:12px;padding:9px 12px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--neutral-tint);}
+    .inb-item:hover{background:var(--surface-alt);}
+    .inb-item b{min-width:170px;}
+    .inb-muted{color:var(--text-faint);font-size:11.5px;margin-right:auto;}
+    .inb-item .prio-badge{margin-right:auto;}
+    .inb-empty{padding:14px;text-align:center;color:var(--text-faint);font-size:12.5px;}
+    .inb-case{background:#fff;border:1px solid #ddd;border-radius:6px;overflow:hidden;box-shadow:var(--shadow-sm);}
+    .pf-grid{display:grid;grid-template-columns:170px minmax(0,1fr) 170px minmax(0,1fr);gap:0 14px;font-size:12.5px;}
+    .pf-k{font-weight:700;color:#333;padding:7px 0;border-bottom:1px solid #f2f2f2;}
+    .pf-v{color:#666;padding:7px 0;border-bottom:1px solid #f2f2f2;}
+    .inb-changes{background:#f56b7b;border-color:#e45a6a;width:100%;justify-content:center;margin-top:8px;}
+    .inb-changes:hover{background:#dd4b39;}
+    @media (max-width:800px){ .pf-grid{grid-template-columns:120px minmax(0,1fr);} }
     .toast{
       position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
       padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
@@ -884,6 +901,7 @@ var OUTCOME_DEFS = [
 var FAILED_OUTCOMES = ['noAnswer','unavailable'];
 function outcomeDef(key){
   if (key === 'bookedAlt') return {key:'bookedAlt', label:'تم الحجز في موعد آخر', color:'#15803d'};
+  if (key === 'maintRequest') return {key:'maintRequest', label:'تسجيل طلب صيانة', color:'#2f6fed'};
   for (var i=0;i<OUTCOME_DEFS.length;i++){ if (OUTCOME_DEFS[i].key===key) return OUTCOME_DEFS[i]; }
   return {key:key, label:key, color:'#5b6472'};
 }
@@ -994,7 +1012,7 @@ var S = {
   overlay:null, createDraft:null, govSearch:'', govDropdownOpen:false,
   detailTaskId:null, detailCaseSearch:'', detailMineOnly:true, detailBulkSelected:[],
   editingTarget:false, editingTargetValue:'',
-  addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesPrio:[], poolOpen:null, poolSearch:'', poolSort:'', dashOpen:false, dashPeriod:'month', dashStep:0, dashAgent:'', addCasesFilters:emptyFilters(),
+  addCasesMode:null, addCasesTab:'auto', addCasesSelected:[], addCasesPrio:[], poolOpen:null, poolSearch:'', poolSort:'', inbound:{q:'', pick:null, form:{}}, dashOpen:false, dashPeriod:'month', dashStep:0, dashAgent:'', addCasesFilters:emptyFilters(),
   confirm:null,
   callOpen:null, callDraft:{}, logOpen:{}, bookTimes:{},
   queueAgent:'', capacityDay:null, capDraft:null,
@@ -2159,6 +2177,8 @@ function renderAgentFocus(){
   var total = due.length + other.length + later.length;
   var h = '<div class="focus-wrap"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
     '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
+  h += renderInbound();
+  if (S.inbound.pick) return h + renderInboundCase() + '</div>';
   if (!seq.length){
     h += '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">مفيش مكالمة مستحقة دلوقتي</div>'+
       (later.length ? '<div class="q-sub">المكالمة الجاية '+fmtWhen(later[0].nxt)+'</div>' : '')+'</div>';
@@ -3047,6 +3067,147 @@ Object.assign(ACT, {
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   });
 })();
+
+// =====================================================================
+// Inbound calls: delivered cases asking for maintenance
+// =====================================================================
+var MAINT_REASONS = ['كسر في الطرف','السوكيت مش مظبوط / تغيير مقاس','ألم أو جرح من الطرف','تغيير قطع غيار','صيانة دورية','أخرى'];
+// every case that received a limb (stands in for the server's delivered-cases list)
+var DELIVERED = (function(){
+  var s = 23; function r(){ s = (s*9301 + 49297) % 233280; return s/233280; }
+  function pick(a){ return a[Math.floor(r()*a.length)]; }
+  var FIRST = ['حسناء','محمد','أحمد','فاطمة','مصطفى','سعاد','إبراهيم','منى','كريم','هدى','عبد الله','نجلاء','سيد','رشا','حسن','آمال','طارق','نادية','يوسف','سامية'];
+  var MID = ['محمد','أحمد','شعبان','علي','حسن','عبد الحميد','إبراهيم','سعيد','فتحي','جمال'];
+  var LAST = ['عزب','سليمان','النجار','منصور','عوض','شلبي','زكي','حسانين','الشافعي','عبد العزيز'];
+  var PLACES = {'القاهرة':['المطرية','عين شمس','شبرا'], 'الجيزة':['إمبابة','الهرم','أوسيم'], 'بني سويف':['سمسطا','الواسطى','ناصر'], 'المنيا':['مطاي','سمالوط','ملوي'],
+    'أسوان':['كوم امبو','إدفو','دراو'], 'سوهاج':['طهطا','جرجا','المراغة'], 'الفيوم':['سنورس','إطسا','طامية'], 'الشرقية':['الزقازيق','بلبيس','منيا القمح']};
+  var govs = Object.keys(PLACES);
+  function dstr(y0, y1){ var y = y0 + Math.floor(r()*(y1-y0+1)), m = 1 + Math.floor(r()*12), d = 1 + Math.floor(r()*28); return y + '-' + ('0'+m).slice(-2) + '-' + ('0'+d).slice(-2); }
+  function phone(){ var t = String(Math.floor(r()*1e8)); while (t.length<8) t = '0'+t; return pick(['010','011','012','015']) + t; }
+  var out = [];
+  function make(id, name, gov, age, level, ph){
+    var markaz = pick(PLACES[gov] || ['المركز']), female = /ة$|ء$|ى$|سعاد|آمال|منى|هدى|نجلاء|رشا|نادية|سامية|فاطمة|حسناء|ليلى|هالة/.test(name.split(' ')[0]);
+    var birthY = new Date().getFullYear() - age, amp = dstr(birthY + Math.min(age-1, 5), new Date().getFullYear() - 2);
+    return {id:id, name:name, gov:gov, age:age, level:level, phone:ph, gender: female ? 'أنثى' : 'ذكر',
+      code:(CODE_PREFIX[level]||'BK') + String(10 + (out.length*7) % 90) + String(100 + (out.length*53) % 900),
+      nid:(age>=18?'2':'3') + (function(){ var x=''; for (var k=0;k<13;k++) x += Math.floor(r()*10); return x; })(), marital: age<18 ? 'أعزب' : pick(['متزوج','متزوج','أعزب','أرمل','مطلق']),
+      birth: birthY + '-' + ('0'+(1+Math.floor(r()*12))).slice(-2) + '-' + ('0'+(1+Math.floor(r()*28))).slice(-2), markaz:markaz, area:pick(['-','الشياخة الأولى','الشياخة الثانية','-']),
+      address:markaz, cardAddress:pick(['-', markaz + ' – ' + gov]), phone1:ph, phone2:r()<0.4 ? phone() : '-', edu:pick(['بدون','بدون','إعدادية','دبلوم','جامعي']),
+      job:age<18 ? 'طالب' : pick(['بدون عمل','عامل','موظف','ربة منزل','مزارع']), howKnown:pick(['جهة او جمعية او مؤسسة أخرى','فيسبوك','معرفة شخصية','حالة سابقة']),
+      chronic:pick(['بدون','بدون','سكر','ضغط','سكر وضغط']), weight:35 + Math.floor(r()*70), side:pick(['أيمن','أيسر']), ampDate:amp,
+      cause:pick(['حادث','طبيعي','سكر','خلقي','ورم']), causeDetails:'-', lastSurgery:dstr(2015, new Date().getFullYear()-1),
+      delivered:dstr(new Date().getFullYear()-3, new Date().getFullYear()), funding:pick(FUNDING_OPTIONS), requests:[]};
+  }
+  // cases that already have an open maintenance request in the operations room
+  CASES.filter(function(c){ return c.order==='maintenance'; }).forEach(function(c){ out.push(make(c.id, c.name, c.gov, c.age, c.level, c.phone)); });
+  for (var i=0;i<34;i++){
+    var gov = pick(govs), age = 6 + Math.floor(r()*60);
+    var d = make('D-' + (2001+i), pick(FIRST) + ' ' + pick(MID) + ' ' + pick(LAST), gov, age, pick(LEVEL_OPTIONS), phone());
+    if (r() < 0.35) d.requests.push({date:dstr(new Date().getFullYear()-2, new Date().getFullYear()-1), callType:'وارد', place:'داخل المؤسسة', reason:pick(MAINT_REASONS), notes:'تمت الصيانة', responsible:'لا', by:pick(AGENTS).name});
+    out.push(d);
+  }
+  return out;
+})();
+var DELIVERED_MAP = {}; DELIVERED.forEach(function(d){ DELIVERED_MAP[d.id] = d; });
+function openMaintenance(id){ var c = CASE_MAP[id]; return !!(c && (c.stage==='maintEval' || c.stage==='maintDelivery')); }
+function emptyInboundForm(){ return {date:isoDate(todayOffset()), callType:'وارد', place:'', notes:'', responsible:'', reason:'', showHist:false}; }
+
+function renderInbound(){
+  var ib = S.inbound, q = (ib.q||'').trim();
+  var h = '<div class="inb-bar"><div class="inb-title">'+ic('phone',15,'#2f6fed')+' مكالمة واردة</div>'+
+    '<input class="cms-input inb-search" placeholder="ابحث باسم الحالة أو الكود أو التليفون" value="'+esc(ib.q)+'" data-k="inb-q" data-input="inboundSearch"/>';
+  if (q.length >= 2 && !ib.pick){
+    var qu = q.toUpperCase();
+    var res = DELIVERED.filter(function(d){ return d.name.indexOf(q)!==-1 || d.code.indexOf(qu)!==-1 || d.phone.indexOf(q)!==-1; }).slice(0, 8);
+    h += '<div class="inb-results">' + (res.length ? res.map(function(d){
+      return '<div class="inb-item"'+A('inboundPick', d.id)+'><b>'+esc(d.name)+'</b><span class="case-code" dir="ltr">'+d.code+'</span><span>'+esc(d.gov)+'</span><span dir="ltr">'+fmtPhone(d.phone)+'</span>'+
+        (openMaintenance(d.id) ? '<span class="prio-badge">عنده طلب صيانة مفتوح</span>' : '<span class="inb-muted">استلم <span dir="ltr">'+d.delivered+'</span></span>')+'</div>';
+    }).join('') : '<div class="inb-empty">لم يتم العثور علي أي نتائج</div>') + '</div>';
+  }
+  return h + '</div>';
+}
+function profRow(k, v){ return '<div class="pf-k">'+k+':</div><div class="pf-v">'+esc(v==null || v==='' ? '-' : v)+'</div>'; }
+function renderInboundCase(){
+  var d = DELIVERED_MAP[S.inbound.pick]; if (!d) return '';
+  var f = S.inbound.form, open = openMaintenance(d.id);
+  var h = '<div class="inb-case"><div class="cms-head"><div class="cms-title">'+ic('user',15,'#535252')+' '+esc(d.name)+' – طلب صيانة</div>'+
+    '<button class="cms-close" title="رجوع لقائمتي"'+A('inboundClose')+'>'+ic('x',15,'#535252',2.4)+'</button></div><div class="cms-body">';
+  h += '<div class="pf-grid">'+
+    profRow('كود الطرف', d.code)+'<div></div><div></div>'+
+    profRow('رقم الهوية', d.nid)+profRow('اسم الحالة', d.name)+
+    profRow('الحالة الإجتماعية', d.marital)+profRow('النوع', d.gender)+
+    profRow('تاريخ الميلاد', d.birth)+profRow('المحافظة', d.gov)+
+    profRow('القسم او المركز', d.markaz)+profRow('المنطقة او الشياخة', d.area)+
+    profRow('عنوان الإقامة', d.address)+profRow('العنوان بالبطاقة', d.cardAddress)+
+    profRow('التليفون', d.phone)+profRow('رقم هاتف 1', d.phone1)+
+    profRow('رقم هاتف 2', d.phone2)+profRow('المؤهل الدراسى', d.edu)+
+    profRow('الوظيفة', d.job)+profRow('كيف عرفتنا', d.howKnown)+
+    profRow('الأمراض المزمنة', d.chronic)+profRow('الوزن', d.weight)+
+    profRow('مستوى البتر', d.level)+profRow('البتر بالطرف', d.side)+
+    profRow('تاريخ البتر', d.ampDate)+profRow('سبب البتر', d.cause)+
+    profRow('تفاصيل سبب البتر', d.causeDetails)+profRow('تاريخ اخر جراحة في مكان البتر', d.lastSurgery)+
+    profRow('تاريخ استلام الطرف', d.delivered)+profRow('التمويل', d.funding)+'</div>';
+  if (open) h += '<div class="rule-hint warn">الحالة عندها طلب صيانة مفتوح بالفعل</div>';
+  // maintenance request form (same fields as the CMS)
+  function sel(field, opts){ return '<select class="cms-input" data-change="inboundField" data-a="'+field+'"><option value="">اختر</option>'+opts.map(function(o){ return '<option'+(f[field]===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>'; }
+  h += '<div class="cms-form" style="margin-top:16px;border-top:1px solid #eee;padding-top:16px;">';
+  h += '<div class="cms-row"><label class="cms-label">تاريخ تقديم الطلب <span class="req">*</span></label><div class="cms-field"><input class="cms-input" type="date" value="'+esc(f.date)+'" data-k="inb-date" data-input="inboundField" data-a="date"/></div>'+
+    '<label class="cms-label">نوع المكالمة <span class="req">*</span></label><div class="cms-field">'+sel('callType', ['وارد','صادر'])+'</div></div>';
+  h += '<div class="cms-row"><label class="cms-label">مكان الصيانة <span class="req">*</span></label><div class="cms-field">'+sel('place', ['داخل المؤسسة', 'قافلة – ' + d.gov])+'</div>'+
+    '<label class="cms-label">الملاحظات <span class="req">*</span></label><div class="cms-field"><textarea class="cms-input" rows="2" placeholder="الملاحظات" data-k="inb-notes" data-input="inboundField" data-a="notes">'+esc(f.notes)+'</textarea></div></div>';
+  h += '<div class="cms-row"><label class="cms-label">هل يوجد مسئول عن الحالة <span class="req">*</span></label><div class="cms-field">'+sel('responsible', ['لا','نعم'])+'</div>'+
+    '<label class="cms-label">سبب الصيانة <span class="req">*</span></label><div class="cms-field">'+sel('reason', MAINT_REASONS)+
+    '<button class="cms-btn inb-changes"'+A('inboundHist')+'>'+ic('history',12,'#fff')+' التغييرات التي تمت ('+d.requests.length+')</button></div></div>';
+  if (f.showHist){
+    h += '<table class="cms-table" style="margin-bottom:12px;"><thead><tr><th>تاريخ الطلب</th><th>نوع المكالمة</th><th>مكان الصيانة</th><th>سبب الصيانة</th><th>الملاحظات</th><th>بواسطة</th></tr></thead><tbody>'+
+      (d.requests.length ? d.requests.slice().reverse().map(function(x){ return '<tr><td dir="ltr" style="text-align:right;">'+x.date+'</td><td>'+esc(x.callType)+'</td><td>'+esc(x.place)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.notes)+'</td><td>'+esc(x.by)+'</td></tr>'; }).join('')
+        : '<tr><td colspan="6" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>';
+  }
+  h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('inboundAdd')+(open?' disabled style="opacity:.5;cursor:not-allowed;"':'')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button></div>';
+  return h + '</div></div></div>';
+}
+Object.assign(ACT, {
+  inboundSearch: function(v){ S.inbound.q = v; S.inbound.pick = null; render(); },
+  inboundPick: function(id){ S.inbound.pick = id; S.inbound.form = emptyInboundForm(); render(); },
+  inboundClose: function(){ S.inbound = {q:'', pick:null, form:emptyInboundForm()}; render(); },
+  inboundField: function(v, field){ S.inbound.form[field] = v; render(); },
+  inboundHist: function(){ S.inbound.form.showHist = !S.inbound.form.showHist; render(); },
+  inboundAdd: function(){
+    var d = DELIVERED_MAP[S.inbound.pick], f = S.inbound.form; if (!d || openMaintenance(d.id)) return;
+    var miss = [['date','تاريخ تقديم الطلب'],['callType','نوع المكالمة'],['place','مكان الصيانة'],['notes','الملاحظات'],['responsible','هل يوجد مسئول عن الحالة'],['reason','سبب الصيانة']]
+      .filter(function(x){ return !String(f[x[0]]||'').trim(); });
+    if (miss.length){ toast('اكمل: ' + miss.map(function(x){ return x[1]; }).join('، ')); return render(); }
+    var convoy = f.place.indexOf('قافلة')===0;
+    // the case becomes a maintenance request waiting for "تقييم الصيانة"
+    var c = CASE_MAP[d.id];
+    if (!c){
+      c = mk(d.id, d.name, d.gov, d.funding, d.level, d.age, 0, convoy ? 'قافلة' : 'داخل المؤسسة', 'maintEval', 0, 0);
+      c.phone = d.phone; c.code = d.code;
+      CASES.push(c); CASE_MAP[c.id] = c;
+    } else { c.stage = 'maintEval'; c.order = 'maintenance'; c.waitingDays = 0; c.ready = null; c.pref = convoy ? 'قافلة' : 'داخل المؤسسة'; }
+    d.requests.push({date:f.date, callType:f.callType, place:f.place, reason:f.reason, notes:f.notes.trim(), responsible:f.responsible, by:agentName(S.agentId)});
+    // nearest published "تقييم الصيانة" day with room, in the requested place
+    var tOff = todayOffset();
+    var target = S.tasks.filter(function(t){
+      return t.type==='maintEval' && t.status==='published' && t.dateOffset>=tOff && taskBookedCount(t) < t.target &&
+        (convoy ? (t.loc==='convoy' && t.gov===d.gov) : t.loc==='org');
+    }).sort(function(a,b){ return a.dateOffset - b.dateOffset; })[0];
+    S.callLog.push({id:'L'+Date.now(), taskId: target ? target.id : null, caseId:c.id, agentId:S.agentId, at:now(), outcome:'maintRequest',
+      callType:f.callType, note:f.reason + ' – ' + f.notes.trim()});
+    S.inbound = {q:'', pick:null, form:emptyInboundForm()};
+    if (!target){
+      toast('اتسجل طلب الصيانة ونزل في حصالة تقييم صيانة – مفيش موعد تقييم صيانة متاح');
+      return render();
+    }
+    if (target.candidateIds.indexOf(c.id)===-1) target.candidateIds.push(c.id);
+    target.assignee[c.id] = S.agentId;
+    target.priority = target.priority || {}; target.priority[c.id] = true;
+    S.callOpen = {tid:target.id, cid:c.id};
+    S.callDraft = {callType:f.callType, outcome:'booked', bookTid:target.id, bookTime:'', note:''};
+    toast('اتسجل طلب الصيانة – حدد الحجز');
+    render();
+  },
+});
 
 // =====================================================================
 // Init
