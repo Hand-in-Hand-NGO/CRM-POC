@@ -290,7 +290,7 @@
     table.cases-table{width:100%;border-collapse:collapse;font-size:12.5px;}
     table.cases-table thead th{
       text-align:right;color:var(--text-faint);font-weight:700;font-size:11px;padding:8px 9px;border-bottom:1px solid var(--border);
-      background:var(--surface-alt);position:sticky;top:0;
+      background:var(--surface-alt);position:sticky;top:0;z-index:3;white-space:nowrap;box-shadow:0 1px 0 var(--border);
     }
     table.cases-table tbody td{padding:9px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
     table.cases-table tbody tr:hover{background:var(--surface-alt);}
@@ -2018,7 +2018,7 @@ function renderTaskCard(t){
   } else {
     var reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
     var lack = admin && n < reco && !full;
-    h += '<div class="candidates-line">المرشحين: '+n+(admin ? ' · <span class="'+(lack?'cand-warn':'')+'">المُوصى '+reco+'</span>' : '')+'</div>';
+    h += '<div class="candidates-line">المرشحين: '+n+(admin ? ' · <span class="'+(lack?'cand-warn':'')+'">مطلوب حجز '+reco+'</span>' : '')+'</div>';
   }
   if (isCC()){
     var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
@@ -2347,7 +2347,7 @@ function renderCreate(){
     h += convoyFields(d, 'setConvoyField', 'c');
   }
   h += '<div class="field"><label class="field-label">العدد المستهدف</label>'+
-    '<input class="num-input" type="number" min="0" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>';
+    '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>';
   // capacity after adding
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
   var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
@@ -2437,9 +2437,9 @@ function renderAddCases(){
     '<button class="clear-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>';
   var list = filteredCases();
   var reco = recommendedFor(ctx.type, ctx.target);
-  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في مرحلة «'+m.label+'»</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · المُوصى '+reco : '')+'</div></div>';
+  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في مرحلة «'+m.label+'»</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco : '')+'</div></div>';
   function th(label, a, d){ var on = srt===a || srt===d, nx = srt===d ? a : d; return '<th class="sort-th'+(on?' on':'')+'"'+A('addCasesSortBy', nx)+'>'+label+' '+(on ? (srt===d ? '▼' : '▲') : '⇅')+'</th>'; }
-  h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:380px;overflow-y:auto;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
+  h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:380px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
     '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th>'+
     th('السن','ageAsc','ageDesc')+th('مدة الانتظار من اللجنة','waitAsc','waitDesc')+'<th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th></th></tr></thead><tbody>';
   list.forEach(function(c){
@@ -2499,7 +2499,7 @@ function renderDetail(){
   var targetEdit = '';
   if (admin){
     targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">تعديل العدد المستهدف</label>' + (S.editingTarget
-      ? '<div class="target-edit-row"><input class="num-input" type="number" min="0" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
+      ? '<div class="target-edit-row"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
         '<button class="btn btn-primary btn-sm"'+A('saveTarget')+'>حفظ</button><button class="btn btn-secondary btn-sm"'+A('cancelEditTarget')+'>إلغاء</button></div>'
       : '<button class="btn btn-secondary btn-sm"'+A('startEditTarget')+'>تعديل العدد</button>') + '</div>';
   }
@@ -2518,7 +2518,7 @@ function renderDetail(){
     var rate = S.settings.histRates[t.type], reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
     var callable = callableCount(t), expected = Math.floor(callable * rate);
     var lack = n < reco || expected < remaining;
-    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' المُوصى: <b>'+reco+'</b> مرشح · الموجود: <b>'+n+'</b> · ممكن الاتصال بيهم: <b>'+callable+'</b>';
+    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' مطلوب حجز: <b>'+reco+'</b> · الموجود: <b>'+n+'</b> · ممكن الاتصال بيهم: <b>'+callable+'</b>';
     h += '</div>';
   }
   h += targetEdit;
@@ -2612,7 +2612,7 @@ function renderCapacity(){
   var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
     '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
   h += '<div class="field"><label class="field-label">الطاقة الاستيعابية للحجوزات في اليوم ده</label>' + (admin
-    ? '<div class="input-suffix"><input class="num-input" type="number" min="0" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حجز/يوم</span></div>'
+    ? '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حجز/يوم</span></div>'
     : '<div class="readonly-box">'+cap+' حجز/يوم</div>') + '</div>';
   h += '<div class="cap-box">'+capTable(loads)+'</div>';
   h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
@@ -2628,7 +2628,7 @@ function renderCapacity(){
 }
 
 function setNum(path, label, suffix){
-  return '<div><label>'+label+'</label><div class="input-suffix"><input class="num-input" type="number" min="0" value="'+esc(S.settingsDraft[path])+'" data-k="set-'+path+'" data-input="setInput" data-a="'+path+'"/>'+(suffix?'<span>'+suffix+'</span>':'')+'</div></div>';
+  return '<div><label>'+label+'</label><div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.settingsDraft[path])+'" data-k="set-'+path+'" data-input="setInput" data-a="'+path+'"/>'+(suffix?'<span>'+suffix+'</span>':'')+'</div></div>';
 }
 function renderSettings(){
   if (!isAdmin()) return '';
@@ -2656,6 +2656,12 @@ document.addEventListener('click', function(e){
 document.addEventListener('input', function(e){
   var el = e.target;
   if (!el.getAttribute || !el.getAttribute('data-input')) return;
+  if (el.getAttribute('inputmode')==='numeric'){
+    // digits only (Arabic-Indic digits are accepted and converted)
+    var pos = el.selectionStart, v = el.value.replace(/[٠-٩]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); });
+    var clean = v.replace(/[^0-9]/g, '');
+    if (clean !== el.value){ pos = Math.max(0, pos - (v.length - clean.length)); el.value = clean; try { el.setSelectionRange(pos, pos); } catch(err){} }
+  }
   var fn = ACT[el.getAttribute('data-input')];
   if (fn) fn(el.value, el.getAttribute('data-a'));
 });
