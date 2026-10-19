@@ -693,6 +693,9 @@
     @media (max-width:800px){ .pf-grid{grid-template-columns:120px minmax(0,1fr);} }
     .calls-need{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
     .set-sub{font-size:11px;font-weight:500;color:var(--text-faint);margin-inline-start:6px;}
+    .att-box{border:1px solid var(--border);border-radius:8px;background:var(--surface-2,#f8fafc);padding:7px 10px;display:flex;align-items:center;gap:8px;min-height:38px;}
+    .att-box b{font-size:18px;color:var(--text);}
+    .att-box span{font-size:10.5px;color:var(--text-faint);line-height:1.4;}
     .rate-card{border:1px solid var(--border);border-top:3px solid var(--edge);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px;}
     .rate-name{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:2px;}
     .rate-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--text-muted);}
@@ -1193,16 +1196,27 @@ function autoRates(){
     var a = acc[e.type]; a.calls++;
     if (e.outcome==='booked'){ a.booked++; if (e.att==='attended') a.attended++; else if (e.att==='noShow') a.noShow++; }
   });
-  var val = {};
+  // average of the daily attendance % (attended / booked per visit day)
+  var days = {};
+  CALL_HISTORY.concat(liveCallEvents()).forEach(function(e){
+    if (!e.att || e.vd==null || e.vd < T-RATE_DAYS || e.vd >= T) return;
+    var x = days[e.vd] || (days[e.vd] = {booked:0, attended:0});
+    x.booked++; if (e.att==='attended') x.attended++;
+  });
+  var dk = Object.keys(days), sumPct = 0, booked = 0, attended = 0;
+  dk.forEach(function(k){ var x = days[k]; sumPct += x.attended/x.booked; booked += x.booked; attended += x.attended; });
+  var daily = {att: dk.length ? sumPct/dk.length : RATE_FALLBACK.att, days:dk.length, avgBooked: dk.length ? booked/dk.length : 0, avgAttended: dk.length ? attended/dk.length : 0};
+  var val = {daily:daily};
   Object.keys(acc).forEach(function(k){
-    var a = acc[k], seen = a.attended + a.noShow;
-    val[k] = {att: seen ? a.attended/seen : RATE_FALLBACK.att, book: a.calls ? a.booked/a.calls : RATE_FALLBACK.book,
+    var a = acc[k];
+    val[k] = {att: daily.att, book: a.calls ? a.booked/a.calls : RATE_FALLBACK.book,
       attended:a.attended, noShow:a.noShow, calls:a.calls, booked:a.booked};
   });
   _ratesCache = {key:key, val:val};
   return val;
 }
 function rateFor(type){ var r = autoRates(); return r && r[type] ? r[type] : {att:RATE_FALLBACK.att, book:RATE_FALLBACK.book}; }
+function dailyAttendance(){ var r = autoRates(); return r ? r.daily : {att:RATE_FALLBACK.att, days:0, avgBooked:0, avgAttended:0}; }
 // bookings needed so that `target` cases attend
 function recommendedFor(type, target){
   var r = rateFor(type).att;
@@ -2400,7 +2414,7 @@ function renderCreate(){
   if (target>0){
     var r = rateFor(d.type), reco = recommendedFor(d.type, target), calls = callsFor(d.type, reco);
     h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' عشان يحضر <b>'+target+'</b> مطلوب حجز <b>'+reco+'</b> حالة · محتاج اتصال بـ <b>'+calls+'</b> حالة'+
-      '<div class="calls-rate">نسبة الحضور '+Math.round(r.att*100)+'% · نسبة الحجز '+Math.round(r.book*100)+'%</div></div>';
+      '<div class="calls-rate">متوسط الحضور اليومي '+Math.round(r.att*100)+'% · نسبة الحجز '+Math.round(r.book*100)+'%</div></div>';
   }
   h += '</div>';
   {
@@ -2574,7 +2588,7 @@ function renderDetail(){
       '<div><span>لسه محتاج يكلم</span><b>'+needCalls+'</b><small>حالة عشان المتبقي '+remaining+'</small></div>'+
       '<div><span>متاح للاتصال دلوقتي</span><b>'+callable+'</b><small>حالة</small></div></div>'+
       (lack ? '<div class="calls-short">ناقص <b>'+short+'</b> حالة – ضيف حالات</div>' : '')+
-      '<div class="calls-rate">'+m.short+': نسبة الحضور '+Math.round(r.att*100)+'% · نسبة الحجز '+Math.round(r.book*100)+'% (من الداش بورد · آخر '+RATE_DAYS+' يوم)</div>';
+      '<div class="calls-rate">متوسط الحضور اليومي '+Math.round(r.att*100)+'% · نسبة الحجز لـ'+m.short+' '+Math.round(r.book*100)+'%</div>';
     h += '</div>';
   }
   h += targetEdit;
@@ -2690,19 +2704,14 @@ function renderSettings(){
   if (!isAdmin()) return '';
   var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">معدلات الطاقة</div><div class="set-grid">'+
-    setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+'</div></div>';
+    setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+(function(){
+      var dA = dailyAttendance(), cap = parseInt(S.settingsDraft.dailyCapacity,10)||0;
+      return '<div><label>متوسط الحضور اليومي</label><div class="att-box"><b>'+Math.round(dA.att*100)+'%</b>'+
+        '<span>متوسط '+Math.round(dA.avgAttended)+' حضر من '+Math.round(dA.avgBooked)+' حجز في اليوم · آخر '+dA.days+' يوم</span></div></div>'+
+        '<div><label>المتوقع حضوره بالطاقة دي</label><div class="att-box"><b>'+Math.round(cap*dA.att)+'</b><span>حالة من '+cap+' حجز</span></div></div>';
+    })()+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
-  var R = autoRates() || {};
-  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">نسب الحضور والحجز <span class="set-sub">محسوبة من الداش بورد · آخر '+RATE_DAYS+' يوم</span></div><div class="set-grid four">'+
-    Object.keys(TASK_TYPES).map(function(k){
-      var tm = TASK_TYPES[k], r = R[k] || rateFor(k);
-      return '<div class="rate-card" style="--edge:'+tm.color+';"><div class="rate-name">'+tm.short+'</div>'+
-        '<div class="rate-row"><span>نسبة الحضور</span><b>'+Math.round(r.att*100)+'%</b></div>'+
-        (r.noShow!=null ? '<div class="rate-sub">حضر '+nfmt(r.attended)+' من '+nfmt(r.attended+r.noShow)+' محجوز</div>' : '')+
-        '<div class="rate-row"><span>نسبة الحجز</span><b>'+Math.round(r.book*100)+'%</b></div>'+
-        (r.calls!=null ? '<div class="rate-sub">اتحجز '+nfmt(r.booked)+' من '+nfmt(r.calls)+' مكالمة</div>' : '')+'</div>';
-    }).join('')+'</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
@@ -2805,7 +2814,7 @@ var CALL_HISTORY = (function(){
         if (!incoming && r() > ans[h]) outcome = r() < 0.72 ? 'noAnswer' : 'unavailable';
         else { var x = r(); outcome = x < p.book + 0.1 ? 'booked' : 'notInterested'; }
         var e = {d:d, h:h, agentId:a.id, type:type, outcome:outcome, incoming:incoming, att:null};
-        if (outcome==='booked'){ var vd = d + 2 + Math.floor(r()*6); if (vd < T) e.att = r() < p.show ? 'attended' : 'noShow'; }
+        if (outcome==='booked'){ var vd = d + 2 + Math.floor(r()*6); if (vd < T){ e.vd = vd; e.att = r() < p.show ? 'attended' : 'noShow'; } }
         out.push(e);
       }
     });
@@ -2817,7 +2826,7 @@ function liveCallEvents(){
     var t = findTask(l.taskId), dt = new Date(l.at), bt = l.bookTid ? findTask(l.bookTid) : t;
     var o = l.outcome==='bookedAlt' ? 'booked' : l.outcome;
     var e = {d:daysBetween(BASE_SUNDAY, dt), h:dt.getHours(), agentId:l.agentId, type:t ? t.type : 'measurement', outcome:o, incoming:l.callType==='وارد', att:null};
-    if (o==='booked' && bt){ var a = S.attendance[nextCallKey(bt.id, l.caseId)]; e.att = a ? a.status : null; }
+    if (o==='booked' && bt){ var a = S.attendance[nextCallKey(bt.id, l.caseId)]; e.att = a ? a.status : null; e.vd = bt.dateOffset; }
     return e;
   });
 }
