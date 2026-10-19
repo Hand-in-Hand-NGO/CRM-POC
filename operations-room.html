@@ -691,6 +691,14 @@
     .inb-changes{background:#f56b7b;border-color:#e45a6a;width:100%;justify-content:center;margin-top:8px;}
     .inb-changes:hover{background:#dd4b39;}
     @media (max-width:800px){ .pf-grid{grid-template-columns:120px minmax(0,1fr);} }
+    .calls-need{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+    .calls-need div{background:#fff;border:1px solid #dbe6fb;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;text-align:center;}
+    .reco-box.lack .calls-need div{border-color:#f0d58a;}
+    .calls-need span{font-size:10.5px;color:var(--text-muted);line-height:1.4;}
+    .calls-need b{font-size:20px;color:var(--text);line-height:1.2;}
+    .calls-need small{font-size:10px;color:var(--text-faint);}
+    .calls-short{margin-top:8px;color:#8a5a00;font-weight:700;}
+    .calls-rate{margin-top:4px;font-size:11px;color:var(--text-faint);}
     .toast{
       position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;border-radius:10px;
       padding:10px 16px;font-size:12.5px;font-weight:700;z-index:90;box-shadow:var(--shadow-md);
@@ -2517,8 +2525,16 @@ function renderDetail(){
   if (!full && !isCC()){
     var rate = S.settings.histRates[t.type], reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
     var callable = callableCount(t), expected = Math.floor(callable * rate);
-    var lack = n < reco || expected < remaining;
-    h += '<div class="reco-box'+(lack?' lack':'')+'">'+ic('spark',13,'#2563eb')+' مطلوب حجز: <b>'+reco+'</b> · الموجود: <b>'+n+'</b> · ممكن الاتصال بيهم: <b>'+callable+'</b>';
+    // cases the call center still has to call to fill what is left of the target
+    var needCalls = recommendedFor(t.type, remaining), short = Math.max(0, needCalls - callable);
+    var lack = short > 0;
+    h += '<div class="reco-box'+(lack?' lack':'')+'"><div class="calls-need">'+
+      '<div><span>المستهدف</span><b>'+t.target+'</b><small>حجز</small></div>'+
+      '<div><span>محتاج الكول سنتر يكلم</span><b>'+reco+'</b><small>حالة عشان يتحجز '+t.target+'</small></div>'+
+      '<div><span>لسه محتاج يكلم</span><b>'+needCalls+'</b><small>حالة عشان المتبقي '+remaining+'</small></div>'+
+      '<div><span>متاح للاتصال دلوقتي</span><b>'+callable+'</b><small>حالة</small></div></div>'+
+      (lack ? '<div class="calls-short">ناقص <b>'+short+'</b> حالة – ضيف حالات</div>' : '')+
+      '<div class="calls-rate">نسبة الحجز التاريخية لـ'+m.short+': '+Math.round(rate*100)+'%</div>';
     h += '</div>';
   }
   h += targetEdit;
