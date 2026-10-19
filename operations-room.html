@@ -2392,11 +2392,12 @@ function addCasesCtx(){
   return {id:t.id, type:t.type, loc:t.loc, gov:t.gov, dateOffset:t.dateOffset, target:t.target};
 }
 function filteredCases(){
-  var f = S.addCasesFilters, ctx = addCasesCtx(), sel = S.addCasesSelected;
+  var f = S.addCasesFilters, ctx = addCasesCtx(), sel = S.addCasesSelected, pctx = poolCtx(ctx);
   var ab = AGE_BUCKETS.filter(function(b){ return b.key===f.age; })[0];
   var tb = ATTEMPTS_BUCKETS.filter(function(b){ return b.key===f.attempts; })[0];
   var list = CASES.filter(function(c){
-    if (c.stage!==ctx.type && sel.indexOf(c.id)===-1) return false;
+    // only the cases of this type's pool (bookable and reachable), plus the ones already picked
+    if (sel.indexOf(c.id)===-1 && !priorityOf(pctx, c).eligible) return false;
     if (f.gov && c.gov!==f.gov) return false;
     if (f.funding && c.funding!==f.funding) return false;
     if (f.level && c.level!==f.level) return false;
@@ -2415,7 +2416,9 @@ function filteredCases(){
     return b.waitingDays - a.waitingDays;
   });
 }
-function selectableCase(ctx, c){ return priorityOf(ctx, c).eligible || S.addCasesSelected.indexOf(c.id)!==-1; }
+// pool of a booking type: every governorate, availability checked for the task's date
+function poolCtx(ctx){ return {id:ctx.id, type:ctx.type, loc:'org', gov:null, dateOffset:ctx.dateOffset}; }
+function selectableCase(ctx, c){ return priorityOf(poolCtx(ctx), c).eligible || S.addCasesSelected.indexOf(c.id)!==-1; }
 function currentAddCasesIds(){
   var ctx = addCasesCtx();
   return filteredCases().filter(function(c){ return selectableCase(ctx, c); }).map(function(c){ return c.id; });
@@ -2445,13 +2448,13 @@ function renderAddCases(){
     '<button class="clear-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>';
   var list = filteredCases();
   var reco = recommendedFor(ctx.type, ctx.target);
-  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في مرحلة «'+m.label+'»</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco : '')+'</div></div>';
+  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco : '')+'</div></div>';
   function th(label, a, d){ var on = srt===a || srt===d, nx = srt===d ? a : d; return '<th class="sort-th'+(on?' on':'')+'"'+A('addCasesSortBy', nx)+'>'+label+' '+(on ? (srt===d ? '▼' : '▲') : '⇅')+'</th>'; }
   h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:380px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
     '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th>'+
     th('السن','ageAsc','ageDesc')+th('مدة الانتظار من اللجنة','waitAsc','waitDesc')+'<th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th></th></tr></thead><tbody>';
   list.forEach(function(c){
-    var p = priorityOf(ctx, c), can = selectableCase(ctx, c), on = sel.indexOf(c.id)!==-1;
+    var p = priorityOf(poolCtx(ctx), c), can = selectableCase(ctx, c), on = sel.indexOf(c.id)!==-1;
     h += '<tr'+(can ? '' : ' style="opacity:.55;"')+'><td><input type="checkbox"'+(on?' checked':'')+(can ? A('toggleCaseSel', c.id) : ' disabled')+'/></td>'+
       '<td style="text-align:center;">'+(can ? prioStar(S.addCasesPrio.indexOf(c.id)!==-1, 'togglePrio', c.id) : '')+'</td>'+
       '<td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td>'+
