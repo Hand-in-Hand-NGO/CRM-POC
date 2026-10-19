@@ -298,7 +298,7 @@
     input[type="checkbox"]{width:15px;height:15px;accent-color:#101828;cursor:pointer;}
 
     /* ---------- detail drawer specifics ---------- */
-    .metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+    .metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px;}
     .metric-box{border:1px solid var(--border);border-radius:9px;padding:9px 8px;text-align:center;background:var(--surface-alt);}
     .metric-val{font-size:16px;font-weight:800;color:var(--text);}
     .metric-lbl{font-size:9.5px;color:var(--text-faint);margin-top:2px;}
@@ -691,7 +691,13 @@
     .inb-changes{background:#f56b7b;border-color:#e45a6a;width:100%;justify-content:center;margin-top:8px;}
     .inb-changes:hover{background:#dd4b39;}
     @media (max-width:800px){ .pf-grid{grid-template-columns:120px minmax(0,1fr);} }
-    .calls-need{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+    .calls-need{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+    .set-sub{font-size:11px;font-weight:500;color:var(--text-faint);margin-inline-start:6px;}
+    .rate-card{border:1px solid var(--border);border-top:3px solid var(--edge);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px;}
+    .rate-name{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:2px;}
+    .rate-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--text-muted);}
+    .rate-row b{font-size:17px;color:var(--text);}
+    .rate-sub{font-size:10.5px;color:var(--text-faint);margin-top:-2px;}
     .calls-need div{background:#fff;border:1px solid #dbe6fb;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;text-align:center;}
     .reco-box.lack .calls-need div{border-color:#f0d58a;}
     .calls-need span{font-size:10.5px;color:var(--text-muted);line-height:1.4;}
@@ -1001,7 +1007,6 @@ function defaultSettings(){
   return {
     dailyCapacity:20,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
-    histRates:{measurement:0.6, newDelivery:0.75, maintEval:0.65, maintDelivery:0.7},
   };
 }
 
@@ -1124,7 +1129,7 @@ function alternativeTasksFor(t, cid){
       (x.loc==='org' || x.gov===(caseById(cid)||{}).gov);
   }).map(function(x){
     var booked = taskBookedCount(x);
-    return {task:x, booked:booked, remaining:x.target-booked};
+    return {task:x, booked:booked, remaining:bookingGoal(x)-booked};
   }).filter(function(x){ return x.remaining > 0; }).sort(function(a,b){ return a.task.dateOffset-b.task.dateOffset; });
 }
 
@@ -1134,9 +1139,9 @@ function alternativeTasksFor(t, cid){
 function capFor(off){ return S.dayCapacity[off]!=null ? S.dayCapacity[off] : S.settings.dailyCapacity; }
 function dayLoad(off, tasks, capOverride){
   var load = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; })
-    .reduce(function(n,t){ return n + (t.target || 0); }, 0);
+    .reduce(function(n,t){ return n + bookingGoal(t); }, 0);
   var cap = capOverride!=null ? capOverride : capFor(off);
-  return [{key:'bookings', label:'الحجوزات', sub:'مجموع الأعداد المستهدفة لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
+  return [{key:'bookings', label:'الحجوزات', sub:'مجموع الحجوزات المطلوبة لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
 }
 function loadLevel(x){
   if (x.load===0) return 'ok';
@@ -1174,11 +1179,43 @@ function guardCapacity(off, tasksAfter, onOk, returnTo){
 // =====================================================================
 // Auto-suggest / priority
 // =====================================================================
+// attendance (حضر من المحجوزين) and booking (اتحجز من المكالمات) rates per type,
+// computed from the dashboard call data of the last RATE_DAYS days
+var RATE_DAYS = 90, RATE_FALLBACK = {att:0.8, book:0.5}, _ratesCache = {key:null, val:null};
+function autoRates(){
+  if (typeof CALL_HISTORY === 'undefined' || !CALL_HISTORY) return null;
+  var T = todayOffset(), key = T+'|'+S.callLog.length+'|'+Object.keys(S.attendance).length;
+  if (_ratesCache.key === key) return _ratesCache.val;
+  var acc = {};
+  Object.keys(TASK_TYPES).forEach(function(k){ acc[k] = {calls:0, booked:0, attended:0, noShow:0}; });
+  CALL_HISTORY.concat(liveCallEvents()).forEach(function(e){
+    if (e.d < T-RATE_DAYS || e.d > T || !acc[e.type] || e.incoming) return;
+    var a = acc[e.type]; a.calls++;
+    if (e.outcome==='booked'){ a.booked++; if (e.att==='attended') a.attended++; else if (e.att==='noShow') a.noShow++; }
+  });
+  var val = {};
+  Object.keys(acc).forEach(function(k){
+    var a = acc[k], seen = a.attended + a.noShow;
+    val[k] = {att: seen ? a.attended/seen : RATE_FALLBACK.att, book: a.calls ? a.booked/a.calls : RATE_FALLBACK.book,
+      attended:a.attended, noShow:a.noShow, calls:a.calls, booked:a.booked};
+  });
+  _ratesCache = {key:key, val:val};
+  return val;
+}
+function rateFor(type){ var r = autoRates(); return r && r[type] ? r[type] : {att:RATE_FALLBACK.att, book:RATE_FALLBACK.book}; }
+// bookings needed so that `target` cases attend
 function recommendedFor(type, target){
-  var r = S.settings.histRates[type];
+  var r = rateFor(type).att;
   if (!r || !target) return target || 0;
   return Math.ceil(target / r - 1e-9);
 }
+// calls needed to get `bookings` bookings
+function callsFor(type, bookings){
+  var r = rateFor(type).book;
+  if (!r || !bookings) return bookings || 0;
+  return Math.ceil(bookings / r - 1e-9);
+}
+function bookingGoal(t){ return recommendedFor(t.type, t.target); }
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
@@ -1549,9 +1586,9 @@ var ACT = {
     var after = S.tasks.map(function(x){ return x.id===t.id ? Object.assign({}, x, {target:nt}) : x; });
     var apply = function(){ t.target = nt; S.editingTarget = false; S.overlay = 'detail'; S.confirm = null; render(); };
     var withCap = function(){ guardCapacity(t.dateOffset, after, apply, 'detail'); };
-    if (nt < booked){
+    if (recommendedFor(t.type, nt) < booked){
       S.overlay = 'confirm';
-      S.confirm = {title:'تأكيد التغيير', tone:'primary', message:'العدد المستهدف الجديد (' + nt + ') أقل من العدد المحجوز حاليًا (' + booked + '). هل تريد المتابعة؟',
+      S.confirm = {title:'تأكيد التغيير', tone:'primary', message:'الحجز المطلوب الجديد (' + recommendedFor(t.type, nt) + ') أقل من العدد المحجوز حاليًا (' + booked + '). هل تريد المتابعة؟',
         confirmLabel:'تأكيد التغيير', returnTo:'detail', onConfirm:withCap};
       render();
     } else withCap();
@@ -1699,8 +1736,6 @@ var ACT = {
     S.settingsDraft = {
       'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
-      'histRates.measurement':String(Math.round(s.histRates.measurement*100)), 'histRates.newDelivery':String(Math.round(s.histRates.newDelivery*100)),
-      'histRates.maintDelivery':String(Math.round(s.histRates.maintDelivery*100)), 'histRates.maintEval':String(Math.round(s.histRates.maintEval*100)),
     };
     S.overlay = 'settings'; render();
   },
@@ -1711,7 +1746,6 @@ var ACT = {
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
     s.dailyCapacity = int('dailyCapacity',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
-    ['measurement','newDelivery','maintEval','maintDelivery'].forEach(function(k){ s.histRates[k] = Math.min(100, int('histRates.'+k,5))/100; });
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
@@ -2007,8 +2041,8 @@ function attendanceCounts(t){
 }
 function renderTaskCard(t){
   var m = TASK_TYPES[t.type];
-  var booked = taskBookedCount(t), pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0;
-  var full = t.target>0 && booked>=t.target;
+  var goal = bookingGoal(t), booked = taskBookedCount(t), pct = goal>0 ? Math.min(100, Math.round(booked/goal*100)) : 0;
+  var full = goal>0 && booked>=goal;
   var dim = S.activeTypes.indexOf(t.type)===-1;
   var admin = isAdmin();
   var h = '<article class="task-card'+(dim?' dim':'')+(t.status==='draft'?' draft':'')+'" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
@@ -2016,17 +2050,17 @@ function renderTaskCard(t){
     '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
     (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '')+
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
-    (full ? '<span class="full-badge">تم اكتمال العدد المستهدف</span>' : '')+'</div></div>'+
+    (full ? '<span class="full-badge">تم اكتمال الحجز المطلوب</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
-    '<div class="progress-line"><span class="progress-num">'+booked+' من '+t.target+'</span><span class="progress-tag">من العدد المستهدف</span></div>'+
+    '<div class="progress-line"><span class="progress-num">'+booked+' من '+goal+'</span><span class="progress-tag">حجز · حضور '+t.target+'</span></div>'+
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
   if (t.dateOffset <= todayOffset() && booked){
     var a = attendanceCounts(t);
     h += '<div class="candidates-line">الاستقبال: <span class="cap-ok">حضر '+a.attended+'</span> · <span class="cap-over">لم يحضر '+a.noShow+'</span>'+(a.pending ? ' · لسه '+a.pending : '')+'</div>';
   } else {
-    var reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
+    var reco = callsFor(t.type, goal), n = t.candidateIds.length;
     var lack = admin && n < reco && !full;
-    h += '<div class="candidates-line">المرشحين: '+n+(admin ? ' · <span class="'+(lack?'cand-warn':'')+'">مطلوب حجز '+reco+'</span>' : '')+'</div>';
+    h += '<div class="candidates-line">المرشحين: '+(admin ? '<span class="'+(lack?'cand-warn':'')+'">'+n+' من '+reco+'</span>' : n)+'</div>';
   }
   if (isCC()){
     var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
@@ -2064,7 +2098,7 @@ function queueItems(agent){
   var tOff = todayOffset(), items = [];
   S.tasks.forEach(function(t){
     if (t.status!=='published' || t.dateOffset < tOff) return;
-    var full = t.target>0 && taskBookedCount(t) >= t.target;
+    var full = t.target>0 && taskBookedCount(t) >= bookingGoal(t);
     t.candidateIds.forEach(function(cid){
       if (agent && t.assignee[cid]!==agent) return;
       var st = caseStatus(t, cid);
@@ -2189,7 +2223,7 @@ function renderQItem(x, rank){
   h += '<div><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,12,m.color)+m.short+'</span>'+
     '<div class="q-line">'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (النهارده)' : '')+' · '+esc(locLabelFor(t))+'</div>'+
     (t.loc==='convoy' ? '<div class="q-line">'+ic('clock',11)+' الحضور '+(t.meetingTime ? fmtClock(t.meetingTime) : '<span class="missing">لم يُحدد</span>')+(t.meetingPoint ? ' · '+esc(t.meetingPoint) : '')+'</div>' : '')+
-    '<div class="q-line">محجوز '+booked+' من '+t.target+'</div>'+
+    '<div class="q-line">محجوز '+booked+' من '+bookingGoal(t)+'</div>'+
     (x.alsoIn.length ? '<div class="q-line" style="color:var(--warning);">مرشحة كمان في: '+x.alsoIn.map(function(o){ return dayLabel(o.dateOffset)+' ('+esc(locLabelFor(o))+')'; }).join('، ')+'</div>' : '')+'</div>';
   h += '<div>'+statusTag(x.st)+'<div class="q-line">المحاولات: اليوم '+failedToday(cid)+'/'+S.settings.maxPerDay+' · الإجمالي '+attemptsTotal(cid)+'</div>'+
     (x.nxt ? '<div class="q-line"><span class="next-call">'+ic('clock',12)+' معاد الاتصال '+fmtWhen(x.nxt)+'</span></div>' : '')+
@@ -2257,7 +2291,7 @@ function renderCallModal(){
     '<label class="cms-label">استجابة المكالمة <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="setCallField" data-a="outcome"><option value="">اختر</option>'+
     OUTCOME_DEFS.filter(function(x){ return !incoming || FAILED_OUTCOMES.indexOf(x.key)===-1; }).map(function(x){ return '<option value="'+x.key+'"'+(o===x.key?' selected':'')+'>'+x.label+'</option>'; }).join('')+'</select></div></div>';
   var booking = o==='booked';
-  var opts = [{task:t, remaining:t.target-taskBookedCount(t)}].concat(alternativeTasksFor(t, cid));
+  var opts = [{task:t, remaining:bookingGoal(t)-taskBookedCount(t)}].concat(alternativeTasksFor(t, cid));
   h += '<div class="cms-row"><label class="cms-label">تاريخ الحجز'+(booking?' <span class="req">*</span>':'')+'</label><div class="cms-field"><select class="cms-input" data-change="setCallField" data-a="bookTid"'+(booking?'':' disabled')+'>'+
     opts.map(function(a){ return '<option value="'+a.task.id+'"'+(d.bookTid===a.task.id?' selected':'')+'>'+isoDate(a.task.dateOffset)+' – '+dayLabel(a.task.dateOffset)+' – '+esc(locLabelFor(a.task))+' (متبقي '+Math.max(0,a.remaining)+')</option>'; }).join('')+'</select></div>'+
     '<label class="cms-label">وقت الحجز</label><div class="cms-field"><input class="cms-input" type="time" value="'+esc(d.bookTime)+'" data-k="call-time" data-input="setCallField" data-a="bookTime"'+(booking?'':' disabled')+'/></div></div>';
@@ -2273,7 +2307,7 @@ function renderCallModal(){
   }
   if (booking){
     var bt = findTask(d.bookTid) || t, b = taskBookedCount(bt);
-    if (b >= bt.target) h += '<div class="rule-hint warn">الموعد اكتمل ('+b+' من '+bt.target+')</div>';
+    if (b >= bookingGoal(bt)) h += '<div class="rule-hint warn">الموعد اكتمل ('+b+' من '+bookingGoal(bt)+')</div>';
   }
   h += '<div class="cms-actions"><button class="cms-btn cms-add"'+A('saveCall')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('closeCall')+'>'+ic('x',12,'#fff',3)+' إلغاء</button></div>';
   h += '</div>';
@@ -2354,7 +2388,7 @@ function renderCreate(){
     h += '</div></div>';
     h += convoyFields(d, 'setConvoyField', 'c');
   }
-  h += '<div class="field"><label class="field-label">العدد المستهدف</label>'+
+  h += '<div class="field"><label class="field-label">عدد الحالات المطلوب حضورها</label>'+
     '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>';
   // capacity after adding
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
@@ -2364,14 +2398,15 @@ function renderCreate(){
     (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
   h += '';
   if (target>0){
-    var rate = S.settings.histRates[d.type], reco = recommendedFor(d.type, target);
-    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' مطلوب حجز <b>'+reco+'</b> حالة</div>';
+    var r = rateFor(d.type), reco = recommendedFor(d.type, target), calls = callsFor(d.type, reco);
+    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' عشان يحضر <b>'+target+'</b> مطلوب حجز <b>'+reco+'</b> حالة · محتاج اتصال بـ <b>'+calls+'</b> حالة'+
+      '<div class="calls-rate">نسبة الحضور '+Math.round(r.att*100)+'% · نسبة الحجز '+Math.round(r.book*100)+'%</div></div>';
   }
   h += '</div>';
   {
-    var n = d.candidateIds.length, reco2 = recommendedFor(d.type, target);
+    var n = d.candidateIds.length, reco2 = callsFor(d.type, recommendedFor(d.type, target));
     h += '<div class="field"><label class="field-label">الحالات المرشحة</label>';
-    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+(target ? ' من '+reco2+' مُوصى بيها' : '')+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>إضافة حالات</button></div>';
+    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+(target ? ' من '+reco2+' محتاج اتصال بيها' : '')+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>إضافة حالات</button></div>';
     if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>+ إضافة حالات</button>';
     h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
@@ -2447,8 +2482,8 @@ function renderAddCases(){
     '<div class="filter-field"><label>ترتيب حسب</label><select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
     '<button class="clear-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>';
   var list = filteredCases();
-  var reco = recommendedFor(ctx.type, ctx.target);
-  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco : '')+'</div></div>';
+  var reco = recommendedFor(ctx.type, ctx.target), recoCalls = callsFor(ctx.type, reco);
+  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco+' · محتاج اتصال بـ '+recoCalls : '')+'</div></div>';
   function th(label, a, d){ var on = srt===a || srt===d, nx = srt===d ? a : d; return '<th class="sort-th'+(on?' on':'')+'"'+A('addCasesSortBy', nx)+'>'+label+' '+(on ? (srt===d ? '▼' : '▲') : '⇅')+'</th>'; }
   h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:380px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
     '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th>'+
@@ -2472,8 +2507,8 @@ function renderAddCases(){
 function renderDetail(){
   var t = findTask(S.detailTaskId); if (!t) return '';
   var m = TASK_TYPES[t.type], admin = isAdmin();
-  var booked = taskBookedCount(t), remaining = Math.max(0, t.target-booked);
-  var pct = t.target>0 ? Math.min(100, Math.round(booked/t.target*100)) : 0, full = t.target>0 && booked>=t.target;
+  var goal = bookingGoal(t), booked = taskBookedCount(t), remaining = Math.max(0, goal-booked);
+  var pct = goal>0 ? Math.min(100, Math.round(booked/goal*100)) : 0, full = goal>0 && booked>=goal;
   var extra = '';
   if (admin){
     extra += t.status==='draft'
@@ -2509,35 +2544,37 @@ function renderDetail(){
 
   var targetEdit = '';
   if (admin){
-    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">تعديل العدد المستهدف</label>' + (S.editingTarget
+    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">تعديل عدد الحالات المطلوب حضورها</label>' + (S.editingTarget
       ? '<div class="target-edit-row"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
         '<button class="btn btn-primary btn-sm"'+A('saveTarget')+'>حفظ</button><button class="btn btn-secondary btn-sm"'+A('cancelEditTarget')+'>إلغاء</button></div>'
       : '<button class="btn btn-secondary btn-sm"'+A('startEditTarget')+'>تعديل العدد</button>') + '</div>';
   }
 
 
-  h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">العدد المستهدف</div></div>'+
+  h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+t.target+'</div><div class="metric-lbl">المطلوب حضورهم</div></div>'+
+    '<div class="metric-box"><div class="metric-val">'+goal+'</div><div class="metric-lbl">مطلوب حجز</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+t.candidateIds.length+'</div><div class="metric-lbl">الحالات المرشحة</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">تم الحجز</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المتبقي</div></div></div>'+
-    '<div class="big-progress-label"><span style="font-size:11.5px;color:var(--text-muted);">التقدم</span><span class="big-progress-num">'+booked+' من '+t.target+'</span></div>'+
+    '<div class="big-progress-label"><span style="font-size:11.5px;color:var(--text-muted);">التقدم</span><span class="big-progress-num">'+booked+' من '+goal+'</span></div>'+
     '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>'+
-    (full ? '<div style="margin-bottom:6px;"><span class="full-badge">تم اكتمال العدد المستهدف</span></div>' : '');
+    (full ? '<div style="margin-bottom:6px;"><span class="full-badge">تم اكتمال الحجز المطلوب</span></div>' : '');
 
   // overbooking recommendation
   if (!full && !isCC()){
-    var rate = S.settings.histRates[t.type], reco = recommendedFor(t.type, t.target), n = t.candidateIds.length;
-    var callable = callableCount(t), expected = Math.floor(callable * rate);
-    // cases the call center still has to call to fill what is left of the target
-    var needCalls = recommendedFor(t.type, remaining), short = Math.max(0, needCalls - callable);
+    var r = rateFor(t.type), reco = callsFor(t.type, goal);
+    var callable = callableCount(t);
+    // cases the call center still has to call to fill the remaining bookings
+    var needCalls = callsFor(t.type, remaining), short = Math.max(0, needCalls - callable);
     var lack = short > 0;
     h += '<div class="reco-box'+(lack?' lack':'')+'"><div class="calls-need">'+
-      '<div><span>المستهدف</span><b>'+t.target+'</b><small>حجز</small></div>'+
-      '<div><span>محتاج الكول سنتر يكلم</span><b>'+reco+'</b><small>حالة عشان يتحجز '+t.target+'</small></div>'+
+      '<div><span>المطلوب حضورهم</span><b>'+t.target+'</b><small>حالة</small></div>'+
+      '<div><span>مطلوب حجز</span><b>'+goal+'</b><small>عشان يحضر '+t.target+'</small></div>'+
+      '<div><span>محتاج الكول سنتر يكلم</span><b>'+reco+'</b><small>حالة عشان يتحجز '+goal+'</small></div>'+
       '<div><span>لسه محتاج يكلم</span><b>'+needCalls+'</b><small>حالة عشان المتبقي '+remaining+'</small></div>'+
       '<div><span>متاح للاتصال دلوقتي</span><b>'+callable+'</b><small>حالة</small></div></div>'+
       (lack ? '<div class="calls-short">ناقص <b>'+short+'</b> حالة – ضيف حالات</div>' : '')+
-      '<div class="calls-rate">نسبة الحجز التاريخية لـ'+m.short+': '+Math.round(rate*100)+'%</div>';
+      '<div class="calls-rate">'+m.short+': نسبة الحضور '+Math.round(r.att*100)+'% · نسبة الحجز '+Math.round(r.book*100)+'% (من الداش بورد · آخر '+RATE_DAYS+' يوم)</div>';
     h += '</div>';
   }
   h += targetEdit;
@@ -2638,7 +2675,7 @@ function renderCapacity(){
   if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
   tasks.forEach(function(t){
     var m = TASK_TYPES[t.type];
-    h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>المستهدف <b>'+t.target+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
+    h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>حضور <b>'+t.target+'</b> · حجز <b>'+bookingGoal(t)+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
   });
   h += '</div>';
   h += '<div class="modal-foot">' + (admin ? '<button class="btn btn-primary"'+A('saveCapacity')+'>حفظ طاقة اليوم</button><button class="btn btn-secondary"'+A('capReset')+'>الافتراضي</button>' : '') +
@@ -2656,8 +2693,16 @@ function renderSettings(){
     setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">نسب الحجز التاريخية</div><div class="set-grid four">'+
-    setNum('histRates.measurement','تقييم طبي وقياسات','%')+setNum('histRates.newDelivery','تسليم طرف جديد','%')+setNum('histRates.maintEval','تقييم صيانة','%')+setNum('histRates.maintDelivery','تسليم صيانة','%')+'</div></div>';
+  var R = autoRates() || {};
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">نسب الحضور والحجز <span class="set-sub">محسوبة من الداش بورد · آخر '+RATE_DAYS+' يوم</span></div><div class="set-grid four">'+
+    Object.keys(TASK_TYPES).map(function(k){
+      var tm = TASK_TYPES[k], r = R[k] || rateFor(k);
+      return '<div class="rate-card" style="--edge:'+tm.color+';"><div class="rate-name">'+tm.short+'</div>'+
+        '<div class="rate-row"><span>نسبة الحضور</span><b>'+Math.round(r.att*100)+'%</b></div>'+
+        (r.noShow!=null ? '<div class="rate-sub">حضر '+nfmt(r.attended)+' من '+nfmt(r.attended+r.noShow)+' محجوز</div>' : '')+
+        '<div class="rate-row"><span>نسبة الحجز</span><b>'+Math.round(r.book*100)+'%</b></div>'+
+        (r.calls!=null ? '<div class="rate-sub">اتحجز '+nfmt(r.booked)+' من '+nfmt(r.calls)+' مكالمة</div>' : '')+'</div>';
+    }).join('')+'</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
@@ -2937,12 +2982,12 @@ function renderDash(){
   // booked vs target for the coming 7 days
   var tOff = todayOffset(), tgt = {};
   Object.keys(TASK_TYPES).forEach(function(k){ tgt[k] = {target:0, booked:0}; });
-  S.tasks.forEach(function(t){ if (t.status==='published' && t.dateOffset>=tOff && t.dateOffset<tOff+7){ tgt[t.type].target += t.target; tgt[t.type].booked += taskBookedCount(t); } });
+  S.tasks.forEach(function(t){ if (t.status==='published' && t.dateOffset>=tOff && t.dateOffset<tOff+7){ tgt[t.type].target += bookingGoal(t); tgt[t.type].booked += taskBookedCount(t); } });
   h += '<div class="vs-chart-group"><p class="vs-group-label">الحجز مقابل المستهدف</p>'+chartCard('المحجوز من المستهدف – الـ 7 أيام الجاية', isoDate(tOff)+' - '+isoDate(tOff+6),
     '<div class="vs-target-grid">'+Object.keys(TASK_TYPES).map(function(k){
       var x = tgt[k], p = pct(x.booked, x.target), ok = p >= 100;
       return '<div class="vs-target-card"><div class="name"><span class="vs-level-table"><span class="dot" style="background:'+DASH_TYPE_COLORS[k]+'"></span></span>'+TASK_TYPES[k].label+'</div>'+
-        '<div class="row"><span>المحجوز</span><b>'+nfmt(x.booked)+'</b></div><div class="row"><span>المستهدف</span><b>'+nfmt(x.target)+'</b></div>'+
+        '<div class="row"><span>المحجوز</span><b>'+nfmt(x.booked)+'</b></div><div class="row"><span>المطلوب</span><b>'+nfmt(x.target)+'</b></div>'+
         '<div class="vs-bar-track"><div class="vs-bar-fill'+(ok?' ok':'')+'" style="width:'+Math.min(100,p)+'%"></div></div><span class="vs-pct-badge'+(ok?' ok':'')+'">'+(x.target ? p+'%' : '-')+'</span></div>';
     }).join('')+'</div>')+'</div>';
 
@@ -3148,7 +3193,7 @@ Object.assign(ACT, {
     // nearest published "تقييم الصيانة" day with room, in the requested place
     var tOff = todayOffset();
     var target = S.tasks.filter(function(t){
-      return t.type==='maintEval' && t.status==='published' && t.dateOffset>=tOff && taskBookedCount(t) < t.target &&
+      return t.type==='maintEval' && t.status==='published' && t.dateOffset>=tOff && taskBookedCount(t) < bookingGoal(t) &&
         (convoy ? (t.loc==='convoy' && t.gov===d.gov) : t.loc==='org');
     }).sort(function(a,b){ return a.dateOffset - b.dateOffset; })[0];
     S.callLog.push({id:'L'+Date.now(), taskId: target ? target.id : null, caseId:c.id, agentId:S.agentId, at:now(), outcome:'maintRequest',
