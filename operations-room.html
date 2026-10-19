@@ -896,7 +896,6 @@ var OUTCOME_DEFS = [
   {key:'noAnswer', label:'لم يتم الرد', color:'#c81e3a'},
   {key:'unavailable', label:'غير متاح / مغلق', color:'#c81e3a'},
   {key:'notInterested', label:'عدم رغبة الحالة', color:'#5b6472'},
-  {key:'wantsOtherDay', label:'يرغب في يوم آخر', color:'#b45309'},
 ];
 var FAILED_OUTCOMES = ['noAnswer','unavailable'];
 function outcomeDef(key){
@@ -1074,7 +1073,6 @@ var STATUS_COLORS = {
   noAnswer:{color:'#c81e3a', tint:'#fceced'},
   unavailable:{color:'#c81e3a', tint:'#fceced'},
   notInterested:{color:'#98a0ac', tint:'#eef0f3'},
-  wantsOtherDay:{color:'#b45309', tint:'#fdf1e0'},
   hardToReach:{color:'#9f1239', tint:'#ffe4ec'},
   pending:{color:'#5b6472', tint:'#eef0f3'},
 };
@@ -1093,7 +1091,6 @@ function caseStatus(t, cid){
   if (isHardToReach(cid)) return {key:'hardToReach', label:'صعب الوصول'};
   if (cs === 'noAnswer') return {key:'noAnswer', label:'لم يتم الرد'};
   if (cs === 'unavailable') return {key:'unavailable', label:'غير متاح / مغلق'};
-  if (cs === 'wantsOtherDay') return {key:'wantsOtherDay', label:'يرغب في يوم آخر'};
   return {key:'pending', label:'لم يتم التواصل بعد'};
 }
 function isOpenStatus(key){ return ['booked','lockedElsewhere','notInterested','attended','noShow'].indexOf(key)===-1; }
@@ -1332,7 +1329,7 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.nextCallAt[nextCallKey('t1','C-1010')] = n - 60*60000;
   log('t1','C-1013','noAnswer',30,'');
   S.nextCallAt[nextCallKey('t1','C-1013')] = n + 90*60000;
-  log('t1','C-1015','wantsOtherDay',95,'تفضّل ميعاد الأسبوع الجاي');
+  log('t1','C-1015','notInterested',95,'مش محتاج دلوقتي');
   log('t1','C-1007','notInterested',140,'ركّبت طرف من جهة أخرى');
   log('t1','C-1016','unavailable',50,'الرقم مغلق');
 })();
@@ -2065,7 +2062,7 @@ function queueItems(agent){
       var st = caseStatus(t, cid);
       if (!isOpenStatus(st.key)) return;
       var nxt = nextCallFor(t, cid);
-      var group = st.key==='hardToReach' ? 'htr' : full ? 'full' : st.key==='wantsOtherDay' ? 'other' : nxt ? 'later' : 'due';
+      var group = st.key==='hardToReach' ? 'htr' : full ? 'full' : nxt ? 'later' : 'due';
       items.push({t:t, cid:cid, st:st, nxt:nxt, group:group, prio: !!(t.priority && t.priority[cid]), p:priorityOf(t, caseById(cid))});
     });
   });
@@ -2110,7 +2107,6 @@ function renderQueue(){
 
   h += qSection('due', 'اتصل الآن', '', groups.due, 'لا توجد حالات مستحقة');
   h += qSection('later', 'معاد اتصال مجدول', '', groups.later, 'لا توجد حالات مجدولة');
-  if (groups.other.length) h += qSection('other', 'يرغب في يوم آخر', '', groups.other, '');
   if (groups.htr.length) h += qSection('htr', 'صعب الوصول', '', groups.htr, '');
   h += '</div>';
 
@@ -2585,12 +2581,6 @@ function renderCaseRow(t, cid){
   h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'سجل المكالمات ('+logsFor(cid).length+')</button>';
   if (st.key==='hardToReach' && admin) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
   h += '</div>';
-  if (st.key==='wantsOtherDay' && !callOpen && (admin || canCall(t,cid))){
-    var alts = alternativeTasksFor(t, cid);
-    h += '<div class="alt-wrap"><div class="alt-title">مواعيد أخرى متاحة</div>' + (alts.length ? alts.map(function(a){
-      return '<span class="alt-chip">'+esc(locLabelFor(a.task))+' – '+dayLabel(a.task.dateOffset)+' · السعة المتبقية: '+a.remaining+'<button'+A('chooseAlt', t.id, a.task.id)+' data-c="'+cid+'">اختيار موعد آخر</button></span>';
-    }).join('') : '<span class="alt-empty">لا توجد مواعيد بديلة متاحة حاليًا لهذه الحالة.</span>') + '</div>';
-  }
   if (S.logOpen[key]) h += renderLog(cid);
   return h + '</div>';
 }
@@ -2721,7 +2711,7 @@ document.addEventListener('dragend', function(){
 // Call-center statistics drawer (same visual system as the visits page)
 // =====================================================================
 var DASH_TYPE_COLORS = {measurement:'#2f6fed', newDelivery:'#15803d', maintEval:'#f96a74', maintDelivery:'#ff6a00'};
-var DASH_OUTCOME_COLORS = {booked:'#15803d', wantsOtherDay:'#c27c0e', notInterested:'#97a0ad', noAnswer:'#dc2626', unavailable:'#f97316'};
+var DASH_OUTCOME_COLORS = {booked:'#15803d', notInterested:'#97a0ad', noAnswer:'#dc2626', unavailable:'#f97316'};
 var DASH_PERIODS = [['today','اليوم'],['week','الأسبوع'],['month','الشهر'],['quarter','ربع سنوي'],['year','سنوية']];
 var DASH_HOURS = [9,10,11,12,13,14,15,16];
 
@@ -2743,7 +2733,7 @@ var CALL_HISTORY = (function(){
         if (d===T && h >= nowH) continue;
         var incoming = r() < 0.07, outcome;
         if (!incoming && r() > ans[h]) outcome = r() < 0.72 ? 'noAnswer' : 'unavailable';
-        else { var x = r(); outcome = x < p.book ? 'booked' : x < p.book + 0.18 ? 'wantsOtherDay' : 'notInterested'; }
+        else { var x = r(); outcome = x < p.book + 0.1 ? 'booked' : 'notInterested'; }
         var e = {d:d, h:h, agentId:a.id, type:type, outcome:outcome, incoming:incoming, att:null};
         if (outcome==='booked'){ var vd = d + 2 + Math.floor(r()*6); if (vd < T) e.att = r() < p.show ? 'attended' : 'noShow'; }
         out.push(e);
@@ -2911,16 +2901,13 @@ function renderDash(){
 
   // KPIs
   var att = s.attended + s.noShow, attRate = pct(s.attended, att), bookRate = pct(s.booked, s.calls), ansRate = pct(s.answered, s.calls);
-  h += '<div class="vs-kpi-grid">'+
+  h += '<div class="vs-kpi-grid last" style="grid-template-columns:repeat(3,1fr);">'+
     kpiBox(nfmt(s.calls), 'إجمالي المكالمات', s.calls ? '' : 'zero')+
     kpiBox(nfmt(s.booked), 'تم الحجز', s.booked ? 'good' : 'zero')+
     kpiBox(ansRate+'<small>%</small>', 'نسبة الرد', s.calls ? '' : 'zero')+
-    kpiBox(bookRate+'<small>%</small>', 'نسبة الحجز من المكالمات', s.calls ? '' : 'zero')+'</div>';
-  h += '<div class="vs-kpi-grid last">'+
+    kpiBox(bookRate+'<small>%</small>', 'نسبة الحجز من المكالمات', s.calls ? '' : 'zero')+
     kpiBox(attRate+'<small>%</small>', 'نسبة الحضور من الحجز ('+nfmt(att)+')', att ? (attRate>=80?'good':'warn') : 'zero')+
-    kpiBox(nfmt(s.noShow), 'لم يحضر', s.noShow ? 'bad' : 'zero')+
-    kpiBox(s.booked ? (Math.round(s.calls/s.booked*10)/10) : '-', 'مكالمات لكل حجز', s.booked ? '' : 'zero')+
-    kpiBox(nfmt(s.incoming), 'مكالمات واردة', s.incoming ? '' : 'zero')+'</div>';
+    kpiBox(nfmt(s.noShow), 'لم يحضر', s.noShow ? 'bad' : 'zero')+'</div>';
 
   // booked vs target for the coming 7 days
   var tOff = todayOffset(), tgt = {};
@@ -2977,7 +2964,7 @@ function dashCsv(){
   function q(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
   var rows = [[q('إحصائيات الكول سنتر'), q(D.R.label)], [], [q('المؤشر'), q('القيمة')],
     [q('إجمالي المكالمات'), s.calls], [q('تم الحجز'), s.booked], [q('نسبة الرد %'), pct(s.answered, s.calls)], [q('نسبة الحجز %'), pct(s.booked, s.calls)],
-    [q('نسبة الحضور %'), pct(s.attended, s.attended+s.noShow)], [q('لم يحضر'), s.noShow], [q('مكالمات واردة'), s.incoming], [],
+    [q('نسبة الحضور %'), pct(s.attended, s.attended+s.noShow)], [q('لم يحضر'), s.noShow], [],
     [q('الموظف'), q('المكالمات'), q('نسبة الرد %'), q('الحجز'), q('نسبة الحجز %'), q('نسبة الحضور %')]];
   D.agents.forEach(function(a){ rows.push([q(a.agent.name), a.calls, pct(a.answered,a.calls), a.booked, pct(a.booked,a.calls), pct(a.attended, a.attended+a.noShow)]); });
   rows.push([]); rows.push([q('استجابة المكالمة'), q('العدد'), q('%')]);
