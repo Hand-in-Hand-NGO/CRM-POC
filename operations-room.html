@@ -704,6 +704,17 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .owner-row{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;flex-wrap:wrap;font-size:12.5px;font-weight:700;}
+    .owner-row label{display:inline-flex;align-items:center;gap:5px;}
+    .msg-chip{display:inline-flex;align-items:center;gap:4px;background:#e9f7ee;color:#15803d;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;cursor:default;}
+    .msg-preview{background:#f0faf3;border:1px solid #cfead9;border-radius:10px;padding:8px 10px;margin:8px 0;}
+    .msg-meta{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+    .msg-text{font-size:12.5px;white-space:pre-line;line-height:1.7;color:var(--text);}
+    .msg-list{border-top:1px dashed var(--border);margin-top:8px;padding-top:8px;display:flex;flex-direction:column;gap:6px;}
+    .msg-item{background:#f6fbf7;border-radius:8px;padding:6px 9px;}
+    .tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+    .tpl-grid label{display:block;font-size:11.5px;font-weight:700;color:var(--text-muted);margin-bottom:5px;}
+    .tpl-input{width:100%;resize:vertical;font-family:inherit;line-height:1.6;}
     .btn-fund{background:#0093e9;color:#fff;border:1px solid #0093e9;}
     .fund-group{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;}
     .fund-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
@@ -1071,6 +1082,9 @@ function defaultSettings(){
     dailyCapacity:20,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2,
+    msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
+    msgBookTpl:'أهلًا {الاسم}، تم حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
+    msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} بكرة {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
   };
 }
 
@@ -1094,7 +1108,7 @@ var S = {
   queueAgent:'', capacityDay:null, capDraft:null,
   settingsDraft:null, convoyEdit:null,
   toast:null,
-  audit:[], confirmations:{}, opsWeek:null, auditQ:'',
+  audit:[], confirmations:{}, opsWeek:null, auditQ:'', messages:[],
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1262,13 +1276,37 @@ function riskTasks(){ return S.tasks.filter(atRisk).sort(function(a,b){ return a
 
 // ---------- recurring tasks ----------
 function weekdayOf(off){ return dateOf(off).getDay(); }
+var ORDINALS_AR = ['أول','تاني','تالت','رابع','آخر'];
 function repeatOffsets(d){
-  if (!d.repeat || !d.repeat.on || !d.repeat.days.length) return [d.dateOffset];
-  var start = d.dateOffset - weekdayOf(d.dateOffset), weeks = Math.max(1, Math.min(26, parseInt(d.repeat.weeks,10)||1)), out = [];
-  for (var w = 0; w < weeks; w++) d.repeat.days.forEach(function(wd){ var off = start + w*7 + wd; if (off >= d.dateOffset) out.push(off); });
-  return out.sort(function(a,b){ return a-b; });
+  var r = d.repeat;
+  if (!r || !r.on) return [d.dateOffset];
+  if (r.freq==='month'){
+    // same date every month, or the same weekday of the month (e.g. 2nd Tuesday; 5th = last)
+    var base = dateOf(d.dateOffset), months = Math.max(1, Math.min(24, parseInt(r.months,10)||1)), out = [];
+    var nth = Math.ceil(base.getDate()/7), wd = base.getDay();
+    for (var m = 0; m < months; m++){
+      var y = base.getFullYear(), mo = base.getMonth() + m, last = new Date(y, mo+1, 0).getDate(), day;
+      if (r.monthBy==='weekday'){
+        var first = new Date(y, mo, 1).getDay(), firstWd = 1 + (wd - first + 7) % 7;
+        day = nth >= 5 ? firstWd + 7*Math.floor((last - firstWd)/7) : firstWd + 7*(nth-1);
+        if (day > last) day -= 7;
+      } else day = Math.min(base.getDate(), last);
+      out.push(daysBetween(BASE_SUNDAY, new Date(y, mo, day)));
+    }
+    return out;
+  }
+  if (!r.days.length) return [d.dateOffset];
+  var start = d.dateOffset - weekdayOf(d.dateOffset), weeks = Math.max(1, Math.min(26, parseInt(r.weeks,10)||1)), res = [];
+  for (var w = 0; w < weeks; w++) r.days.forEach(function(x){ var off = start + w*7 + x; if (off >= d.dateOffset) res.push(off); });
+  return res.sort(function(a,b){ return a-b; });
 }
 function repeatLabel(days){ return days.slice().sort().map(function(wd){ return WEEKDAYS_AR[wd]; }).join(' و'); }
+function monthRepeatLabel(off, by){
+  var dt = dateOf(off), nth = Math.ceil(dt.getDate()/7);
+  return by==='weekday' ? (ORDINALS_AR[Math.min(nth,5)-1] + ' ' + WEEKDAYS_AR[dt.getDay()] + ' في الشهر') : ('يوم ' + dt.getDate() + ' من كل شهر');
+}
+function seriesText(d){ return d.repeat.freq==='month' ? monthRepeatLabel(d.dateOffset, d.repeat.monthBy) : 'كل ' + repeatLabel(d.repeat.days); }
+function taskSeriesText(t){ return t.seriesLabel || (t.seriesDays ? 'كل ' + repeatLabel(t.seriesDays) : ''); }
 
 function alternativeTasksFor(t, cid){
   var tOff = todayOffset();
@@ -1447,6 +1485,16 @@ function agentLoads(){
   return loads;
 }
 function autoAssign(t, rebalance){
+  // a task given to one agent: every open case goes to that agent
+  if (t.owner){
+    var n = 0;
+    t.candidateIds.forEach(function(cid){
+      if (!isOpenStatus(caseStatus(t,cid).key)) return;
+      if (t.assignee[cid] && !rebalance) return;
+      if (t.assignee[cid]!==t.owner){ t.assignee[cid] = t.owner; n++; }
+    });
+    return n;
+  }
   var loads = agentLoads();
   if (rebalance){
     t.candidateIds.forEach(function(cid){
@@ -1678,14 +1726,14 @@ var ACT = {
     var target = draftTarget(d);
     if (target<=0 || (d.loc==='convoy' && !d.gov)) return;
     var offs = repeatOffsets(d); if (!offs.length) return;
-    var series = offs.length > 1 ? {id:'s'+Date.now(), days:d.repeat.days.slice()} : null;
+    var series = offs.length > 1 ? {id:'s'+Date.now(), label:seriesText(d)} : null;
     var made = [], pool = S.tasks.slice();
     offs.forEach(function(off, i){
       var tg = target;
       var t = {
         id:'t'+Date.now()+'_'+i, type:d.type, dateOffset:off, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
         target:tg, mode:d.targetMode, attendTarget: d.targetMode==='attendance' ? draftAttend(d) : null, candidateIds: i===0 ? d.candidateIds.slice() : [], priority: i===0 ? Object.assign({}, d.priority||{}) : {}, callStatus:{}, assignee:{},
-        standby:[], confirmCall: !!d.confirmCall, seriesId: series ? series.id : null, seriesDays: series ? series.days : null,
+        standby:[], confirmCall: !!d.confirmCall, seriesId: series ? series.id : null, seriesLabel: series ? series.label : null, owner:null,
         status:'draft', publishedAt:null, publishedBy:null,
         meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
         meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '', convoyNotes: d.loc==='convoy' ? (d.convoyNotes||'').trim() : '',
@@ -1699,7 +1747,7 @@ var ACT = {
       made.forEach(function(t){
         S.tasks.push(t);
         if (publish === '1') publishOne(t);
-        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار كل ' + repeatLabel(series.days) : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : '') + (publish==='1' ? ' · نُشرت' : ''));
+        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار ' + series.label : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : '') + (publish==='1' ? ' · نُشرت' : ''));
       });
       S.overlay = null; S.createDraft = null; S.confirm = null;
       toast(made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة' + (publish==='1' ? ' ونشرها' : ' كمسودات')
@@ -1713,7 +1761,9 @@ var ACT = {
       confirmLabel:'حفظ رغم التجاوز', onConfirm:apply, returnTo:'create'};
     render();
   },
-  setRepeat: function(on){ var r = S.createDraft.repeat; r.on = on==='1'; if (!r.days.length) r.days = [weekdayOf(S.createDraft.dateOffset)]; render(); },
+  setRepeat: function(v){ var r = S.createDraft.repeat; r.on = v!=='0'; if (r.on) r.freq = v; if (!r.days.length) r.days = [weekdayOf(S.createDraft.dateOffset)]; render(); },
+  setRepeatMonthBy: function(v){ S.createDraft.repeat.monthBy = v; render(); },
+  setRepeatMonths: function(v){ S.createDraft.repeat.months = v; render(); },
   toggleRepeatDay: function(wd){
     var r = S.createDraft.repeat, n = parseInt(wd,10), i = r.days.indexOf(n);
     if (i===-1) r.days.push(n); else if (r.days.length > 1) r.days.splice(i,1);
@@ -1739,7 +1789,7 @@ var ACT = {
       onConfirm:function(){
         src.forEach(function(x, i){
           var t = {id:'t'+Date.now()+'_c'+i, type:x.type, dateOffset:x.dateOffset+7, loc:x.loc, gov:x.gov, target:x.target, mode:x.mode||'booking', attendTarget:x.attendTarget||null,
-            candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], confirmCall:!!x.confirmCall, seriesId:null, seriesDays:null,
+            candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], confirmCall:!!x.confirmCall, seriesId:null, seriesLabel:null, owner:x.owner||null,
             status:'draft', publishedAt:null, publishedBy:null, meetingPoint:x.meetingPoint||'', mapUrl:x.mapUrl||'', meetingTime:x.meetingTime||'', convoyNotes:x.convoyNotes||''};
           S.tasks.push(t); audit('نسخ من الأسبوع اللي فات', t, t.target + ' حجز');
         });
@@ -1898,6 +1948,14 @@ var ACT = {
       }};
     render();
   },
+  setTaskOwner: function(v){
+    var t = findTask(S.detailTaskId); if (!t) return;
+    t.owner = v || null;
+    var n = autoAssign(t, true);
+    audit(v ? 'توكيل المهمة لموظف' : 'إلغاء توكيل المهمة', t, v ? agentName(v) : 'توزيع على كل الموظفين');
+    toast(v ? 'المهمة كلها بقت مع ' + agentName(v) + (n ? ' (' + n + ' حالة)' : '') : 'الحالات اتوزعت على كل الموظفين');
+    render();
+  },
   redistribute: function(tid){
     var t = findTask(tid); var n = autoAssign(t, true); audit('إعادة توزيع', t, n + ' حالة');
     toast('تمت إعادة توزيع ' + n + ' حالة مفتوحة بالتساوي على الموظفين'); render();
@@ -1948,6 +2006,7 @@ var ACT = {
       delete S.nextCallAt[key]; delete t.callStatus[cid];
       entry.bookTid = to.id; entry.bookTime = d.bookTime;
       msg = 'تم حجز ' + c.name + ' في ' + dayLabel(to.dateOffset) + (d.bookTime ? ' الساعة ' + fmtClock(d.bookTime) : '');
+      if (S.settings.msgOn){ sendMsg('booking', to, cid); msg += ' · اتبعتت رسالة ' + CHANNELS[S.settings.msgChannel]; }
     } else {
       t.callStatus[cid] = o;
       if (FAILED_OUTCOMES.indexOf(o)!==-1){
@@ -1979,7 +2038,8 @@ var ACT = {
     delete S.nextCallAt[nextCallKey(from.id, cid)];
     S.callLog.push({id:'L'+Date.now(), taskId:from.id, caseId:cid, agentId:isCC() ? S.agentId : 'a1', at:now(), outcome:'booked', callType:'صادر',
       bookTid:to.id, note:'حُجزت في موعد بديل: ' + locLabelFor(to) + ' – ' + dayLabel(to.dateOffset)});
-    toast('تم حجز الحالة في ' + dayLabel(to.dateOffset)); render();
+    if (S.settings.msgOn) sendMsg('booking', to, cid);
+    toast('تم حجز الحالة في ' + dayLabel(to.dateOffset) + (S.settings.msgOn ? ' · اتبعتت رسالة ' + CHANNELS[S.settings.msgChannel] : '')); render();
   },
   toggleLog: function(key){ S.logOpen[key] = !S.logOpen[key]; render(); },
   copyPhone: function(p){
@@ -2032,9 +2092,11 @@ var ACT = {
       'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag),
+      'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl,
     };
     S.overlay = 'settings'; render();
   },
+  toggleSetting: function(path){ S.settingsDraft[path] = !S.settingsDraft[path]; render(); },
   closeSettings: function(){ S.overlay = null; S.settingsDraft = null; render(); },
   setInput: function(v, path){ S.settingsDraft[path] = v; render(); },
   saveSettings: function(){
@@ -2043,6 +2105,8 @@ var ACT = {
     s.dailyCapacity = int('dailyCapacity',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1);
+    s.msgOn = !!d.msgOn; s.msgChannel = d.msgChannel; s.reminderOn = !!d.reminderOn; s.reminderTime = d.reminderTime || '10:00';
+    s.orgMapUrl = (d.orgMapUrl||'').trim(); s.msgBookTpl = d.msgBookTpl; s.msgRemindTpl = d.msgRemindTpl;
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
@@ -2091,7 +2155,7 @@ function legacyCopy(text){
 }
 function openCreate(type, off){
   S.overlay = 'create'; S.dayMenu = null;
-  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'attendance', attend:String(defaultAttend(type, off)), confirmCall:true, repeat:{on:false, days:[weekdayOf(off)], weeks:'4'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'attendance', attend:String(defaultAttend(type, off)), confirmCall:true, repeat:{on:false, freq:'week', days:[weekdayOf(off)], weeks:'4', monthBy:'date', months:'3'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
   S.govSearch = ''; S.govDropdownOpen = false;
   render();
 }
@@ -2149,6 +2213,8 @@ function capTable(loads){
 var root = null, pendingCaret = null;
 function render(){
   if (!root) return;
+  var rem = sendDueReminders();
+  if (rem && !S.toast) S.toast = 'اتبعت ' + rem + ' تذكير للحالات المحجوزة بكرة';
   var ae = document.activeElement, focusK = null, selS = null, selE = null;
   if (ae && ae.getAttribute && ae.getAttribute('data-k')){
     focusK = ae.getAttribute('data-k');
@@ -2381,7 +2447,7 @@ function renderTaskCard(t){
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
     (full ? '<span class="full-badge">تم اكتمال الحجز المطلوب</span>' : '')+
     (risky ? '<span class="risk-badge">محتاجة تدخل</span>' : '')+
-    (t.seriesId ? '<span class="rep-badge" title="تتكرر كل '+esc(repeatLabel(t.seriesDays||[]))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
+    (t.seriesId ? '<span class="rep-badge" title="تتكرر '+esc(taskSeriesText(t))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
     '<div class="progress-line"><span class="progress-num">'+booked+' من '+goal+'</span><span class="progress-tag">حجز · متوقع يحضر '+expectedAttend(t.type, goal)+'</span></div>'+
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
@@ -2395,6 +2461,7 @@ function renderTaskCard(t){
       if (cs.confirmed + cs.cancelled + cs.pending) h += '<div class="candidates-line">التأكيد: <span class="cap-ok">أكد '+cs.confirmed+'</span> · <span class="cap-over">اعتذر '+cs.cancelled+'</span> · لسه '+cs.pending+'</div>';
     }
   }
+  if (t.owner && !isCC()) h += '<div class="my-line">'+ic('user',11)+' مع '+esc(agentName(t.owner))+'</div>';
   if (isCC()){
     var mine = t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId && isOpenStatus(caseStatus(t,cid).key); }).length;
     if (mine) h += '<div class="my-line">'+ic('user',11)+' حالات مسندة لك: '+mine+'</div>';
@@ -2649,6 +2716,12 @@ function renderCallModal(){
     else h += '<div class="rule-hint">إعادة الاتصال '+fmtTime(now()+S.settings.retryMinutes*60000)+' · محاولة '+ftAfter+'/'+S.settings.maxPerDay+'</div>';
   }
   if (o==='standby') h += '<div class="rule-hint">هتتسجل احتياطي #'+((t.standby||[]).length+1)+' – لو حد من المحجوزين اعتذر، الحالة هتظهر للاتصال على طول</div>';
+  if (booking && S.settings.msgOn){
+    var pt = findTask(d.bookTid) || t, saveBT = S.bookTimes[nextCallKey(pt.id, cid)];
+    S.bookTimes[nextCallKey(pt.id, cid)] = d.bookTime || saveBT;
+    h += '<div class="msg-preview"><div class="msg-meta">'+ic('send',12)+' هتتبعت للحالة على '+CHANNELS[S.settings.msgChannel]+' بعد الحفظ:</div><div class="msg-text">'+esc(msgText('booking', pt, cid))+'</div></div>';
+    if (saveBT) S.bookTimes[nextCallKey(pt.id, cid)] = saveBT; else delete S.bookTimes[nextCallKey(pt.id, cid)];
+  }
   if (booking){
     var bt = findTask(d.bookTid) || t, b = taskBookedCount(bt);
     if (b >= bookingGoal(bt)) h += '<div class="rule-hint warn">الموعد اكتمل ('+b+' من '+bookingGoal(bt)+')</div>';
@@ -2682,7 +2755,7 @@ function renderLog(cid){
       (l.note ? '<div class="log-note">'+esc(l.note)+'</div>' : '')+'</div></div>';
   });
   if (seedFailed(cid)) h += '<div class="log-legacy">+ '+seedFailed(cid)+' محاولات سابقة قبل تفعيل سجل المكالمات</div>';
-  return h + '</div>';
+  return h + renderMsgs(cid) + '</div>';
 }
 
 // =====================================================================
@@ -2758,8 +2831,17 @@ function renderCreate(){
   var rp = d.repeat, offs = repeatOffsets(d);
   h += '<div class="field"><label class="field-label">التكرار</label><div class="seg">'+
     '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
-    '<button class="seg-btn'+(rp.on?' on':'')+'"'+A('setRepeat','1')+'>تتكرر أسبوعيًا</button></div>';
-  if (rp.on){
+    '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
+    '<button class="seg-btn'+(rp.on && rp.freq==='month'?' on':'')+'"'+A('setRepeat','month')+'>تتكرر شهريًا</button></div>';
+  if (rp.on && rp.freq==='month'){
+    h += '<div class="wd-row">'+
+      '<button class="wd-chip'+(rp.monthBy==='date'?' on':'')+'"'+A('setRepeatMonthBy','date')+'>'+esc(monthRepeatLabel(d.dateOffset,'date'))+'</button>'+
+      '<button class="wd-chip'+(rp.monthBy==='weekday'?' on':'')+'"'+A('setRepeatMonthBy','weekday')+'>'+esc(monthRepeatLabel(d.dateOffset,'weekday'))+'</button></div>'+
+      '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>'+
+      '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، ')+'</span></div>'+
+      (d.candidateIds.length ? '<div class="field-hint">الحالات المرشحة هتتضاف لأول مهمة بس</div>' : '');
+  }
+  if (rp.on && rp.freq==='week'){
     h += '<div class="wd-row">'+[0,1,2,3,4,5,6].map(function(wd){
       return '<button class="wd-chip'+(rp.days.indexOf(wd)!==-1?' on':'')+'"'+A('toggleRepeatDay', wd)+'>'+WEEKDAYS_AR[wd]+'</button>';
     }).join('')+'</div>'+
@@ -2883,7 +2965,7 @@ function renderDetail(){
     extra += '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>';
   }
   var sub = dayLabel(t.dateOffset) + ' · ' + (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '<span class="pub-badge">منشورة</span>') +
-    (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر كل '+esc(repeatLabel(t.seriesDays||[]))+'</span>' : '');
+    (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر '+esc(taskSeriesText(t))+'</span>' : '');
   var h = '<div class="scrim"'+A('closeDetail')+'></div><aside class="drawer" style="width:520px;">' + drawerHead(m, m.label, sub, extra, 'closeDetail');
   h += '<div class="drawer-body" data-scroll="detail">';
   if (t.publishedAt && admin && t.status!=='draft'){
@@ -2961,7 +3043,9 @@ function renderDetail(){
   }
   if (canAssign()){
     h += '<div style="display:flex;gap:8px;margin-bottom:10px;">'+(admin ? '<button class="btn btn-outline-dashed btn-sm" style="flex:1;"'+A('openAddCasesTask', t.id)+'>+ إضافة حالات</button>' : '')+
-      (t.status==='published' ? '<button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button>' : '')+'</div>';
+      (t.status==='published' && !t.owner ? '<button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button>' : '')+'</div>';
+    h += '<div class="owner-row"><label>'+ic('user',13)+' الموظف المسؤول عن المهمة</label><select class="filter-select" data-change="setTaskOwner">'+
+      '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
     if (t.status==='published'){
       var per = {}; AGENTS.forEach(function(a){ per[a.id] = 0; });
       t.candidateIds.forEach(function(cid){ var a = t.assignee[cid]; if (a && per[a]!=null && isOpenStatus(caseStatus(t,cid).key)) per[a]++; });
@@ -3000,6 +3084,7 @@ function renderCaseRow(t, cid){
   h += '<span class="meta-sep">|</span><span>المحاولات: اليوم '+failedToday(cid)+'/'+S.settings.maxPerDay+' · الإجمالي '+attemptsTotal(cid)+'</span>';
   var nxt = open && st.key!=='hardToReach' ? nextCallFor(t, cid) : 0;
   if (nxt) h += '<span class="next-call">'+ic('clock',12)+' معاد الاتصال '+fmtWhen(nxt)+'</span>';
+  var chips = msgChips(t, cid); if (chips) h += '<span class="meta-sep">|</span>' + chips;
   h += '</div><div class="row-actions">';
   var callOpen = S.callOpen && S.callOpen.tid===t.id && S.callOpen.cid===cid;
   if (open && st.key!=='hardToReach' && canCall(t, cid) && t.status==='published' && t.dateOffset>=todayOffset()){
@@ -3239,6 +3324,56 @@ function renderFunded(){
   return h + '</div></div>';
 }
 
+
+// =====================================================================
+// SMS / WhatsApp to the case: after booking, and a reminder the day before
+// (simulated here – the real system sends through the SMS / WhatsApp gateway)
+// =====================================================================
+var CHANNELS = {whatsapp:'واتساب', sms:'SMS'};
+function msgFields(t, cid){
+  var c = caseById(cid), key = nextCallKey(t.id, cid), time = S.bookTimes[key] || (t.loc==='convoy' ? t.meetingTime : '');
+  var map = t.loc==='convoy' ? safeUrl(t.mapUrl) : safeUrl(S.settings.orgMapUrl);
+  return {'الاسم':c.name.split(' ')[0], 'النوع':TASK_TYPES[t.type].label, 'الميعاد':'يوم ' + dayLabel(t.dateOffset) + (time ? ' الساعة ' + fmtClock(time) : ''),
+    'المكان': t.loc==='convoy' ? ((t.meetingPoint ? t.meetingPoint + ' – ' : '') + 'قافلة ' + (t.gov||'')) : 'مقر مؤسسة هاند إن هاند',
+    'الخريطة': map || 'هيتبعت لحضرتك قبل الميعاد'};
+}
+function fillTpl(tpl, f){ return String(tpl||'').replace(/\{([^}]+)\}/g, function(m, k){ return f[k]!=null ? f[k] : m; }); }
+function msgText(kind, t, cid){ return fillTpl(kind==='reminder' ? S.settings.msgRemindTpl : S.settings.msgBookTpl, msgFields(t, cid)); }
+function sendMsg(kind, t, cid){
+  var m = {id:'M'+Date.now()+Math.random().toString(36).slice(2,6), caseId:cid, tid:t.id, kind:kind, channel:S.settings.msgChannel, at:now(), text:msgText(kind, t, cid), status:'sent'};
+  S.messages.push(m); return m;
+}
+function msgsFor(cid){ return S.messages.filter(function(m){ return m.caseId===cid; }); }
+function lastMsg(t, cid, kind){ var l = S.messages.filter(function(m){ return m.caseId===cid && m.tid===t.id && m.kind===kind; }); return l[l.length-1] || null; }
+// reminders go out on the day before, from the configured time
+function sendDueReminders(){
+  if (!S.settings.msgOn || !S.settings.reminderOn) return 0;
+  var n = nowDate(), p = (S.settings.reminderTime||'10:00').split(':');
+  if (n.getHours()*60 + n.getMinutes() < (+p[0])*60 + (+p[1]||0)) return 0;
+  var tOff = todayOffset(), sent = 0;
+  S.tasks.forEach(function(t){
+    if (t.status!=='published' || t.dateOffset - tOff !== 1) return;
+    t.candidateIds.forEach(function(cid){
+      if ((S.bookings[t.type]||{})[cid]!==t.id || lastMsg(t, cid, 'reminder')) return;
+      sendMsg('reminder', t, cid); sent++;
+    });
+  });
+  return sent;
+}
+function msgChips(t, cid){
+  var b = lastMsg(t, cid, 'booking'), r = lastMsg(t, cid, 'reminder'), h = '';
+  if (b) h += '<span class="msg-chip" title="'+esc(b.text)+'">'+ic('send',11)+' رسالة الحجز · '+CHANNELS[b.channel]+'</span>';
+  if (r) h += '<span class="msg-chip" title="'+esc(r.text)+'">'+ic('clock',11)+' التذكير اتبعت</span>';
+  return h;
+}
+function renderMsgs(cid){
+  var l = msgsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
+  if (!l.length) return '';
+  return '<div class="msg-list">'+l.map(function(m){
+    return '<div class="msg-item"><div class="msg-meta">'+(m.kind==='reminder' ? 'تذكير' : 'رسالة الحجز')+' · '+CHANNELS[m.channel]+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
+  }).join('')+'</div>';
+}
+
 // =====================================================================
 // Confirm / capacity / settings
 // =====================================================================
@@ -3301,6 +3436,20 @@ function renderSettings(){
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">التنبيهات والاحتياطي</div><div class="set-grid four">'+
     setNum('riskDays','تنبيه "محتاجة تدخل" قبل الموعد بـ','يوم')+setNum('riskPct','لو المحجوز أقل من','%')+
     setNum('standbyMax','عدد الاحتياطي لكل مهمة','حالة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
+  var sd = S.settingsDraft, sample = S.tasks.filter(function(t){ return t.loc==='convoy'; })[0] || S.tasks[0], scid = sample && sample.candidateIds[0];
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">رسائل الحالات (SMS / واتساب)</div>'+
+    '<label class="switch-row"><input type="checkbox"'+(sd.msgOn?' checked':'')+A('toggleSetting','msgOn')+'/> ابعت رسالة للحالة أوتوماتيك بعد "تم الحجز"</label>'+
+    '<label class="switch-row"><input type="checkbox"'+(sd.reminderOn?' checked':'')+A('toggleSetting','reminderOn')+'/> ابعت تذكير قبل الميعاد بيوم</label>'+
+    '<div class="set-grid" style="margin-top:8px;">'+
+      '<div><label>القناة</label><select class="filter-select" style="width:100%;" data-change="setInput" data-a="msgChannel">'+Object.keys(CHANNELS).map(function(k){ return '<option value="'+k+'"'+(sd.msgChannel===k?' selected':'')+'>'+CHANNELS[k]+'</option>'; }).join('')+'</select></div>'+
+      '<div><label>ميعاد إرسال التذكير (اليوم اللي قبله)</label><input class="text-input" type="time" value="'+esc(sd.reminderTime)+'" data-k="set-remtime" data-change="setInput" data-a="reminderTime"/></div>'+
+      '<div><label>لينك لوكيشن المؤسسة</label><input class="text-input" dir="ltr" placeholder="https://maps.google.com/..." value="'+esc(sd.orgMapUrl)+'" data-k="set-orgmap" data-input="setInput" data-a="orgMapUrl"/></div></div>'+
+    '<div class="tpl-grid">'+
+      '<div><label>رسالة الحجز</label><textarea class="text-input tpl-input" rows="4" data-k="set-tplb" data-input="setInput" data-a="msgBookTpl">'+esc(sd.msgBookTpl)+'</textarea>'+
+        (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgBookTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div>'+
+      '<div><label>رسالة التذكير</label><textarea class="text-input tpl-input" rows="4" data-k="set-tplr" data-input="setInput" data-a="msgRemindTpl">'+esc(sd.msgRemindTpl)+'</textarea>'+
+        (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgRemindTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div></div>'+
+    '<div class="field-hint">المتغيرات: {الاسم} {النوع} {الميعاد} {المكان} {الخريطة}</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
