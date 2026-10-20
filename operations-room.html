@@ -598,6 +598,10 @@
       display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;line-height:1;padding:0;
     }
     .day-add:hover{color:var(--text);border-color:var(--text-muted);}
+    .day-add-wrap{position:relative;display:inline-flex;}
+    .day-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12);padding:4px;display:flex;flex-direction:column;min-width:190px;}
+    .day-menu button{display:flex;align-items:center;gap:7px;border:none;background:none;padding:8px 10px;border-radius:7px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:right;white-space:nowrap;}
+    .day-menu button:hover{background:#f4f6fa;}
     .cms-modal{
       position:fixed;top:40px;left:50%;transform:translateX(-50%);width:1000px;max-width:96vw;max-height:calc(100vh - 80px);
       background:#fff;border-radius:6px;box-shadow:0 5px 15px rgba(0,0,0,.5);z-index:61;display:flex;flex-direction:column;overflow:hidden;
@@ -1365,14 +1369,18 @@ function recommendedFor(type, target){
   return Math.ceil(target / r - 1e-9);
 }
 // t.target is always the number of bookings; t.mode says how it was set:
-// 'capacity' = filled automatically from the day's free capacity, 'booking' = entered by hand
+// 'attendance' = from the attendees entered (t.attendTarget) and the historical attendance rate, 'booking' = entered by hand
 function bookingGoal(t){ return t.target || 0; }
 function expectedAttend(type, bookings){ return Math.round((bookings||0) * rateFor(type).att); }
 function freeCapacity(off, exceptId){
   var load = S.tasks.filter(function(t){ return t.dateOffset===off && t.id!==exceptId; }).reduce(function(n,t){ return n + bookingGoal(t); }, 0);
   return Math.max(0, capFor(off) - load);
 }
-function draftTarget(d){ return d.targetMode==='capacity' ? freeCapacity(d.dateOffset) : (parseInt(d.target,10)||0); }
+// attendance mode: the user enters how many should attend; bookings = attendees / historical attendance rate
+function draftAttend(d){ return parseInt(d.attend,10)||0; }
+function draftTarget(d){ return d.targetMode==='attendance' ? recommendedFor(d.type, draftAttend(d)) : (parseInt(d.target,10)||0); }
+// default attendees = what the free capacity of the day is expected to bring
+function defaultAttend(type, off){ return Math.floor(freeCapacity(off) * rateFor(type).att); }   // rounded down so it fits the free capacity
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
@@ -1650,9 +1658,16 @@ var ACT = {
     if (had) toast('تم تغيير نوع الحجز – الحالات المرشحة اتمسحت لأنها خاصة بالنوع السابق');
     render();
   },
-  openCreateDay: function(off){ openCreate('measurement', parseInt(off,10)); },
+  openCreateDay: function(off){ var o = parseInt(off,10); S.dayMenu = S.dayMenu===o ? null : o; render(); },
+  pickDayType: function(off, type){ S.dayMenu = null; openCreate(type, parseInt(off,10)); },
   setCreateTarget: function(v){ S.createDraft.target = v; render(); },
-  setCreateMode: function(m){ var d = S.createDraft; if (m==='booking' && d.targetMode==='capacity') d.target = String(freeCapacity(d.dateOffset)); d.targetMode = m; render(); },
+  setCreateAttend: function(v){ S.createDraft.attend = v; render(); },
+  setCreateMode: function(m){
+    var d = S.createDraft; if (d.targetMode===m) return;
+    if (m==='booking') d.target = String(draftTarget(d) || freeCapacity(d.dateOffset));
+    else if (!draftAttend(d)) d.attend = String(defaultAttend(d.type, d.dateOffset));   // keep what the user typed
+    d.targetMode = m; render();
+  },
   govSearch: function(v){ S.govSearch = v; S.govDropdownOpen = true; render(); },
   govFocus: function(){ S.govDropdownOpen = true; render(); },
   pickGov: function(name){ S.createDraft.gov = name; S.govSearch = name; S.govDropdownOpen = false; render(); },
@@ -1664,14 +1679,10 @@ var ACT = {
     var series = offs.length > 1 ? {id:'s'+Date.now(), days:d.repeat.days.slice()} : null;
     var made = [], pool = S.tasks.slice();
     offs.forEach(function(off, i){
-      // capacity mode: each occurrence takes what is free on its own day
-      var tg = d.targetMode==='capacity'
-        ? Math.max(0, capFor(off) - pool.filter(function(x){ return x.dateOffset===off; }).reduce(function(n,x){ return n + bookingGoal(x); }, 0))
-        : target;
-      if (!tg) return;
+      var tg = target;
       var t = {
         id:'t'+Date.now()+'_'+i, type:d.type, dateOffset:off, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
-        target:tg, mode:d.targetMode, candidateIds: i===0 ? d.candidateIds.slice() : [], priority: i===0 ? Object.assign({}, d.priority||{}) : {}, callStatus:{}, assignee:{},
+        target:tg, mode:d.targetMode, attendTarget: d.targetMode==='attendance' ? draftAttend(d) : null, candidateIds: i===0 ? d.candidateIds.slice() : [], priority: i===0 ? Object.assign({}, d.priority||{}) : {}, callStatus:{}, assignee:{},
         standby:[], confirmCall: !!d.confirmCall, seriesId: series ? series.id : null, seriesDays: series ? series.days : null,
         status:'draft', publishedAt:null, publishedBy:null,
         meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
@@ -2077,8 +2088,8 @@ function legacyCopy(text){
   document.body.removeChild(ta);
 }
 function openCreate(type, off){
-  S.overlay = 'create';
-  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'capacity', confirmCall:true, repeat:{on:false, days:[weekdayOf(off)], weeks:'4'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
+  S.overlay = 'create'; S.dayMenu = null;
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'attendance', attend:String(defaultAttend(type, off)), confirmCall:true, repeat:{on:false, days:[weekdayOf(off)], weeks:'4'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
   S.govSearch = ''; S.govDropdownOpen = false;
   render();
 }
@@ -2319,7 +2330,10 @@ function renderWeek(){
     var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
     h += '<section class="day-col" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
       '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
-      (isAdmin() && off >= todayOffset() ? '<button class="day-add" title="إضافة حجز لهذا اليوم"'+A('openCreateDay', off)+'>+</button>' : '')+'</span></div>';
+      (isAdmin() && off >= todayOffset() ? '<span class="day-add-wrap"><button class="day-add" title="إضافة حجز لهذا اليوم"'+A('openCreateDay', off)+'>+</button>'+
+        (S.dayMenu===off ? '<span class="day-menu">'+Object.keys(TASK_TYPES).map(function(k){
+          var tm = TASK_TYPES[k]; return '<button style="--edge:'+tm.color+';"'+A('pickDayType', off, k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.label+'</button>';
+        }).join('')+'</span>' : '')+'</span>' : '')+'</span></div>';
     if (showCap) h += renderCapMini(off);
     h += '<div class="day-body">';
     if (!tasks.length){
@@ -2698,15 +2712,11 @@ function drawerHead(m, title, sub, extra, closeAct){
 
 function renderCreate(){
   var d = S.createDraft, m = TASK_TYPES[d.type];
-  var target = draftTarget(d), capMode = d.targetMode==='capacity';
+  var target = draftTarget(d), attMode = d.targetMode==='attendance';
   var canCreate = target>0 && (d.loc==='org' || !!d.gov);
   var h = '<div class="scrim"'+A('closeCreate')+'></div><aside class="drawer">' + drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', 'closeCreate');
   h += '<div class="drawer-body" data-scroll="create">';
   if (d.fundCompany) h += '<div class="fund-note">'+ic('send',13,'#0093e9')+' حالات ممولة من <b>'+esc(d.fundCompany)+'</b> ('+d.candidateIds.length+' حالة) – اختار اليوم والمكان</div>';
-  h += '<div class="field"><label class="field-label">نوع الحجز</label><div class="type-seg">'+Object.keys(TASK_TYPES).map(function(k){
-    var tm = TASK_TYPES[k], on = k===d.type;
-    return '<button class="type-seg-btn'+(on?' on':'')+'" style="--edge:'+tm.color+';--tint:'+tm.tint+';"'+A('setCreateType', k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.short+'</button>';
-  }).join('')+'</div></div>';
   h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
     '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
     '<button class="seg-btn'+(d.loc==='convoy'?' on':'')+'"'+A('setCreateLoc','convoy')+'>قافلة</button></div></div>';
@@ -2722,13 +2732,12 @@ function renderCreate(){
     h += '</div></div>';
     h += convoyFields(d, 'setConvoyField', 'c');
   }
-  h += '<div class="field"><label class="field-label">عدد الحجوزات</label><div class="target-mode-row">'+
-    (capMode
-      ? '<div class="num-input auto-num">'+target+'</div>'
+  h += '<div class="field"><label class="field-label">'+(attMode ? 'عدد الحالات المطلوب حضورها' : 'عدد الحجوزات')+'</label><div class="target-mode-row">'+
+    (attMode
+      ? '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.attend)+'" data-k="attend" data-input="setCreateAttend"/>'
       : '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>')+
-    '<div class="seg mode-seg"><button class="seg-btn'+(capMode?' on':'')+'"'+A('setCreateMode','capacity')+'>حسب الحضور</button>'+
-    '<button class="seg-btn'+(!capMode?' on':'')+'"'+A('setCreateMode','booking')+'>حسب الحجوزات</button></div></div>'+
-    (capMode && !target ? '<div class="field-hint" style="color:var(--danger);">مفيش طاقة متاحة في اليوم ده</div>' : '');
+    '<div class="seg mode-seg"><button class="seg-btn'+(attMode?' on':'')+'"'+A('setCreateMode','attendance')+'>الحضور</button>'+
+    '<button class="seg-btn'+(!attMode?' on':'')+'"'+A('setCreateMode','booking')+'>الحجز</button></div></div>';
   // capacity after adding
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
   var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
@@ -2738,7 +2747,9 @@ function renderCreate(){
   h += '';
   if (target>0){
     var r = rateFor(d.type);
-    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+' <b>'+target+'</b> حجز · متوقع يحضر <b>'+expectedAttend(d.type, target)+'</b>'+
+    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+(attMode
+      ? ' عشان يحضر <b>'+draftAttend(d)+'</b> محتاج تحجز <b>'+target+'</b> حالة'
+      : ' <b>'+target+'</b> حجز · متوقع يحضر <b>'+expectedAttend(d.type, target)+'</b>')+
       '<div class="calls-rate">متوسط الحضور اليومي '+Math.round(r.att*100)+'%</div></div>';
   }
   h += '</div>';
@@ -2908,7 +2919,7 @@ function renderDetail(){
 
 
   h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+goal+'</div><div class="metric-lbl">مطلوب حجز</div></div>'+
-    '<div class="metric-box"><div class="metric-val">'+expectedAttend(t.type, goal)+'</div><div class="metric-lbl">متوقع يحضر</div></div>'+
+    '<div class="metric-box"><div class="metric-val">'+(t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, goal))+'</div><div class="metric-lbl">'+(t.mode==='attendance' && t.attendTarget ? 'المطلوب حضورهم' : 'متوقع يحضر')+'</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+t.candidateIds.length+'</div><div class="metric-lbl">الحالات المرشحة</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">تم الحجز</div></div>'+
     '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المتبقي</div></div></div>'+
