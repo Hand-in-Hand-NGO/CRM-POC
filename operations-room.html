@@ -704,6 +704,17 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .cases-btn{width:100%;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:right;
+      border:1px solid var(--border);background:#fff;border-radius:10px;padding:10px 12px;margin:16px 0 12px;cursor:pointer;font-family:inherit;color:var(--text);}
+    .cases-btn:hover{border-color:#93b8ff;background:#f7faff;}
+    .cases-btn > svg:first-child{grid-row:1 / span 2;color:var(--text-muted);}
+    .cases-btn > svg:last-child{grid-row:1 / span 2;grid-column:3;color:var(--text-faint);}
+    .cases-btn-t{font-size:14px;font-weight:700;}
+    .cases-btn-s{grid-column:2;font-size:11.5px;color:var(--text-muted);}
+    .cases-tabs{display:flex;gap:4px;padding:0 20px;border-bottom:1px solid var(--border);}
+    .cases-tabs button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:10px 12px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+    .cases-tabs button.on{color:var(--text);border-bottom-color:var(--text);}
+    .cases-tabs .count{background:var(--surface-alt);border-radius:999px;padding:0 7px;font-size:11px;}
     .owner-row{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;flex-wrap:wrap;font-size:12.5px;font-weight:700;}
     .owner-row label{display:inline-flex;align-items:center;gap:5px;}
     .msg-chip{display:inline-flex;align-items:center;gap:4px;background:#e9f7ee;color:#15803d;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;cursor:default;}
@@ -1850,8 +1861,15 @@ var ACT = {
     if (S.createDraft.loc==='convoy' && S.createDraft.gov) S.addCasesFilters.gov = S.createDraft.gov;
     S.overlay = 'addCases'; render();
   },
+  openTaskCases: function(tid){ ACT.openAddCasesTask(tid); S.casesTab = 'list'; S.detailBulkSelected = []; render(); },
+  setCasesTab: function(v){ S.casesTab = v; render(); },
+  // leave the "add from pool" tab without saving: drop the unsaved picks
+  cancelAddTab: function(){
+    var t = findTask(S.addCasesMode.taskId);
+    S.addCasesSelected = t.candidateIds.slice(); S.addCasesPrio = Object.keys(t.priority||{}); S.casesTab = 'list'; render();
+  },
   openAddCasesTask: function(tid){
-    var t = findTask(tid);
+    var t = findTask(tid); S.casesTab = 'add';
     S.addCasesMode = {kind:'existing', taskId:tid}; S.addCasesSelected = t ? t.candidateIds.slice() : []; S.addCasesPrio = t ? Object.keys(t.priority||{}) : [];
     S.addCasesFilters = emptyFilters(); S.addCasesSort = 'waitDesc';
     if (t && t.loc==='convoy' && t.gov) S.addCasesFilters.gov = t.gov;
@@ -1893,7 +1911,9 @@ var ACT = {
       audit('تعديل الحالات المرشحة', t, t.candidateIds.length + ' ← ' + sel.length + ' حالة');
       t.candidateIds = sel; t.priority = prio;
       if (t.status==='published'){ var n = autoAssign(t); if (n) toast('تم توزيع ' + n + ' حالة جديدة على الموظفين'); }
-      S.overlay = 'detail';
+      // back to the task's case list inside the same popup
+      S.casesTab = 'list'; S.addCasesSelected = t.candidateIds.slice(); S.addCasesPrio = Object.keys(t.priority||{});
+      return render();
     }
     S.addCasesMode = null; render();
   },
@@ -1939,12 +1959,13 @@ var ACT = {
     var tid = S.detailTaskId, ids = S.detailBulkSelected.slice(); if (!ids.length) return;
     S.overlay = 'confirm';
     S.confirm = {title:'إزالة حالات', tone:'danger', message:'هل تريد إزالة ' + ids.length + ' حالة من قائمة المرشحين لهذه المهمة؟',
-      confirmLabel:'إزالة الحالات المحددة', returnTo:'detail',
+      confirmLabel:'إزالة الحالات المحددة', returnTo:'addCases',
       onConfirm:function(){
         var t = findTask(tid);
         t.candidateIds = t.candidateIds.filter(function(id){ return ids.indexOf(id)===-1; });
         audit('إزالة حالات', t, ids.length + ' حالة');
-        S.detailBulkSelected = []; S.overlay = 'detail'; S.confirm = null; render();
+        S.addCasesSelected = t.candidateIds.slice();
+        S.detailBulkSelected = []; S.overlay = 'addCases'; S.confirm = null; render();
       }};
     render();
   },
@@ -2768,7 +2789,7 @@ function renderOverlays(){
     case 'detail': return renderDetail();
     case 'confirm':
       var under = S.confirm && S.confirm.returnTo;
-      return (under==='detail' ? renderDetail() : under==='create' && S.createDraft ? renderCreate() : under==='capacity' ? renderCapacity() : '') + renderConfirm();
+      return (under==='detail' ? renderDetail() : under==='addCases' && S.addCasesMode ? renderAddCases() : under==='create' && S.createDraft ? renderCreate() : under==='capacity' ? renderCapacity() : '') + renderConfirm();
     case 'capacity': return renderCapacity();
     case 'settings': return renderSettings();
     case 'risk': return renderRisk();
@@ -2854,8 +2875,8 @@ function renderCreate(){
   {
     var n = d.candidateIds.length;
     h += '<div class="field"><label class="field-label">الحالات المرشحة</label>';
-    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>إضافة حالات</button></div>';
-    if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>+ إضافة حالات</button>';
+    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>الحالات</button></div>';
+    if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>'+ic('users',13)+' الحالات</button>';
     h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
   h += '</div><div class="drawer-foot">'+
@@ -2909,11 +2930,38 @@ function currentAddCasesIds(){
 function prioStar(on, act, arg, title){
   return '<button class="prio-star'+(on?' on':'')+'" title="'+(title || (on ? 'إلغاء أولوية الاتصال' : 'أولوية اتصال للكول سنتر'))+'"'+A(act, arg)+'>'+(on ? '★' : '☆')+'</button>';
 }
+function renderTaskCasesTab(t){
+  var q = (S.detailCaseSearch||'').trim(), admin = isAdmin();
+  var ids = t.candidateIds.filter(function(cid){
+    var c = caseById(cid);
+    if (q && !(c && (c.name.indexOf(q)!==-1 || c.code.toUpperCase().indexOf(q.toUpperCase())!==-1 || c.phone.indexOf(q)!==-1))) return false;
+    if (isCC() && S.detailMineOnly && t.assignee[cid]!==S.agentId) return false;
+    return true;
+  });
+  var h = '<div class="section-head"><input class="case-search" style="flex:1;" placeholder="الاسم أو الكود أو الهاتف" value="'+esc(S.detailCaseSearch)+'" data-k="dsearch" data-input="detailSearch"/>'+
+    (isCC() ? '<label class="switch-row" style="margin:0;"><input type="checkbox"'+(S.detailMineOnly?' checked':'')+A('toggleMineOnly')+'/> حالاتي فقط</label>' : '')+'</div>';
+  if (admin && S.detailBulkSelected.length){
+    h += '<div class="bulk-bar"><span>تم تحديد '+S.detailBulkSelected.length+' حالة</span><button class="btn btn-danger btn-sm"'+A('removeSelected')+'>إزالة الحالات المحددة</button></div>';
+  }
+  ids.forEach(function(cid){ h += renderCaseRow(t, cid); });
+  if (!ids.length) h += '<div class="table-empty">'+(!t.candidateIds.length ? 'لسه مفيش حالات في المهمة' : isCC() && S.detailMineOnly ? 'لا توجد حالات مسندة لك في هذه المهمة' : 'لا توجد حالات مطابقة')+'</div>';
+  return h;
+}
 function renderAddCases(){
-  var ctx = addCasesCtx(), m = TASK_TYPES[ctx.type], sel = S.addCasesSelected;
-  var h = '<div class="scrim"'+A('closeAddCases')+'></div><div class="modal modal-lg"><div class="modal-head"><div><div class="drawer-title">إضافة حالات</div>'+
+  var ctx = addCasesCtx(), m = TASK_TYPES[ctx.type], sel = S.addCasesSelected, mode = S.addCasesMode;
+  var task = mode.kind==='existing' ? findTask(mode.taskId) : null, tab = task ? (isAdmin() ? S.casesTab || 'list' : 'list') : 'add';
+  var h = '<div class="scrim"'+A('closeAddCases')+'></div><div class="modal modal-lg"><div class="modal-head"><div><div class="drawer-title">'+(task ? 'الحالات' : 'إضافة حالات')+'</div>'+
     '<div class="drawer-sub">لـ '+m.short+' – '+dayLabel(ctx.dateOffset)+' · '+esc(ctx.loc==='convoy' ? 'قافلة '+(ctx.gov||'') : 'داخل المؤسسة')+'</div></div>'+
-    '<button class="icon-btn"'+A('closeAddCases')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="addcases">';
+    '<button class="icon-btn"'+A('closeAddCases')+'>'+ic('x',15,null,2)+'</button></div>';
+  if (task){
+    h += '<div class="cases-tabs"><button class="'+(tab==='list'?'on':'')+'"'+A('setCasesTab','list')+'>'+ic('history',13)+' حالات المهمة <span class="count">'+task.candidateIds.length+'</span></button>'+
+      (isAdmin() ? '<button class="'+(tab==='add'?'on':'')+'"'+A('setCasesTab','add')+'>'+pathIc('M12 5v14M5 12h14',13,null,2.4)+' إضافة من '+POOL_NAMES[task.type]+'</button>' : '')+'</div>';
+  }
+  h += '<div class="modal-body" data-scroll="addcases'+tab+'">';
+  if (tab==='list'){
+    return h + renderTaskCasesTab(task) + '</div><div class="modal-foot"><button class="btn btn-secondary"'+A('closeAddCases')+'>إغلاق</button>'+
+      (isAdmin() ? '<button class="btn btn-outline-dashed"'+A('setCasesTab','add')+'>+ إضافة من الحصّالة</button>' : '')+'</div></div>';
+  }
   var ids = currentAddCasesIds();
   var f = S.addCasesFilters, srt = S.addCasesSort || 'waitDesc';
   function opts(list, cur){ return '<option value="">الكل</option>' + list.map(function(v){ return '<option'+(cur===v?' selected':'')+'>'+v+'</option>'; }).join(''); }
@@ -2945,7 +2993,7 @@ function renderAddCases(){
       '<td>'+(p.eligible ? (hasNoShow(c.id) ? '<span class="reason child">لم يحضر موعد سابق</span>' : '') : '<span class="reason neg">'+esc(p.why)+'</span>')+'</td></tr>';
   });
   h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
-  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+(sel.length || ids.length ? '' : ' disabled')+'>'+(sel.length ? 'حفظ الحالات المحددة ('+sel.length+')' : 'إضافة كل الحالات ('+ids.length+')')+'</button><span class="field-hint" style="align-self:center;">★ '+S.addCasesPrio.filter(function(x){ return sel.indexOf(x)!==-1; }).length+'</span><button class="btn btn-secondary"'+A('closeAddCases')+'>إلغاء</button></div></div>';
+  h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+(sel.length || ids.length ? '' : ' disabled')+'>'+(sel.length ? 'حفظ الحالات المحددة ('+sel.length+')' : 'إضافة كل الحالات ('+ids.length+')')+'</button><span class="field-hint" style="align-self:center;">★ '+S.addCasesPrio.filter(function(x){ return sel.indexOf(x)!==-1; }).length+'</span><button class="btn btn-secondary"'+A(task ? 'cancelAddTab' : 'closeAddCases')+'>'+(task ? 'رجوع لحالات المهمة' : 'إلغاء')+'</button></div></div>';
   return h;
 }
 
@@ -3028,22 +3076,14 @@ function renderDetail(){
 
   h += targetEdit;
 
-  // cases
-  var q = (S.detailCaseSearch||'').trim();
-  var ids = t.candidateIds.filter(function(cid){
-    var c = caseById(cid);
-    if (q && !(c && (c.name.indexOf(q)!==-1 || c.code.toUpperCase().indexOf(q.toUpperCase())!==-1 || c.phone.indexOf(q)!==-1))) return false;
-    if (isCC() && S.detailMineOnly && t.assignee[cid]!==S.agentId) return false;
-    return true;
-  });
-  h += '<div class="section-head"><span class="section-title">الحالات ('+t.candidateIds.length+')</span>'+
-    '<input class="case-search" placeholder="الاسم أو الكود أو الهاتف" value="'+esc(S.detailCaseSearch)+'" data-k="dsearch" data-input="detailSearch"/></div>';
-  if (isCC()){
-    h += '<label class="switch-row" style="margin-bottom:10px;"><input type="checkbox"'+(S.detailMineOnly?' checked':'')+A('toggleMineOnly')+'/> حالاتي فقط</label>';
-  }
+  // cases -> opened in the "الحالات" popup (task cases + add from the pool)
+  var cnt = {booked:0, open:0, closed:0};
+  t.candidateIds.forEach(function(cid){ var k = caseStatus(t, cid).key; if (k==='booked' || k==='attended') cnt.booked++; else if (isOpenStatus(k)) cnt.open++; else cnt.closed++; });
+  var mine = isCC() ? t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId; }).length : 0;
+  h += '<button class="cases-btn"'+A('openTaskCases', t.id)+'>'+ic('users',16)+'<span class="cases-btn-t">الحالات <b>('+t.candidateIds.length+')</b></span>'+
+    '<span class="cases-btn-s">محجوز '+cnt.booked+' · مفتوحة '+cnt.open+' · مقفولة '+cnt.closed+(isCC() ? ' · مسندة لك '+mine : '')+'</span>'+pathIc('M15 6l-6 6 6 6',15,null,2)+'</button>';
   if (canAssign()){
-    h += '<div style="display:flex;gap:8px;margin-bottom:10px;">'+(admin ? '<button class="btn btn-outline-dashed btn-sm" style="flex:1;"'+A('openAddCasesTask', t.id)+'>+ إضافة حالات</button>' : '')+
-      (t.status==='published' && !t.owner ? '<button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button>' : '')+'</div>';
+    if (t.status==='published' && !t.owner) h += '<div style="display:flex;gap:8px;margin-bottom:10px;"><button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button></div>';
     h += '<div class="owner-row"><label>'+ic('user',13)+' الموظف المسؤول عن المهمة</label><select class="filter-select" data-change="setTaskOwner">'+
       '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
     if (t.status==='published'){
@@ -3052,11 +3092,6 @@ function renderDetail(){
       h += '<div class="field-hint" style="margin:-4px 0 10px;">'+AGENTS.map(function(a){ return esc(a.name)+' ('+per[a.id]+')'; }).join(' · ')+'</div>';
     }
   }
-  if (admin && S.detailBulkSelected.length){
-    h += '<div class="bulk-bar"><span>تم تحديد '+S.detailBulkSelected.length+' حالة</span><button class="btn btn-danger btn-sm"'+A('removeSelected')+'>إزالة الحالات المحددة</button></div>';
-  }
-  ids.forEach(function(cid){ h += renderCaseRow(t, cid); });
-  if (!ids.length) h += '<div class="table-empty">'+(isCC() && S.detailMineOnly ? 'لا توجد حالات مسندة لك في هذه المهمة' : 'لا توجد حالات مطابقة')+'</div>';
   if (canAssign()){
     var log = S.audit.filter(function(a){ return a.tid===t.id; });
     h += '<div class="section-head" style="margin-top:16px;"><span class="section-title">سجل التعديلات ('+log.length+')</span></div>'+auditList(log, true);
