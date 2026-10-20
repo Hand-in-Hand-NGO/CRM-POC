@@ -700,6 +700,11 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .btn-fund{background:#0093e9;color:#fff;border:1px solid #0093e9;}
+    .fund-group{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;}
+    .fund-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+    .fund-note{background:#e6f1fb;border:1px solid #0093e9;color:#0b5f96;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:12px;display:flex;gap:6px;align-items:center;}
+    .limb-badge{background:#fff4e5;color:#b45309;border:1px solid #f0c98a;border-radius:999px;padding:0 7px;font-size:10.5px;font-weight:700;white-space:nowrap;}
     .btn-risk{background:var(--warning-tint);color:var(--warning);border:1px solid #f0c98a;}
     .task-card.at-risk{border-color:#f0b35a;box-shadow:0 0 0 2px #fde7c4;}
     .risk-badge{background:var(--warning-tint);color:var(--warning);border:1px solid #f0c98a;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;}
@@ -1043,9 +1048,17 @@ var CASES = [
   mk('C-1046','ليلى ماهر عزت','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',9,0,'داخل المؤسسة','maintEval',25),
   mk('C-1047','فارس أيمن جاد','سوهاج','تمويل مؤسسة','بتر أعلى المرفق',14,0,'قافلة','maintEval',40,10),
   mk('C-1048','محمد رضا حنفي','أسوان','تمويل ذاتي','بتر أسفل الركبة',47,0,'قافلة','maintEval',70,15),
+  // second limb of the same person = a separate request with its own code (person = id of the first request)
+  mk('C-1051','سارة أحمد فتحي','أسوان','تمويل مؤسسة','بتر أسفل الركبة',12,0,'قافلة','measurement',90,0,{person:'C-1003'}),
+  mk('C-1052','عمر خالد فؤاد','الجيزة','تمويل مؤسسة','بتر أسفل الركبة',22,0,'داخل المؤسسة','measurement',45,0,{person:'C-1010'}),
+  mk('C-1053','أحمد جمال توفيق','المنيا','تمويل مؤسسة','بتر أسفل الركبة',55,0,'','measurement',28,0,{person:'C-1006'}),
+  mk('C-1054','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أعلى الركبة',38,0,'','maintEval',25,5,{person:'C-1014'}),
 ];
 var CASE_MAP = {};
 CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
+CASES.forEach(function(c){ if (c.person && CASE_MAP[c.person]) c.phone = CASE_MAP[c.person].phone; else c.person = c.id; });
+// other requests (other codes / limbs) of the same person
+function otherLimbs(c){ return CASES.filter(function(x){ return x.person===c.person && x.id!==c.id; }); }
 function caseById(id){ return CASE_MAP[id] || null; }
 function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
 
@@ -1378,6 +1391,8 @@ function priorityOf(ctx, c){
   if (c.postponed && c.postponed.contact==='org' && c.postponed.until <= ctx.dateOffset){
     score += 15; reasons.push({t:'انتهى التأجيل الهندسي (' + c.postponed.reason + ')', k:'overdue'});
   }
+  var fa = fundOf(c.id);
+  if (fa){ score += 15; reasons.push({t:'ممول – ' + fa.company, k:'pref'}); }
   if (isRepeatNoShow(c.id)){ score -= 15; reasons.push({t:'غياب متكرر (' + noShowCount(c.id) + ')', k:'neg'}); }
   else if (hasNoShow(c.id)){ score += 10; reasons.push({t:'لم يحضر موعد سابق', k:'child'}); }
   if (c.age < 12){ score += 25; reasons.push({t:'طفل (' + c.age + ' سنة)', k:'child'}); }
@@ -1671,7 +1686,7 @@ var ACT = {
       made.forEach(function(t){
         S.tasks.push(t);
         if (publish === '1') publishOne(t);
-        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار كل ' + repeatLabel(series.days) : '') + (publish==='1' ? ' · نُشرت' : ''));
+        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار كل ' + repeatLabel(series.days) : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : '') + (publish==='1' ? ' · نُشرت' : ''));
       });
       S.overlay = null; S.createDraft = null; S.confirm = null;
       toast(made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة' + (publish==='1' ? ' ونشرها' : ' كمسودات')
@@ -1744,6 +1759,18 @@ var ACT = {
 
   // ---------- panels ----------
   openRisk: function(){ S.overlay = 'risk'; render(); },
+  openFunded: function(){ S.overlay = 'funded'; render(); },
+  // funded cases of one company + stage -> new booking task (operations picks the day)
+  createFromFunding: function(k){
+    var p = k.split('|'), company = p[0], type = p[1], ctx = {id:'__fund', type:type, loc:'org', gov:null, dateOffset:todayOffset()};
+    var ids = fundedNew().filter(function(c){ var a = fundOf(c.id); return a.company===company && c.stage===type && priorityOf(ctx, c).eligible; }).map(function(c){ return c.id; });
+    if (!ids.length) return;
+    openCreate(type, todayOffset()+1);
+    var d = S.createDraft;
+    d.candidateIds = ids; d.priority = {}; ids.forEach(function(cid){ d.priority[cid] = true; });
+    d.targetMode = 'booking'; d.target = String(ids.length); d.fundCompany = company;
+    render();
+  },
   openOps: function(){ S.overlay = 'ops'; S.opsWeek = S.weekOffset; render(); },
   opsStep: function(n){ S.opsWeek += parseInt(n,10); render(); },
   openNoShow: function(){ S.overlay = 'noShow'; render(); },
@@ -2117,6 +2144,7 @@ function render(){
   var scrolls = {};
   root.querySelectorAll('[data-scroll]').forEach(function(el){ scrolls[el.getAttribute('data-scroll')] = el.scrollTop; });
   root.innerHTML = renderApp();
+  syncFundingOps();
   root.querySelectorAll('[data-scroll]').forEach(function(el){ var v = scrolls[el.getAttribute('data-scroll')]; if (v) el.scrollTop = v; });
   if (pendingCaret){ focusK = pendingCaret.k; selS = selE = pendingCaret.pos; pendingCaret = null; }
   if (focusK){
@@ -2154,6 +2182,7 @@ function renderTopbar(){
   h += '<span class="clock-pill" title="الوقت الحالي – أزرار المحاكاة لتجربة قواعد إعادة الاتصال فقط">'+ic('clock',13)+' الآن <b>'+fmtTime(now())+'</b>'+
     '<button'+A('simAdvance','60')+' title="محاكاة: تقديم الوقت ساعة">+ ساعة</button>'+
     (S.simOffset ? '<button'+A('simReset')+' title="رجوع للوقت الحقيقي">الوقت الحقيقي</button>' : '')+'</span>';
+  if (isAdmin()) h += '<a class="top-btn" href="funding.html" style="text-decoration:none;">'+ic('send',14)+'صفحة التمويل</a>';
   if (canAssign()){
     h += '<button class="top-btn"'+A('openOps')+'>'+ic('gauge',14)+'داش بورد الأوبريشن</button>';
     h += '<button class="top-btn"'+A('openAudit')+'>'+ic('history',14)+'سجل التعديلات</button>';
@@ -2259,6 +2288,8 @@ function renderPlanStrip(){
     '<span class="plan-stat"><span class="pdot" style="background:#e0a100"></span>مسودة: <b>'+drafts+'</b></span>'+'</div>';
   var risk = riskTasks().length;
   h += '<div class="plan-actions">';
+  var fn = fundedNew().length;
+  if (fn) h += '<button class="btn btn-fund btn-sm"'+A('openFunded')+'>'+ic('send',13,'#fff')+' تمويل جديد ('+fn+')</button>';
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
   h += '<button class="btn btn-secondary btn-sm"'+A('copyLastWeek')+'>'+ic('copy',13)+' نسخ خطة الأسبوع اللي فات</button>';
   if (drafts) h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13)+' نشر خطة الأسبوع ('+drafts+')</button>';
@@ -2655,6 +2686,7 @@ function renderOverlays(){
     case 'ops': return renderOps();
     case 'noShow': return renderNoShow();
     case 'audit': return renderAudit();
+    case 'funded': return renderFunded();
   }
   return '';
 }
@@ -2670,6 +2702,7 @@ function renderCreate(){
   var canCreate = target>0 && (d.loc==='org' || !!d.gov);
   var h = '<div class="scrim"'+A('closeCreate')+'></div><aside class="drawer">' + drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', 'closeCreate');
   h += '<div class="drawer-body" data-scroll="create">';
+  if (d.fundCompany) h += '<div class="fund-note">'+ic('send',13,'#0093e9')+' حالات ممولة من <b>'+esc(d.fundCompany)+'</b> ('+d.candidateIds.length+' حالة) – اختار اليوم والمكان</div>';
   h += '<div class="field"><label class="field-label">نوع الحجز</label><div class="type-seg">'+Object.keys(TASK_TYPES).map(function(k){
     var tm = TASK_TYPES[k], on = k===d.type;
     return '<button class="type-seg-btn'+(on?' on':'')+'" style="--edge:'+tm.color+';--tint:'+tm.tint+';"'+A('setCreateType', k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.short+'</button>';
@@ -3114,6 +3147,83 @@ function renderAudit(){
     panelHead('سجل التعديلات', S.audit.length+' تعديل')+'<div class="modal-body" data-scroll="audit">'+
     '<input class="case-search" style="width:100%;margin-bottom:10px;" placeholder="بحث بالإجراء أو المهمة أو الشخص" value="'+esc(S.auditQ)+'" data-k="audit-q" data-input="auditSearch"/>'+
     auditList(list)+'</div></div>';
+}
+
+
+// =====================================================================
+// Funding page link (صفحة التمويل) – shared through localStorage
+//   hih_funding_v1     : written by the funding page  {companies, alloc:{caseId:{company,at,by,batch}}, batches}
+//   hih_funding_ops_v1 : written here                 {caseId:{status, day, tid, type}}
+// =====================================================================
+var FUND_KEY = 'hih_funding_v1', FUND_OPS_KEY = 'hih_funding_ops_v1';
+var FUND = {companies:[], alloc:{}, batches:[]}, fundOpsLast = '';
+function readStore(k, def){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function loadFunding(){
+  FUND = readStore(FUND_KEY, null) || {companies:[], alloc:{}, batches:[]};
+  FUND.alloc = FUND.alloc || {};
+  CASES.forEach(function(c){
+    if (c.baseFunding===undefined) c.baseFunding = c.funding;
+    var a = FUND.alloc[c.id]; c.funding = a ? a.company : c.baseFunding;
+  });
+  (FUND.companies||[]).forEach(function(n){ if (FUNDING_OPTIONS.indexOf(n)===-1) FUNDING_OPTIONS.push(n); });
+}
+function fundOf(cid){ return FUND.alloc[cid] || null; }
+// where a funded case stands in the operations room
+function fundOpsStatus(c){
+  var tOff = todayOffset(), tid = (S.bookings[c.stage]||{})[c.id];
+  if (tid){
+    var bt = findTask(tid), att = S.attendance[nextCallKey(tid, c.id)];
+    if (bt) return {status: att ? att.status : 'booked', day:isoDate(bt.dateOffset), tid:tid, type:bt.type};
+  }
+  var in_ = S.tasks.filter(function(t){ return t.type===c.stage && t.dateOffset>=tOff && t.candidateIds.indexOf(c.id)!==-1; })
+    .sort(function(a,b){ return a.dateOffset-b.dateOffset; })[0];
+  if (in_) return {status:'scheduled', day:isoDate(in_.dateOffset), tid:in_.id, type:in_.type, draft: in_.status==='draft'};
+  return {status:'new'};
+}
+function syncFundingOps(){
+  var out = {};
+  Object.keys(FUND.alloc).forEach(function(cid){ var c = caseById(cid); if (c) out[cid] = fundOpsStatus(c); });
+  var str = JSON.stringify(out);
+  if (str !== fundOpsLast){ fundOpsLast = str; writeStore(FUND_OPS_KEY, out); }
+}
+function fundedNew(){
+  return Object.keys(FUND.alloc).map(caseById).filter(function(c){ return c && fundOpsStatus(c).status==='new'; });
+}
+window.addEventListener('storage', function(e){
+  if (e.key!==FUND_KEY) return;
+  var before = fundedNew().length;
+  loadFunding();
+  var after = fundedNew().length;
+  if (after > before) toast('وصل تمويل جديد من الـ CSR – ' + (after-before) + ' حالة');
+  render();
+});
+function renderFunded(){
+  var list = fundedNew(), groups = {};
+  list.forEach(function(c){
+    var a = fundOf(c.id), k = a.company + '|' + c.stage;
+    (groups[k] = groups[k] || {company:a.company, type:c.stage, cases:[]}).cases.push(c);
+  });
+  var keys = Object.keys(groups).sort();
+  var h = '<div class="scrim"'+A('closePanel')+'></div><div class="modal" style="width:880px;max-width:95vw;">'+
+    panelHead(ic('send',16,'#2f6fed')+' حالات ممولة جديدة من الـ CSR', list.length+' حالة محتاجة مهمة حجز')+'<div class="modal-body" data-scroll="funded">';
+  if (!keys.length) return h + '<div class="table-empty">مفيش حالات ممولة جديدة</div></div></div>';
+  keys.forEach(function(k){
+    var g = groups[k], m = TASK_TYPES[g.type], ctx = {id:'__fund', type:g.type, loc:'org', gov:null, dateOffset:todayOffset()};
+    var ok = g.cases.filter(function(c){ return priorityOf(ctx, c).eligible; });
+    h += '<div class="fund-group"><div class="fund-head"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,12,m.color)+m.short+'</span>'+
+      '<b>'+esc(g.company)+'</b><span class="field-hint" style="margin:0;">'+g.cases.length+' حالة</span>'+
+      (ok.length ? '<button class="btn btn-primary btn-sm" style="margin-inline-start:auto;"'+A('createFromFunding', k)+'>'+ic('calendar',13,'#fff')+' إنشاء مهمة حجز ('+ok.length+')</button>' : '')+'</div>';
+    h += '<table class="cases-table"><thead><tr><th>كود الحالة</th><th>الاسم</th><th>المحافظة</th><th>الطرف</th><th>اتمول</th><th>الحالة</th></tr></thead><tbody>'+
+      g.cases.map(function(c){
+        var p = priorityOf(ctx, c), a = fundOf(c.id), others = otherLimbs(c);
+        return '<tr><td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+
+          (others.length ? ' <span class="limb-badge" title="'+esc(others.map(function(o){ return o.code+' – '+o.level; }).join('، '))+'">له طرف تاني: '+others.map(function(o){ return o.code; }).join('، ')+'</span>' : '')+'</td>'+
+          '<td>'+esc(c.gov)+'</td><td>'+esc(c.level)+'</td><td>'+fmtWhen(a.at)+'<div class="field-hint" style="margin:0;">'+esc(a.by||'')+'</div></td>'+
+          '<td>'+(p.eligible ? '<span class="cap-ok">جاهز للحجز</span>' : '<span class="cap-over">'+esc(p.why)+'</span>')+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+  });
+  return h + '</div></div>';
 }
 
 // =====================================================================
@@ -3692,6 +3802,7 @@ Object.assign(ACT, {
 // Init
 // =====================================================================
 root = document.getElementById('root');
+loadFunding();
 render();
 // keep clocks / countdowns fresh without disturbing typing
 setInterval(function(){
