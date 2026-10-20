@@ -667,7 +667,11 @@
     .focus-empty-t{font-size:16px;font-weight:800;margin:8px 0 4px;}
     .focus-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
     .focus-name{font-size:22px;font-weight:800;color:var(--text);}
-    .focus-phone{margin:8px 0 14px;}
+    .focus-phone{margin:8px 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .send-btns{display:inline-flex;gap:6px;}
+    .send-btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:8px;padding:6px 11px;font-family:inherit;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;}
+    .send-btn.wa{background:#25a95a;} .send-btn.wa:hover{background:#1f8f4c;}
+    .send-btn.sms{background:#0093e9;} .send-btn.sms:hover{background:#0080cc;}
     .focus-phone .phone-chip{font-size:15px;padding:4px 6px 4px 12px;}
     .focus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
     .focus-grid div{background:var(--surface-alt);border:1px solid var(--border);border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;}
@@ -1096,6 +1100,7 @@ function defaultSettings(){
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
     msgBookTpl:'أهلًا {الاسم}، تم حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
     msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} بكرة {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
+    msgInfoTpl:'أهلًا {الاسم}، دي بيانات موعد {النوع}:\nالميعاد: {الميعاد}\nالمكان: {المكان}\nاللوكيشن: {الخريطة}\n{ملاحظات}\n– مؤسسة هاند إن هاند',
   };
 }
 
@@ -1863,6 +1868,14 @@ var ACT = {
   },
   openTaskCases: function(tid){ ACT.openAddCasesTask(tid); S.casesTab = 'list'; S.detailBulkSelected = []; render(); },
   setCasesTab: function(v){ S.casesTab = v; render(); },
+  sendInfo: function(key, channel){
+    var p = key.split('|'), t = findTask(p[0]), c = caseById(p[1]); if (!t || !c) return;
+    var m = sendMsg('info', t, c.id, channel), text = encodeURIComponent(m.text);
+    var url = channel==='whatsapp' ? 'https://wa.me/' + intlPhone(c.phone) + '?text=' + text : 'sms:+' + intlPhone(c.phone) + '?body=' + text;
+    try { window.open(url, '_blank', 'noopener'); } catch(e){}
+    toast('اتفتحت رسالة ' + CHANNELS[channel] + ' لـ ' + c.name + ' فيها بيانات الموعد واللوكيشن');
+    render();
+  },
   // leave the "add from pool" tab without saving: drop the unsaved picks
   cancelAddTab: function(){
     var t = findTask(S.addCasesMode.taskId);
@@ -2113,7 +2126,7 @@ var ACT = {
       'dailyCapacity':String(s.dailyCapacity),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag),
-      'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl,
+      'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl, 'msgInfoTpl':s.msgInfoTpl,
     };
     S.overlay = 'settings'; render();
   },
@@ -2127,7 +2140,7 @@ var ACT = {
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1);
     s.msgOn = !!d.msgOn; s.msgChannel = d.msgChannel; s.reminderOn = !!d.reminderOn; s.reminderTime = d.reminderTime || '10:00';
-    s.orgMapUrl = (d.orgMapUrl||'').trim(); s.msgBookTpl = d.msgBookTpl; s.msgRemindTpl = d.msgRemindTpl;
+    s.orgMapUrl = (d.orgMapUrl||'').trim(); s.msgBookTpl = d.msgBookTpl; s.msgRemindTpl = d.msgRemindTpl; s.msgInfoTpl = d.msgInfoTpl;
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
   },
 
@@ -2619,7 +2632,7 @@ function renderAgentFocus(){
     (x.prio ? '<span class="prio-badge">★ أولوية اتصال</span>' : '')+(x.group==='other' || x.st.key==='standbyUp' ? statusTag(x.st) : '')+
     (x.group==='full' ? '<span class="standby-tag">المهمة كملت – سجّل احتياطي</span>' : '')+'</div>';
   h += '<div class="focus-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span>'+noShowBadge(cid)+'</div>';
-  h += '<div class="focus-phone">'+phoneChip(c)+'</div>';
+  h += '<div class="focus-phone">'+phoneChip(c)+sendInfoBtns(t, cid)+'</div>';
   h += '<div class="focus-grid">'+
     '<div><span>الموعد</span><b>'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (النهارده)' : '')+'</b></div>'+
     '<div><span>المكان</span><b>'+esc(locLabelFor(t))+(t.loc==='convoy' && t.meetingTime ? ' – '+fmtClock(t.meetingTime) : '')+'</b></div>'+
@@ -2708,7 +2721,7 @@ function renderCallModal(){
   h += '<div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' '+esc(m.label)+' – حجز لحالة '+esc(c.name)+'</div>'+
     '<button class="cms-close" title="إغلاق"'+A('closeCall')+'>'+ic('x',15,'#535252',2.4)+'</button></div>';
   h += '<div class="cms-body" data-scroll="callmodal">';
-  h += '<div class="cms-case"><span><b>'+esc(c.name)+'</b> <span class="case-code" dir="ltr">'+c.code+'</span></span>'+phoneChip(c)+
+  h += '<div class="cms-case"><span><b>'+esc(c.name)+'</b> <span class="case-code" dir="ltr">'+c.code+'</span></span>'+phoneChip(c)+sendInfoBtns(t, cid)+
     '<span class="cms-muted">'+esc(c.gov)+' · '+esc(c.level)+' · '+c.age+' سنة</span></div>';
   h += renderConvoyBox(t);
   var nxt = nextCallFor(t, cid);
@@ -3145,7 +3158,7 @@ function renderConfirmCard(x, total){
     (isRepeatNoShow(cid) ? '<span class="ns-badge">غياب متكرر – تأكيد إجباري</span>' : '')+
     (x.cf && x.cf.status==='noAnswer' ? '<span class="status-tag" style="background:#fceced;color:#c81e3a;">لم يرد · محاولة '+x.cf.tries+'</span>' : '')+'</div>';
   h += '<div class="focus-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span></div>';
-  h += '<div class="focus-phone">'+phoneChip(c)+'</div>';
+  h += '<div class="focus-phone">'+phoneChip(c)+sendInfoBtns(t, cid)+'</div>';
   h += '<div class="focus-grid">'+
     '<div><span>الموعد</span><b>'+dayLabel(t.dateOffset)+(bt ? ' – '+fmtClock(bt) : '')+'</b></div>'+
     '<div><span>المكان</span><b>'+esc(locLabelFor(t))+(t.loc==='convoy' && t.meetingPoint ? ' – '+esc(t.meetingPoint) : '')+'</b></div></div>';
@@ -3370,13 +3383,28 @@ function msgFields(t, cid){
   var map = t.loc==='convoy' ? safeUrl(t.mapUrl) : safeUrl(S.settings.orgMapUrl);
   return {'الاسم':c.name.split(' ')[0], 'النوع':TASK_TYPES[t.type].label, 'الميعاد':'يوم ' + dayLabel(t.dateOffset) + (time ? ' الساعة ' + fmtClock(time) : ''),
     'المكان': t.loc==='convoy' ? ((t.meetingPoint ? t.meetingPoint + ' – ' : '') + 'قافلة ' + (t.gov||'')) : 'مقر مؤسسة هاند إن هاند',
-    'الخريطة': map || 'هيتبعت لحضرتك قبل الميعاد'};
+    'الخريطة': map || 'هيتبعت لحضرتك قبل الميعاد',
+    'ملاحظات': t.loc==='convoy' && t.convoyNotes ? 'ملاحظات: ' + t.convoyNotes : ''};
 }
-function fillTpl(tpl, f){ return String(tpl||'').replace(/\{([^}]+)\}/g, function(m, k){ return f[k]!=null ? f[k] : m; }); }
-function msgText(kind, t, cid){ return fillTpl(kind==='reminder' ? S.settings.msgRemindTpl : S.settings.msgBookTpl, msgFields(t, cid)); }
-function sendMsg(kind, t, cid){
-  var m = {id:'M'+Date.now()+Math.random().toString(36).slice(2,6), caseId:cid, tid:t.id, kind:kind, channel:S.settings.msgChannel, at:now(), text:msgText(kind, t, cid), status:'sent'};
+// lines that end up empty (e.g. no notes) are dropped
+function fillTpl(tpl, f){
+  return String(tpl||'').replace(/\{([^}]+)\}/g, function(m, k){ return f[k]!=null ? f[k] : m; })
+    .split('\n').filter(function(l){ return l.trim(); }).join('\n');
+}
+var MSG_TPL = {booking:'msgBookTpl', reminder:'msgRemindTpl', info:'msgInfoTpl'};
+var MSG_KIND = {booking:'رسالة الحجز', reminder:'تذكير', info:'بيانات الموعد'};
+function msgText(kind, t, cid){ return fillTpl(S.settings[MSG_TPL[kind]], msgFields(t, cid)); }
+function sendMsg(kind, t, cid, channel){
+  var m = {id:'M'+Date.now()+Math.random().toString(36).slice(2,6), caseId:cid, tid:t.id, kind:kind, channel:channel || S.settings.msgChannel, at:now(), text:msgText(kind, t, cid), status:'sent', by: isCC() ? S.agentId : null};
   S.messages.push(m); return m;
+}
+// Egyptian mobile -> international format for wa.me / sms:
+function intlPhone(p){ return '20' + String(p).replace(/^0/, ''); }
+var WA_ICON_PATH = 'M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z';
+// buttons next to the phone: open WhatsApp / SMS on the agent's device with the appointment info ready
+function sendInfoBtns(t, cid){
+  return '<span class="send-btns"><button class="send-btn wa" title="ابعت بيانات الموعد واللوكيشن على واتساب"'+A('sendInfo', t.id+'|'+cid, 'whatsapp')+'>'+pathIc(WA_ICON_PATH,14,'#fff',2)+' واتساب</button>'+
+    '<button class="send-btn sms" title="ابعت بيانات الموعد واللوكيشن SMS"'+A('sendInfo', t.id+'|'+cid, 'sms')+'>'+ic('send',13,'#fff')+' SMS</button></span>';
 }
 function msgsFor(cid){ return S.messages.filter(function(m){ return m.caseId===cid; }); }
 function lastMsg(t, cid, kind){ var l = S.messages.filter(function(m){ return m.caseId===cid && m.tid===t.id && m.kind===kind; }); return l[l.length-1] || null; }
@@ -3405,7 +3433,7 @@ function renderMsgs(cid){
   var l = msgsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
   if (!l.length) return '';
   return '<div class="msg-list">'+l.map(function(m){
-    return '<div class="msg-item"><div class="msg-meta">'+(m.kind==='reminder' ? 'تذكير' : 'رسالة الحجز')+' · '+CHANNELS[m.channel]+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
+    return '<div class="msg-item"><div class="msg-meta">'+(MSG_KIND[m.kind]||'رسالة')+' · '+CHANNELS[m.channel]+(m.by ? ' · '+esc(agentName(m.by)) : '')+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
   }).join('')+'</div>';
 }
 
@@ -3483,8 +3511,10 @@ function renderSettings(){
       '<div><label>رسالة الحجز</label><textarea class="text-input tpl-input" rows="4" data-k="set-tplb" data-input="setInput" data-a="msgBookTpl">'+esc(sd.msgBookTpl)+'</textarea>'+
         (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgBookTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div>'+
       '<div><label>رسالة التذكير</label><textarea class="text-input tpl-input" rows="4" data-k="set-tplr" data-input="setInput" data-a="msgRemindTpl">'+esc(sd.msgRemindTpl)+'</textarea>'+
-        (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgRemindTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div></div>'+
-    '<div class="field-hint">المتغيرات: {الاسم} {النوع} {الميعاد} {المكان} {الخريطة}</div></div>';
+        (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgRemindTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div>'+
+      '<div><label>رسالة بيانات الموعد (زرار واتساب / SMS جنب رقم الحالة)</label><textarea class="text-input tpl-input" rows="5" data-k="set-tpli" data-input="setInput" data-a="msgInfoTpl">'+esc(sd.msgInfoTpl)+'</textarea>'+
+        (scid ? '<div class="msg-preview"><div class="msg-meta">معاينة</div><div class="msg-text">'+esc(fillTpl(sd.msgInfoTpl, msgFields(sample, scid)))+'</div></div>' : '')+'</div></div>'+
+    '<div class="field-hint">المتغيرات: {الاسم} {النوع} {الميعاد} {المكان} {الخريطة} {ملاحظات}</div></div>';
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('saveSettings')+'>حفظ الإعدادات</button><button class="btn btn-secondary"'+A('closeSettings')+'>إلغاء</button></div></div>';
   return h;
 }
