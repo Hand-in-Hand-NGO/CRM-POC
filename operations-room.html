@@ -1285,11 +1285,13 @@ function alternativeTasksFor(t, cid){
 // Capacity
 // =====================================================================
 function capFor(off){ return S.dayCapacity[off]!=null ? S.dayCapacity[off] : S.settings.dailyCapacity; }
+// capacity = how many cases the place can receive in a day, so it is used by attendance, not by bookings
+function taskAttendLoad(t){ return t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, bookingGoal(t)); }
 function dayLoad(off, tasks, capOverride){
   var load = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; })
-    .reduce(function(n,t){ return n + bookingGoal(t); }, 0);
+    .reduce(function(n,t){ return n + taskAttendLoad(t); }, 0);
   var cap = capOverride!=null ? capOverride : capFor(off);
-  return [{key:'bookings', label:'الحجوزات', sub:'مجموع الحجوزات المطلوبة لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
+  return [{key:'attendance', label:'الحضور', sub:'مجموع الحضور المطلوب لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
 }
 function loadLevel(x){
   if (x.load===0) return 'ok';
@@ -1317,7 +1319,7 @@ function guardCapacity(off, tasksAfter, onOk, returnTo){
   S.overlay = 'confirm';
   S.confirm = {
     title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn',
-    message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة الاستيعابية للحجوزات:',
+    message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة الاستيعابية:',
     items: ov.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
     confirmLabel:'حفظ رغم التجاوز', onConfirm:onOk, returnTo:returnTo,
   };
@@ -1373,14 +1375,14 @@ function recommendedFor(type, target){
 function bookingGoal(t){ return t.target || 0; }
 function expectedAttend(type, bookings){ return Math.round((bookings||0) * rateFor(type).att); }
 function freeCapacity(off, exceptId){
-  var load = S.tasks.filter(function(t){ return t.dateOffset===off && t.id!==exceptId; }).reduce(function(n,t){ return n + bookingGoal(t); }, 0);
+  var load = S.tasks.filter(function(t){ return t.dateOffset===off && t.id!==exceptId; }).reduce(function(n,t){ return n + taskAttendLoad(t); }, 0);
   return Math.max(0, capFor(off) - load);
 }
 // attendance mode: the user enters how many should attend; bookings = attendees / historical attendance rate
 function draftAttend(d){ return parseInt(d.attend,10)||0; }
 function draftTarget(d){ return d.targetMode==='attendance' ? recommendedFor(d.type, draftAttend(d)) : (parseInt(d.target,10)||0); }
 // default attendees = what the free capacity of the day is expected to bring
-function defaultAttend(type, off){ return Math.floor(freeCapacity(off) * rateFor(type).att); }   // rounded down so it fits the free capacity
+function defaultAttend(type, off){ return freeCapacity(off); }   // what is left of the day's capacity
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
@@ -1664,7 +1666,7 @@ var ACT = {
   setCreateAttend: function(v){ S.createDraft.attend = v; render(); },
   setCreateMode: function(m){
     var d = S.createDraft; if (d.targetMode===m) return;
-    if (m==='booking') d.target = String(draftTarget(d) || freeCapacity(d.dateOffset));
+    if (m==='booking') d.target = String(draftTarget(d) || recommendedFor(d.type, freeCapacity(d.dateOffset)));
     else if (!draftAttend(d)) d.attend = String(defaultAttend(d.type, d.dateOffset));   // keep what the user typed
     d.targetMode = m; render();
   },
@@ -1706,8 +1708,8 @@ var ACT = {
     };
     if (!overDays.length){ apply(); return; }
     S.overlay = 'confirm';
-    S.confirm = {title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn', message:'الأيام دي هتتخطى الطاقة الاستيعابية للحجوزات:',
-      items: overDays.map(function(off){ var x = dayLoad(off, after)[0]; return {label:dayLabel(off), value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+    S.confirm = {title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn', message:'الأيام دي هتتخطى الطاقة الاستيعابية:',
+      items: overDays.map(function(off){ var x = dayLoad(off, after)[0]; return {label:dayLabel(off), value:'الحضور ' + x.load + ' / الطاقة ' + x.cap}; }),
       confirmLabel:'حفظ رغم التجاوز', onConfirm:apply, returnTo:'create'};
     render();
   },
@@ -1736,7 +1738,7 @@ var ACT = {
       confirmLabel:'نسخ كمسودات',
       onConfirm:function(){
         src.forEach(function(x, i){
-          var t = {id:'t'+Date.now()+'_c'+i, type:x.type, dateOffset:x.dateOffset+7, loc:x.loc, gov:x.gov, target:x.target, mode:x.mode||'booking',
+          var t = {id:'t'+Date.now()+'_c'+i, type:x.type, dateOffset:x.dateOffset+7, loc:x.loc, gov:x.gov, target:x.target, mode:x.mode||'booking', attendTarget:x.attendTarget||null,
             candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], confirmCall:!!x.confirmCall, seriesId:null, seriesDays:null,
             status:'draft', publishedAt:null, publishedBy:null, meetingPoint:x.meetingPoint||'', mapUrl:x.mapUrl||'', meetingTime:x.meetingTime||'', convoyNotes:x.convoyNotes||''};
           S.tasks.push(t); audit('نسخ من الأسبوع اللي فات', t, t.target + ' حجز');
@@ -2739,7 +2741,7 @@ function renderCreate(){
     '<div class="seg mode-seg"><button class="seg-btn'+(attMode?' on':'')+'"'+A('setCreateMode','attendance')+'>الحضور</button>'+
     '<button class="seg-btn'+(!attMode?' on':'')+'"'+A('setCreateMode','booking')+'>الحجز</button></div></div>';
   // capacity after adding
-  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target};
+  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target, mode:d.targetMode, attendTarget: attMode ? draftAttend(d) : null};
   var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
   var anyOver = loads.some(function(x){ return x.load > x.cap; });
   h += '<div class="cap-box'+(anyOver?' over':'')+'" style="margin-top:10px;margin-bottom:0;"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+' بعد إضافة المهمة'+
@@ -3070,13 +3072,13 @@ function opsWeekData(w){
   for (var i=0;i<7;i++) days.push(from+i);
   var tasks = S.tasks.filter(function(t){ return t.dateOffset>=from && t.dateOffset<from+7; });
   var pub = tasks.filter(function(t){ return t.status==='published'; });
-  var o = {days:days, tasks:tasks, pub:pub, goal:0, booked:0, cap:0, planned:0, attended:0, noShow:0, waitSum:0, waitN:0, byType:{}};
+  var o = {days:days, tasks:tasks, pub:pub, goal:0, booked:0, bookedAttend:0, cap:0, planned:0, attended:0, noShow:0, waitSum:0, waitN:0, byType:{}};
   Object.keys(TASK_TYPES).forEach(function(k){ o.byType[k] = {tasks:0, goal:0, booked:0, attended:0, noShow:0}; });
   days.forEach(function(off){ o.cap += capFor(off); });
-  tasks.forEach(function(t){ o.planned += bookingGoal(t); });
+  tasks.forEach(function(t){ o.planned += taskAttendLoad(t); });
   pub.forEach(function(t){
     var g = bookingGoal(t), b = taskBookedCount(t), a = attendanceCounts(t), x = o.byType[t.type];
-    o.goal += g; o.booked += b; o.attended += a.attended; o.noShow += a.noShow;
+    o.goal += g; o.booked += b; o.bookedAttend += expectedAttend(t.type, b); o.attended += a.attended; o.noShow += a.noShow;
     x.tasks++; x.goal += g; x.booked += b; x.attended += a.attended; x.noShow += a.noShow;
     t.candidateIds.forEach(function(cid){
       if ((S.bookings[t.type]||{})[cid]!==t.id) return;
@@ -3088,7 +3090,7 @@ function opsWeekData(w){
 }
 function renderOps(){
   var w = S.opsWeek!=null ? S.opsWeek : S.weekOffset, D = opsWeekData(w), from = w*7;
-  var plan = pct(D.booked, D.goal), used = pct(D.planned, D.cap), bookedCap = pct(D.booked, D.cap), att = D.attended + D.noShow;
+  var plan = pct(D.booked, D.goal), used = pct(D.planned, D.cap), bookedCap = pct(D.bookedAttend, D.cap), att = D.attended + D.noShow;
   var repeat = CASES.filter(function(c){ return isRepeatNoShow(c.id); }).length, risk = riskTasks();
   var h = '<div class="scrim"'+A('closePanel')+'></div><div class="modal ops-modal">'+
     panelHead(ic('gauge',17,'#2f6fed')+' داش بورد الأوبريشن', '',
@@ -3098,8 +3100,8 @@ function renderOps(){
   h += '<div class="modal-body" data-scroll="ops">';
   h += '<div class="vs-kpi-grid" style="grid-template-columns:repeat(3,1fr);">'+
     kpiBox(plan+'<small>%</small>', 'تحقيق خطة الأسبوع ('+D.booked+' من '+D.goal+' حجز)', D.goal ? (plan>=80?'good':plan>=50?'warn':'bad') : 'zero')+
-    kpiBox(used+'<small>%</small>', 'الطاقة المخططة ('+D.planned+' من '+D.cap+')', D.cap ? (used>100?'bad':'') : 'zero')+
-    kpiBox(bookedCap+'<small>%</small>', 'الطاقة المحجوزة فعلًا', D.booked ? '' : 'zero')+
+    kpiBox(used+'<small>%</small>', 'الطاقة المخططة – حضور ('+D.planned+' من '+D.cap+')', D.cap ? (used>100?'bad':'') : 'zero')+
+    kpiBox(bookedCap+'<small>%</small>', 'الطاقة المتغطية بالحجوزات ('+D.bookedAttend+' حضور متوقع)', D.booked ? '' : 'zero')+
     kpiBox((D.waitN ? Math.round(D.waitSum/D.waitN) : 0)+'<small> يوم</small>', 'متوسط الانتظار من اللجنة للزيارة', D.waitN ? '' : 'zero')+
     kpiBox(risk.length, 'مهام محتاجة تدخل', risk.length ? 'bad' : 'good')+
     kpiBox(repeat, 'حالات غياب متكرر', repeat ? 'warn' : 'zero')+'</div>';
@@ -3114,11 +3116,11 @@ function renderOps(){
     }).join('')+'</tbody><tfoot><tr><td>الإجمالي</td><td>'+D.pub.length+'</td><td>'+D.goal+'</td><td>'+D.booked+'</td><td>'+(D.goal ? plan+'%' : '-')+'</td><td>'+D.attended+'</td><td>'+D.noShow+'</td></tr></tfoot></table>')+'</div>';
 
   // capacity per day
-  h += '<div class="vs-chart-group"><p class="vs-group-label">الطاقة الاستيعابية</p>'+chartCard('الطاقة مقابل المخطط والمحجوز لكل يوم', '',
+  h += '<div class="vs-chart-group"><p class="vs-group-label">الطاقة الاستيعابية</p>'+chartCard('الطاقة مقابل الحضور المخطط والمتوقع لكل يوم', '',
     svgBars(D.days.map(function(off){ return WEEKDAYS_AR[weekdayOf(off)]; }), [
       {name:'الطاقة', color:'#d6dceb', values:D.days.map(capFor)},
-      {name:'المخطط', color:'#93b4f5', values:D.days.map(function(off){ return dayLoad(off)[0].load; })},
-      {name:'المحجوز', color:'#2f6fed', values:D.days.map(function(off){ return S.tasks.filter(function(t){ return t.dateOffset===off && t.status==='published'; }).reduce(function(n,t){ return n + taskBookedCount(t); }, 0); })}],
+      {name:'الحضور المخطط', color:'#93b4f5', values:D.days.map(function(off){ return dayLoad(off)[0].load; })},
+      {name:'متوقع يحضر من المحجوز', color:'#2f6fed', values:D.days.map(function(off){ return S.tasks.filter(function(t){ return t.dateOffset===off && t.status==='published'; }).reduce(function(n,t){ return n + expectedAttend(t.type, taskBookedCount(t)); }, 0); })}],
       {h:220}))+'</div>';
 
   h += '<div class="vs-chart-group"><p class="vs-group-label">محتاجة تدخل</p>'+chartCard('مهام قريبة والمحجوز فيها قليل', '', riskTable(risk))+'</div>';
@@ -3265,15 +3267,15 @@ function renderCapacity(){
   var custom = S.dayCapacity[off]!=null;
   var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
     '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
-  h += '<div class="field"><label class="field-label">الطاقة الاستيعابية للحجوزات في اليوم ده</label>' + (admin
-    ? '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حجز/يوم</span></div>'
-    : '<div class="readonly-box">'+cap+' حجز/يوم</div>') + '</div>';
+  h += '<div class="field"><label class="field-label">الطاقة الاستيعابية في اليوم ده (عدد الحضور)</label>' + (admin
+    ? '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حضور/يوم</span></div>'
+    : '<div class="readonly-box">'+cap+' حضور/يوم</div>') + '</div>';
   h += '<div class="cap-box">'+capTable(loads)+'</div>';
   h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
   if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
   tasks.forEach(function(t){
     var m = TASK_TYPES[t.type];
-    h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>حجز <b>'+t.target+'</b> · متوقع يحضر <b>'+expectedAttend(t.type, t.target)+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
+    h += '<div class="agent-row"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span>'+esc(locLabelFor(t))+'</span><span class="nums"><span>حضور <b>'+taskAttendLoad(t)+'</b> · حجز <b>'+t.target+'</b></span>'+(t.status==='draft'?'<span class="draft-badge">مسودة</span>':'')+'</span></div>';
   });
   h += '</div>';
   h += '<div class="modal-foot">' + (admin ? '<button class="btn btn-primary"'+A('saveCapacity')+'>حفظ طاقة اليوم</button><button class="btn btn-secondary"'+A('capReset')+'>الافتراضي</button>' : '') +
@@ -3288,11 +3290,11 @@ function renderSettings(){
   if (!isAdmin()) return '';
   var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">معدلات الطاقة</div><div class="set-grid">'+
-    setNum('dailyCapacity','الطاقة الاستيعابية للحجوزات','حجز/يوم')+(function(){
+    setNum('dailyCapacity','الطاقة الاستيعابية (عدد الحضور)','حضور/يوم')+(function(){
       var dA = dailyAttendance(), cap = parseInt(S.settingsDraft.dailyCapacity,10)||0;
       return '<div><label>متوسط الحضور اليومي</label><div class="att-box"><b>'+Math.round(dA.att*100)+'%</b>'+
         '<span>متوسط '+Math.round(dA.avgAttended)+' حضر من '+Math.round(dA.avgBooked)+' حجز في اليوم · آخر '+dA.days+' يوم</span></div></div>'+
-        '<div><label>المتوقع حضوره بالطاقة دي</label><div class="att-box"><b>'+Math.round(cap*dA.att)+'</b><span>حالة من '+cap+' حجز</span></div></div>';
+        '<div><label>عشان الطاقة دي تتملى</label><div class="att-box"><b>'+(cap ? Math.ceil(cap/dA.att - 1e-9) : 0)+'</b><span>حجز في اليوم عشان يحضر '+cap+'</span></div></div>';
     })()+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
