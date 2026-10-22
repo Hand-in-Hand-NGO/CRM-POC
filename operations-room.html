@@ -367,16 +367,6 @@
       border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
     }
     .top-btn:hover{border-color:var(--border-strong);color:var(--text);}
-    .clock-pill{
-      display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--border-strong);border-radius:999px;
-      padding:4px 6px 4px 10px;font-size:12px;color:var(--text-muted);
-    }
-    .clock-pill b{color:var(--text);}
-    .clock-pill button{
-      border:none;background:var(--neutral-tint);border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;
-      color:var(--text-muted);cursor:pointer;font-family:inherit;
-    }
-    .clock-pill button:hover{color:var(--text);}
 
     .main-tabs{display:flex;gap:4px;background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:3px;}
     .main-tab{
@@ -1659,8 +1649,6 @@ var ACT = {
   },
   setAgent: function(v){ S.agentId = v; S.callOpen = null; S.justConfirmed = null; render(); },
   setMainView: function(v){ S.mainView = v; S.callOpen = null; render(); },
-  simAdvance: function(min){ S.simOffset += parseInt(min,10)*60000; toast('تم تقديم الوقت (محاكاة) إلى ' + fmtTime(now())); render(); },
-  simReset: function(){ S.simOffset = 0; render(); },
 
   // ---------- calendar navigation ----------
   onToday: function(){
@@ -2259,9 +2247,6 @@ function renderTopbar(){
   var h = '<header class="topbar"><div class="brandblock"><div class="brand-mark">'+ic('calendar',18,'#fff')+'</div>'+
     '<div><div class="page-title">غرفة العمليات</div></div></div>';
   h += '<div class="topbar-right">';
-  h += '<span class="clock-pill" title="الوقت الحالي – أزرار المحاكاة لتجربة قواعد إعادة الاتصال فقط">'+ic('clock',13)+' الآن <b>'+fmtTime(now())+'</b>'+
-    '<button'+A('simAdvance','60')+' title="محاكاة: تقديم الوقت ساعة">+ ساعة</button>'+
-    (S.simOffset ? '<button'+A('simReset')+' title="رجوع للوقت الحقيقي">الوقت الحقيقي</button>' : '')+'</span>';
   if (isAdmin()) h += '<a class="top-btn" href="funding.html" style="text-decoration:none;">'+ic('send',14)+'صفحة التمويل</a>';
   if (canAssign()){
     h += '<button class="top-btn"'+A('openAudit')+'>'+ic('history',14)+'سجل التعديلات</button>';
