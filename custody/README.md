@@ -23,7 +23,7 @@
 
 ## المتطلبات
 
-- PHP 7.3 أو أحدث، ومعاه `pdo_sqlite` (الافتراضي) أو `pdo_mysql`.
+- PHP 7.3 أو أحدث (يفضل 8.x)، ومعاه إضافات `mbstring` و `pdo_sqlite` (الافتراضي) أو `pdo_mysql`.
 - Apache أو Nginx أو أي سيرفر يشغّل PHP.
 
 ## التركيب
