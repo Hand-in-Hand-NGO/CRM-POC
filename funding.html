@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>صفحة التمويل</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/3.4.0/css/bootstrap-rtl.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap">
+  <style>
+/* =====================================================================
+   HandinHand CMS theme — font, palette and recurring components.
+   Paste into the page <style> after bootstrap + bootstrap-rtl.
+   Font link: https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap
+   ===================================================================== */
+:root {
+    --live-font: 'Droid Arabic Kufi', 'Noto Kufi Arabic', Tahoma, Arial, sans-serif;
+
+    --hih-header-gradient: linear-gradient(90deg, #d3f1f8 0%, #ebf6ed 17%, #fff9e4 34%, #f9e7de 47%, #f8f2e4 57%, #d9eaf4 64%, #e9efec 74%, #baeae6 100%);
+    --hih-header-text: #535252;
+    --hih-sidebar: #222d32;
+    --hih-sidebar-active: #1e282c;
+    --hih-sidebar-text: #b8c7ce;
+
+    --hih-primary: #0093e9;
+    --hih-success: #31c860;
+    --hih-success-hover: #2db457;
+    --hih-danger: #f96a74;
+    --hih-warning: #ff6a00;
+    --hih-focus: #67b9ec;
+
+    --hih-default-bg: #f4f4f4;
+    --hih-default-border: #ddd;
+    --hih-default-text: #444;
+    --hih-input-border: #d2d6de;
+
+    --hih-toggle-all: #b7b7b7;
+    --hih-toggle-on: #5bb75b;
+    --hih-toggle-off: #da4f49;
+
+    --hih-box-bg: #f6f6f6;
+    --hih-box-border: #d7dbe0;
+
+    --hih-chip-bg: #e6f1fb;
+    --hih-picker-head: #d9e8f7;
+    --hih-picker-odd: #c3e0f9;
+    --hih-picker-even: #ffbec2;
+
+    --hih-row-new: #d9edf7;
+    --hih-row-new-hover: #becfd8;
+    --hih-row-new-key: #e8f1ff;
+    --hih-row-maint: #f2dede;
+    --hih-row-maint-hover: #dbc6c6;
+    --hih-row-maint-key: #fbe8e8;
+    --hih-row-hover: #f96a741f;
+
+    --hih-stats-head: #e9eef3;
+    --hih-stats-border: #e3e6ea;
+    --hih-stats-alt: #f7f9fb;
+    --hih-stats-target: #fdf6df;
+    --hih-stats-percent: #dff0d8;
+    --hih-stats-percent-alt: #d3eacb;
+
+    /* dashboard (cards / charts) */
+    --vs-bg: #f5f6f8;
+    --vs-bg-raised: #fff;
+    --vs-surface: #fff;
+    --vs-surface-2: #eef0f3;
+    --vs-border: #e2e5ea;
+    --vs-border-soft: #ececf0;
+    --vs-text: #1a1d23;
+    --vs-text-dim: #62697a;
+    --vs-text-faint: #97a0ad;
+    --vs-accent: #2f6fed;
+    --vs-accent-hover: #2559c9;
+    --vs-green: #15803d;
+    --vs-radius-sm: 6px;
+    --vs-radius: 10px;
+    --vs-font-ui: var(--live-font);
+    --vs-font-mono: var(--live-font);
+    --vs-chart-axis: #6b7280;
+    --vs-chart-grid: #d6d9df;
+}
+
+/* ---------- font ---------- */
+body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
+.tooltip, .popover, .daterangepicker, .select2-container, .select2-dropdown,
+input, select, textarea, button { font-family: var(--live-font); }
+body { direction: rtl; text-align: right; }
+
+/* ---------- header / panels ---------- */
+.main-header, .main-header .navbar, .main-header .logo,
+.panel-primary > .panel-heading, .modal-header {
+    background: var(--hih-header-gradient) !important;
+    color: var(--hih-header-text) !important;
+    border-color: var(--hih-box-border);
+}
+.main-header a, .main-header .navbar .nav > li > a, .modal-title { color: var(--hih-header-text) !important; }
+.main-sidebar { background: var(--hih-sidebar); }
+.main-sidebar .sidebar-menu > li > a { color: var(--hih-sidebar-text); }
+.main-sidebar .sidebar-menu > li:hover > a, .main-sidebar .sidebar-menu > li.active > a { background: var(--hih-sidebar-active); color: #fff; }
+
+.box-content { background: var(--hih-box-bg); border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+
+/* ---------- form controls ---------- */
+.form-control { border-color: var(--hih-input-border); border-radius: 0; box-shadow: none; }
+.form-control:focus { border-color: var(--hih-focus); box-shadow: none; }
+label { font-weight: bold; }
+.select2-container--default .select2-results__option--highlighted[aria-selected] { background: var(--hih-focus); }
+
+/* ---------- buttons ---------- */
+.btn-action, .filter-inline .btn { border-radius: 10px !important; }
+.btn-primary { background: var(--hih-primary); border-color: var(--hih-primary); }
+.btn-success { background: var(--hih-success); border-color: var(--hih-success-hover); }
+.btn-success:hover, .btn-success:focus { background: var(--hih-success-hover); border-color: var(--hih-success-hover); }
+.btn-danger { background: var(--hih-danger); border-color: var(--hih-danger); }
+.btn-warning { background: var(--hih-warning); border-color: var(--hih-warning); }
+.btn-default { background: var(--hih-default-bg); border-color: var(--hih-default-border); color: var(--hih-default-text); }
+
+/* filter with its buttons directly beside it */
+.filter-inline { display: flex; align-items: center; gap: 4px; }
+.filter-inline > .form-control, .filter-inline > .select2-container { flex: 1 1 auto; min-width: 0; }
+
+/* ---------- toggle groups (الكل / نعم / لا) ---------- */
+.btn-group-justified .btn.active.toggle-all { background: var(--hih-toggle-all); color: #fff; }
+.btn-group-justified .btn.active.toggle-on  { background: var(--hih-toggle-on);  color: #fff; }
+.btn-group-justified .btn.active.toggle-off { background: var(--hih-toggle-off); color: #fff; }
+
+/* ---------- chips + picker table ---------- */
+.chip { display: inline-block; background: var(--hih-chip-bg); color: var(--hih-primary); border: 1px solid var(--hih-primary); border-radius: 15px; padding: 0 8px; margin: 1px 2px; font-size: 12px; }
+.picker-table { width: 100%; border-collapse: collapse; }
+.picker-table th { background: var(--hih-picker-head); text-align: center; }
+.picker-table td, .picker-table th { border: 1px solid #ccc; padding: 4px 6px; cursor: pointer; }
+.picker-table td.selected:nth-child(odd)  { background: var(--hih-picker-odd); }
+.picker-table td.selected:nth-child(even) { background: var(--hih-picker-even); }
+
+/* ---------- data table ---------- */
+.table > thead > tr > th { text-align: center; white-space: nowrap; vertical-align: middle; }
+.table > tbody > tr > td { text-align: center; vertical-align: middle; }
+.table tbody tr:hover { background: var(--hih-row-hover); }
+.table tbody tr.row-new   > td { background: var(--hih-row-new); }
+.table tbody tr.row-new:hover > td { background: var(--hih-row-new-hover); }
+.table tbody tr.row-new   > td.key { background: var(--hih-row-new-key); }
+.table tbody tr.row-maint > td { background: var(--hih-row-maint); }
+.table tbody tr.row-maint:hover > td { background: var(--hih-row-maint-hover); }
+.table tbody tr.row-maint > td.key { background: var(--hih-row-maint-key); }
+.info-label { color: gray; }
+.table-scroll { overflow-x: auto; }   /* only the table scrolls; toolbar + pager stay fixed */
+
+/* ---------- value + 🔍 + نسخ ---------- */
+
+.case-value .case-text {
+    margin-left: 3px;
+}
+
+.case-value .btn-xs {
+    padding: 0 5px;
+    font-size: 11px;
+    line-height: 18px;
+    border-radius: 3px !important;
+}
+
+.case-value .case-search {
+    background: #fff;
+    border-color: #ccc;
+    color: #333;
+}
+
+.case-value .case-copy.copied {
+    background-color: #31c860;
+    border-color: #2db457;
+}
+
+/* ---------- side stats table ---------- */
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.stats-table th,
+.stats-table td {
+    border: 1px solid #e3e6ea;
+    padding: 4px 6px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.stats-table thead th {
+    background: #e9eef3;
+    color: #333;
+    font-size: 11px;
+    padding: 4px 3px;
+    white-space: nowrap;
+}
+
+.stats-table td.stats-label {
+    text-align: right;
+    font-weight: bold;
+    color: #333;
+    white-space: normal;
+    line-height: 1.3;
+}
+
+.stats-table td.stats-label small {
+    display: block;
+    font-weight: normal;
+    color: #999;
+    font-size: 10px;
+    text-align: left;
+}
+
+.stats-table td.stats-num {
+    font-weight: bold;
+    color: #222;
+    width: 56px;
+    padding: 4px 3px;
+}
+
+.stats-table tr.row-period:nth-child(even) td {
+    background: #f7f9fb;
+}
+
+.stats-table tr.row-target td {
+    background: #fdf6df;
+}
+
+.stats-table tr.row-percent td {
+    background: #dff0d8;
+}
+
+.stats-table tr.row-percent:nth-child(even) td {
+    background: #d3eacb;
+}
+
+
+/* ---------- dashboard building blocks ---------- */
+/* ---- chart-drawer building blocks ---- */
+.vs-dash-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; flex-wrap: wrap; gap: 10px; }
+.vs-period-tabs { display: inline-flex; background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius-sm); padding: 3px; gap: 2px; flex-wrap: wrap; }
+.vs-period-tabs button {
+    border: none; background: none; color: var(--vs-text-dim); padding: 7px 14px; border-radius: 5px;
+    font-size: 12.5px; cursor: pointer; font-family: inherit; font-weight: 600; transition: background .15s, color .15s;
+}
+.vs-period-tabs button:hover { color: var(--vs-text); }
+.vs-period-tabs button.active { background: var(--vs-accent); color: #fff; }
+.vs-period-range { font-size: 11.5px; color: var(--vs-text-faint); font-family: var(--vs-font-mono); }
+
+.vs-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+.vs-kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 5px; }
+.vs-kpi .num { font-family: var(--vs-font-mono); font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.vs-kpi .lbl { font-size: 11px; color: var(--vs-text-dim); }
+.vs-kpi.zero .num { color: var(--vs-text-faint); }
+
+.vs-group-label { font-size: 11px; font-weight: 700; color: var(--vs-text-faint); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; }
+.vs-chart-group { margin-bottom: 22px; }
+.vs-chart-group:last-child { margin-bottom: 0; }
+.vs-chart-row-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.vs-chart-card { background: var(--vs-surface); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 16px; }
+.vs-chart-card-head { margin-bottom: 10px; }
+.vs-chart-card-head h4 { margin: 0; font-size: 13.5px; font-weight: 700; }
+.vs-chart-card-head p.sub { margin: 3px 0 0; font-size: 11.5px; color: var(--vs-text-dim); }
+
+.vs-target-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.vs-target-card { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: var(--vs-radius); padding: 12px; }
+.vs-target-card .name { font-size: 12px; font-weight: 700; color: var(--vs-text); margin-bottom: 8px; }
+.vs-target-card .row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; font-size: 11.5px; color: var(--vs-text-dim); }
+.vs-target-card .row b { font-family: var(--vs-font-mono); color: var(--vs-text); font-size: 12.5px; font-weight: 700; }
+.vs-bar-track { height: 7px; border-radius: 999px; background: var(--vs-surface-2); overflow: hidden; margin: 7px 0 5px; }
+.vs-bar-fill { height: 100%; border-radius: 999px; background: var(--vs-accent); transition: width .4s ease; }
+.vs-bar-fill.ok { background: var(--vs-green); }
+.vs-pct-badge { font-family: var(--vs-font-mono); font-size: 12.5px; font-weight: 700; }
+.vs-pct-badge.ok { color: var(--vs-green); }
+.vs-pct-badge.warn { color: var(--vs-accent); }
+.vs-no-target { color: var(--vs-text-faint); font-size: 12px; text-align: center; padding: 30px 10px; }
+.vs-chart-empty { display: flex; align-items: center; justify-content: center; height: 180px; color: var(--vs-text-faint); font-size: 12.5px; }
+
+.vs-tooltip { background: var(--vs-bg-raised); border: 1px solid var(--vs-border); border-radius: var(--vs-radius-sm); padding: 8px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.1); font-size: 12px; direction: rtl; font-family: var(--vs-font-ui); }
+.vs-tooltip .t-label { font-weight: 700; margin-bottom: 4px; }
+.vs-tooltip .t-row { display: flex; align-items: center; gap: 6px; }
+.vs-tooltip .t-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+.stats-panel .recharts-wrapper { direction: ltr; }
+
+@media (min-width: 560px) {
+    .vs-chart-row-2 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+    .vs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .vs-target-grid { grid-template-columns: 1fr; }
+}
+
+.stats-refresh.spinning i { animation: fa-spin .8s linear infinite; }
+.recharts-wrapper { direction: ltr; }   /* charts draw LTR; tooltips stay RTL */
+
+
+    /* ---------- page ---------- */
+    html, body { background: #ecf0f5; font-size: 13px; color: #333; }
+    .main-header { position: fixed; top: 0; right: 0; left: 0; height: 50px; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 0 66px 0 16px; border-bottom: 1px solid var(--hih-box-border); }
+    .main-header .page-title { font-size: 17px; font-weight: 700; color: var(--hih-header-text); display: flex; align-items: center; gap: 8px; }
+    .main-header .hdr-user { margin-right: auto; color: var(--hih-header-text); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+    .main-sidebar { position: fixed; top: 0; bottom: 0; right: 0; width: 50px; z-index: 31; display: flex; flex-direction: column; padding-top: 50px; }
+    .main-sidebar .logo { position: absolute; top: 0; right: 0; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; background: var(--hih-sidebar-active); }
+    .main-sidebar a { display: flex; align-items: center; justify-content: center; height: 46px; color: var(--hih-sidebar-text); font-size: 17px; text-decoration: none; }
+    .main-sidebar a:hover, .main-sidebar a.active { background: var(--hih-sidebar-active); color: #fff; border-right: 3px solid var(--hih-primary); }
+    .content { margin: 50px 50px 0 0; padding: 14px 16px 40px; }
+
+    .panel-primary { border-color: var(--hih-box-border); }
+    .panel-primary > .panel-heading { font-weight: 700; padding: 8px 12px; }
+    .panel-primary > .panel-heading .fa { margin-left: 6px; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+    .filters .form-group { margin: 0; }
+    .filters label { display: block; font-size: 12px; margin-bottom: 4px; }
+    .filters .form-control { height: 32px; padding: 4px 8px; font-size: 12.5px; }
+    .w-search { width: 240px; } .w-sel { width: 160px; } .w-sm { width: 130px; }
+    .stage-tabs .btn { border-radius: 0; font-size: 12.5px; padding: 6px 12px; }
+    .stage-tabs .btn.active.t-all { background: var(--hih-toggle-all); border-color: var(--hih-toggle-all); color: #fff; }
+    .stage-tabs .btn.active.t-new { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
+    .stage-tabs .btn.active.t-maint { background: var(--hih-danger); border-color: var(--hih-danger); color: #fff; }
+    .fund-toggle .btn { border-radius: 0; font-size: 12.5px; padding: 6px 12px; }
+    .fund-toggle .btn.active.toggle-all { background: var(--hih-toggle-all); color: #fff; }
+    .fund-toggle .btn.active.toggle-on { background: var(--hih-toggle-on); color: #fff; }
+    .fund-toggle .btn.active.toggle-off { background: var(--hih-toggle-off); color: #fff; }
+    .chk-inline { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; height: 32px; cursor: pointer; }
+
+    .funder-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .funder-row .form-control { height: 32px; font-size: 12.5px; }
+
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .toolbar .count { color: #666; }
+    .toolbar .count b { color: #222; }
+    .toolbar .spacer { flex: 1; }
+    .btn-action { border-radius: 10px !important; }
+    .btn-action .fa { margin-left: 4px; }
+
+    .table-scroll { overflow: auto; max-height: calc(100vh - 230px); border: 1px solid #ddd; background: #fff; }
+    .table-scroll .table { margin: 0; }
+    .table-scroll thead th { position: sticky; top: 0; z-index: 2; background: #f4f4f4; box-shadow: 0 1px 0 #ddd; font-size: 12px; }
+    .table > tbody > tr > td { font-size: 12.5px; padding: 6px 8px; }
+    .table tbody tr.row-funded > td { background: #f7f7f7; color: #888; }
+    .table tbody tr.row-sel > td { background: #fff7d6 !important; }
+    td.key { font-weight: 700; direction: ltr; }
+    .limb-chip { display: inline-block; margin-top: 3px; background: #fff4e5; color: #b45309; border: 1px solid #f0c98a; border-radius: 15px; padding: 0 7px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .stage-lbl { display: inline-block; border-radius: 15px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .st-new { color: #0b6db0; background: #e6f1fb; } .st-maint { color: #c0303b; background: #fde8ea; }
+    .ops-lbl { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .ops-wait { color: #ff6a00; } .ops-sched { color: #0093e9; } .ops-booked { color: #31a356; } .ops-bad { color: #da4f49; }
+    .muted { color: #999; }
+    .chip { white-space: nowrap; }
+
+    .stats-wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+    .batch-list { max-height: 210px; overflow: auto; }
+    .batch { border-bottom: 1px solid #eee; padding: 6px 2px; font-size: 12px; }
+    .batch b { color: #222; }
+    .batch .codes { color: #777; direction: ltr; text-align: right; font-size: 11px; }
+
+    /* modal (rendered by state, no jQuery) */
+    .modal-backdrop.in { opacity: .45; }
+    .modal.show-modal { display: block; overflow-y: auto; }
+    .modal-header { border-radius: 4px 4px 0 0; }
+    .modal-header .close { float: left; opacity: .6; }
+    .modal-title { font-weight: 700; font-size: 15px; }
+    .modal-body .table { margin-bottom: 8px; }
+    .warn-box { background: #fff4e5; border: 1px solid #f0c98a; color: #8a4b08; border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 12.5px; }
+    .info-box { background: var(--hih-chip-bg); border: 1px solid var(--hih-primary); color: #0b5f96; border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 12.5px; }
+
+    .toast-box { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #222d32; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+    @media (max-width: 1100px) { .stats-wrap { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// =====================================================================
+// Shared case data – identical to operations-room.html (same ids / codes)
+// =====================================================================
+var MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+var WEEKDAYS_AR = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+function startOfDay(d){ var x = new Date(d.getTime()); x.setHours(0,0,0,0); return x; }
+function daysBetween(a, b){ return Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / 86400000); }
+function isSameDate(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+// The calendar is anchored on the Sunday of the real current week.
+var REAL_TODAY = startOfDay(new Date());
+var BASE_SUNDAY = (function(){ var d = new Date(REAL_TODAY.getTime()); d.setDate(d.getDate() - d.getDay()); return d; })();
+var BASE_MONTH = new Date(REAL_TODAY.getFullYear(), REAL_TODAY.getMonth(), 1);
+
+var TASK_TYPES = {
+  measurement: {label:'التقييم الطبي والقياسات', short:'تقييم طبي وقياسات', stage:'new_mdm', reception:1, order:'new', color:'#2563eb', tint:'#eaf1ff',
+    iconPath:'M4 16 L16 4 L20 8 L8 20 Z M8.7 15.3 L10.3 16.9 M11.6 12.4 L13.2 14 M14.5 9.5 L16.1 11.1'},
+  newDelivery: {label:'تسليم طرف جديد', short:'تسليم طرف جديد', stage:'new_fitting', reception:2, order:'new', color:'#059669', tint:'#e6f7f1',
+    iconPath:'M12 3 L20 7 L20 17 L12 21 L4 17 L4 7 Z M4 7 L12 11 L20 7 M12 11 L12 21'},
+  maintEval: {label:'تقييم الصيانة', short:'تقييم صيانة', stage:'maintenance_mdm', reception:1, order:'maintenance', color:'#c2660a', tint:'#fdf1e0',
+    iconPath:'M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z M6 6h12v14H6z M9 13l2 2 4-4'},
+  maintDelivery: {label:'تسليم الصيانة', short:'تسليم صيانة', stage:'maintenance_fitting', reception:2, order:'maintenance', color:'#7c3aed', tint:'#f2eafd',
+    iconPath:'M14.3 6.4a4 4 0 0 0-5.2 5.2L4 16.7V20h3.3l5.1-5.1a4 4 0 0 0 5.2-5.2l-2.7 2.7-2.3-2.3z'},
+};
+var ORG_ICON_PATH = 'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16';
+var CONVOY_ICON_PATH = 'M3 16V8a1 1 0 0 1 1-1h9v9M13 10h4l3 3v3M3 16a2 2 0 0 0 4 0M13 16a2 2 0 0 0 4 0M3 16h1M17 16h1';
+
+var ICONS = {
+  phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.1a16 16 0 0 0 6 6l1.3-1.4a2 2 0 0 1 2.1-.4c1 .4 2 .6 3 .7a2 2 0 0 1 1.6 2z',
+  copy:'M9 9h11v11H9z M5 15H4V4h11v1',
+  gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
+  script:'M8 3h8l4 4v14H4V3h4z M14 3v5h5 M8 12h8 M8 16h6',
+  clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',
+  user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0',
+  users:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M1 21a8 8 0 0 1 16 0 M17 3.5a4 4 0 0 1 0 7.5 M23 21a8 8 0 0 0-5-7.4',
+  send:'M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z',
+  spark:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
+  list:'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  calendar:'M3 5h18v16H3z M3 10h18 M8 3v4 M16 3v4',
+  alert:'M12 3l10 18H2z M12 10v4 M12 17h.01',
+  history:'M3 12a9 9 0 1 0 3-6.7L3 8 M3 3v5h5 M12 7v5l3 2',
+  x:'M6 6l12 12M18 6L6 18',
+  lock:'M5 11h14v9H5z M8 11V8a4 4 0 0 1 8 0v3',
+  trash:'M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13',
+  pin:'M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  undo:'M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3',
+  check:'M5 12l5 5L20 7',
+  gauge:'M12 21a9 9 0 1 1 9-9 M12 12l5-4',
+};
+function ic(name, size, color, sw){
+  size = size || 14;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||1.8)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+ICONS[name]+'"></path></svg>';
+}
+function pathIc(d, size, color, sw){
+  size = size || 14;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||1.8)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+d+'"></path></svg>';
+}
+function esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+var GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','أسوان','سوهاج','المنيا','الفيوم','بني سويف','قنا','الأقصر','الشرقية','دمياط','أسيوط','بورسعيد'];
+var FUNDING_OPTIONS = ['بدون','متبرع فردي','مؤسسة مصر الخير','بنك الطعام'];
+var LEVEL_OPTIONS = ['تحت الركبة','فوق الركبة','تحت الكوع','فوق الكوع','مشط القدم'];
+var AGE_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'child', label:'أقل من 12 سنة', test:function(a){return a<12;}},
+  {key:'teen', label:'12–18 سنة', test:function(a){return a>=12 && a<=18;}},
+  {key:'adult', label:'أكبر من 18 سنة', test:function(a){return a>18;}},
+];
+var ATTEMPTS_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'0', label:'لم يتم التواصل بعد', test:function(a){return a===0;}},
+  {key:'1-2', label:'1–2 محاولة', test:function(a){return a>=1 && a<=2;}},
+  {key:'3+', label:'3 محاولات فأكثر', test:function(a){return a>=3;}},
+];
+var PREF_BUCKETS = [
+  {key:'', label:'الكل'},
+  {key:'داخل المؤسسة', label:'داخل المؤسسة'},
+  {key:'قافلة', label:'قافلة'},
+  {key:'غير محدد', label:'غير محدد'},
+];
+
+var OUTCOME_DEFS = [
+  {key:'booked', label:'تم الحجز بنجاح', color:'#15803d'},
+  {key:'noAnswer', label:'لم يتم الرد', color:'#c81e3a'},
+  {key:'unavailable', label:'غير متاح / مغلق', color:'#c81e3a'},
+  {key:'notInterested', label:'عدم رغبة الحالة', color:'#5b6472'},
+];
+var FAILED_OUTCOMES = ['noAnswer','unavailable'];
+var NOT_ANSWERED = FAILED_OUTCOMES.concat(['confirmNoAnswer']);
+function outcomeDef(key){
+  if (key === 'bookedAlt') return {key:'bookedAlt', label:'تم الحجز في موعد آخر', color:'#15803d'};
+  if (key === 'maintRequest') return {key:'maintRequest', label:'تسجيل طلب صيانة', color:'#2f6fed'};
+  if (key === 'confirmed') return {key:'confirmed', label:'أكد الحضور', color:'#15803d'};
+  if (key === 'cancelled') return {key:'cancelled', label:'اعتذر عن الموعد', color:'#9f1239'};
+  if (key === 'confirmNoAnswer') return {key:'confirmNoAnswer', label:'لم يرد على مكالمة التأكيد', color:'#c81e3a'};
+  if (key === 'standby') return {key:'standby', label:'وافق – قائمة احتياطي', color:'#7c3aed'};
+  for (var i=0;i<OUTCOME_DEFS.length;i++){ if (OUTCOME_DEFS[i].key===key) return OUTCOME_DEFS[i]; }
+  return {key:key, label:key, color:'#5b6472'};
+}
+
+var AGENTS = [
+  {id:'a1', name:'منة الله سامي'},
+  {id:'a2', name:'أحمد رضا'},
+  {id:'a3', name:'ريهام عادل'},
+];
+function agentName(id){ for (var i=0;i<AGENTS.length;i++){ if (AGENTS[i].id===id) return AGENTS[i].name; } return 'غير مسندة'; }
+
+// stage = which pipeline step the case is waiting for (used for auto-suggest eligibility)
+// wait  = days waiting in that stage ; overdue = days past the scheduled maintenance date
+var LEVEL_MAP = {'بتر أسفل الركبة':'تحت الركبة','بتر أعلى الركبة':'فوق الركبة','بتر الساعد':'تحت الكوع','بتر أعلى المرفق':'فوق الكوع','بتر أصابع القدم':'مشط القدم'};
+var FUNDING_MAP = {'تمويل مؤسسة':'بدون','ممول خاص':'متبرع فردي','مشروع اليونيسف':'مؤسسة مصر الخير','تمويل ذاتي':'بنك الطعام'};
+var CODE_PREFIX = {'تحت الركبة':'BK','فوق الركبة':'AK','تحت الكوع':'BE','فوق الكوع':'AE','مشط القدم':'FT'};
+// stage   = which of the 4 visits-page columns the case is waiting for (= task type)
+// wait    = days waiting in that stage ; overdue = days past the scheduled maintenance date
+// extra   = ready (limb back from manufacturing / maintenance finished, for the 2 delivery stages),
+//           postponed {until, contact, reason} (engineering "مؤجل" from the visits page),
+//           noShow (day offset of a missed visit recorded by reception)
+function mk(id,name,gov,funding,level,age,attempts,pref,stage,wait,overdue,extra){
+  var n = parseInt(id.slice(2),10);
+  var prefixes = ['010','011','012','015'];
+  var tail = String((n*7919 + 13579) % 100000000); while (tail.length<8) tail = '0'+tail;
+  level = LEVEL_MAP[level] || level;
+  var c = {id:id, name:name, gov:gov, funding:FUNDING_MAP[funding] || funding, level:level, age:age, attempts:attempts, pref:pref,
+          stage:stage, order:TASK_TYPES[stage].order, waitingDays:wait, maintOverdue:overdue||0, phone: prefixes[n%4] + tail,
+          code:(CODE_PREFIX[level]||'BK') + String(10 + n % 90) + String(100 + (n*37) % 900),
+          ready: stage==='newDelivery' || stage==='maintDelivery' ? true : null, postponed:null, noShow:null};
+  return Object.assign(c, extra || {});
+}
+var T0 = daysBetween(BASE_SUNDAY, REAL_TODAY);
+var CASES = [
+  mk('C-1001','هالة عبد الرحمن','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',34,0,'','measurement',120),
+  mk('C-1002','محمود سيد إبراهيم','الجيزة','تمويل مؤسسة','بتر أعلى الركبة',41,1,'داخل المؤسسة','newDelivery',35),
+  mk('C-1003','سارة أحمد فتحي','أسوان','ممول خاص','بتر الساعد',12,0,'قافلة','measurement',90),
+  mk('C-1004','يوسف كمال عبده','سوهاج','تمويل مؤسسة','بتر أعلى المرفق',27,2,'','maintDelivery',40,18),
+  mk('C-1005','نور الهدى محمد','أسوان','مشروع اليونيسف','بتر أسفل الركبة',8,0,'قافلة','measurement',150),
+  mk('C-1006','أحمد جمال توفيق','المنيا','تمويل مؤسسة','بتر أصابع القدم',55,0,'','newDelivery',28),
+  mk('C-1007','منى عبد اللطيف','الفيوم','تمويل ذاتي','بتر أعلى الركبة',19,3,'داخل المؤسسة','measurement',60),
+  mk('C-1008','كريم وليد حسن','أسوان','تمويل مؤسسة','بتر الساعد',30,1,'قافلة','measurement',75),
+  mk('C-1009','إيمان صلاح الدين','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',46,0,'','newDelivery',22),
+  mk('C-1010','عمر خالد فؤاد','الجيزة','ممول خاص','بتر أعلى المرفق',22,0,'داخل المؤسسة','measurement',45),
+  mk('C-1011','رانيا محمود سالم','أسوان','تمويل مؤسسة','بتر أسفل الركبة',15,2,'قافلة','measurement',130),
+  mk('C-1012','حسام الدين طارق','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',60,0,'','maintDelivery',30,9,{noShowHist:[T0-35,T0-80]}),
+  mk('C-1013','دينا فاروق عزت','بني سويف','مشروع اليونيسف','بتر الساعد',9,1,'داخل المؤسسة','measurement',110),
+  mk('C-1014','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أصابع القدم',38,0,'','maintDelivery',25,3),
+  mk('C-1015','شيماء رضا محمد','الأقصر','تمويل ذاتي','بتر أسفل الركبة',25,0,'','measurement',55),
+  mk('C-1016','أمير حازم صبري','القاهرة','تمويل مؤسسة','بتر أعلى الركبة',33,4,'','measurement',180),
+  mk('C-1017','هبة الله كريم','الجيزة','تمويل مؤسسة','بتر أعلى المرفق',17,0,'داخل المؤسسة','measurement',70),
+  mk('C-1018','طارق سامي لطفي','المنيا','ممول خاص','بتر الساعد',49,1,'','newDelivery',18),
+  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0-2, contact:'org', reason:'لحين التئام الجرح'}}),
+  mk('C-1020','بلال ياسر منير','أسوان','تمويل مؤسسة','بتر أعلى الركبة',21,2,'قافلة','newDelivery',40,0,{ready:false}),
+  mk('C-1021','ياسمين علاء الدين','سوهاج','مشروع اليونيسف','بتر أصابع القدم',13,0,'داخل المؤسسة','maintDelivery',20,14),
+  mk('C-1022','عبد الرحمن فتحي','القاهرة','تمويل مؤسسة','بتر الساعد',44,0,'','newDelivery',12),
+  mk('C-1023','لمياء حسين عبد العزيز','الجيزة','تمويل ذاتي','بتر أسفل الركبة',37,1,'','measurement',95),
+  mk('C-1024','سيف الدين محمد رأفت','أسوان','تمويل مؤسسة','بتر أعلى المرفق',26,0,'قافلة','maintDelivery',35,22),
+  mk('C-1025','مريم أشرف حمدي','أسوان','مشروع اليونيسف','بتر أسفل الركبة',7,0,'قافلة','measurement',140),
+  mk('C-1026','عادل حسني مرسي','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',52,1,'','maintDelivery',60,25,{ready:false}),
+  mk('C-1027','جنى محمد صلاح','المنيا','مشروع اليونيسف','بتر الساعد',10,0,'قافلة','measurement',95),
+  mk('C-1028','إسلام فوزي عبده','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',31,0,'','newDelivery',40,0,{noShow:T0-4, noShowHist:[T0-60]}),
+  mk('C-1029','آية سمير حامد','الجيزة','ممول خاص','بتر أعلى المرفق',16,0,'داخل المؤسسة','maintDelivery',30,12),
+  mk('C-1030','مصطفى رجب علي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',44,0,'','measurement',200),
+  mk('C-1031','رحمة خالد يونس','سوهاج','مشروع اليونيسف','بتر أسفل الركبة',9,0,'قافلة','maintDelivery',50,40),
+  mk('C-1032','فاطمة الزهراء سعيد','القاهرة','تمويل مؤسسة','بتر الساعد',23,0,'داخل المؤسسة','measurement',75,0,{postponed:{until:T0+3, contact:'case', reason:'سفر الحالة'}}),
+  mk('C-1033','زياد هشام كامل','أسوان','تمويل مؤسسة','بتر أصابع القدم',14,0,'قافلة','newDelivery',20,0,{ready:false}),
+  mk('C-1034','سلمى طارق نجيب','المنيا','تمويل ذاتي','بتر أسفل الركبة',36,0,'','measurement',160),
+  mk('C-1035','خالد عبد العليم','سوهاج','تمويل مؤسسة','بتر أعلى الركبة',61,0,'','maintDelivery',45,8),
+  mk('C-1036','روان إيهاب فتحي','الجيزة','مشروع اليونيسف','بتر الساعد',6,0,'داخل المؤسسة','measurement',110),
+  mk('C-1037','حمدي سالم بدوي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',58,3,'','measurement',30),
+  mk('C-1038','ملك أحمد زكي','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',11,0,'','newDelivery',15),
+  mk('C-1039','أنس محمود عطية','المنيا','تمويل مؤسسة','بتر أعلى المرفق',27,0,'','maintDelivery',22,5),
+  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0+12, contact:'org', reason:'انتظار عملية جراحية'}}),
+  mk('C-1041','سامي فؤاد عبد الحميد','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',45,0,'','maintEval',20,4),
+  mk('C-1042','نادية حسن البنا','الجيزة','ممول خاص','بتر أعلى الركبة',52,0,'','maintEval',30,10,{noShow:T0-10}),
+  mk('C-1043','كريم عادل سالم','القاهرة','تمويل مؤسسة','بتر الساعد',29,0,'داخل المؤسسة','maintEval',15),
+  mk('C-1044','هالة سعيد مراد','الإسكندرية','مشروع اليونيسف','بتر أسفل الركبة',38,1,'','maintEval',45,20),
+  mk('C-1045','عمرو طه إسماعيل','الشرقية','تمويل مؤسسة','بتر أعلى الركبة',61,0,'','maintEval',60,35),
+  mk('C-1046','ليلى ماهر عزت','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',9,0,'داخل المؤسسة','maintEval',25),
+  mk('C-1047','فارس أيمن جاد','سوهاج','تمويل مؤسسة','بتر أعلى المرفق',14,0,'قافلة','maintEval',40,10),
+  mk('C-1048','محمد رضا حنفي','أسوان','تمويل ذاتي','بتر أسفل الركبة',47,0,'قافلة','maintEval',70,15),
+  // second limb of the same person = a separate request with its own code (person = id of the first request)
+  mk('C-1051','سارة أحمد فتحي','أسوان','تمويل مؤسسة','بتر أسفل الركبة',12,0,'قافلة','measurement',90,0,{person:'C-1003'}),
+  mk('C-1052','عمر خالد فؤاد','الجيزة','تمويل مؤسسة','بتر أسفل الركبة',22,0,'داخل المؤسسة','measurement',45,0,{person:'C-1010'}),
+  mk('C-1053','أحمد جمال توفيق','المنيا','تمويل مؤسسة','بتر أسفل الركبة',55,0,'','measurement',28,0,{person:'C-1006'}),
+  mk('C-1054','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أعلى الركبة',38,0,'','maintEval',25,5,{person:'C-1014'}),
+];
+var CASE_MAP = {};
+CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
+CASES.forEach(function(c){ if (c.person && CASE_MAP[c.person]) c.phone = CASE_MAP[c.person].phone; else c.person = c.id; });
+// other requests (other codes / limbs) of the same person
+function otherLimbs(c){ return CASES.filter(function(x){ return x.person===c.person && x.id!==c.id; }); }
+function caseById(id){ return CASE_MAP[id] || null; }
+function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
+
+
+// =====================================================================
+// Funding store (shared with the operations room through localStorage)
+// =====================================================================
+var FUND_KEY = 'hih_funding_v1', FUND_OPS_KEY = 'hih_funding_ops_v1';
+var CSR_USER = 'موظف CSR';
+var BASE_COMPANIES = FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; });
+function readStore(k, def){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+
+var F = {
+  store: null, ops: {},
+  company: '', newCompany: '',
+  filters: {q:'', gov:'', level:'', stage:'', fund:'none', company:'', multi:false},
+  sort: 'waitDesc', sel: [], modal: null, toast: null,
+};
+function loadStores(){
+  F.store = readStore(FUND_KEY, null) || {companies:[], alloc:{}, batches:[]};
+  F.store.alloc = F.store.alloc || {}; F.store.batches = F.store.batches || []; F.store.companies = F.store.companies || [];
+  F.ops = readStore(FUND_OPS_KEY, {}) || {};
+}
+function saveStore(){ return writeStore(FUND_KEY, F.store); }
+function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
+
+function allocOf(c){ return F.store.alloc[c.id] || null; }
+function funderOf(c){ var a = allocOf(c); return a ? a.company : (c.funding!=='بدون' ? c.funding : ''); }
+function isFunded(c){ return !!funderOf(c); }
+function isSelectable(c){ return !isFunded(c); }
+function isMaint(c){ return TASK_TYPES[c.stage].order==='maintenance'; }
+
+function opsInfo(c){
+  if (!allocOf(c)) return null;
+  var o = F.ops[c.id];
+  if (!o || o.status==='new') return {cls:'ops-wait', txt:'مستني الأوبريشن يعمل مهمة الحجز', key:'new'};
+  if (o.status==='scheduled') return {cls:'ops-sched', txt:'في مهمة حجز يوم ' + o.day, key:'scheduled'};
+  if (o.status==='booked') return {cls:'ops-booked', txt:'تم الحجز يوم ' + o.day, key:'booked'};
+  if (o.status==='attended') return {cls:'ops-booked', txt:'حضر يوم ' + o.day, key:'attended'};
+  if (o.status==='noShow') return {cls:'ops-bad', txt:'لم يحضر يوم ' + o.day, key:'noShow'};
+  return {cls:'muted', txt:'-', key:o.status};
+}
+
+// =====================================================================
+// Helpers
+// =====================================================================
+function A(act, a, b){ return ' data-act="'+act+'"' + (a!=null ? ' data-a="'+esc(a)+'"' : '') + (b!=null ? ' data-b="'+esc(b)+'"' : ''); }
+function isoFromMs(ms){ var d = new Date(ms); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function timeFromMs(ms){ var d = new Date(ms), h = d.getHours(), m = d.getMinutes(); return (h%12||12)+':'+(m<10?'0':'')+m+' '+(h<12?'ص':'م'); }
+var toastTimer = null;
+function toast(msg){ F.toast = msg; clearTimeout(toastTimer); toastTimer = setTimeout(function(){ F.toast = null; render(); }, 3500); }
+function opts(list, cur, allLabel){ return '<option value="">'+(allLabel||'الكل')+'</option>' + list.map(function(o){ return '<option'+(o===cur?' selected':'')+'>'+esc(o)+'</option>'; }).join(''); }
+
+function filtered(){
+  var f = F.filters, q = f.q.trim();
+  var list = CASES.filter(function(c){
+    if (q && c.name.indexOf(q)===-1 && c.code.toUpperCase().indexOf(q.toUpperCase())===-1 && c.phone.indexOf(q)===-1) return false;
+    if (f.gov && c.gov!==f.gov) return false;
+    if (f.level && c.level!==f.level) return false;
+    if (f.stage && c.stage!==f.stage) return false;
+    if (f.fund==='none' && isFunded(c)) return false;
+    if (f.fund==='funded' && !isFunded(c)) return false;
+    if (f.company && funderOf(c)!==f.company) return false;
+    if (f.multi && !otherLimbs(c).length) return false;
+    return true;
+  });
+  var s = F.sort;
+  return list.sort(function(a,b){
+    if (s==='ageAsc') return a.age-b.age;
+    if (s==='ageDesc') return b.age-a.age;
+    if (s==='gov') return a.gov.localeCompare(b.gov,'ar') || b.waitingDays-a.waitingDays;
+    if (s==='person') return a.person.localeCompare(b.person) || a.id.localeCompare(b.id);
+    return b.waitingDays-a.waitingDays;
+  });
+}
+
+// =====================================================================
+// Render
+// =====================================================================
+var root = null;
+function render(){
+  var ae = document.activeElement, k = ae && ae.getAttribute && ae.getAttribute('data-k'), ss = null, se = null;
+  if (k){ try { ss = ae.selectionStart; se = ae.selectionEnd; } catch(e){} }
+  var sc = root.querySelector('.table-scroll'), st = sc ? sc.scrollTop : 0;
+  root.innerHTML = renderApp();
+  var sc2 = root.querySelector('.table-scroll'); if (sc2) sc2.scrollTop = st;
+  if (k){ var el = root.querySelector('[data-k="'+k+'"]'); if (el){ el.focus(); try { if (ss!=null) el.setSelectionRange(ss, se); } catch(e){} } }
+}
+function renderApp(){
+  var h = '<header class="main-header"><div class="page-title"><i class="fa fa-money"></i> صفحة التمويل</div>'+
+    '<div class="hdr-user"><i class="fa fa-user-circle"></i> '+esc(CSR_USER)+'</div></header>';
+  h += '<aside class="main-sidebar"><span class="logo">HiH</span>'+
+    '<a href="operations-room.html" title="غرفة العمليات"><i class="fa fa-calendar"></i></a>'+
+    '<a class="active" href="#" title="صفحة التمويل"><i class="fa fa-money"></i></a></aside>';
+  h += '<div class="content">';
+  h += renderFunder();
+  h += renderFilters();
+  h += renderTable();
+  h += renderStats();
+  h += '</div>';
+  h += renderModal();
+  if (F.toast) h += '<div class="toast-box">'+esc(F.toast)+'</div>';
+  return h;
+}
+
+function renderFunder(){
+  var list = companies();
+  return '<div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-building"></i>الشركة الممولة</div><div class="panel-body"><div class="funder-row">'+
+    '<div class="form-group" style="margin:0;"><label>اختار الشركة</label><select class="form-control" style="width:240px;" data-change="setCompany">'+
+      '<option value="">— اختار الشركة —</option>'+list.map(function(c){ return '<option'+(F.company===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group" style="margin:0;"><label>شركة جديدة</label><div class="filter-inline"><input class="form-control" style="width:200px;" placeholder="اسم الشركة" value="'+esc(F.newCompany)+'" data-k="newco" data-input="setNewCompany"/>'+
+      '<button class="btn btn-default btn-action"'+A('addCompany')+'><i class="fa fa-plus"></i> إضافة</button></div></div>'+
+    (F.company ? '<div class="info-box" style="margin:0;">اختار الحالات من الجدول وبعدين اضغط <b>تمويل بواسطة '+esc(F.company)+'</b></div>' : '')+
+    '</div></div></div>';
+}
+
+function renderFilters(){
+  var f = F.filters;
+  var stages = [['','الكل','t-all']].concat(Object.keys(TASK_TYPES).map(function(k){ return [k, TASK_TYPES[k].label, TASK_TYPES[k].order==='new' ? 't-new' : 't-maint']; }));
+  var funds = [['all','الكل','toggle-all'],['none','غير ممول','toggle-off'],['funded','ممول','toggle-on']];
+  var sorts = [['waitDesc','مدة الانتظار (الأطول الأول)'],['ageAsc','السن: الأصغر الأول'],['ageDesc','السن: الأكبر الأول'],['gov','المحافظة'],['person','الحالة (الأطراف جنب بعض)']];
+  return '<div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-filter"></i>بحث وفلاتر</div><div class="panel-body">'+
+    '<div class="form-group" style="margin-bottom:10px;"><label style="display:block;">المرحلة</label><div class="btn-group stage-tabs">'+stages.map(function(s){
+      return '<button class="btn btn-default '+s[2]+(f.stage===s[0]?' active':'')+'"'+A('setStage', s[0])+'>'+s[1]+'</button>';
+    }).join('')+'</div></div>'+
+    '<div class="filters">'+
+    '<div class="form-group"><label>بحث</label><div class="filter-inline"><input class="form-control w-search" placeholder="الاسم أو الكود أو التليفون" value="'+esc(f.q)+'" data-k="q" data-input="setFilter" data-a="q"/>'+
+      '<button class="btn btn-danger btn-action btn-sm"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح</button></div></div>'+
+    '<div class="form-group"><label>المحافظة</label><select class="form-control w-sel" data-change="setFilter" data-a="gov">'+opts(GOVERNORATES, f.gov)+'</select></div>'+
+    '<div class="form-group"><label>الطرف (مستوى البتر)</label><select class="form-control w-sel" data-change="setFilter" data-a="level">'+opts(LEVEL_OPTIONS, f.level)+'</select></div>'+
+    '<div class="form-group"><label>التمويل</label><div class="btn-group fund-toggle">'+funds.map(function(x){
+      return '<button class="btn btn-default '+x[2]+(f.fund===x[0]?' active':'')+'"'+A('setFund', x[0])+'>'+x[1]+'</button>';
+    }).join('')+'</div></div>'+
+    '<div class="form-group"><label>الشركة الممولة</label><select class="form-control w-sel" data-change="setFilter" data-a="company">'+opts(companies(), f.company)+'</select></div>'+
+    '<div class="form-group"><label>ترتيب حسب</label><select class="form-control w-sel" style="width:200px;" data-change="setSort">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(F.sort===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+    '<div class="form-group"><label>&nbsp;</label><label class="chk-inline"><input type="checkbox"'+(f.multi?' checked':'')+A('toggleMulti')+'/> حالات ليها أكتر من طرف</label></div>'+
+    '</div></div></div>';
+}
+
+function renderTable(){
+  var list = filtered(), sel = F.sel;
+  var h = '<div class="toolbar"><span class="count">عدد الطلبات: <b>'+list.length+'</b></span>'+
+    (sel.length ? '<span class="count">· تم تحديد <b>'+sel.length+'</b></span><button class="btn btn-default btn-xs btn-action"'+A('clearSel')+'><i class="fa fa-times"></i> إزالة التحديد</button>' : '')+
+    '<span class="spacer"></span>'+
+    '<button class="btn btn-primary btn-action"'+A('openConfirm')+(sel.length && F.company ? '' : ' disabled')+'><i class="fa fa-check"></i> '+
+      (F.company ? 'تمويل بواسطة '+esc(F.company)+(sel.length ? ' ('+sel.length+')' : '') : 'اختار الشركة الأول')+'</button>'+
+    '<button class="btn btn-success btn-action"'+A('exportCsv')+'><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button></div>';
+  h += '<div class="table-scroll"><table class="table table-bordered"><thead><tr>'+
+    '<th style="width:34px;"></th><th>كود الحالة</th><th>الاسم</th><th>التليفون</th><th>المحافظة</th><th>السن</th><th>الطرف</th><th>المرحلة</th><th>مدة الانتظار</th><th>التمويل</th><th>حالة الحجز (غرفة العمليات)</th><th></th>'+
+    '</tr></thead><tbody>';
+  list.forEach(function(c){
+    var funded = isFunded(c), on = sel.indexOf(c.id)!==-1, others = otherLimbs(c), a = allocOf(c), oi = opsInfo(c);
+    var cls = (isMaint(c) ? 'row-maint' : 'row-new') + (on ? ' row-sel' : '') + (funded ? ' row-funded' : '');
+    h += '<tr class="'+cls+'">'+
+      '<td><input type="checkbox"'+(on?' checked':'')+(funded?' disabled':'')+A('toggleSel', c.id)+'/></td>'+
+      '<td class="key">'+c.code+(others.length ? '<br><span class="limb-chip"'+A('showLimbs', c.id)+' title="الحالة ليها طرف تاني">+ '+others.map(function(o){ return o.code; }).join('، ')+'</span>' : '')+'</td>'+
+      '<td style="font-weight:700;">'+esc(c.name)+'</td><td dir="ltr">'+fmtPhone(c.phone)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
+      '<td><span class="stage-lbl '+(isMaint(c)?'st-maint':'st-new')+'">'+TASK_TYPES[c.stage].label+'</span></td>'+
+      '<td>'+c.waitingDays+' يوم</td>'+
+      '<td>'+(funded ? '<span class="chip">'+esc(funderOf(c))+'</span>'+(a ? '<div class="muted" style="font-size:11px;">'+isoFromMs(a.at)+'</div>' : '') : '<span class="muted">غير ممول</span>')+'</td>'+
+      '<td>'+(oi ? '<span class="ops-lbl '+oi.cls+'">'+oi.txt+'</span>' : '<span class="muted">-</span>')+'</td>'+
+      '<td>'+(a ? '<button class="btn btn-default btn-xs btn-action"'+A('askUnfund', c.id)+'><i class="fa fa-undo"></i> إلغاء التمويل</button>' : '')+'</td></tr>';
+  });
+  if (!list.length) h += '<tr><td colspan="12" class="muted" style="padding:24px;">لا توجد طلبات مطابقة</td></tr>';
+  return h + '</tbody></table></div>';
+}
+
+function renderStats(){
+  var rows = companies().map(function(co){
+    var r = {co:co, n:0, wait:0, sched:0, booked:0, att:0};
+    Object.keys(F.store.alloc).forEach(function(cid){
+      var a = F.store.alloc[cid], c = caseById(cid); if (!c || a.company!==co) return;
+      r.n++; var oi = opsInfo(c);
+      if (oi.key==='new') r.wait++; else if (oi.key==='scheduled') r.sched++; else if (oi.key==='booked') r.booked++; else if (oi.key==='attended') r.att++;
+    });
+    return r;
+  }).filter(function(r){ return r.n; });
+  var h = '<div class="stats-wrap" style="margin-top:14px;"><div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-bar-chart"></i>ملخص التمويل من الصفحة دي</div><div class="panel-body">';
+  if (!rows.length) h += '<div class="muted">لسه مفيش حالات اتمولت من الصفحة دي</div>';
+  else h += '<table class="stats-table"><thead><tr><th>الشركة</th><th>الحالات</th><th>مستني الأوبريشن</th><th>في مهمة حجز</th><th>تم الحجز</th><th>حضر</th></tr></thead><tbody>'+
+    rows.map(function(r){ return '<tr class="row-period"><td class="stats-label">'+esc(r.co)+'</td><td class="stats-num">'+r.n+'</td><td class="stats-num">'+r.wait+'</td><td class="stats-num">'+r.sched+'</td><td class="stats-num">'+r.booked+'</td><td class="stats-num">'+r.att+'</td></tr>'; }).join('')+'</tbody></table>';
+  h += '</div></div><div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-history"></i>سجل التمويل</div><div class="panel-body batch-list">';
+  if (!F.store.batches.length) h += '<div class="muted">مفيش عمليات تمويل لسه</div>';
+  F.store.batches.slice().reverse().forEach(function(b){
+    h += '<div class="batch"><b>'+esc(b.company)+'</b> · '+b.ids.length+' حالة · '+isoFromMs(b.at)+' '+timeFromMs(b.at)+' · '+esc(b.by)+
+      '<div class="codes">'+b.ids.map(function(id){ var c = caseById(id); return c ? c.code : id; }).join(' · ')+'</div></div>';
+  });
+  return h + '</div></div></div>';
+}
+
+function modalShell(title, body, foot, wide){
+  return '<div class="modal-backdrop fade in"></div><div class="modal show-modal" '+A('closeModalBg')+'><div class="modal-dialog'+(wide?' modal-lg':'')+'"><div class="modal-content">'+
+    '<div class="modal-header"><button class="close"'+A('closeModal')+'>&times;</button><h4 class="modal-title">'+title+'</h4></div>'+
+    '<div class="modal-body">'+body+'</div><div class="modal-footer">'+foot+'</div></div></div></div>';
+}
+function limbTable(list){
+  return '<table class="table table-bordered"><thead><tr><th>كود الحالة</th><th>الطرف</th><th>المرحلة</th><th>التمويل</th></tr></thead><tbody>'+list.map(function(o){
+    return '<tr class="'+(isMaint(o)?'row-maint':'row-new')+'"><td class="key">'+o.code+'</td><td>'+esc(o.level)+'</td><td>'+TASK_TYPES[o.stage].label+'</td><td>'+(isFunded(o) ? esc(funderOf(o)) : '<span class="muted">غير ممول</span>')+'</td></tr>';
+  }).join('')+'</tbody></table>';
+}
+function renderModal(){
+  var m = F.modal; if (!m) return '';
+  if (m.kind==='limb'){
+    var c = caseById(m.cid), others = otherLimbs(c), free = others.filter(function(o){ return isSelectable(o) && F.sel.indexOf(o.id)===-1; });
+    var body = '<div class="warn-box"><i class="fa fa-exclamation-triangle"></i> الحالة <b>'+esc(c.name)+'</b> ليها '+(others.length>1 ? others.length+' أكواد تانية' : 'كود تاني')+' وطرف تاني</div>'+
+      '<div style="margin-bottom:6px;">الكود اللي اخترته: <b dir="ltr">'+c.code+'</b> – '+esc(c.level)+'</div>'+limbTable(others);
+    var foot = m.fromSelect
+      ? (free.length ? '<button class="btn btn-primary btn-action"'+A('selectOthers', c.id)+'><i class="fa fa-plus"></i> اختار '+(free.length>1 ? 'الأكواد التانية' : 'الكود التاني')+' كمان</button>' : '')+
+        '<button class="btn btn-default btn-action"'+A('closeModal')+'>'+(free.length ? 'الكود ده بس' : 'تمام')+'</button>'
+      : '<button class="btn btn-default btn-action"'+A('closeModal')+'>تمام</button>';
+    return modalShell('الحالة ليها كود تاني', body, foot);
+  }
+  if (m.kind==='confirm'){
+    var ids = F.sel.slice(), byStage = {};
+    ids.forEach(function(id){ var c = caseById(id); byStage[c.stage] = (byStage[c.stage]||0) + 1; });
+    var missing = [];
+    ids.forEach(function(id){ var c = caseById(id); otherLimbs(c).forEach(function(o){ if (isSelectable(o) && ids.indexOf(o.id)===-1) missing.push({c:c, o:o}); }); });
+    var body = '<div class="info-box">هيتسجل تمويل <b>'+ids.length+'</b> حالة بواسطة <b>'+esc(F.company)+'</b> ويظهروا في غرفة العمليات عشان الأوبريشن يعمل مهمة الحجز ويحدد اليوم.</div>'+
+      '<table class="stats-table" style="margin-bottom:10px;"><thead><tr><th>المرحلة</th><th>عدد الحالات</th></tr></thead><tbody>'+
+      Object.keys(byStage).map(function(k){ return '<tr class="row-period"><td class="stats-label">'+TASK_TYPES[k].label+'</td><td class="stats-num">'+byStage[k]+'</td></tr>'; }).join('')+'</tbody></table>'+
+      (missing.length ? '<div class="warn-box"><i class="fa fa-exclamation-triangle"></i> حالات ليها كود تاني مش متحدد:<ul style="margin:6px 0 0;padding-right:18px;">'+
+        missing.map(function(x){ return '<li><b>'+esc(x.c.name)+'</b> – متحدد <span dir="ltr">'+x.c.code+'</span> والكود التاني <span dir="ltr">'+x.o.code+'</span> ('+esc(x.o.level)+') مش متحدد</li>'; }).join('')+'</ul></div>' : '');
+    var foot = '<button class="btn btn-success btn-action"'+A('confirmFunding')+'><i class="fa fa-check"></i> تأكيد التمويل وإرسال لغرفة العمليات</button>'+
+      '<button class="btn btn-default btn-action"'+A('closeModal')+'>إلغاء</button>';
+    return modalShell('تأكيد التمويل', body, foot);
+  }
+  if (m.kind==='unfund'){
+    var c2 = caseById(m.cid), a = allocOf(c2), oi = opsInfo(c2);
+    if (oi && (oi.key==='booked' || oi.key==='attended')){
+      return modalShell('مينفعش تلغي التمويل', '<div class="warn-box">الحالة <b>'+esc(c2.name)+'</b> اتحجزلها بالفعل في غرفة العمليات ('+oi.txt+')، فمينفعش يتلغي تمويلها من هنا.</div>',
+        '<button class="btn btn-primary btn-action"'+A('closeModal')+'>تمام</button>');
+    }
+    return modalShell('إلغاء التمويل', '<div>هتلغي تمويل <b>'+esc(c2.name)+'</b> (<span dir="ltr">'+c2.code+'</span>) بواسطة <b>'+esc(a.company)+'</b>.'+
+      (oi && oi.key==='scheduled' ? '<div class="warn-box">الحالة موجودة في مهمة حجز يوم '+F.ops[c2.id].day+' في غرفة العمليات – الأوبريشن هيفضل شايفها في المهمة.</div>' : '')+'</div>',
+      '<button class="btn btn-danger btn-action"'+A('unfund', c2.id)+'><i class="fa fa-undo"></i> إلغاء التمويل</button><button class="btn btn-default btn-action"'+A('closeModal')+'>رجوع</button>');
+  }
+  return '';
+}
+
+// =====================================================================
+// Actions
+// =====================================================================
+var ACT = {
+  setCompany: function(v){ F.company = v; render(); },
+  setNewCompany: function(v){ F.newCompany = v; render(); },
+  addCompany: function(){
+    var n = F.newCompany.trim(); if (!n) return;
+    if (companies().indexOf(n)===-1){ loadStores(); F.store.companies.push(n); saveStore(); }
+    F.company = n; F.newCompany = ''; toast('تمت إضافة ' + n); render();
+  },
+  setStage: function(v){ F.filters.stage = v; render(); },
+  setFund: function(v){ F.filters.fund = v; render(); },
+  setFilter: function(v, key){ F.filters[key] = v; render(); },
+  setSort: function(v){ F.sort = v; render(); },
+  toggleMulti: function(){ F.filters.multi = !F.filters.multi; render(); },
+  clearFilters: function(){ F.filters = {q:'', gov:'', level:'', stage:'', fund:'none', company:'', multi:false}; render(); },
+  clearSel: function(){ F.sel = []; render(); },
+  toggleSel: function(cid){
+    var c = caseById(cid); if (!c || !isSelectable(c)) return;
+    var i = F.sel.indexOf(cid);
+    if (i!==-1){ F.sel.splice(i,1); return render(); }
+    F.sel.push(cid);
+    // same person has another code (another limb) -> tell the CSR
+    if (otherLimbs(c).length) F.modal = {kind:'limb', cid:cid, fromSelect:true};
+    render();
+  },
+  showLimbs: function(cid){ F.modal = {kind:'limb', cid:cid, fromSelect:false}; render(); },
+  selectOthers: function(cid){
+    otherLimbs(caseById(cid)).forEach(function(o){ if (isSelectable(o) && F.sel.indexOf(o.id)===-1) F.sel.push(o.id); });
+    F.modal = null; render();
+  },
+  openConfirm: function(){ if (!F.sel.length || !F.company) return; F.modal = {kind:'confirm'}; render(); },
+  confirmFunding: function(){
+    loadStores();                                   // merge with anything saved from another tab
+    var ids = F.sel.filter(function(id){ return !F.store.alloc[id]; }), at = Date.now(), batch = 'b' + at;
+    ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER, batch:batch}; });
+    F.store.batches.push({id:batch, company:F.company, at:at, by:CSR_USER, ids:ids});
+    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    F.sel = []; F.modal = null;
+    toast('تم تمويل ' + ids.length + ' حالة بواسطة ' + F.company + ' واتبعتوا لغرفة العمليات');
+    render();
+  },
+  askUnfund: function(cid){ F.modal = {kind:'unfund', cid:cid}; render(); },
+  unfund: function(cid){
+    loadStores(); delete F.store.alloc[cid]; saveStore();
+    F.modal = null; toast('تم إلغاء التمويل'); render();
+  },
+  closeModal: function(){ F.modal = null; render(); },
+  closeModalBg: function(v, a, b, e){ if (e && e.target.classList.contains('show-modal')){ F.modal = null; render(); } },
+  exportCsv: function(){
+    function q(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
+    var rows = [['كود الحالة','الاسم','التليفون','المحافظة','السن','الطرف','المرحلة','مدة الانتظار','التمويل','حالة الحجز'].map(q)];
+    filtered().forEach(function(c){ var oi = opsInfo(c); rows.push([c.code, c.name, c.phone, c.gov, c.age, c.level, TASK_TYPES[c.stage].label, c.waitingDays, funderOf(c)||'غير ممول', oi ? oi.txt : '-'].map(q)); });
+    var blob = new Blob(['﻿' + rows.map(function(r){ return r.join(','); }).join('\r\n')], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'التمويل-' + isoFromMs(Date.now()) + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  },
+};
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  if (el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='checkbox')) return;
+  var fn = ACT[el.getAttribute('data-act')]; if (!fn) return;
+  if (el.getAttribute('data-act')!=='closeModalBg') e.stopPropagation();
+  fn(el.getAttribute('data-a'), el.getAttribute('data-b'), null, e);
+});
+document.addEventListener('input', function(e){
+  var el = e.target, act = el.getAttribute && el.getAttribute('data-input'); if (!act) return;
+  ACT[act](el.value, el.getAttribute('data-a'));
+});
+document.addEventListener('change', function(e){
+  var el = e.target, act = el.getAttribute && el.getAttribute('data-change'); if (!act) return;
+  ACT[act](el.value, el.getAttribute('data-a'));
+});
+document.addEventListener('keydown', function(e){ if (e.key==='Escape' && F.modal){ F.modal = null; render(); } });
+// live updates from the operations room (another tab)
+window.addEventListener('storage', function(e){
+  if (e.key!==FUND_KEY && e.key!==FUND_OPS_KEY) return;
+  loadStores(); render();
+});
+
+loadStores();
+root = document.getElementById('root');
+render();
+</script>
+</body>
+</html>
