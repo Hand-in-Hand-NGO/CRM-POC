@@ -1,7 +1,8 @@
 /* نسخة تجريبية: بديل api.php يعمل داخل المتصفح ويحفظ البيانات في localStorage */
 (function ($) {
     'use strict';
-    var KEY = 'custody-demo-v1';
+    var KEY = 'custody-demo-v2';
+    var TYPES = window.CUSTODY_TYPES;   // نفس custody/types.json، يضمّنه build.py
     var STATUSES = ['متاحة', 'مسلمة', 'صيانة', 'تالفة', 'مفقودة', 'مكهنة'];
     var CONDITIONS = ['جديد', 'جيد', 'مستعمل', 'يحتاج صيانة', 'تالف'];
     var ROLES = { admin: 'مدير النظام', editor: 'مسؤول عهد', viewer: 'مشاهدة فقط' };
@@ -25,12 +26,10 @@
 
     // ------------------------------------------------------------ seed data
     function seed() {
-        var db = { seq: {}, users: [], employees: [], categories: [], items: [], handovers: [], custody: [], log: [] };
+        var db = { seq: {}, users: [], employees: [], items: [], handovers: [], custody: [], log: [] };
         db.users.push({ id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', active: 1, must_change: 0, last_login: now(), created_at: now(), password: 'admin123' });
         db.users.push({ id: 2, username: 'store', name: 'مسؤول المخزن', role: 'editor', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'store1234' });
         db.seq.users = 2;
-        ['لاب توب', 'كمبيوتر مكتبي', 'شاشة', 'موبايل', 'شريحة اتصال', 'تابلت', 'طابعة', 'سيارة', 'أدوات وعدد', 'أثاث', 'مفاتيح', 'أخرى'].forEach(function (n, i) { db.categories.push({ id: i + 1, name: n }); });
-        db.seq.categories = 12;
         [['E001', 'أحمد محمد عبد الله', 'الهندسة', 'مهندس تركيب', 'القاهرة', '01012345678'],
          ['E002', 'منى علي حسن', 'المصنع', 'فني تصنيع', 'القاهرة', '01123456789'],
          ['E003', 'كريم حسن مصطفى', 'خدمة العملاء', 'مسؤول كول سنتر', 'القاهرة', '01234567890'],
@@ -42,38 +41,48 @@
             db.employees.push({ id: i + 1, code: e[0], name: e[1], national_id: '2' + pad(90010112345 + i * 7, 13).slice(0, 13), department: e[2], job_title: e[3], branch: e[4], phone: e[5], email: '', active: 1, notes: '', created_at: now() });
         });
         db.seq.employees = 7;
-        [[1, 'لاب توب Dell Latitude 5420', 'Dell', '5420', 'DL5420-778', 25000],
-         [1, 'لاب توب Lenovo ThinkPad E14', 'Lenovo', 'E14', 'LN-E14-221', 23000],
-         [1, 'لاب توب HP ProBook 450', 'HP', '450 G9', 'HP450-993', 21000],
-         [4, 'موبايل Samsung A15', 'Samsung', 'A15', '356789012345678', 9000],
-         [4, 'موبايل Samsung A25', 'Samsung', 'A25', '356789012399911', 11500],
-         [4, 'موبايل Xiaomi Redmi 13', 'Xiaomi', 'Redmi 13', '868123456789012', 7500],
-         [5, 'شريحة فودافون', 'Vodafone', '', '01099887766', 0],
-         [5, 'شريحة أورانج', 'Orange', '', '01288776655', 0],
-         [3, 'شاشة HP 24 بوصة', 'HP', 'P24', 'CN-HP24-55', 5500],
-         [6, 'تابلت Lenovo Tab M10', 'Lenovo', 'M10', 'LN-TAB-01', 7000],
-         [8, 'سيارة تويوتا هاي إس', 'Toyota', 'Hiace 2022', 'ط ر ب 1234', 950000],
-         [9, 'شنطة عدة فنية كاملة', 'Total', '', 'TL-KIT-07', 4200],
-         [7, 'طابعة HP LaserJet', 'HP', 'M211', 'HP-M211-31', 8500],
-         [2, 'كمبيوتر مكتبي Dell OptiPlex', 'Dell', '7090', 'DO-7090-12', 18000]
-        ].forEach(function (it, i) {
-            db.items.push({ id: i + 1, code: 'AS-' + pad(i + 1, 5), category_id: it[0], name: it[1], brand: it[2], model: it[3], serial_no: it[4], purchase_date: today(-300 + i * 9),
-                value: it[5], item_condition: i < 4 ? 'جديد' : 'جيد', status: 'متاحة', location: 'المخزن الرئيسي', notes: '', created_at: now() });
-        });
-        db.seq.items = 14;
-        db.seq.handovers = 0; db.seq.custody = 0; db.seq.log = 0;
+        db.seq.items = 0; db.seq.handovers = 0; db.seq.custody = 0; db.seq.log = 0;
         DB = db;
-        var h1 = assign(1, [{ item_id: 1 }, { item_id: 4 }, { item_id: 7 }], today(-40), 'عهدة بداية العمل');
+        var L = function (brand, model, sn, cpu, ram, st, size, screen, os, acc, value) {
+            return ['laptop', { brand: brand, model: model, serial_no: sn, cpu: cpu, ram: ram, storage_type: st, storage: size, screen: screen, os: os, accessories: acc }, value];
+        };
+        var M = function (brand, model, imei, imei2, storage, ram, color, acc, value) {
+            return ['mobile', { brand: brand, model: model, serial_no: imei, imei2: imei2, storage: storage, ram: ram, color: color, accessories: acc }, value];
+        };
+        var SIM = function (num, net, lineType, format, pkg, fee, data) {
+            return ['sim', { serial_no: num, brand: net, line_type: lineType, sim_format: format, package: pkg, monthly_fee: fee, data_quota: data, owner: 'الجمعية' }, 0];
+        };
+        [L('Dell', 'Latitude 5420', 'DL5420-778', 'Core i5', '16GB', 'SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة', 'ماوس'], 25000),
+         L('Lenovo', 'ThinkPad E14', 'LN-E14-221', 'Core i7', '16GB', 'NVMe SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة'], 27000),
+         L('HP', 'ProBook 450 G9', 'HP450-993', 'Core i5', '8GB', 'SSD', '256GB', '15.6 بوصة', 'Windows 10 Pro', ['شاحن'], 21000),
+         L('Apple', 'MacBook Air', 'C02XK1ABCD', 'Apple M2', '8GB', 'SSD', '256GB', '13.3 بوصة', 'macOS', ['شاحن'], 48000),
+         L('Asus', 'VivoBook 15', 'ASV15-3321', 'Ryzen 5', '8GB', 'SSD', '512GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن', 'ماوس'], 19000),
+         M('Samsung', 'Galaxy A15', '356789012345678', '356789012345679', '128GB', '6GB', 'أسود', ['شاحن', 'كابل', 'جراب', 'اسكرينة'], 9000),
+         M('Samsung', 'Galaxy A25', '356789012399911', '356789012399912', '256GB', '8GB', 'أزرق', ['شاحن', 'جراب'], 11500),
+         M('Xiaomi', 'Redmi 13', '868123456789012', '', '128GB', '8GB', 'أسود', ['شاحن', 'كابل'], 7500),
+         M('Apple', 'iPhone 13', '353912110000001', '', '128GB', '4GB', 'أبيض', ['كابل', 'العلبة'], 32000),
+         M('Oppo', 'A78', '862100000000044', '862100000000045', '256GB', '8GB', 'أخضر', [], 10500),
+         SIM('01099887766', 'فودافون', 'فاتورة', 'شريحة عادية', 'فليكس 100', '100', '10GB'),
+         SIM('01288776655', 'أورانج', 'فاتورة', 'شريحة عادية', 'بريميوم 150', '150', '20GB'),
+         SIM('01155443322', 'اتصالات', 'كارت', 'شريحة عادية', '', '', '5GB'),
+         SIM('01022334455', 'فودافون', 'فاتورة', 'eSIM', 'ريد 300', '300', 'غير محدود'),
+         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB')
+        ].forEach(function (x, i) {
+            A['items.save']({ type: x[0], specs: x[1], value: x[2] || '', purchase_date: today(-300 + i * 9), item_condition: i % 5 === 0 ? 'جديد' : 'جيد', location: 'المخزن الرئيسي' });
+        });
+        var h1 = assign(1, [{ item_id: 1 }, { item_id: 6 }, { item_id: 11 }], today(-40), 'عهدة بداية العمل');
         sign(h1, 'أحمد محمد عبد الله');
-        var h2 = assign(5, [{ item_id: 11 }, { item_id: 12 }], today(-25), 'سيارة الصيانة الميدانية');
+        var h2 = assign(5, [{ item_id: 3 }, { item_id: 8 }, { item_id: 12 }], today(-25), '');
         sign(h2, 'محمود السيد');
-        var h3 = assign(4, [{ item_id: 2 }, { item_id: 5 }, { item_id: 8 }], today(-12), '');
+        var h3 = assign(4, [{ item_id: 2 }, { item_id: 7 }, { item_id: 14 }], today(-12), '');
         sign(h3, 'سارة إبراهيم');
-        assign(2, [{ item_id: 9 }, { item_id: 14 }], today(-3), '');
-        assign(3, [{ item_id: 6 }], today(-1), '');
-        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 5; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
+        var h4 = assign(7, [{ item_id: 4 }], today(-8), '');
+        sign(h4, 'عمرو فتحي');
+        assign(2, [{ item_id: 5 }, { item_id: 13 }], today(-3), '');
+        assign(3, [{ item_id: 10 }], today(-1), '');
+        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 7; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
         sign(r, 'سارة إبراهيم');
-        DB.log = DB.log.slice(0, 0);
+        DB.log = [];
         log('إنشاء البيانات التجريبية', null, null, '');
         save();
     }
@@ -88,7 +97,17 @@
     function str(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max || 190); }
     function has(s, q) { return String(s || '').toLowerCase().indexOf(q.toLowerCase()) >= 0; }
     function copy(o) { return JSON.parse(JSON.stringify(o)); }
-    function catName(id) { var c = byId('categories', id); return c ? c.name : null; }
+    // نفس decorate_item في lib.php
+    function decorate(row) {
+        var t = TYPES[row.type], specs = $.extend({}, row.specs || {});
+        ['brand', 'model', 'serial_no'].forEach(function (k) { if (row[k] !== undefined) specs[k] = row[k]; });
+        return $.extend({}, row, {
+            type_label: t ? t.label : '', specs: specs,
+            specs_text: (t ? t.summary : []).filter(function (k) { return specs[k]; }).map(function (k) { return specs[k]; }).join(' / '),
+            accessories_text: (specs.accessories || []).join('، ')
+        });
+    }
+    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs }; }
     function docNo(type, id, date) { return (type === 'out' ? 'TS' : 'RT') + '-' + date.slice(0, 4) + '-' + pad(id, 5); }
     function signUrl(t) { return 'sign.php?t=' + t; }
 
@@ -154,8 +173,7 @@
     function handoverItems(h) {
         var col = h.type === 'out' ? 'out_handover_id' : 'in_handover_id';
         return DB.custody.filter(function (c) { return c[col] === h.id; }).map(function (c) {
-            var it = byId('items', c.item_id);
-            return $.extend({}, c, { code: it.code, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, category: catName(it.category_id) });
+            return decorate($.extend({}, c, itemFields(byId('items', c.item_id))));
         });
     }
 
@@ -172,20 +190,20 @@
         var state = p.state || 'active', q = str(p.q);
         return DB.custody.slice().reverse().map(function (c) {
             var it = byId('items', c.item_id), e = byId('employees', c.employee_id), ho = byId('handovers', c.out_handover_id), hi = c.in_handover_id ? byId('handovers', c.in_handover_id) : null;
-            return $.extend({}, c, { code: it.code, item_name: it.name, serial_no: it.serial_no, brand: it.brand, model: it.model, value: it.value, category: catName(it.category_id), category_id: it.category_id,
+            return decorate($.extend({}, c, itemFields(it), { item_name: it.name,
                 employee_name: e.name, employee_code: e.code, department: e.department, out_doc_no: ho.doc_no, out_ack_at: ho.ack_at, out_token: ho.token,
-                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null });
+                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null }));
         }).filter(function (r) {
             if (state === 'active' && r.in_handover_id) return false;
             if (state === 'returned' && !r.in_handover_id) return false;
             if (p.employee_id && r.employee_id !== +p.employee_id) return false;
             if (p.department && r.department !== p.department) return false;
-            if (p.category_id && r.category_id !== +p.category_id) return false;
+            if (TYPES[p.type] && r.type !== p.type) return false;
             if (p.ack === 'signed' && !r.out_ack_at) return false;
             if (p.ack === 'pending' && r.out_ack_at) return false;
             if (p.from && r.assigned_at < p.from) return false;
             if (p.to && r.assigned_at > p.to) return false;
-            if (q && ![r.item_name, r.code, r.serial_no, r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
+            if (q && ![r.item_name, r.code, r.serial_no, JSON.stringify(r.specs), r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
             return true;
         });
     }
@@ -208,13 +226,13 @@
     function itemRows(p) {
         var q = str(p.q);
         return DB.items.slice().reverse().filter(function (i) {
-            if (q && ![i.name, i.code, i.serial_no, i.brand, i.model].some(function (v) { return has(v, q); })) return false;
-            if (p.category_id && i.category_id !== +p.category_id) return false;
+            if (q && ![i.name, i.code, i.serial_no, i.brand, i.model, JSON.stringify(i.specs || {})].some(function (v) { return has(v, q); })) return false;
+            if (TYPES[p.type] && i.type !== p.type) return false;
             if (p.status && i.status !== p.status) return false;
             return true;
         }).map(function (i) {
             var c = DB.custody.filter(function (x) { return x.item_id === i.id && !x.in_handover_id; })[0], e = c ? byId('employees', c.employee_id) : null;
-            return $.extend({}, i, { category: catName(i.category_id), holder_id: e ? e.id : null, holder_name: e ? e.name : null, holder_department: e ? e.department : null, assigned_at: c ? c.assigned_at : null });
+            return decorate($.extend({}, i, { holder_id: e ? e.id : null, holder_name: e ? e.name : null, holder_department: e ? e.department : null, assigned_at: c ? c.assigned_at : null }));
         });
     }
 
@@ -235,7 +253,7 @@
     var A = {};
     A['auth.me'] = function () {
         return { user: { id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', must_change: 0 }, csrf: 'demo', app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand',
-            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today() };
+            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES };
     };
     A['auth.login'] = function () { return { ok: true }; };
     A['auth.logout'] = function () { return { ok: true }; };
@@ -244,7 +262,10 @@
     A.dashboard = function () {
         var by = {}; DB.items.forEach(function (i) { by[i.status] = (by[i.status] || 0) + 1; });
         var active = DB.custody.filter(function (c) { return !c.in_handover_id; });
-        var cats = {}; DB.items.forEach(function (i) { var n = catName(i.category_id) || 'بدون تصنيف'; cats[n] = cats[n] || { name: n, total: 0, assigned: 0 }; cats[n].total++; if (i.status === 'مسلمة') cats[n].assigned++; });
+        var types = {}; DB.items.forEach(function (i) {
+            var t = types[i.type] = types[i.type] || { type: i.type, name: TYPES[i.type].label, total: 0, assigned: 0, available: 0 };
+            t.total++; if (i.status === 'مسلمة') t.assigned++; if (i.status === 'متاحة') t.available++;
+        });
         var deps = {}; active.forEach(function (c) { var e = byId('employees', c.employee_id), n = e.department || 'بدون قسم'; deps[n] = deps[n] || { name: n, n: 0, value: 0 }; deps[n].n++; deps[n].value += +byId('items', c.item_id).value || 0; });
         var srt = function (k) { return function (a, b) { return b[k] - a[k]; }; };
         return {
@@ -252,7 +273,7 @@
             active_value: active.reduce(function (s, c) { return s + (+byId('items', c.item_id).value || 0); }, 0),
             employees_with_custody: distinct(active, 'employee_id').length,
             pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && !h.ack_at; }).length,
-            by_category: Object.keys(cats).map(function (k) { return cats[k]; }).sort(srt('total')),
+            by_type: Object.keys(types).map(function (k) { return types[k]; }).sort(srt('total')),
             by_department: Object.keys(deps).map(function (k) { return deps[k]; }).sort(srt('n')),
             recent: DB.handovers.slice().reverse().slice(0, 10).map(function (h) {
                 return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
@@ -261,22 +282,7 @@
     };
 
     A.lookups = function () {
-        return {
-            categories: DB.categories.map(function (c) { return $.extend({}, c, { items_count: DB.items.filter(function (i) { return i.category_id === c.id; }).length }); })
-                .sort(function (a, b) { return a.name.localeCompare(b.name, 'ar'); }),
-            departments: distinct(DB.employees, 'department'), branches: distinct(DB.employees, 'branch'), locations: distinct(DB.items, 'location')
-        };
-    };
-    A['categories.save'] = function (p) {
-        var name = str(p.name), id = +p.id || 0;
-        if (!name) fail('اسم التصنيف مطلوب');
-        if (DB.categories.some(function (c) { return c.name === name && c.id !== id; })) fail('التصنيف موجود بالفعل');
-        if (id) byId('categories', id).name = name; else { id = nextId('categories'); DB.categories.push({ id: id, name: name }); }
-        log('حفظ تصنيف', 'category', id, name); return { id: id };
-    };
-    A['categories.delete'] = function (p) {
-        if (DB.items.some(function (i) { return i.category_id === +p.id; })) fail('لا يمكن حذف تصنيف مرتبط بأصناف');
-        DB.categories = DB.categories.filter(function (c) { return c.id !== +p.id; }); log('حذف تصنيف', 'category', +p.id); return { ok: true };
+        return { departments: distinct(DB.employees, 'department'), branches: distinct(DB.employees, 'branch'), locations: distinct(DB.items, 'location') };
     };
 
     A['employees.list'] = employeeRows;
@@ -305,29 +311,52 @@
     A['items.get'] = function (p) {
         var i = byId('items', p.id); if (!i) fail('الصنف غير موجود', 404);
         return {
-            item: $.extend({}, i, { category: catName(i.category_id) }),
+            item: decorate(i),
             history: DB.custody.filter(function (c) { return c.item_id === i.id; }).reverse().map(function (c) {
                 var e = byId('employees', c.employee_id);
                 return $.extend({}, c, { employee_name: e.name, department: e.department, out_doc_no: byId('handovers', c.out_handover_id).doc_no, in_doc_no: c.in_handover_id ? byId('handovers', c.in_handover_id).doc_no : null });
             })
         };
     };
+    // نفس read_type_fields + save_item في api.php
+    function readTypeFields(type, input) {
+        var def = TYPES[type], cols = { brand: '', model: '', serial_no: '' }, specs = {};
+        def.fields.forEach(function (f) {
+            var k = f.key, kind = f.input || 'text', v;
+            if (kind === 'checks') {
+                v = f.options.filter(function (o) { return (input[k] || []).indexOf(o) >= 0; });
+                if (v.length) specs[k] = v;
+                return;
+            }
+            v = str(input[k]);
+            if (v === '') { if (f.required) fail(f.label + ' مطلوب'); return; }
+            if (kind === 'number') { if (isNaN(+v) || +v < 0) fail(f.label + ': أدخل رقمًا صحيحًا'); v = String(Math.round(+v * 100) / 100); }
+            if (f.options && f.options.indexOf(v) < 0) fail(f.label + ': اختر قيمة من القائمة');
+            if (f.pattern && !new RegExp(f.pattern).test(v)) fail(f.pattern_msg || (f.label + ' غير صحيح'));
+            if (k in cols) cols[k] = v; else specs[k] = v;
+        });
+        var name = def.name.map(function (k) { return cols[k] !== undefined ? cols[k] : specs[k]; }).filter(Boolean).join(' ');
+        return { cols: cols, specs: specs, name: ((def.name_prefix || '') + ' ' + name).trim() || def.label };
+    }
+
     A['items.save'] = function (p) {
         var id = +p.id || 0, old = id ? byId('items', id) : null;
         if (id && !old) fail('الصنف غير موجود', 404);
-        var row = { code: str(p.code, 64), category_id: p.category_id ? +p.category_id : null, name: str(p.name), brand: str(p.brand), model: str(p.model), serial_no: str(p.serial_no),
+        var type = old ? old.type : str(p.type, 16);
+        if (!TYPES[type]) fail('اختر نوع الصنف');
+        var tf = readTypeFields(type, p.specs || {});
+        var row = $.extend({}, tf.cols, { code: str(p.code, 64), type: type, name: tf.name, specs: tf.specs,
             purchase_date: str(p.purchase_date, 10) || null, value: p.value === '' || p.value === undefined || p.value === null ? null : Math.round(+p.value * 100) / 100,
-            item_condition: str(p.item_condition, 32) || 'جيد', location: str(p.location), notes: str(p.notes, 2000) };
-        if (!row.name) fail('اسم الصنف مطلوب');
+            item_condition: str(p.item_condition, 32) || 'جيد', location: str(p.location), notes: str(p.notes, 2000) });
         var st = str(p.status, 32);
         if (old && old.status === 'مسلمة') st = 'مسلمة';
         else if (st === 'مسلمة' || STATUSES.indexOf(st) < 0) st = old ? old.status : 'متاحة';
         row.status = st;
         if (row.code && DB.items.some(function (i) { return i.code === row.code && i.id !== id; })) fail('كود الأصل مستخدم لصنف آخر');
         var dup = row.serial_no && DB.items.filter(function (i) { return i.serial_no === row.serial_no && i.id !== id; })[0];
-        if (dup) fail('الرقم التسلسلي مسجل بالفعل للصنف ' + dup.code);
+        if (dup) fail(TYPES[type].fields.filter(function (f) { return f.key === 'serial_no'; })[0].label + ' مسجل بالفعل للصنف ' + dup.code);
         if (id) { if (!row.code) row.code = old.code; $.extend(old, row); log('تعديل صنف', 'item', id, row.code + ' ' + row.name); }
-        else { id = nextId('items'); if (!row.code) row.code = 'AS-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
+        else { id = nextId('items'); if (!row.code) row.code = TYPES[type].prefix + '-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
         return { id: id, code: row.code };
     };
     A['items.delete'] = function (p) {
@@ -389,12 +418,18 @@
     A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: l.user_id ? 'مدير النظام' : null }); }); };
 
     A.export = function (p) {
-        if (p.type === 'custody') {
-            csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'التصنيف', 'الصنف', 'الرقم التسلسلي', 'القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع'],
-                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.category, r.item_name, r.serial_no, r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]; }));
-        } else if (p.type === 'items') {
-            csv('items-' + today() + '.csv', ['كود الأصل', 'التصنيف', 'الصنف', 'الماركة', 'الموديل', 'الرقم التسلسلي', 'تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات'],
-                itemRows(p).map(function (r) { return [r.code, r.category, r.name, r.brand, r.model, r.serial_no, r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]; }));
+        var def = TYPES[p.type];
+        var specHeads = def ? def.fields.map(function (f) { return f.label; }) : ['النوع', 'الرقم التسلسلي / IMEI / رقم الخط', 'المواصفات', 'الملحقات'];
+        var specCells = function (r) {
+            if (!def) return [r.type_label, r.serial_no, r.specs_text, r.accessories_text];
+            return def.fields.map(function (f) { var v = r.specs[f.key]; return $.isArray(v) ? v.join('، ') : (v || ''); });
+        };
+        if (p.what === 'custody') {
+            csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'].concat(specHeads, ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']),
+                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]); }));
+        } else if (p.what === 'items') {
+            csv('items-' + today() + '.csv', ['كود الأصل', 'الصنف'].concat(specHeads, ['تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات']),
+                itemRows(p).map(function (r) { return [r.code, r.name].concat(specCells(r), [r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]); }));
         } else {
             csv('employees-' + today() + '.csv', ['الكود', 'الاسم', 'الرقم القومي', 'القسم', 'الوظيفة', 'الفرع', 'الموبايل', 'البريد', 'الحالة', 'عدد أصناف العهدة', 'قيمة العهدة'],
                 employeeRows(p).map(function (r) { return [r.code, r.name, r.national_id, r.department, r.job_title, r.branch, r.phone, r.email, +r.active ? 'نشط' : 'موقوف', r.active_count, r.active_value]; }));
@@ -464,8 +499,8 @@
             else {
                 var v = handoverView(h.id, true), e = esc;
                 body = '<div class="sign-info"><div><span class="info-label">الموظف:</span> <b>' + e(v.employee_name) + '</b></div><div><span class="info-label">القسم:</span> ' + e(v.department || '-') +
-                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة</th></tr></thead><tbody>' +
-                    v.items.map(function (it, n) { return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.name) + '</td><td>' + e(it.serial_no || '-') + '</td><td>' + e(v.type === 'out' ? it.condition_out : it.condition_in) + '</td></tr>'; }).join('') +
+                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead><tbody>' +
+                    v.items.map(function (it, n) { return '<tr><td>' + (n + 1) + '</td><td>' + e(it.name) + '<br><small class="info-label">' + e(it.type_label + ' — ' + it.code) + '</small></td><td>' + e(it.serial_no || '-') + '</td><td class="details-cell">' + detailsHtml(it) + '</td><td>' + e(v.type === 'out' ? it.condition_out : it.condition_in) + '</td></tr>'; }).join('') +
                     '</tbody></table></div><div class="sign-terms">' + (v.type === 'out' ? TERMS_OUT : TERMS_IN) + '</div>';
                 if (v.ack_at) {
                     body += '<div class="alert alert-success text-center"><i class="fa fa-check-circle fa-2x"></i><br>تم التوقيع بواسطة <b>' + e(v.ack_name) + '</b> بتاريخ <span class="d">' + v.ack_at + '</span></div><div class="text-center"><img class="sig-img" src="' + v.ack_signature + '"></div>';
@@ -504,6 +539,12 @@
     };
 
     function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    // نفس item_details_html في lib.php
+    function detailsHtml(it) {
+        var html = it.specs_text ? it.specs_text.split(' / ').map(function (x) { return '<bdi>' + esc(x) + '</bdi>'; }).join(' / ') : '';
+        if (it.accessories_text) html += (html ? '<br>' : '') + '<small><span class="info-label">الملحقات:</span> ' + esc(it.accessories_text) + '</small>';
+        return html || '-';
+    }
     function money2(v) { return Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
     function printHtml(p) {
@@ -511,7 +552,7 @@
         if (p.h) { h = handoverView(+p.h, true); emp = byId('employees', h.employee_id); items = h.items; title = h.type === 'out' ? 'سند تسليم عهدة' : 'سند ارتجاع عهدة'; }
         else {
             emp = byId('employees', p.emp);
-            items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return $.extend({}, c, { code: it.code, name: it.name, serial_no: it.serial_no, value: it.value, category: catName(it.category_id), doc_no: ho.doc_no }); });
+            items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return decorate($.extend({}, c, itemFields(it), { doc_no: ho.doc_no })); });
             title = items.length ? 'بيان عهدة موظف' : 'شهادة إخلاء طرف من العهد';
         }
         var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div><div class="sheet">' +
@@ -521,11 +562,11 @@
             '</td><td><span class="info-label">الرقم القومي:</span> ' + e(emp.national_id || '-') + '</td></tr><tr><td><span class="info-label">القسم:</span> ' + e(emp.department || '-') + '</td><td colspan="2"><span class="info-label">الوظيفة:</span> ' + e(emp.job_title || '-') + '</td></tr></table>';
         if (items.length) {
             var total = 0;
-            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>التصنيف</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th>' +
+            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>القيمة</th>' +
                 (h ? '<th>الحالة</th><th>ملاحظات</th>' : '<th>تاريخ التسليم</th><th>رقم السند</th>') + '</tr></thead><tbody>' +
                 items.map(function (it, n) {
                     total += +it.value || 0;
-                    return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.category || '-') + '</td><td>' + e(it.name) + '</td><td>' + e(it.serial_no || '-') + '</td><td>' + (it.value === null ? '-' : money2(it.value)) + '</td>' +
+                    return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.name) + '<br><small class="info-label">' + e(it.type_label) + '</small></td><td>' + e(it.serial_no || '-') + '</td><td class="details-cell">' + detailsHtml(it) + '</td><td>' + (it.value === null ? '-' : money2(it.value)) + '</td>' +
                         (h ? '<td>' + e(h.type === 'out' ? it.condition_out : it.condition_in) + '</td><td>' + e((h.type === 'out' ? it.notes_out : it.notes_in) || '') + '</td>' : '<td>' + it.assigned_at + '</td><td>' + it.doc_no + '</td>') + '</tr>';
                 }).join('') + '</tbody><tfoot><tr><th colspan="5">الإجمالي (' + items.length + ' صنف)</th><th>' + money2(total) + '</th><th colspan="2"></th></tr></tfoot></table>';
         }

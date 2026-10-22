@@ -1,0 +1,66 @@
+{
+    "laptop": {
+        "label": "لاب توب",
+        "plural": "اللاب توب",
+        "icon": "fa-laptop",
+        "prefix": "LT",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Toshiba", "Microsoft"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "Latitude 5420"},
+            {"key": "serial_no", "label": "الرقم التسلسلي (S/N)", "required": true, "ltr": true},
+            {"key": "cpu", "label": "المعالج", "suggest": ["Core i3", "Core i5", "Core i7", "Core i9", "Core Ultra 5", "Core Ultra 7", "Ryzen 3", "Ryzen 5", "Ryzen 7", "Apple M1", "Apple M2", "Apple M3", "Apple M4"]},
+            {"key": "ram", "label": "الرامات", "options": ["4GB", "8GB", "12GB", "16GB", "24GB", "32GB", "64GB"]},
+            {"key": "storage_type", "label": "نوع التخزين", "options": ["SSD", "NVMe SSD", "HDD", "SSD + HDD"]},
+            {"key": "storage", "label": "سعة التخزين", "options": ["128GB", "256GB", "512GB", "1TB", "2TB"]},
+            {"key": "screen", "label": "حجم الشاشة", "options": ["13.3 بوصة", "14 بوصة", "15.6 بوصة", "16 بوصة", "17.3 بوصة"]},
+            {"key": "os", "label": "نظام التشغيل", "options": ["Windows 11 Pro", "Windows 11 Home", "Windows 10 Pro", "Windows 10 Home", "macOS", "Linux", "بدون نظام"]},
+            {"key": "mac", "label": "عنوان MAC", "ltr": true, "pattern": "^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$", "pattern_msg": "عنوان MAC غير صحيح، مثال: 3C:52:82:1A:2B:3C"},
+            {"key": "warranty_end", "label": "نهاية الضمان", "input": "date"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الجهاز", "input": "checks", "options": ["شاحن", "شنطة", "ماوس", "كيبورد خارجي", "دوك ستيشن", "سماعة"]}
+        ],
+        "summary": ["cpu", "ram", "storage_type", "storage", "screen"],
+        "columns": ["serial_no", "cpu", "ram", "storage", "accessories"]
+    },
+    "mobile": {
+        "label": "موبايل",
+        "plural": "الموبايلات",
+        "icon": "fa-mobile",
+        "prefix": "MB",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["Samsung", "Apple", "Xiaomi", "Oppo", "Realme", "Honor", "Huawei", "Infinix", "Vivo", "Nokia"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "Galaxy A15"},
+            {"key": "serial_no", "label": "IMEI 1", "required": true, "ltr": true, "pattern": "^[0-9]{15}$", "pattern_msg": "رقم IMEI يجب أن يكون 15 رقمًا (اطلب *#06# من الموبايل)"},
+            {"key": "imei2", "label": "IMEI 2", "ltr": true, "pattern": "^[0-9]{15}$", "pattern_msg": "رقم IMEI 2 يجب أن يكون 15 رقمًا"},
+            {"key": "storage", "label": "سعة التخزين", "options": ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"]},
+            {"key": "ram", "label": "الرامات", "options": ["2GB", "3GB", "4GB", "6GB", "8GB", "12GB", "16GB"]},
+            {"key": "color", "label": "اللون", "suggest": ["أسود", "أبيض", "رمادي", "فضي", "أزرق", "أخضر", "ذهبي"]},
+            {"key": "warranty_end", "label": "نهاية الضمان", "input": "date"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الجهاز", "input": "checks", "options": ["شاحن", "كابل", "سماعة", "جراب", "اسكرينة", "العلبة"]}
+        ],
+        "summary": ["storage", "ram", "color"],
+        "columns": ["serial_no", "imei2", "storage", "color", "accessories"]
+    },
+    "sim": {
+        "label": "شريحة",
+        "plural": "الشرائح",
+        "icon": "fa-signal",
+        "prefix": "SM",
+        "name_prefix": "خط",
+        "name": ["brand"],
+        "fields": [
+            {"key": "serial_no", "label": "رقم الخط", "required": true, "ltr": true, "pattern": "^01[0125][0-9]{8}$", "pattern_msg": "رقم الخط يجب أن يكون 11 رقمًا ويبدأ بـ 010 أو 011 أو 012 أو 015"},
+            {"key": "brand", "label": "الشبكة", "required": true, "options": ["فودافون", "أورانج", "اتصالات", "WE"]},
+            {"key": "iccid", "label": "رقم الشريحة (ICCID)", "ltr": true, "pattern": "^[0-9]{18,22}$", "pattern_msg": "رقم الشريحة (المكتوب على الكارت) من 18 إلى 22 رقمًا"},
+            {"key": "line_type", "label": "نوع الخط", "options": ["فاتورة", "كارت"]},
+            {"key": "sim_format", "label": "نوع الشريحة", "options": ["شريحة عادية", "eSIM"]},
+            {"key": "package", "label": "اسم الباقة", "placeholder": "فليكس 100"},
+            {"key": "monthly_fee", "label": "قيمة الباقة الشهرية (ج.م)", "input": "number"},
+            {"key": "data_quota", "label": "باقة الإنترنت", "suggest": ["بدون", "5GB", "10GB", "20GB", "50GB", "غير محدود"]},
+            {"key": "owner", "label": "الخط مسجل باسم", "suggest": ["الجمعية"]}
+        ],
+        "summary": ["line_type", "package", "data_quota"],
+        "columns": ["serial_no", "brand", "line_type", "package", "monthly_fee"]
+    }
+}

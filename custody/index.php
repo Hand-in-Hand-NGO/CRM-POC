@@ -43,7 +43,6 @@ page_head(cfg('app_name'));
             <li data-view="handovers"><a href="#handovers"><i class="fa fa-file-text-o"></i> <span>السندات والتوقيعات</span></a></li>
             <li data-view="items"><a href="#items"><i class="fa fa-cubes"></i> <span>الأصناف والأصول</span></a></li>
             <li data-view="employees"><a href="#employees"><i class="fa fa-users"></i> <span>الموظفين</span></a></li>
-            <li data-view="categories"><a href="#categories"><i class="fa fa-tags"></i> <span>التصنيفات</span></a></li>
             <li data-view="users" class="admin-only"><a href="#users"><i class="fa fa-user-secret"></i> <span>المستخدمين</span></a></li>
             <li data-view="log" class="admin-only"><a href="#log"><i class="fa fa-history"></i> <span>سجل العمليات</span></a></li>
         </ul>

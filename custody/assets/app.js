@@ -2,7 +2,7 @@
 (function ($) {
     'use strict';
 
-    var S = { csrf: '', user: null, meta: {}, lookups: { categories: [], departments: [], branches: [], locations: [] } };
+    var S = { csrf: '', user: null, meta: {}, lookups: { departments: [], branches: [], locations: [] }, tabs: {} };
     var PAGE_SIZE = 50;
 
     // ------------------------------------------------------------ helpers
@@ -54,9 +54,42 @@
         return html;
     }
 
-    function catOptions(selected, placeholder) {
-        return options(S.lookups.categories.map(function (c) { return { value: c.id, text: c.name }; }), selected, placeholder);
+    // ---------- أنواع الأصناف (types.json): لاب توب / موبايل / شريحة
+
+    function typeKeys() { return Object.keys(S.meta.types); }
+    function typeDef(t) { return S.meta.types[t]; }
+    function fieldOf(t, key) { return typeDef(t).fields.filter(function (f) { return f.key === key; })[0]; }
+
+    function typeBadge(r) {
+        var d = typeDef(r.type);
+        return d ? '<span class="type-badge type-' + esc(r.type) + '"><i class="fa ' + d.icon + '"></i> ' + esc(d.label) + '</span>' : '';
     }
+
+    function specCell(r, key) {
+        var v = r.specs ? r.specs[key] : '';
+        if ($.isArray(v)) v = v.join('، ');
+        if (v && fieldOf(r.type, key).input === 'number') v = money(v);
+        return v ? esc(v) : '-';
+    }
+
+    // عناوين وخلايا الأعمدة الخاصة بنوع محدد
+    function typeHeads(t) {
+        return typeDef(t).columns.map(function (k) { return '<th>' + esc(fieldOf(t, k).label) + '</th>'; }).join('');
+    }
+
+    function typeCells(r, t) {
+        return typeDef(t).columns.map(function (k) { return '<td' + (fieldOf(t, k).ltr ? ' dir="ltr"' : '') + '>' + specCell(r, k) + '</td>'; }).join('');
+    }
+
+    // المعرّف + المواصفات + الملحقات في عمود واحد (لعرض "الكل")
+    function itemDetails(r) {
+        // كل جزء في <bdi> حتى لا يختلط ترتيب العربي والإنجليزي (مثل "15.6 بوصة / Core i5")
+        var html = r.specs_text ? r.specs_text.split(' / ').map(function (x) { return '<bdi>' + esc(x) + '</bdi>'; }).join(' / ') : '';
+        if (r.accessories_text) html += (html ? '<br>' : '') + '<small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>';
+        return html || '-';
+    }
+
+    function keyLabel(t) { return t ? fieldOf(t, 'serial_no').label : 'S/N / IMEI / رقم الخط'; }
 
     function datalist(id, list) {
         return '<datalist id="' + id + '">' + list.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
@@ -97,8 +130,8 @@
         return o;
     }
 
-    function exportUrl(type, filters) {
-        return 'api.php?action=export&type=' + type + '&' + $.param(filters || {});
+    function exportUrl(what, filters) {
+        return 'api.php?action=export&what=' + what + '&' + $.param(filters || {});
     }
 
     function openPrint(url) { window.open(url, '_blank'); }
@@ -155,18 +188,33 @@
                 cfg.filters + ' <button class="btn btn-success btn-action" type="submit"><span class="glyphicon glyphicon-search"></span> بحث</button>' +
                 ' <button class="btn btn-danger btn-action" type="reset"><i class="fa fa-times"></i> مسح</button></form></div></div>';
         }
+        if (cfg.tabs) html += '<div class="type-tabs"></div>';
         html += '<div class="box box-table"><div class="table-toolbar"><span class="records"></span><span class="toolbar-extra">' + (cfg.toolbar || '') + '</span></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-hover data-table"><thead><tr>' + cfg.head + '</tr></thead><tbody></tbody></table></div>' +
+            '<div class="table-scroll"><table class="table table-bordered table-hover data-table"><thead><tr></tr></thead><tbody></tbody></table></div>' +
             '<div class="pager-wrap"></div></div>';
         var $c = $('#content').html(html);
-        var rows = [], page = 0;
+        var all = [], rows = [], page = 0;
+        // تبويبات النوع: تعرض في الجدول أصناف النوع المختار فقط بأعمدته الخاصة
+        var tab = cfg.tabs ? (S.tabs[cfg.action] || '') : '';
+
+        function drawTabs() {
+            if (!cfg.tabs) return;
+            var count = function (t) { return all.filter(function (r) { return !t || r.type === t; }).length; };
+            var btn = function (t, icon, label) {
+                return '<button type="button" class="btn btn-lg btn-default' + (tab === t ? ' active tab-' + (t || 'all') : '') + '" data-tab="' + t + '"><i class="fa ' + icon + '"></i> ' +
+                    esc(label) + ' <span class="badge">' + count(t) + '</span></button>';
+            };
+            $c.find('.type-tabs').html(btn('', 'fa-th-large', 'الكل') + typeKeys().map(function (t) { return btn(t, typeDef(t).icon, typeDef(t).plural); }).join(''));
+        }
 
         function draw() {
+            rows = tab ? all.filter(function (r) { return r.type === tab; }) : all;
+            $c.find('thead tr').html(typeof cfg.head === 'function' ? cfg.head(tab) : cfg.head);
             var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
             page = Math.min(page, pages - 1);
             var slice = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
             var cols = $c.find('thead th').length;
-            $c.find('tbody').html(slice.length ? slice.map(cfg.row).join('') : '<tr><td colspan="' + cols + '" class="empty">لا توجد بيانات</td></tr>');
+            $c.find('tbody').html(slice.length ? slice.map(function (r) { return cfg.row(r, tab); }).join('') : '<tr><td colspan="' + cols + '" class="empty">لا توجد بيانات</td></tr>');
             $c.find('.records').text('عدد السجلات: ' + rows.length);
             var p = '';
             if (pages > 1) {
@@ -183,18 +231,26 @@
         function load() {
             var f = cfg.filters ? formData($c.find('form.filters')) : {};
             $c.find('tbody').html('<tr><td colspan="20" class="empty"><i class="fa fa-spinner fa-spin"></i></td></tr>');
-            return api(cfg.action, $.extend({}, cfg.params || {}, f), 'GET').then(function (data) { rows = cfg.transform ? cfg.transform(data) : data; page = 0; draw(); });
+            return api(cfg.action, $.extend({}, cfg.params || {}, f), 'GET').then(function (data) { all = cfg.transform ? cfg.transform(data) : data; page = 0; drawTabs(); draw(); });
         }
+
+        $c.on('click', '.type-tabs [data-tab]', function () {
+            tab = String($(this).data('tab'));
+            S.tabs[cfg.action] = tab;
+            page = 0;
+            drawTabs();
+            draw();
+        });
 
         $c.on('submit', 'form.filters', function (e) { e.preventDefault(); load(); });
         $c.on('reset', 'form.filters', function () { setTimeout(function () { $c.find('form.filters select.s2').trigger('change'); load(); }); });
         $c.on('click', '.pager-wrap a', function (e) { e.preventDefault(); page = +$(this).data('page'); draw(); });
         $c.on('click', '[data-export]', function () {
-            window.location = exportUrl($(this).data('export'), $.extend({}, cfg.params || {}, cfg.filters ? formData($c.find('form.filters')) : {}));
+            window.location = exportUrl($(this).data('export'), $.extend({}, cfg.params || {}, cfg.filters ? formData($c.find('form.filters')) : {}, tab ? { type: tab } : {}));
         });
         if (cfg.init) cfg.init($c);
         load();
-        return { reload: load, rows: function () { return rows; }, $c: $c };
+        return { reload: load, rows: function () { return rows; }, tab: function () { return tab; }, $c: $c };
     }
 
     // ------------------------------------------------------------ views
@@ -211,6 +267,11 @@
             };
             var html = '<div class="page-head"><h3><i class="fa fa-dashboard"></i> لوحة المتابعة</h3><div class="page-actions">' +
                 (canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '') + '</div></div>';
+            html += '<div class="type-kpis">' + typeKeys().map(function (t) {
+                var r = d.by_type.filter(function (x) { return x.type === t; })[0] || { total: 0, assigned: 0, available: 0 };
+                return '<a class="type-kpi type-' + t + '" href="#custody" data-tab-link="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i><div><b>' + esc(typeDef(t).plural) + '</b>' +
+                    '<span>' + r.assigned + ' في العهدة · ' + r.available + ' متاحة · ' + r.total + ' إجمالي</span></div></a>';
+            }).join('') + '</div>';
             html += '<div class="vs-kpi-grid kpi-6">' +
                 kpi(d.items_total, 'إجمالي الأصناف', 'fa-cubes', '#items') +
                 kpi(st['مسلمة'] || 0, 'في عهدة الموظفين', 'fa-exchange', '#custody') +
@@ -222,8 +283,8 @@
                 kpi(money(d.active_value), 'قيمة العهد القائمة', 'fa-money', '#custody') +
                 '</div>';
             html += '<div class="dash-grid">';
-            html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب التصنيف</div>' + barTable(d.by_category.map(function (c) {
-                return { name: c.name, value: +c.total, part: +c.assigned, note: c.assigned + ' مسلمة من ' + c.total };
+            html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب النوع</div>' + barTable(d.by_type.map(function (c) {
+                return { name: c.name, value: +c.total, part: +c.assigned, note: c.assigned + ' في العهدة · ' + c.available + ' متاحة' };
             })) + '</div>';
             html += '<div class="vs-chart-card"><div class="vs-group-label">العهد القائمة حسب القسم</div>' + barTable(d.by_department.map(function (c) {
                 return { name: c.name, value: +c.n, note: c.n + ' صنف — ' + money(c.value) };
@@ -250,28 +311,32 @@
     }
 
     views.custody = function () {
-        var cats = catOptions('', 'كل التصنيفات');
-        var view = listView({
-            title: 'العهد', icon: 'fa-exchange', action: 'custody.list',
+        var check = canEdit() ? '<th><input type="checkbox" class="check-all"></th>' : '';
+        current = listView({
+            title: 'العهد', icon: 'fa-exchange', action: 'custody.list', tabs: true,
             actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '',
             filters:
-                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / رقم سند" style="width:260px"> ' +
+                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / IMEI / رقم خط / سند" style="width:300px"> ' +
                 '<select class="form-control" name="state"><option value="active">العهد القائمة</option><option value="returned">تم ارتجاعها</option><option value="all">الكل</option></select> ' +
                 '<select class="form-control" name="department">' + options(S.lookups.departments, '', 'كل الأقسام') + '</select> ' +
-                '<select class="form-control" name="category_id">' + cats + '</select> ' +
                 '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع</option><option value="pending">بانتظار التوقيع</option></select> ' +
                 '<label class="inline-label">من</label><input class="form-control" type="date" name="from"> <label class="inline-label">إلى</label><input class="form-control" type="date" name="to">',
             toolbar: (canEdit() ? '<button class="btn btn-warning btn-sm btn-action" data-act="return-selected"><i class="fa fa-undo"></i> ارتجاع المحدد</button> ' +
                 '<button class="btn btn-primary btn-sm btn-action" data-act="transfer-selected"><i class="fa fa-random"></i> نقل المحدد لموظف آخر</button> ' : '') +
                 '<button class="btn btn-success btn-sm btn-action" data-export="custody"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
-            head: (canEdit() ? '<th><input type="checkbox" class="check-all"></th>' : '') + '<th>الموظف</th><th>القسم</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th><th>تاريخ التسليم</th><th>سند التسليم</th><th>التوقيع</th><th>الارتجاع</th>',
-            row: function (r) {
+            head: function (t) {
+                return check + '<th>الموظف</th><th>القسم</th><th>كود الأصل</th>' + (t ? '<th>الصنف</th>' + typeHeads(t) : '<th>النوع</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th>') +
+                    '<th>تاريخ التسليم</th><th>سند التسليم</th><th>التوقيع</th><th>الارتجاع</th>';
+            },
+            row: function (r, t) {
                 var active = !r.in_handover_id;
                 return '<tr class="' + (active ? '' : 'row-returned') + '">' +
                     (canEdit() ? '<td>' + (active ? '<input type="checkbox" class="row-check" value="' + r.id + '" data-emp="' + r.employee_id + '">' : '') + '</td>' : '') +
                     '<td><a href="#" data-act="employee" data-id="' + r.employee_id + '">' + esc(r.employee_name) + '</a></td><td>' + esc(r.department || '-') + '</td>' +
-                    '<td class="key"><a href="#" data-act="item" data-id="' + r.item_id + '">' + esc(r.code) + '</a></td><td>' + esc(r.item_name) + ' <small class="info-label">' + esc(r.category || '') + '</small></td>' +
-                    '<td>' + esc(r.serial_no || '-') + '</td><td>' + money(r.value) + '</td><td>' + esc(r.assigned_at) + '</td>' +
+                    '<td class="key"><a href="#" data-act="item" data-id="' + r.item_id + '">' + esc(r.code) + '</a></td>' +
+                    (t ? '<td>' + esc(r.item_name) + '</td>' + typeCells(r, t)
+                        : '<td>' + typeBadge(r) + '</td><td>' + esc(r.item_name) + '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(r) + '</td>') +
+                    '<td>' + esc(r.assigned_at) + '</td>' +
                     '<td><a href="#" data-act="handover" data-id="' + r.out_handover_id + '">' + esc(r.out_doc_no) + '</a></td><td>' + ackLabel(r.out_ack_at) + '</td>' +
                     '<td>' + (active ? '<span class="label label-primary">قائمة</span>' : dt(r.returned_at) + ' <a href="#" data-act="handover" data-id="' + r.in_handover_id + '">' + esc(r.in_doc_no) + '</a>') + '</td></tr>';
             },
@@ -279,7 +344,6 @@
                 $c.on('change', '.check-all', function () { $c.find('.row-check').prop('checked', this.checked); });
             }
         });
-        current = view;
     };
 
     function selectedCustody() {
@@ -315,17 +379,23 @@
 
     views.items = function () {
         current = listView({
-            title: 'الأصناف والأصول', icon: 'fa-cubes', action: 'items.list',
-            actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="item-edit"><i class="fa fa-plus"></i> إضافة صنف</button>' : '',
+            title: 'الأصناف والأصول', icon: 'fa-cubes', action: 'items.list', tabs: true,
+            actions: canEdit() ? typeKeys().map(function (t) {
+                return '<button class="btn btn-primary btn-action" data-act="item-edit" data-type="' + t + '"><i class="fa fa-plus"></i> إضافة ' + esc(typeDef(t).label) + '</button>';
+            }).join(' ') : '',
             filters:
-                '<input class="form-control" name="q" placeholder="اسم / كود / سيريال / ماركة" style="width:240px"> ' +
-                '<select class="form-control" name="category_id">' + catOptions('', 'كل التصنيفات') + '</select> ' +
+                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / سيريال / IMEI / رقم خط" style="width:300px"> ' +
                 '<select class="form-control" name="status">' + options(S.meta.statuses, '', 'كل الحالات') + '</select>',
             toolbar: '<button class="btn btn-success btn-sm btn-action" data-export="items"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
-            head: '<th>كود الأصل</th><th>التصنيف</th><th>الصنف</th><th>الماركة / الموديل</th><th>الرقم التسلسلي</th><th>القيمة</th><th>الحالة الفنية</th><th>الوضع</th><th>في عهدة</th><th>إجراءات</th>',
-            row: function (i) {
-                return '<tr><td class="key">' + esc(i.code) + '</td><td>' + esc(i.category || '-') + '</td><td>' + esc(i.name) + '</td><td>' + esc([i.brand, i.model].filter(Boolean).join(' / ') || '-') +
-                    '</td><td>' + esc(i.serial_no || '-') + '</td><td>' + money(i.value) + '</td><td>' + esc(i.item_condition) + '</td><td>' + statusLabel(i.status) + '</td><td>' +
+            head: function (t) {
+                return '<th>كود الأصل</th>' + (t ? '<th>الصنف</th>' + typeHeads(t) : '<th>النوع</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th>') +
+                    '<th>القيمة</th><th>الحالة الفنية</th><th>الوضع</th><th>في عهدة</th><th>إجراءات</th>';
+            },
+            row: function (i, t) {
+                return '<tr><td class="key">' + esc(i.code) + '</td>' +
+                    (t ? '<td>' + esc(i.name) + '</td>' + typeCells(i, t)
+                        : '<td>' + typeBadge(i) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>') +
+                    '<td>' + money(i.value) + '</td><td>' + esc(i.item_condition) + '</td><td>' + statusLabel(i.status) + '</td><td>' +
                     (i.holder_id ? '<a href="#" data-act="employee" data-id="' + i.holder_id + '">' + esc(i.holder_name) + '</a><br><small class="info-label">منذ ' + dt(i.assigned_at) + '</small>' : '-') +
                     '</td><td class="nowrap"><button class="btn btn-default btn-xs" data-act="item" data-id="' + i.id + '"><i class="fa fa-history"></i> السجل</button> ' +
                     (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="item-edit" data-id="' + i.id + '"><i class="fa fa-pencil"></i> تعديل</button> ' : '') +
@@ -353,19 +423,6 @@
                     (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="employee-edit" data-id="' + e.id + '"><i class="fa fa-pencil"></i> تعديل</button> ' : '') +
                     (canEdit() && +e.active ? '<button class="btn btn-success btn-xs" data-act="assign" data-emp="' + e.id + '" data-emp-name="' + esc(e.name) + '"><i class="fa fa-share"></i> تسليم</button> ' : '') +
                     (isAdmin() ? '<button class="btn btn-danger btn-xs" data-act="employee-delete" data-id="' + e.id + '"><i class="fa fa-trash"></i></button>' : '') + '</td></tr>';
-            }
-        });
-    };
-
-    views.categories = function () {
-        current = listView({
-            title: 'التصنيفات', icon: 'fa-tags', action: 'lookups', transform: function (d) { S.lookups = d; return d.categories; },
-            actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="cat-edit"><i class="fa fa-plus"></i> إضافة تصنيف</button>' : '',
-            head: '<th>التصنيف</th><th>عدد الأصناف</th><th>إجراءات</th>',
-            row: function (c) {
-                return '<tr><td>' + esc(c.name) + '</td><td>' + c.items_count + '</td><td>' +
-                    (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="cat-edit" data-id="' + c.id + '" data-name="' + esc(c.name) + '"><i class="fa fa-pencil"></i> تعديل</button> ' +
-                        (+c.items_count ? '' : '<button class="btn btn-danger btn-xs" data-act="cat-delete" data-id="' + c.id + '"><i class="fa fa-trash"></i></button>') : '') + '</td></tr>';
             }
         });
     };
@@ -399,9 +456,9 @@
         var out = h.type === 'out';
         var body = '<div class="handover-head"><div><span class="info-label">الموظف:</span> <b>' + esc(h.employee_name) + '</b> ' + esc(h.department ? '— ' + h.department : '') +
             '</div><div><span class="info-label">التاريخ:</span> ' + dt(h.doc_date) + '</div><div><span class="info-label">بواسطة:</span> ' + esc(h.created_by_name || '') + '</div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
             h.items.map(function (it, n) {
-                return '<tr><td>' + (n + 1) + '</td><td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td>' + esc(it.serial_no || '-') + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
+                return '<tr><td>' + (n + 1) + '</td><td>' + typeBadge(it) + '</td><td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td dir="ltr">' + esc(it.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(it) + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
                     '</td><td>' + esc((out ? it.notes_out : it.notes_in) || '') + '</td></tr>';
             }).join('') + '</tbody></table></div>' +
             (h.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(h.notes) + '</p>' : '');
@@ -430,8 +487,11 @@
         var body = '<form id="assignForm">' +
             '<div class="row"><div class="col-sm-6 form-group"><label>الموظف المستلم</label><select class="form-control" id="asEmp"></select></div>' +
             '<div class="col-sm-3 form-group"><label>تاريخ التسليم</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
-            '<div class="form-group"><label>الأصناف</label><select class="form-control" id="asItem"></select><small class="info-label">ابحث بالاسم أو الكود أو الرقم التسلسلي — تظهر الأصناف المتاحة فقط</small></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
+            '<div class="form-group"><label>الأصناف</label><div class="filter-inline as-type">' +
+            '<div class="btn-group" id="asType"><button type="button" class="btn btn-default active" data-type="">الكل</button>' +
+            typeKeys().map(function (t) { return '<button type="button" class="btn btn-default" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>'; }).join('') +
+            '</div><select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو S/N أو IMEI أو رقم الخط — تظهر الأصناف المتاحة فقط</small></div>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
             '<div class="form-group"><label>ملاحظات السند</label><textarea class="form-control" name="notes" rows="2"></textarea></div></form>';
         var $m = modal('<i class="fa fa-share"></i> تسليم عهدة جديدة', body,
             '<button class="btn btn-success btn-action" id="asSave"><i class="fa fa-check"></i> حفظ وإنشاء سند التسليم</button><button class="btn btn-default btn-action" data-dismiss="modal">إلغاء</button>', 'modal-lg');
@@ -439,20 +499,28 @@
         if (preset.emp) {
             $m.find('#asEmp').append(new Option(preset.empName, preset.emp, true, true)).trigger('change');
         }
-        var $item = $m.find('#asItem');
+        var $item = $m.find('#asItem'), asType = '';
+        $m.find('#asType').on('click', '[data-type]', function () {
+            asType = String($(this).data('type'));
+            $(this).addClass('active').siblings().removeClass('active');
+            $item.select2('open');
+        });
         $item.select2({
             dir: 'rtl', width: '100%', dropdownParent: $m, placeholder: 'أضف صنفًا...',
             language: { noResults: function () { return 'لا توجد أصناف متاحة مطابقة'; }, searching: function () { return 'جاري البحث...'; } },
             ajax: {
                 url: 'api.php', dataType: 'json', delay: 250,
-                data: function (p) { return { action: 'items.list', q: p.term || '', status: 'متاحة' }; },
+                data: function (p) { return { action: 'items.list', q: p.term || '', status: 'متاحة', type: asType }; },
                 processResults: function (r) {
                     return {
                         results: r.data.slice(0, 50).map(function (i) {
-                            return { id: i.id, text: i.code + ' — ' + i.name + (i.serial_no ? ' [' + i.serial_no + ']' : ''), item: i };
+                            return { id: i.id, text: i.type_label + ' — ' + i.code + ' — ' + i.name + (i.serial_no ? ' [' + i.serial_no + ']' : '') + (i.specs_text ? ' — ' + i.specs_text : ''), item: i };
                         })
                     };
                 }
+            },
+            templateResult: function (d) {
+                return d.item ? $('<span><i class="fa ' + typeDef(d.item.type).icon + '"></i> ' + esc(d.text) + '</span>') : d.text;
             }
         }).on('select2:select', function (e) {
             addLine(e.params.data.item);
@@ -462,7 +530,7 @@
         function addLine(i) {
             if (lines.some(function (l) { return l.id == i.id; })) return;
             lines.push(i);
-            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '"><td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td>' + esc(i.serial_no || '-') + '</td>' +
+            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '"><td>' + typeBadge(i) + '</td><td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>' +
                 '<td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, i.item_condition) + '</select></td>' +
                 '<td><input class="form-control input-sm l-notes"></td><td><button type="button" class="btn btn-danger btn-xs l-del"><i class="fa fa-times"></i></button></td></tr>');
         }
@@ -497,10 +565,11 @@
         var body = '<form id="retForm"><p><span class="info-label">الموظف:</span> <b>' + esc(rows[0].employee_name) + '</b></p>' +
             '<div class="row">' + (transfer ? '<div class="col-sm-6 form-group"><label>نقل إلى الموظف</label><select class="form-control" id="toEmp"></select></div>' : '') +
             '<div class="col-sm-3 form-group"><label>' + (transfer ? 'تاريخ النقل' : 'تاريخ الارتجاع') + '</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr><th>كود الأصل</th><th>الصنف</th><th>الحالة عند الاستلام</th>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>الحالة عند الاستلام</th>' +
             (transfer ? '' : '<th>الوضع بعد الارتجاع</th>') + '<th>ملاحظات</th></tr></thead><tbody>' +
             rows.map(function (r) {
-                return '<tr data-id="' + r.id + '"><td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + '</td><td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, r.condition_out || 'جيد') + '</select></td>' +
+                return '<tr data-id="' + r.id + '"><td>' + typeBadge(r) + '</td><td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + (r.accessories_text ? '<br><small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>' : '') +
+                    '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, r.condition_out || 'جيد') + '</select></td>' +
                     (transfer ? '' : '<td><select class="form-control input-sm l-status">' + options(S.meta.statuses.filter(function (s) { return s !== 'مسلمة'; }), 'متاحة') + '</select></td>') +
                     '<td><input class="form-control input-sm l-notes"></td></tr>';
             }).join('') + '</tbody></table></div>' +
@@ -544,14 +613,14 @@
                 '<div class="vs-kpi-grid"><div class="vs-kpi"><span class="num">' + active.length + '</span><span class="lbl">أصناف في العهدة</span></div>' +
                 '<div class="vs-kpi"><span class="num">' + money(total) + '</span><span class="lbl">قيمة العهدة</span></div>' +
                 '<div class="vs-kpi' + (d.handovers.filter(function (h) { return !h.ack_at; }).length ? '' : ' zero') + '"><span class="num">' + d.handovers.filter(function (h) { return !h.ack_at; }).length + '</span><span class="lbl">سندات بانتظار التوقيع</span></div></div>' +
-                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
+                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
                 (d.custody.length ? d.custody.map(function (c) {
                     var act = !c.in_handover_id;
                     return '<tr class="' + (act ? '' : 'row-returned') + '">' + (canEdit() ? '<td>' + (act ? '<input type="checkbox" class="emp-check" value="' + c.id + '">' : '') + '</td>' : '') +
-                        '<td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td>' + esc(c.serial_no || '-') + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
+                        '<td>' + typeBadge(c) + '</td><td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td dir="ltr">' + esc(c.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(c) + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
                         '</td><td><a href="#" data-act="handover" data-id="' + c.out_handover_id + '">' + esc(c.out_doc_no) + '</a></td><td>' + ackLabel(c.out_ack_at) + '</td><td>' +
                         (act ? '<span class="label label-primary">قائمة</span>' : dt(c.returned_at) + ' — ' + esc(c.in_doc_no)) + '</td></tr>';
-                }).join('') : '<tr><td colspan="9" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
+                }).join('') : '<tr><td colspan="12" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
             var footer = (canEdit() && +e.active ? '<button class="btn btn-success btn-action" data-act="assign" data-emp="' + e.id + '" data-emp-name="' + esc(e.name) + '"><i class="fa fa-share"></i> تسليم عهدة</button>' : '') +
                 (canEdit() && active.length ? '<button class="btn btn-warning btn-action" id="empReturn"><i class="fa fa-undo"></i> ارتجاع المحدد</button><button class="btn btn-primary btn-action" id="empTransfer"><i class="fa fa-random"></i> نقل المحدد</button>' : '') +
                 '<button class="btn btn-default btn-action" data-act="print-emp" data-id="' + e.id + '"><i class="fa fa-print"></i> ' + (active.length ? 'طباعة بيان العهدة' : 'طباعة إخلاء طرف') + '</button>' +
@@ -570,10 +639,13 @@
     function itemCard(id) {
         api('items.get', { id: id }, 'GET').then(function (d) {
             var i = d.item;
-            var info = [['الكود', i.code], ['التصنيف', i.category], ['الماركة', i.brand], ['الموديل', i.model], ['الرقم التسلسلي', i.serial_no], ['تاريخ الشراء', i.purchase_date],
-                ['القيمة', i.value !== null ? money(i.value) : ''], ['المكان', i.location], ['الحالة الفنية', i.item_condition]]
+            var spec = typeDef(i.type).fields.map(function (f) {
+                var v = specCell(i, f.key);
+                return v === '-' ? '' : '<span><span class="info-label">' + esc(f.label) + ':</span> ' + v + '</span>';
+            }).join('');
+            var info = [['الكود', i.code], ['تاريخ الشراء', i.purchase_date], ['القيمة', i.value !== null ? money(i.value) : ''], ['المكان', i.location], ['الحالة الفنية', i.item_condition]]
                 .filter(function (x) { return x[1]; }).map(function (x) { return '<span><span class="info-label">' + x[0] + ':</span> ' + esc(x[1]) + '</span>'; }).join('');
-            var body = '<div class="emp-info">' + info + ' ' + statusLabel(i.status) + '</div>' + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
+            var body = '<div class="emp-info">' + typeBadge(i) + ' ' + info + ' ' + statusLabel(i.status) + '</div><div class="emp-info spec-info">' + spec + '</div>' + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
                 '<div class="vs-group-label">سجل التداول</div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>الموظف</th><th>القسم</th><th>تاريخ التسليم</th><th>الحالة</th><th>سند التسليم</th><th>تاريخ الارتجاع</th><th>الحالة</th><th>سند الارتجاع</th></tr></thead><tbody>' +
                 (d.history.length ? d.history.map(function (c) {
                     return '<tr><td>' + esc(c.employee_name) + '</td><td>' + esc(c.department || '-') + '</td><td>' + esc(c.assigned_at) + '</td><td>' + esc(c.condition_out || '') +
@@ -584,18 +656,49 @@
         });
     }
 
-    function itemForm(id) {
-        var load = id ? api('items.get', { id: id }, 'GET').then(function (d) { return d.item; }) : $.Deferred().resolve({ status: 'متاحة', item_condition: 'جديد' }).promise();
+    // حقل من حقول نوع الصنف حسب تعريفه في types.json
+    function typeFieldInput(t, f, v) {
+        if (f.input === 'checks') {
+            return '<div class="spec-checks">' + f.options.map(function (o) {
+                return '<label class="checkbox-inline"><input type="checkbox" class="spec-check" data-key="' + f.key + '" value="' + esc(o) + '"' + ($.isArray(v) && v.indexOf(o) >= 0 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+            }).join('') + '</div>';
+        }
+        if (f.options) return '<select class="form-control spec" data-key="' + f.key + '"' + (f.required ? ' required' : '') + '>' + options(f.options, v || '', '-- اختر --') + '</select>';
+        var type = f.input === 'date' ? 'date' : f.input === 'number' ? 'number' : 'text', dl = 'dl-' + t + '-' + f.key;
+        return '<input class="form-control spec" data-key="' + f.key + '" type="' + type + '"' + (type === 'number' ? ' step="0.01" min="0"' : '') + (f.ltr ? ' dir="ltr"' : '') +
+            (f.required ? ' required' : '') + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '') + (f.suggest ? ' list="' + dl + '"' : '') + ' value="' + esc(v || '') + '">' +
+            (f.suggest ? datalist(dl, f.suggest) : '');
+    }
+
+    function typeFieldsHtml(t, specs) {
+        return '<div class="col-xs-12"><div class="vs-group-label"><i class="fa ' + typeDef(t).icon + '"></i> بيانات ' + esc(typeDef(t).label) + '</div></div>' +
+            typeDef(t).fields.map(function (f) {
+                return fg(f.input === 'checks' ? 12 : 4, esc(f.label) + (f.required ? ' *' : ''), typeFieldInput(t, f, specs[f.key]));
+            }).join('');
+    }
+
+    function collectSpecs($form) {
+        var o = {};
+        $form.find('.spec').each(function () { o[$(this).data('key')] = $(this).val(); });
+        $form.find('.spec-check:checked').each(function () { var k = $(this).data('key'); (o[k] = o[k] || []).push(this.value); });
+        return o;
+    }
+
+    function itemForm(id, presetType) {
+        var load = id ? api('items.get', { id: id }, 'GET').then(function (d) { return d.item; })
+            : $.Deferred().resolve({ type: presetType || (current && current.tab && current.tab()) || 'laptop', status: 'متاحة', item_condition: 'جديد', specs: {} }).promise();
         load.then(function (i) {
-            var assigned = i.status === 'مسلمة';
+            var type = i.type, assigned = i.status === 'مسلمة';
+            var typePicker = id ? '<p class="form-control-static">' + typeBadge(i) + ' <small class="info-label">نوع الصنف لا يتغير بعد إضافته</small></p>'
+                : '<div class="btn-group" id="itType">' + typeKeys().map(function (t) {
+                    return '<button type="button" class="btn btn-default' + (t === type ? ' active' : '') + '" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>';
+                }).join('') + '</div>';
             var body = '<form id="itemForm" class="row">' +
                 '<input type="hidden" name="id" value="' + esc(i.id || '') + '">' +
+                fg(12, 'نوع الصنف', typePicker) +
+                '<div id="itFields" class="clearfix">' + typeFieldsHtml(type, i.specs || {}) + '</div>' +
+                '<div class="col-xs-12"><div class="vs-group-label"><i class="fa fa-archive"></i> بيانات الأصل</div></div>' +
                 fg(4, 'كود الأصل', '<input class="form-control" name="code" value="' + esc(i.code || '') + '" placeholder="يُولَّد تلقائيًا إن تُرك فارغًا">') +
-                fg(4, 'التصنيف', '<select class="form-control" name="category_id">' + catOptions(i.category_id, '-- اختر --') + '</select>') +
-                fg(4, 'اسم الصنف *', '<input class="form-control" name="name" required value="' + esc(i.name || '') + '">') +
-                fg(4, 'الماركة', '<input class="form-control" name="brand" value="' + esc(i.brand || '') + '">') +
-                fg(4, 'الموديل', '<input class="form-control" name="model" value="' + esc(i.model || '') + '">') +
-                fg(4, 'الرقم التسلسلي / IMEI', '<input class="form-control" name="serial_no" dir="ltr" value="' + esc(i.serial_no || '') + '">') +
                 fg(4, 'تاريخ الشراء', '<input class="form-control" type="date" name="purchase_date" value="' + esc(i.purchase_date || '') + '">') +
                 fg(4, 'القيمة (ج.م)', '<input class="form-control" type="number" step="0.01" min="0" name="value" value="' + esc(i.value === null || i.value === undefined ? '' : i.value) + '">') +
                 fg(4, 'المكان / المخزن', '<input class="form-control" name="location" list="dlLoc" value="' + esc(i.location || '') + '">' + datalist('dlLoc', S.lookups.locations)) +
@@ -603,9 +706,24 @@
                 fg(4, 'الوضع', assigned ? '<p class="form-control-static">' + statusLabel('مسلمة') + ' <small class="info-label">يتغير بالارتجاع</small></p>'
                     : '<select class="form-control" name="status">' + options(S.meta.statuses.filter(function (s) { return s !== 'مسلمة'; }), i.status) + '</select>') +
                 fg(12, 'ملاحظات', '<textarea class="form-control" name="notes" rows="2">' + esc(i.notes || '') + '</textarea>') + '</form>';
-            var $m = modal('<i class="fa fa-cube"></i> ' + (id ? 'تعديل صنف' : 'إضافة صنف'), body, saveFooter(), 'modal-lg');
+            var title = function () { return '<i class="fa ' + typeDef(type).icon + '"></i> ' + (id ? 'تعديل ' : 'إضافة ') + esc(typeDef(type).label); };
+            var $m = modal(title(), body, saveFooter(), 'modal-lg');
+            $m.find('#itType').on('click', '[data-type]', function () {
+                type = String($(this).data('type'));
+                $(this).addClass('active').siblings().removeClass('active');
+                $m.find('#itFields').html(typeFieldsHtml(type, {}));
+                $m.find('.modal-title').html(title());
+            });
             $m.find('#btnSave').on('click', function () {
-                saveForm($m, 'items.save', $m.find('#itemForm'), 'تم حفظ الصنف').then(function () { loadLookups(); });
+                var $form = $m.find('#itemForm');
+                if (!$form[0].checkValidity()) { $form[0].reportValidity(); return; }
+                var $b = $(this).prop('disabled', true);
+                api('items.save', $.extend(formData($form), { type: type, specs: collectSpecs($form) })).then(function (r) {
+                    $m.modal('hide');
+                    toast('تم حفظ ' + typeDef(type).label + ' ' + r.code);
+                    refresh();
+                    loadLookups();
+                }).always(function () { $b.prop('disabled', false); });
             });
         });
     }
@@ -642,14 +760,6 @@
             fg(6, 'الحالة', '<div class="checkbox"><label><input type="checkbox" name="active"' + (+u.active ? ' checked' : '') + '> نشط</label></div>') + '</form>';
         var $m = modal('<i class="fa fa-user-secret"></i> ' + (id ? 'تعديل مستخدم' : 'إضافة مستخدم'), body, saveFooter());
         $m.find('#btnSave').on('click', function () { saveForm($m, 'users.save', $m.find('#userForm'), 'تم حفظ المستخدم'); });
-    }
-
-    function categoryForm(id, name) {
-        var body = '<form id="catForm"><input type="hidden" name="id" value="' + esc(id || '') + '"><div class="form-group"><label>اسم التصنيف</label><input class="form-control" name="name" required value="' + esc(name || '') + '"></div></form>';
-        var $m = modal('<i class="fa fa-tag"></i> ' + (id ? 'تعديل تصنيف' : 'إضافة تصنيف'), body, saveFooter(), 'modal-sm');
-        $m.find('#btnSave').on('click', function () {
-            saveForm($m, 'categories.save', $m.find('#catForm'), 'تم الحفظ');
-        });
     }
 
     function passwordDialog(forced) {
@@ -711,23 +821,22 @@
                 break;
             case 'employee': employeeCard(id); break;
             case 'item': itemCard(id); break;
-            case 'item-edit': itemForm(id); break;
+            case 'item-edit': itemForm(id, $t.data('type')); break;
             case 'employee-edit': employeeForm(id); break;
             case 'user-edit': userForm(id); break;
-            case 'cat-edit': categoryForm(id, $t.data('name')); break;
             case 'item-delete':
                 confirmBox('حذف الصنف نهائيًا؟').then(function () { api('items.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); }); });
                 break;
             case 'employee-delete':
                 confirmBox('حذف الموظف نهائيًا؟').then(function () { api('employees.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); loadLookups(); }); });
                 break;
-            case 'cat-delete':
-                confirmBox('حذف التصنيف؟').then(function () { api('categories.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); }); });
-                break;
             case 'return-selected': var r = selectedCustody(); if (r) returnDialog(r, false); break;
             case 'transfer-selected': var t = selectedCustody(); if (t) returnDialog(t, true); break;
         }
     });
+
+    // بطاقات الأنواع في لوحة المتابعة تفتح صفحة العهد على تبويب النوع
+    $(document).on('click', '[data-tab-link]', function () { S.tabs['custody.list'] = String($(this).data('tab-link')); });
 
     $(document).on('click', '[data-copy]', function (e) { e.preventDefault(); copyText($(this).data('copy'), $(this)); });
 

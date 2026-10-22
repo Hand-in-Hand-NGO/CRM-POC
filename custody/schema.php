@@ -43,6 +43,7 @@ return [
     "CREATE TABLE IF NOT EXISTS items (
         id {PK},
         code VARCHAR(64) NOT NULL UNIQUE,
+        type VARCHAR(16) NOT NULL DEFAULT 'laptop',
         category_id INT,
         name VARCHAR(190) NOT NULL,
         brand VARCHAR(190),
@@ -53,6 +54,7 @@ return [
         item_condition VARCHAR(32) NOT NULL DEFAULT 'جيد',
         status VARCHAR(32) NOT NULL DEFAULT 'متاحة',
         location VARCHAR(190),
+        specs TEXT,
         notes TEXT,
         created_at VARCHAR(19) NOT NULL
     ){TBL}",

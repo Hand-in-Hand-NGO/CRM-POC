@@ -458,6 +458,42 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
     .filters .form-control { width: 100% !important; }
 }
 
+/* ---------- أنواع الأصناف: لاب توب / موبايل / شريحة ---------- */
+:root { --type-laptop: var(--hih-primary); --type-mobile: var(--hih-success); --type-sim: var(--hih-warning); }
+.type-badge { display: inline-block; white-space: nowrap; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; color: #fff; background: #888; }
+.type-badge.type-laptop { background: var(--type-laptop); }
+.type-badge.type-mobile { background: var(--type-mobile); }
+.type-badge.type-sim { background: var(--type-sim); }
+
+.type-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.type-tabs .btn { border-radius: 10px !important; font-weight: 600; }
+.type-tabs .btn .badge { background: #fff; color: #555; margin-right: 4px; }
+.type-tabs .btn.active { color: #fff; box-shadow: none; }
+.type-tabs .btn.tab-all { background: var(--hih-toggle-all); border-color: var(--hih-toggle-all); }
+.type-tabs .btn.tab-laptop { background: var(--type-laptop); border-color: var(--type-laptop); }
+.type-tabs .btn.tab-mobile { background: var(--type-mobile); border-color: var(--type-mobile); }
+.type-tabs .btn.tab-sim { background: var(--type-sim); border-color: var(--type-sim); }
+
+.details-cell { text-align: right !important; font-size: 12px; min-width: 160px; }
+.spec-checks .checkbox-inline { margin: 0 0 4px 14px; padding-right: 20px; }
+.spec-checks .checkbox-inline input { margin-right: -20px; }
+#itType .btn.active, #asType .btn.active { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
+.as-type { flex-wrap: wrap; }
+.as-type .select2-container { flex: 1 1 260px; }
+.spec-info { background: var(--hih-box-bg); border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 8px 12px; }
+
+.type-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.type-kpi { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--vs-border); border-right: 4px solid #888; border-radius: 10px; padding: 12px 14px; color: var(--vs-text); text-decoration: none !important; }
+.type-kpi:hover { border-color: var(--vs-accent); color: var(--vs-text); }
+.type-kpi .fa { font-size: 26px; width: 30px; text-align: center; }
+.type-kpi b { display: block; font-size: 14px; }
+.type-kpi span { font-size: 11.5px; color: var(--vs-text-dim); }
+.type-kpi.type-laptop { border-right-color: var(--type-laptop); } .type-kpi.type-laptop .fa { color: var(--type-laptop); }
+.type-kpi.type-mobile { border-right-color: var(--type-mobile); } .type-kpi.type-mobile .fa { color: var(--type-mobile); }
+.type-kpi.type-sim { border-right-color: var(--type-sim); } .type-kpi.type-sim .fa { color: var(--type-sim); }
+.print-page .details-cell, .sign-page .details-cell { min-width: 0; font-size: 11px; }
+@media (max-width: 900px) { .type-kpis { grid-template-columns: 1fr; } }
+
 .demo-badge{background:#ff6a00;color:#fff;border-radius:10px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:6px}
 </style>
 </head>
@@ -499,7 +535,6 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
             <li data-view="handovers"><a href="#handovers"><i class="fa fa-file-text-o"></i> <span>السندات والتوقيعات</span></a></li>
             <li data-view="items"><a href="#items"><i class="fa fa-cubes"></i> <span>الأصناف والأصول</span></a></li>
             <li data-view="employees"><a href="#employees"><i class="fa fa-users"></i> <span>الموظفين</span></a></li>
-            <li data-view="categories"><a href="#categories"><i class="fa fa-tags"></i> <span>التصنيفات</span></a></li>
             <li data-view="users" class="admin-only"><a href="#users"><i class="fa fa-user-secret"></i> <span>المستخدمين</span></a></li>
             <li data-view="log" class="admin-only"><a href="#log"><i class="fa fa-history"></i> <span>سجل العمليات</span></a></li>
         </ul>
@@ -540,10 +575,79 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
 /*! Select2 4.0.13 | https://github.com/select2/select2/blob/master/LICENSE.md */
 !function(n){"function"==typeof define&&define.amd?define(["jquery"],n):"object"==typeof module&&module.exports?module.exports=function(e,t){return void 0===t&&(t="undefined"!=typeof window?require("jquery"):require("jquery")(e)),n(t),t}:n(jQuery)}(function(u){var e=function(){if(u&&u.fn&&u.fn.select2&&u.fn.select2.amd)var e=u.fn.select2.amd;var t,n,r,h,o,s,f,g,m,v,y,_,i,a,b;function w(e,t){return i.call(e,t)}function l(e,t){var n,r,i,o,s,a,l,c,u,d,p,h=t&&t.split("/"),f=y.map,g=f&&f["*"]||{};if(e){for(s=(e=e.split("/")).length-1,y.nodeIdCompat&&b.test(e[s])&&(e[s]=e[s].replace(b,"")),"."===e[0].charAt(0)&&h&&(e=h.slice(0,h.length-1).concat(e)),u=0;u<e.length;u++)if("."===(p=e[u]))e.splice(u,1),--u;else if(".."===p){if(0===u||1===u&&".."===e[2]||".."===e[u-1])continue;0<u&&(e.splice(u-1,2),u-=2)}e=e.join("/")}if((h||g)&&f){for(u=(n=e.split("/")).length;0<u;--u){if(r=n.slice(0,u).join("/"),h)for(d=h.length;0<d;--d)if(i=(i=f[h.slice(0,d).join("/")])&&i[r]){o=i,a=u;break}if(o)break;!l&&g&&g[r]&&(l=g[r],c=u)}!o&&l&&(o=l,a=c),o&&(n.splice(0,a,o),e=n.join("/"))}return e}function A(t,n){return function(){var e=a.call(arguments,0);return"string"!=typeof e[0]&&1===e.length&&e.push(null),s.apply(h,e.concat([t,n]))}}function x(t){return function(e){m[t]=e}}function D(e){if(w(v,e)){var t=v[e];delete v[e],_[e]=!0,o.apply(h,t)}if(!w(m,e)&&!w(_,e))throw new Error("No "+e);return m[e]}function c(e){var t,n=e?e.indexOf("!"):-1;return-1<n&&(t=e.substring(0,n),e=e.substring(n+1,e.length)),[t,e]}function S(e){return e?c(e):[]}return e&&e.requirejs||(e?n=e:e={},m={},v={},y={},_={},i=Object.prototype.hasOwnProperty,a=[].slice,b=/\.js$/,f=function(e,t){var n,r,i=c(e),o=i[0],s=t[1];return e=i[1],o&&(n=D(o=l(o,s))),o?e=n&&n.normalize?n.normalize(e,(r=s,function(e){return l(e,r)})):l(e,s):(o=(i=c(e=l(e,s)))[0],e=i[1],o&&(n=D(o))),{f:o?o+"!"+e:e,n:e,pr:o,p:n}},g={require:function(e){return A(e)},exports:function(e){var t=m[e];return void 0!==t?t:m[e]={}},module:function(e){return{id:e,uri:"",exports:m[e],config:(t=e,function(){return y&&y.config&&y.config[t]||{}})};var t}},o=function(e,t,n,r){var i,o,s,a,l,c,u,d=[],p=typeof n;if(c=S(r=r||e),"undefined"==p||"function"==p){for(t=!t.length&&n.length?["require","exports","module"]:t,l=0;l<t.length;l+=1)if("require"===(o=(a=f(t[l],c)).f))d[l]=g.require(e);else if("exports"===o)d[l]=g.exports(e),u=!0;else if("module"===o)i=d[l]=g.module(e);else if(w(m,o)||w(v,o)||w(_,o))d[l]=D(o);else{if(!a.p)throw new Error(e+" missing "+o);a.p.load(a.n,A(r,!0),x(o),{}),d[l]=m[o]}s=n?n.apply(m[e],d):void 0,e&&(i&&i.exports!==h&&i.exports!==m[e]?m[e]=i.exports:s===h&&u||(m[e]=s))}else e&&(m[e]=n)},t=n=s=function(e,t,n,r,i){if("string"==typeof e)return g[e]?g[e](t):D(f(e,S(t)).f);if(!e.splice){if((y=e).deps&&s(y.deps,y.callback),!t)return;t.splice?(e=t,t=n,n=null):e=h}return t=t||function(){},"function"==typeof n&&(n=r,r=i),r?o(h,e,t,n):setTimeout(function(){o(h,e,t,n)},4),s},s.config=function(e){return s(e)},t._defined=m,(r=function(e,t,n){if("string"!=typeof e)throw new Error("See almond README: incorrect module build, no module name");t.splice||(n=t,t=[]),w(m,e)||w(v,e)||(v[e]=[e,t,n])}).amd={jQuery:!0},e.requirejs=t,e.require=n,e.define=r),e.define("almond",function(){}),e.define("jquery",[],function(){var e=u||$;return null==e&&console&&console.error&&console.error("Select2: An instance of jQuery or a jQuery-compatible library was not found. Make sure that you are including jQuery before Select2 on your web page."),e}),e.define("select2/utils",["jquery"],function(o){var i={};function u(e){var t=e.prototype,n=[];for(var r in t){"function"==typeof t[r]&&"constructor"!==r&&n.push(r)}return n}i.Extend=function(e,t){var n={}.hasOwnProperty;function r(){this.constructor=e}for(var i in t)n.call(t,i)&&(e[i]=t[i]);return r.prototype=t.prototype,e.prototype=new r,e.__super__=t.prototype,e},i.Decorate=function(r,i){var e=u(i),t=u(r);function o(){var e=Array.prototype.unshift,t=i.prototype.constructor.length,n=r.prototype.constructor;0<t&&(e.call(arguments,r.prototype.constructor),n=i.prototype.constructor),n.apply(this,arguments)}i.displayName=r.displayName,o.prototype=new function(){this.constructor=o};for(var n=0;n<t.length;n++){var s=t[n];o.prototype[s]=r.prototype[s]}function a(e){var t=function(){};e in o.prototype&&(t=o.prototype[e]);var n=i.prototype[e];return function(){return Array.prototype.unshift.call(arguments,t),n.apply(this,arguments)}}for(var l=0;l<e.length;l++){var c=e[l];o.prototype[c]=a(c)}return o};function e(){this.listeners={}}e.prototype.on=function(e,t){this.listeners=this.listeners||{},e in this.listeners?this.listeners[e].push(t):this.listeners[e]=[t]},e.prototype.trigger=function(e){var t=Array.prototype.slice,n=t.call(arguments,1);this.listeners=this.listeners||{},null==n&&(n=[]),0===n.length&&n.push({}),(n[0]._type=e)in this.listeners&&this.invoke(this.listeners[e],t.call(arguments,1)),"*"in this.listeners&&this.invoke(this.listeners["*"],arguments)},e.prototype.invoke=function(e,t){for(var n=0,r=e.length;n<r;n++)e[n].apply(this,t)},i.Observable=e,i.generateChars=function(e){for(var t="",n=0;n<e;n++){t+=Math.floor(36*Math.random()).toString(36)}return t},i.bind=function(e,t){return function(){e.apply(t,arguments)}},i._convertData=function(e){for(var t in e){var n=t.split("-"),r=e;if(1!==n.length){for(var i=0;i<n.length;i++){var o=n[i];(o=o.substring(0,1).toLowerCase()+o.substring(1))in r||(r[o]={}),i==n.length-1&&(r[o]=e[t]),r=r[o]}delete e[t]}}return e},i.hasScroll=function(e,t){var n=o(t),r=t.style.overflowX,i=t.style.overflowY;return(r!==i||"hidden"!==i&&"visible"!==i)&&("scroll"===r||"scroll"===i||(n.innerHeight()<t.scrollHeight||n.innerWidth()<t.scrollWidth))},i.escapeMarkup=function(e){var t={"\\":"&#92;","&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","/":"&#47;"};return"string"!=typeof e?e:String(e).replace(/[&<>"'\/\\]/g,function(e){return t[e]})},i.appendMany=function(e,t){if("1.7"===o.fn.jquery.substr(0,3)){var n=o();o.map(t,function(e){n=n.add(e)}),t=n}e.append(t)},i.__cache={};var n=0;return i.GetUniqueElementId=function(e){var t=e.getAttribute("data-select2-id");return null==t&&(e.id?(t=e.id,e.setAttribute("data-select2-id",t)):(e.setAttribute("data-select2-id",++n),t=n.toString())),t},i.StoreData=function(e,t,n){var r=i.GetUniqueElementId(e);i.__cache[r]||(i.__cache[r]={}),i.__cache[r][t]=n},i.GetData=function(e,t){var n=i.GetUniqueElementId(e);return t?i.__cache[n]&&null!=i.__cache[n][t]?i.__cache[n][t]:o(e).data(t):i.__cache[n]},i.RemoveData=function(e){var t=i.GetUniqueElementId(e);null!=i.__cache[t]&&delete i.__cache[t],e.removeAttribute("data-select2-id")},i}),e.define("select2/results",["jquery","./utils"],function(h,f){function r(e,t,n){this.$element=e,this.data=n,this.options=t,r.__super__.constructor.call(this)}return f.Extend(r,f.Observable),r.prototype.render=function(){var e=h('<ul class="select2-results__options" role="listbox"></ul>');return this.options.get("multiple")&&e.attr("aria-multiselectable","true"),this.$results=e},r.prototype.clear=function(){this.$results.empty()},r.prototype.displayMessage=function(e){var t=this.options.get("escapeMarkup");this.clear(),this.hideLoading();var n=h('<li role="alert" aria-live="assertive" class="select2-results__option"></li>'),r=this.options.get("translations").get(e.message);n.append(t(r(e.args))),n[0].className+=" select2-results__message",this.$results.append(n)},r.prototype.hideMessages=function(){this.$results.find(".select2-results__message").remove()},r.prototype.append=function(e){this.hideLoading();var t=[];if(null!=e.results&&0!==e.results.length){e.results=this.sort(e.results);for(var n=0;n<e.results.length;n++){var r=e.results[n],i=this.option(r);t.push(i)}this.$results.append(t)}else 0===this.$results.children().length&&this.trigger("results:message",{message:"noResults"})},r.prototype.position=function(e,t){t.find(".select2-results").append(e)},r.prototype.sort=function(e){return this.options.get("sorter")(e)},r.prototype.highlightFirstItem=function(){var e=this.$results.find(".select2-results__option[aria-selected]"),t=e.filter("[aria-selected=true]");0<t.length?t.first().trigger("mouseenter"):e.first().trigger("mouseenter"),this.ensureHighlightVisible()},r.prototype.setClasses=function(){var t=this;this.data.current(function(e){var r=h.map(e,function(e){return e.id.toString()});t.$results.find(".select2-results__option[aria-selected]").each(function(){var e=h(this),t=f.GetData(this,"data"),n=""+t.id;null!=t.element&&t.element.selected||null==t.element&&-1<h.inArray(n,r)?e.attr("aria-selected","true"):e.attr("aria-selected","false")})})},r.prototype.showLoading=function(e){this.hideLoading();var t={disabled:!0,loading:!0,text:this.options.get("translations").get("searching")(e)},n=this.option(t);n.className+=" loading-results",this.$results.prepend(n)},r.prototype.hideLoading=function(){this.$results.find(".loading-results").remove()},r.prototype.option=function(e){var t=document.createElement("li");t.className="select2-results__option";var n={role:"option","aria-selected":"false"},r=window.Element.prototype.matches||window.Element.prototype.msMatchesSelector||window.Element.prototype.webkitMatchesSelector;for(var i in(null!=e.element&&r.call(e.element,":disabled")||null==e.element&&e.disabled)&&(delete n["aria-selected"],n["aria-disabled"]="true"),null==e.id&&delete n["aria-selected"],null!=e._resultId&&(t.id=e._resultId),e.title&&(t.title=e.title),e.children&&(n.role="group",n["aria-label"]=e.text,delete n["aria-selected"]),n){var o=n[i];t.setAttribute(i,o)}if(e.children){var s=h(t),a=document.createElement("strong");a.className="select2-results__group";h(a);this.template(e,a);for(var l=[],c=0;c<e.children.length;c++){var u=e.children[c],d=this.option(u);l.push(d)}var p=h("<ul></ul>",{class:"select2-results__options select2-results__options--nested"});p.append(l),s.append(a),s.append(p)}else this.template(e,t);return f.StoreData(t,"data",e),t},r.prototype.bind=function(t,e){var l=this,n=t.id+"-results";this.$results.attr("id",n),t.on("results:all",function(e){l.clear(),l.append(e.data),t.isOpen()&&(l.setClasses(),l.highlightFirstItem())}),t.on("results:append",function(e){l.append(e.data),t.isOpen()&&l.setClasses()}),t.on("query",function(e){l.hideMessages(),l.showLoading(e)}),t.on("select",function(){t.isOpen()&&(l.setClasses(),l.options.get("scrollAfterSelect")&&l.highlightFirstItem())}),t.on("unselect",function(){t.isOpen()&&(l.setClasses(),l.options.get("scrollAfterSelect")&&l.highlightFirstItem())}),t.on("open",function(){l.$results.attr("aria-expanded","true"),l.$results.attr("aria-hidden","false"),l.setClasses(),l.ensureHighlightVisible()}),t.on("close",function(){l.$results.attr("aria-expanded","false"),l.$results.attr("aria-hidden","true"),l.$results.removeAttr("aria-activedescendant")}),t.on("results:toggle",function(){var e=l.getHighlightedResults();0!==e.length&&e.trigger("mouseup")}),t.on("results:select",function(){var e=l.getHighlightedResults();if(0!==e.length){var t=f.GetData(e[0],"data");"true"==e.attr("aria-selected")?l.trigger("close",{}):l.trigger("select",{data:t})}}),t.on("results:previous",function(){var e=l.getHighlightedResults(),t=l.$results.find("[aria-selected]"),n=t.index(e);if(!(n<=0)){var r=n-1;0===e.length&&(r=0);var i=t.eq(r);i.trigger("mouseenter");var o=l.$results.offset().top,s=i.offset().top,a=l.$results.scrollTop()+(s-o);0===r?l.$results.scrollTop(0):s-o<0&&l.$results.scrollTop(a)}}),t.on("results:next",function(){var e=l.getHighlightedResults(),t=l.$results.find("[aria-selected]"),n=t.index(e)+1;if(!(n>=t.length)){var r=t.eq(n);r.trigger("mouseenter");var i=l.$results.offset().top+l.$results.outerHeight(!1),o=r.offset().top+r.outerHeight(!1),s=l.$results.scrollTop()+o-i;0===n?l.$results.scrollTop(0):i<o&&l.$results.scrollTop(s)}}),t.on("results:focus",function(e){e.element.addClass("select2-results__option--highlighted")}),t.on("results:message",function(e){l.displayMessage(e)}),h.fn.mousewheel&&this.$results.on("mousewheel",function(e){var t=l.$results.scrollTop(),n=l.$results.get(0).scrollHeight-t+e.deltaY,r=0<e.deltaY&&t-e.deltaY<=0,i=e.deltaY<0&&n<=l.$results.height();r?(l.$results.scrollTop(0),e.preventDefault(),e.stopPropagation()):i&&(l.$results.scrollTop(l.$results.get(0).scrollHeight-l.$results.height()),e.preventDefault(),e.stopPropagation())}),this.$results.on("mouseup",".select2-results__option[aria-selected]",function(e){var t=h(this),n=f.GetData(this,"data");"true"!==t.attr("aria-selected")?l.trigger("select",{originalEvent:e,data:n}):l.options.get("multiple")?l.trigger("unselect",{originalEvent:e,data:n}):l.trigger("close",{})}),this.$results.on("mouseenter",".select2-results__option[aria-selected]",function(e){var t=f.GetData(this,"data");l.getHighlightedResults().removeClass("select2-results__option--highlighted"),l.trigger("results:focus",{data:t,element:h(this)})})},r.prototype.getHighlightedResults=function(){return this.$results.find(".select2-results__option--highlighted")},r.prototype.destroy=function(){this.$results.remove()},r.prototype.ensureHighlightVisible=function(){var e=this.getHighlightedResults();if(0!==e.length){var t=this.$results.find("[aria-selected]").index(e),n=this.$results.offset().top,r=e.offset().top,i=this.$results.scrollTop()+(r-n),o=r-n;i-=2*e.outerHeight(!1),t<=2?this.$results.scrollTop(0):(o>this.$results.outerHeight()||o<0)&&this.$results.scrollTop(i)}},r.prototype.template=function(e,t){var n=this.options.get("templateResult"),r=this.options.get("escapeMarkup"),i=n(e,t);null==i?t.style.display="none":"string"==typeof i?t.innerHTML=r(i):h(t).append(i)},r}),e.define("select2/keys",[],function(){return{BACKSPACE:8,TAB:9,ENTER:13,SHIFT:16,CTRL:17,ALT:18,ESC:27,SPACE:32,PAGE_UP:33,PAGE_DOWN:34,END:35,HOME:36,LEFT:37,UP:38,RIGHT:39,DOWN:40,DELETE:46}}),e.define("select2/selection/base",["jquery","../utils","../keys"],function(n,r,i){function o(e,t){this.$element=e,this.options=t,o.__super__.constructor.call(this)}return r.Extend(o,r.Observable),o.prototype.render=function(){var e=n('<span class="select2-selection" role="combobox"  aria-haspopup="true" aria-expanded="false"></span>');return this._tabindex=0,null!=r.GetData(this.$element[0],"old-tabindex")?this._tabindex=r.GetData(this.$element[0],"old-tabindex"):null!=this.$element.attr("tabindex")&&(this._tabindex=this.$element.attr("tabindex")),e.attr("title",this.$element.attr("title")),e.attr("tabindex",this._tabindex),e.attr("aria-disabled","false"),this.$selection=e},o.prototype.bind=function(e,t){var n=this,r=e.id+"-results";this.container=e,this.$selection.on("focus",function(e){n.trigger("focus",e)}),this.$selection.on("blur",function(e){n._handleBlur(e)}),this.$selection.on("keydown",function(e){n.trigger("keypress",e),e.which===i.SPACE&&e.preventDefault()}),e.on("results:focus",function(e){n.$selection.attr("aria-activedescendant",e.data._resultId)}),e.on("selection:update",function(e){n.update(e.data)}),e.on("open",function(){n.$selection.attr("aria-expanded","true"),n.$selection.attr("aria-owns",r),n._attachCloseHandler(e)}),e.on("close",function(){n.$selection.attr("aria-expanded","false"),n.$selection.removeAttr("aria-activedescendant"),n.$selection.removeAttr("aria-owns"),n.$selection.trigger("focus"),n._detachCloseHandler(e)}),e.on("enable",function(){n.$selection.attr("tabindex",n._tabindex),n.$selection.attr("aria-disabled","false")}),e.on("disable",function(){n.$selection.attr("tabindex","-1"),n.$selection.attr("aria-disabled","true")})},o.prototype._handleBlur=function(e){var t=this;window.setTimeout(function(){document.activeElement==t.$selection[0]||n.contains(t.$selection[0],document.activeElement)||t.trigger("blur",e)},1)},o.prototype._attachCloseHandler=function(e){n(document.body).on("mousedown.select2."+e.id,function(e){var t=n(e.target).closest(".select2");n(".select2.select2-container--open").each(function(){this!=t[0]&&r.GetData(this,"element").select2("close")})})},o.prototype._detachCloseHandler=function(e){n(document.body).off("mousedown.select2."+e.id)},o.prototype.position=function(e,t){t.find(".selection").append(e)},o.prototype.destroy=function(){this._detachCloseHandler(this.container)},o.prototype.update=function(e){throw new Error("The `update` method must be defined in child classes.")},o.prototype.isEnabled=function(){return!this.isDisabled()},o.prototype.isDisabled=function(){return this.options.get("disabled")},o}),e.define("select2/selection/single",["jquery","./base","../utils","../keys"],function(e,t,n,r){function i(){i.__super__.constructor.apply(this,arguments)}return n.Extend(i,t),i.prototype.render=function(){var e=i.__super__.render.call(this);return e.addClass("select2-selection--single"),e.html('<span class="select2-selection__rendered"></span><span class="select2-selection__arrow" role="presentation"><b role="presentation"></b></span>'),e},i.prototype.bind=function(t,e){var n=this;i.__super__.bind.apply(this,arguments);var r=t.id+"-container";this.$selection.find(".select2-selection__rendered").attr("id",r).attr("role","textbox").attr("aria-readonly","true"),this.$selection.attr("aria-labelledby",r),this.$selection.on("mousedown",function(e){1===e.which&&n.trigger("toggle",{originalEvent:e})}),this.$selection.on("focus",function(e){}),this.$selection.on("blur",function(e){}),t.on("focus",function(e){t.isOpen()||n.$selection.trigger("focus")})},i.prototype.clear=function(){var e=this.$selection.find(".select2-selection__rendered");e.empty(),e.removeAttr("title")},i.prototype.display=function(e,t){var n=this.options.get("templateSelection");return this.options.get("escapeMarkup")(n(e,t))},i.prototype.selectionContainer=function(){return e("<span></span>")},i.prototype.update=function(e){if(0!==e.length){var t=e[0],n=this.$selection.find(".select2-selection__rendered"),r=this.display(t,n);n.empty().append(r);var i=t.title||t.text;i?n.attr("title",i):n.removeAttr("title")}else this.clear()},i}),e.define("select2/selection/multiple",["jquery","./base","../utils"],function(i,e,l){function n(e,t){n.__super__.constructor.apply(this,arguments)}return l.Extend(n,e),n.prototype.render=function(){var e=n.__super__.render.call(this);return e.addClass("select2-selection--multiple"),e.html('<ul class="select2-selection__rendered"></ul>'),e},n.prototype.bind=function(e,t){var r=this;n.__super__.bind.apply(this,arguments),this.$selection.on("click",function(e){r.trigger("toggle",{originalEvent:e})}),this.$selection.on("click",".select2-selection__choice__remove",function(e){if(!r.isDisabled()){var t=i(this).parent(),n=l.GetData(t[0],"data");r.trigger("unselect",{originalEvent:e,data:n})}})},n.prototype.clear=function(){var e=this.$selection.find(".select2-selection__rendered");e.empty(),e.removeAttr("title")},n.prototype.display=function(e,t){var n=this.options.get("templateSelection");return this.options.get("escapeMarkup")(n(e,t))},n.prototype.selectionContainer=function(){return i('<li class="select2-selection__choice"><span class="select2-selection__choice__remove" role="presentation">&times;</span></li>')},n.prototype.update=function(e){if(this.clear(),0!==e.length){for(var t=[],n=0;n<e.length;n++){var r=e[n],i=this.selectionContainer(),o=this.display(r,i);i.append(o);var s=r.title||r.text;s&&i.attr("title",s),l.StoreData(i[0],"data",r),t.push(i)}var a=this.$selection.find(".select2-selection__rendered");l.appendMany(a,t)}},n}),e.define("select2/selection/placeholder",["../utils"],function(e){function t(e,t,n){this.placeholder=this.normalizePlaceholder(n.get("placeholder")),e.call(this,t,n)}return t.prototype.normalizePlaceholder=function(e,t){return"string"==typeof t&&(t={id:"",text:t}),t},t.prototype.createPlaceholder=function(e,t){var n=this.selectionContainer();return n.html(this.display(t)),n.addClass("select2-selection__placeholder").removeClass("select2-selection__choice"),n},t.prototype.update=function(e,t){var n=1==t.length&&t[0].id!=this.placeholder.id;if(1<t.length||n)return e.call(this,t);this.clear();var r=this.createPlaceholder(this.placeholder);this.$selection.find(".select2-selection__rendered").append(r)},t}),e.define("select2/selection/allowClear",["jquery","../keys","../utils"],function(i,r,a){function e(){}return e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),null==this.placeholder&&this.options.get("debug")&&window.console&&console.error&&console.error("Select2: The `allowClear` option should be used in combination with the `placeholder` option."),this.$selection.on("mousedown",".select2-selection__clear",function(e){r._handleClear(e)}),t.on("keypress",function(e){r._handleKeyboardClear(e,t)})},e.prototype._handleClear=function(e,t){if(!this.isDisabled()){var n=this.$selection.find(".select2-selection__clear");if(0!==n.length){t.stopPropagation();var r=a.GetData(n[0],"data"),i=this.$element.val();this.$element.val(this.placeholder.id);var o={data:r};if(this.trigger("clear",o),o.prevented)this.$element.val(i);else{for(var s=0;s<r.length;s++)if(o={data:r[s]},this.trigger("unselect",o),o.prevented)return void this.$element.val(i);this.$element.trigger("input").trigger("change"),this.trigger("toggle",{})}}}},e.prototype._handleKeyboardClear=function(e,t,n){n.isOpen()||t.which!=r.DELETE&&t.which!=r.BACKSPACE||this._handleClear(t)},e.prototype.update=function(e,t){if(e.call(this,t),!(0<this.$selection.find(".select2-selection__placeholder").length||0===t.length)){var n=this.options.get("translations").get("removeAllItems"),r=i('<span class="select2-selection__clear" title="'+n()+'">&times;</span>');a.StoreData(r[0],"data",t),this.$selection.find(".select2-selection__rendered").prepend(r)}},e}),e.define("select2/selection/search",["jquery","../utils","../keys"],function(r,a,l){function e(e,t,n){e.call(this,t,n)}return e.prototype.render=function(e){var t=r('<li class="select2-search select2-search--inline"><input class="select2-search__field" type="search" tabindex="-1" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" role="searchbox" aria-autocomplete="list" /></li>');this.$searchContainer=t,this.$search=t.find("input");var n=e.call(this);return this._transferTabIndex(),n},e.prototype.bind=function(e,t,n){var r=this,i=t.id+"-results";e.call(this,t,n),t.on("open",function(){r.$search.attr("aria-controls",i),r.$search.trigger("focus")}),t.on("close",function(){r.$search.val(""),r.$search.removeAttr("aria-controls"),r.$search.removeAttr("aria-activedescendant"),r.$search.trigger("focus")}),t.on("enable",function(){r.$search.prop("disabled",!1),r._transferTabIndex()}),t.on("disable",function(){r.$search.prop("disabled",!0)}),t.on("focus",function(e){r.$search.trigger("focus")}),t.on("results:focus",function(e){e.data._resultId?r.$search.attr("aria-activedescendant",e.data._resultId):r.$search.removeAttr("aria-activedescendant")}),this.$selection.on("focusin",".select2-search--inline",function(e){r.trigger("focus",e)}),this.$selection.on("focusout",".select2-search--inline",function(e){r._handleBlur(e)}),this.$selection.on("keydown",".select2-search--inline",function(e){if(e.stopPropagation(),r.trigger("keypress",e),r._keyUpPrevented=e.isDefaultPrevented(),e.which===l.BACKSPACE&&""===r.$search.val()){var t=r.$searchContainer.prev(".select2-selection__choice");if(0<t.length){var n=a.GetData(t[0],"data");r.searchRemoveChoice(n),e.preventDefault()}}}),this.$selection.on("click",".select2-search--inline",function(e){r.$search.val()&&e.stopPropagation()});var o=document.documentMode,s=o&&o<=11;this.$selection.on("input.searchcheck",".select2-search--inline",function(e){s?r.$selection.off("input.search input.searchcheck"):r.$selection.off("keyup.search")}),this.$selection.on("keyup.search input.search",".select2-search--inline",function(e){if(s&&"input"===e.type)r.$selection.off("input.search input.searchcheck");else{var t=e.which;t!=l.SHIFT&&t!=l.CTRL&&t!=l.ALT&&t!=l.TAB&&r.handleSearch(e)}})},e.prototype._transferTabIndex=function(e){this.$search.attr("tabindex",this.$selection.attr("tabindex")),this.$selection.attr("tabindex","-1")},e.prototype.createPlaceholder=function(e,t){this.$search.attr("placeholder",t.text)},e.prototype.update=function(e,t){var n=this.$search[0]==document.activeElement;this.$search.attr("placeholder",""),e.call(this,t),this.$selection.find(".select2-selection__rendered").append(this.$searchContainer),this.resizeSearch(),n&&this.$search.trigger("focus")},e.prototype.handleSearch=function(){if(this.resizeSearch(),!this._keyUpPrevented){var e=this.$search.val();this.trigger("query",{term:e})}this._keyUpPrevented=!1},e.prototype.searchRemoveChoice=function(e,t){this.trigger("unselect",{data:t}),this.$search.val(t.text),this.handleSearch()},e.prototype.resizeSearch=function(){this.$search.css("width","25px");var e="";""!==this.$search.attr("placeholder")?e=this.$selection.find(".select2-selection__rendered").width():e=.75*(this.$search.val().length+1)+"em";this.$search.css("width",e)},e}),e.define("select2/selection/eventRelay",["jquery"],function(s){function e(){}return e.prototype.bind=function(e,t,n){var r=this,i=["open","opening","close","closing","select","selecting","unselect","unselecting","clear","clearing"],o=["opening","closing","selecting","unselecting","clearing"];e.call(this,t,n),t.on("*",function(e,t){if(-1!==s.inArray(e,i)){t=t||{};var n=s.Event("select2:"+e,{params:t});r.$element.trigger(n),-1!==s.inArray(e,o)&&(t.prevented=n.isDefaultPrevented())}})},e}),e.define("select2/translation",["jquery","require"],function(t,n){function r(e){this.dict=e||{}}return r.prototype.all=function(){return this.dict},r.prototype.get=function(e){return this.dict[e]},r.prototype.extend=function(e){this.dict=t.extend({},e.all(),this.dict)},r._cache={},r.loadPath=function(e){if(!(e in r._cache)){var t=n(e);r._cache[e]=t}return new r(r._cache[e])},r}),e.define("select2/diacritics",[],function(){return{"Ⓐ":"A","Ａ":"A","À":"A","Á":"A","Â":"A","Ầ":"A","Ấ":"A","Ẫ":"A","Ẩ":"A","Ã":"A","Ā":"A","Ă":"A","Ằ":"A","Ắ":"A","Ẵ":"A","Ẳ":"A","Ȧ":"A","Ǡ":"A","Ä":"A","Ǟ":"A","Ả":"A","Å":"A","Ǻ":"A","Ǎ":"A","Ȁ":"A","Ȃ":"A","Ạ":"A","Ậ":"A","Ặ":"A","Ḁ":"A","Ą":"A","Ⱥ":"A","Ɐ":"A","Ꜳ":"AA","Æ":"AE","Ǽ":"AE","Ǣ":"AE","Ꜵ":"AO","Ꜷ":"AU","Ꜹ":"AV","Ꜻ":"AV","Ꜽ":"AY","Ⓑ":"B","Ｂ":"B","Ḃ":"B","Ḅ":"B","Ḇ":"B","Ƀ":"B","Ƃ":"B","Ɓ":"B","Ⓒ":"C","Ｃ":"C","Ć":"C","Ĉ":"C","Ċ":"C","Č":"C","Ç":"C","Ḉ":"C","Ƈ":"C","Ȼ":"C","Ꜿ":"C","Ⓓ":"D","Ｄ":"D","Ḋ":"D","Ď":"D","Ḍ":"D","Ḑ":"D","Ḓ":"D","Ḏ":"D","Đ":"D","Ƌ":"D","Ɗ":"D","Ɖ":"D","Ꝺ":"D","Ǳ":"DZ","Ǆ":"DZ","ǲ":"Dz","ǅ":"Dz","Ⓔ":"E","Ｅ":"E","È":"E","É":"E","Ê":"E","Ề":"E","Ế":"E","Ễ":"E","Ể":"E","Ẽ":"E","Ē":"E","Ḕ":"E","Ḗ":"E","Ĕ":"E","Ė":"E","Ë":"E","Ẻ":"E","Ě":"E","Ȅ":"E","Ȇ":"E","Ẹ":"E","Ệ":"E","Ȩ":"E","Ḝ":"E","Ę":"E","Ḙ":"E","Ḛ":"E","Ɛ":"E","Ǝ":"E","Ⓕ":"F","Ｆ":"F","Ḟ":"F","Ƒ":"F","Ꝼ":"F","Ⓖ":"G","Ｇ":"G","Ǵ":"G","Ĝ":"G","Ḡ":"G","Ğ":"G","Ġ":"G","Ǧ":"G","Ģ":"G","Ǥ":"G","Ɠ":"G","Ꞡ":"G","Ᵹ":"G","Ꝿ":"G","Ⓗ":"H","Ｈ":"H","Ĥ":"H","Ḣ":"H","Ḧ":"H","Ȟ":"H","Ḥ":"H","Ḩ":"H","Ḫ":"H","Ħ":"H","Ⱨ":"H","Ⱶ":"H","Ɥ":"H","Ⓘ":"I","Ｉ":"I","Ì":"I","Í":"I","Î":"I","Ĩ":"I","Ī":"I","Ĭ":"I","İ":"I","Ï":"I","Ḯ":"I","Ỉ":"I","Ǐ":"I","Ȉ":"I","Ȋ":"I","Ị":"I","Į":"I","Ḭ":"I","Ɨ":"I","Ⓙ":"J","Ｊ":"J","Ĵ":"J","Ɉ":"J","Ⓚ":"K","Ｋ":"K","Ḱ":"K","Ǩ":"K","Ḳ":"K","Ķ":"K","Ḵ":"K","Ƙ":"K","Ⱪ":"K","Ꝁ":"K","Ꝃ":"K","Ꝅ":"K","Ꞣ":"K","Ⓛ":"L","Ｌ":"L","Ŀ":"L","Ĺ":"L","Ľ":"L","Ḷ":"L","Ḹ":"L","Ļ":"L","Ḽ":"L","Ḻ":"L","Ł":"L","Ƚ":"L","Ɫ":"L","Ⱡ":"L","Ꝉ":"L","Ꝇ":"L","Ꞁ":"L","Ǉ":"LJ","ǈ":"Lj","Ⓜ":"M","Ｍ":"M","Ḿ":"M","Ṁ":"M","Ṃ":"M","Ɱ":"M","Ɯ":"M","Ⓝ":"N","Ｎ":"N","Ǹ":"N","Ń":"N","Ñ":"N","Ṅ":"N","Ň":"N","Ṇ":"N","Ņ":"N","Ṋ":"N","Ṉ":"N","Ƞ":"N","Ɲ":"N","Ꞑ":"N","Ꞥ":"N","Ǌ":"NJ","ǋ":"Nj","Ⓞ":"O","Ｏ":"O","Ò":"O","Ó":"O","Ô":"O","Ồ":"O","Ố":"O","Ỗ":"O","Ổ":"O","Õ":"O","Ṍ":"O","Ȭ":"O","Ṏ":"O","Ō":"O","Ṑ":"O","Ṓ":"O","Ŏ":"O","Ȯ":"O","Ȱ":"O","Ö":"O","Ȫ":"O","Ỏ":"O","Ő":"O","Ǒ":"O","Ȍ":"O","Ȏ":"O","Ơ":"O","Ờ":"O","Ớ":"O","Ỡ":"O","Ở":"O","Ợ":"O","Ọ":"O","Ộ":"O","Ǫ":"O","Ǭ":"O","Ø":"O","Ǿ":"O","Ɔ":"O","Ɵ":"O","Ꝋ":"O","Ꝍ":"O","Œ":"OE","Ƣ":"OI","Ꝏ":"OO","Ȣ":"OU","Ⓟ":"P","Ｐ":"P","Ṕ":"P","Ṗ":"P","Ƥ":"P","Ᵽ":"P","Ꝑ":"P","Ꝓ":"P","Ꝕ":"P","Ⓠ":"Q","Ｑ":"Q","Ꝗ":"Q","Ꝙ":"Q","Ɋ":"Q","Ⓡ":"R","Ｒ":"R","Ŕ":"R","Ṙ":"R","Ř":"R","Ȑ":"R","Ȓ":"R","Ṛ":"R","Ṝ":"R","Ŗ":"R","Ṟ":"R","Ɍ":"R","Ɽ":"R","Ꝛ":"R","Ꞧ":"R","Ꞃ":"R","Ⓢ":"S","Ｓ":"S","ẞ":"S","Ś":"S","Ṥ":"S","Ŝ":"S","Ṡ":"S","Š":"S","Ṧ":"S","Ṣ":"S","Ṩ":"S","Ș":"S","Ş":"S","Ȿ":"S","Ꞩ":"S","Ꞅ":"S","Ⓣ":"T","Ｔ":"T","Ṫ":"T","Ť":"T","Ṭ":"T","Ț":"T","Ţ":"T","Ṱ":"T","Ṯ":"T","Ŧ":"T","Ƭ":"T","Ʈ":"T","Ⱦ":"T","Ꞇ":"T","Ꜩ":"TZ","Ⓤ":"U","Ｕ":"U","Ù":"U","Ú":"U","Û":"U","Ũ":"U","Ṹ":"U","Ū":"U","Ṻ":"U","Ŭ":"U","Ü":"U","Ǜ":"U","Ǘ":"U","Ǖ":"U","Ǚ":"U","Ủ":"U","Ů":"U","Ű":"U","Ǔ":"U","Ȕ":"U","Ȗ":"U","Ư":"U","Ừ":"U","Ứ":"U","Ữ":"U","Ử":"U","Ự":"U","Ụ":"U","Ṳ":"U","Ų":"U","Ṷ":"U","Ṵ":"U","Ʉ":"U","Ⓥ":"V","Ｖ":"V","Ṽ":"V","Ṿ":"V","Ʋ":"V","Ꝟ":"V","Ʌ":"V","Ꝡ":"VY","Ⓦ":"W","Ｗ":"W","Ẁ":"W","Ẃ":"W","Ŵ":"W","Ẇ":"W","Ẅ":"W","Ẉ":"W","Ⱳ":"W","Ⓧ":"X","Ｘ":"X","Ẋ":"X","Ẍ":"X","Ⓨ":"Y","Ｙ":"Y","Ỳ":"Y","Ý":"Y","Ŷ":"Y","Ỹ":"Y","Ȳ":"Y","Ẏ":"Y","Ÿ":"Y","Ỷ":"Y","Ỵ":"Y","Ƴ":"Y","Ɏ":"Y","Ỿ":"Y","Ⓩ":"Z","Ｚ":"Z","Ź":"Z","Ẑ":"Z","Ż":"Z","Ž":"Z","Ẓ":"Z","Ẕ":"Z","Ƶ":"Z","Ȥ":"Z","Ɀ":"Z","Ⱬ":"Z","Ꝣ":"Z","ⓐ":"a","ａ":"a","ẚ":"a","à":"a","á":"a","â":"a","ầ":"a","ấ":"a","ẫ":"a","ẩ":"a","ã":"a","ā":"a","ă":"a","ằ":"a","ắ":"a","ẵ":"a","ẳ":"a","ȧ":"a","ǡ":"a","ä":"a","ǟ":"a","ả":"a","å":"a","ǻ":"a","ǎ":"a","ȁ":"a","ȃ":"a","ạ":"a","ậ":"a","ặ":"a","ḁ":"a","ą":"a","ⱥ":"a","ɐ":"a","ꜳ":"aa","æ":"ae","ǽ":"ae","ǣ":"ae","ꜵ":"ao","ꜷ":"au","ꜹ":"av","ꜻ":"av","ꜽ":"ay","ⓑ":"b","ｂ":"b","ḃ":"b","ḅ":"b","ḇ":"b","ƀ":"b","ƃ":"b","ɓ":"b","ⓒ":"c","ｃ":"c","ć":"c","ĉ":"c","ċ":"c","č":"c","ç":"c","ḉ":"c","ƈ":"c","ȼ":"c","ꜿ":"c","ↄ":"c","ⓓ":"d","ｄ":"d","ḋ":"d","ď":"d","ḍ":"d","ḑ":"d","ḓ":"d","ḏ":"d","đ":"d","ƌ":"d","ɖ":"d","ɗ":"d","ꝺ":"d","ǳ":"dz","ǆ":"dz","ⓔ":"e","ｅ":"e","è":"e","é":"e","ê":"e","ề":"e","ế":"e","ễ":"e","ể":"e","ẽ":"e","ē":"e","ḕ":"e","ḗ":"e","ĕ":"e","ė":"e","ë":"e","ẻ":"e","ě":"e","ȅ":"e","ȇ":"e","ẹ":"e","ệ":"e","ȩ":"e","ḝ":"e","ę":"e","ḙ":"e","ḛ":"e","ɇ":"e","ɛ":"e","ǝ":"e","ⓕ":"f","ｆ":"f","ḟ":"f","ƒ":"f","ꝼ":"f","ⓖ":"g","ｇ":"g","ǵ":"g","ĝ":"g","ḡ":"g","ğ":"g","ġ":"g","ǧ":"g","ģ":"g","ǥ":"g","ɠ":"g","ꞡ":"g","ᵹ":"g","ꝿ":"g","ⓗ":"h","ｈ":"h","ĥ":"h","ḣ":"h","ḧ":"h","ȟ":"h","ḥ":"h","ḩ":"h","ḫ":"h","ẖ":"h","ħ":"h","ⱨ":"h","ⱶ":"h","ɥ":"h","ƕ":"hv","ⓘ":"i","ｉ":"i","ì":"i","í":"i","î":"i","ĩ":"i","ī":"i","ĭ":"i","ï":"i","ḯ":"i","ỉ":"i","ǐ":"i","ȉ":"i","ȋ":"i","ị":"i","į":"i","ḭ":"i","ɨ":"i","ı":"i","ⓙ":"j","ｊ":"j","ĵ":"j","ǰ":"j","ɉ":"j","ⓚ":"k","ｋ":"k","ḱ":"k","ǩ":"k","ḳ":"k","ķ":"k","ḵ":"k","ƙ":"k","ⱪ":"k","ꝁ":"k","ꝃ":"k","ꝅ":"k","ꞣ":"k","ⓛ":"l","ｌ":"l","ŀ":"l","ĺ":"l","ľ":"l","ḷ":"l","ḹ":"l","ļ":"l","ḽ":"l","ḻ":"l","ſ":"l","ł":"l","ƚ":"l","ɫ":"l","ⱡ":"l","ꝉ":"l","ꞁ":"l","ꝇ":"l","ǉ":"lj","ⓜ":"m","ｍ":"m","ḿ":"m","ṁ":"m","ṃ":"m","ɱ":"m","ɯ":"m","ⓝ":"n","ｎ":"n","ǹ":"n","ń":"n","ñ":"n","ṅ":"n","ň":"n","ṇ":"n","ņ":"n","ṋ":"n","ṉ":"n","ƞ":"n","ɲ":"n","ŉ":"n","ꞑ":"n","ꞥ":"n","ǌ":"nj","ⓞ":"o","ｏ":"o","ò":"o","ó":"o","ô":"o","ồ":"o","ố":"o","ỗ":"o","ổ":"o","õ":"o","ṍ":"o","ȭ":"o","ṏ":"o","ō":"o","ṑ":"o","ṓ":"o","ŏ":"o","ȯ":"o","ȱ":"o","ö":"o","ȫ":"o","ỏ":"o","ő":"o","ǒ":"o","ȍ":"o","ȏ":"o","ơ":"o","ờ":"o","ớ":"o","ỡ":"o","ở":"o","ợ":"o","ọ":"o","ộ":"o","ǫ":"o","ǭ":"o","ø":"o","ǿ":"o","ɔ":"o","ꝋ":"o","ꝍ":"o","ɵ":"o","œ":"oe","ƣ":"oi","ȣ":"ou","ꝏ":"oo","ⓟ":"p","ｐ":"p","ṕ":"p","ṗ":"p","ƥ":"p","ᵽ":"p","ꝑ":"p","ꝓ":"p","ꝕ":"p","ⓠ":"q","ｑ":"q","ɋ":"q","ꝗ":"q","ꝙ":"q","ⓡ":"r","ｒ":"r","ŕ":"r","ṙ":"r","ř":"r","ȑ":"r","ȓ":"r","ṛ":"r","ṝ":"r","ŗ":"r","ṟ":"r","ɍ":"r","ɽ":"r","ꝛ":"r","ꞧ":"r","ꞃ":"r","ⓢ":"s","ｓ":"s","ß":"s","ś":"s","ṥ":"s","ŝ":"s","ṡ":"s","š":"s","ṧ":"s","ṣ":"s","ṩ":"s","ș":"s","ş":"s","ȿ":"s","ꞩ":"s","ꞅ":"s","ẛ":"s","ⓣ":"t","ｔ":"t","ṫ":"t","ẗ":"t","ť":"t","ṭ":"t","ț":"t","ţ":"t","ṱ":"t","ṯ":"t","ŧ":"t","ƭ":"t","ʈ":"t","ⱦ":"t","ꞇ":"t","ꜩ":"tz","ⓤ":"u","ｕ":"u","ù":"u","ú":"u","û":"u","ũ":"u","ṹ":"u","ū":"u","ṻ":"u","ŭ":"u","ü":"u","ǜ":"u","ǘ":"u","ǖ":"u","ǚ":"u","ủ":"u","ů":"u","ű":"u","ǔ":"u","ȕ":"u","ȗ":"u","ư":"u","ừ":"u","ứ":"u","ữ":"u","ử":"u","ự":"u","ụ":"u","ṳ":"u","ų":"u","ṷ":"u","ṵ":"u","ʉ":"u","ⓥ":"v","ｖ":"v","ṽ":"v","ṿ":"v","ʋ":"v","ꝟ":"v","ʌ":"v","ꝡ":"vy","ⓦ":"w","ｗ":"w","ẁ":"w","ẃ":"w","ŵ":"w","ẇ":"w","ẅ":"w","ẘ":"w","ẉ":"w","ⱳ":"w","ⓧ":"x","ｘ":"x","ẋ":"x","ẍ":"x","ⓨ":"y","ｙ":"y","ỳ":"y","ý":"y","ŷ":"y","ỹ":"y","ȳ":"y","ẏ":"y","ÿ":"y","ỷ":"y","ẙ":"y","ỵ":"y","ƴ":"y","ɏ":"y","ỿ":"y","ⓩ":"z","ｚ":"z","ź":"z","ẑ":"z","ż":"z","ž":"z","ẓ":"z","ẕ":"z","ƶ":"z","ȥ":"z","ɀ":"z","ⱬ":"z","ꝣ":"z","Ά":"Α","Έ":"Ε","Ή":"Η","Ί":"Ι","Ϊ":"Ι","Ό":"Ο","Ύ":"Υ","Ϋ":"Υ","Ώ":"Ω","ά":"α","έ":"ε","ή":"η","ί":"ι","ϊ":"ι","ΐ":"ι","ό":"ο","ύ":"υ","ϋ":"υ","ΰ":"υ","ώ":"ω","ς":"σ","’":"'"}}),e.define("select2/data/base",["../utils"],function(r){function n(e,t){n.__super__.constructor.call(this)}return r.Extend(n,r.Observable),n.prototype.current=function(e){throw new Error("The `current` method must be defined in child classes.")},n.prototype.query=function(e,t){throw new Error("The `query` method must be defined in child classes.")},n.prototype.bind=function(e,t){},n.prototype.destroy=function(){},n.prototype.generateResultId=function(e,t){var n=e.id+"-result-";return n+=r.generateChars(4),null!=t.id?n+="-"+t.id.toString():n+="-"+r.generateChars(4),n},n}),e.define("select2/data/select",["./base","../utils","jquery"],function(e,a,l){function n(e,t){this.$element=e,this.options=t,n.__super__.constructor.call(this)}return a.Extend(n,e),n.prototype.current=function(e){var n=[],r=this;this.$element.find(":selected").each(function(){var e=l(this),t=r.item(e);n.push(t)}),e(n)},n.prototype.select=function(i){var o=this;if(i.selected=!0,l(i.element).is("option"))return i.element.selected=!0,void this.$element.trigger("input").trigger("change");if(this.$element.prop("multiple"))this.current(function(e){var t=[];(i=[i]).push.apply(i,e);for(var n=0;n<i.length;n++){var r=i[n].id;-1===l.inArray(r,t)&&t.push(r)}o.$element.val(t),o.$element.trigger("input").trigger("change")});else{var e=i.id;this.$element.val(e),this.$element.trigger("input").trigger("change")}},n.prototype.unselect=function(i){var o=this;if(this.$element.prop("multiple")){if(i.selected=!1,l(i.element).is("option"))return i.element.selected=!1,void this.$element.trigger("input").trigger("change");this.current(function(e){for(var t=[],n=0;n<e.length;n++){var r=e[n].id;r!==i.id&&-1===l.inArray(r,t)&&t.push(r)}o.$element.val(t),o.$element.trigger("input").trigger("change")})}},n.prototype.bind=function(e,t){var n=this;(this.container=e).on("select",function(e){n.select(e.data)}),e.on("unselect",function(e){n.unselect(e.data)})},n.prototype.destroy=function(){this.$element.find("*").each(function(){a.RemoveData(this)})},n.prototype.query=function(r,e){var i=[],o=this;this.$element.children().each(function(){var e=l(this);if(e.is("option")||e.is("optgroup")){var t=o.item(e),n=o.matches(r,t);null!==n&&i.push(n)}}),e({results:i})},n.prototype.addOptions=function(e){a.appendMany(this.$element,e)},n.prototype.option=function(e){var t;e.children?(t=document.createElement("optgroup")).label=e.text:void 0!==(t=document.createElement("option")).textContent?t.textContent=e.text:t.innerText=e.text,void 0!==e.id&&(t.value=e.id),e.disabled&&(t.disabled=!0),e.selected&&(t.selected=!0),e.title&&(t.title=e.title);var n=l(t),r=this._normalizeItem(e);return r.element=t,a.StoreData(t,"data",r),n},n.prototype.item=function(e){var t={};if(null!=(t=a.GetData(e[0],"data")))return t;if(e.is("option"))t={id:e.val(),text:e.text(),disabled:e.prop("disabled"),selected:e.prop("selected"),title:e.prop("title")};else if(e.is("optgroup")){t={text:e.prop("label"),children:[],title:e.prop("title")};for(var n=e.children("option"),r=[],i=0;i<n.length;i++){var o=l(n[i]),s=this.item(o);r.push(s)}t.children=r}return(t=this._normalizeItem(t)).element=e[0],a.StoreData(e[0],"data",t),t},n.prototype._normalizeItem=function(e){e!==Object(e)&&(e={id:e,text:e});return null!=(e=l.extend({},{text:""},e)).id&&(e.id=e.id.toString()),null!=e.text&&(e.text=e.text.toString()),null==e._resultId&&e.id&&null!=this.container&&(e._resultId=this.generateResultId(this.container,e)),l.extend({},{selected:!1,disabled:!1},e)},n.prototype.matches=function(e,t){return this.options.get("matcher")(e,t)},n}),e.define("select2/data/array",["./select","../utils","jquery"],function(e,f,g){function r(e,t){this._dataToConvert=t.get("data")||[],r.__super__.constructor.call(this,e,t)}return f.Extend(r,e),r.prototype.bind=function(e,t){r.__super__.bind.call(this,e,t),this.addOptions(this.convertToOptions(this._dataToConvert))},r.prototype.select=function(n){var e=this.$element.find("option").filter(function(e,t){return t.value==n.id.toString()});0===e.length&&(e=this.option(n),this.addOptions(e)),r.__super__.select.call(this,n)},r.prototype.convertToOptions=function(e){var t=this,n=this.$element.find("option"),r=n.map(function(){return t.item(g(this)).id}).get(),i=[];function o(e){return function(){return g(this).val()==e.id}}for(var s=0;s<e.length;s++){var a=this._normalizeItem(e[s]);if(0<=g.inArray(a.id,r)){var l=n.filter(o(a)),c=this.item(l),u=g.extend(!0,{},a,c),d=this.option(u);l.replaceWith(d)}else{var p=this.option(a);if(a.children){var h=this.convertToOptions(a.children);f.appendMany(p,h)}i.push(p)}}return i},r}),e.define("select2/data/ajax",["./array","../utils","jquery"],function(e,t,o){function n(e,t){this.ajaxOptions=this._applyDefaults(t.get("ajax")),null!=this.ajaxOptions.processResults&&(this.processResults=this.ajaxOptions.processResults),n.__super__.constructor.call(this,e,t)}return t.Extend(n,e),n.prototype._applyDefaults=function(e){var t={data:function(e){return o.extend({},e,{q:e.term})},transport:function(e,t,n){var r=o.ajax(e);return r.then(t),r.fail(n),r}};return o.extend({},t,e,!0)},n.prototype.processResults=function(e){return e},n.prototype.query=function(n,r){var i=this;null!=this._request&&(o.isFunction(this._request.abort)&&this._request.abort(),this._request=null);var t=o.extend({type:"GET"},this.ajaxOptions);function e(){var e=t.transport(t,function(e){var t=i.processResults(e,n);i.options.get("debug")&&window.console&&console.error&&(t&&t.results&&o.isArray(t.results)||console.error("Select2: The AJAX results did not return an array in the `results` key of the response.")),r(t)},function(){"status"in e&&(0===e.status||"0"===e.status)||i.trigger("results:message",{message:"errorLoading"})});i._request=e}"function"==typeof t.url&&(t.url=t.url.call(this.$element,n)),"function"==typeof t.data&&(t.data=t.data.call(this.$element,n)),this.ajaxOptions.delay&&null!=n.term?(this._queryTimeout&&window.clearTimeout(this._queryTimeout),this._queryTimeout=window.setTimeout(e,this.ajaxOptions.delay)):e()},n}),e.define("select2/data/tags",["jquery"],function(u){function e(e,t,n){var r=n.get("tags"),i=n.get("createTag");void 0!==i&&(this.createTag=i);var o=n.get("insertTag");if(void 0!==o&&(this.insertTag=o),e.call(this,t,n),u.isArray(r))for(var s=0;s<r.length;s++){var a=r[s],l=this._normalizeItem(a),c=this.option(l);this.$element.append(c)}}return e.prototype.query=function(e,c,u){var d=this;this._removeOldTags(),null!=c.term&&null==c.page?e.call(this,c,function e(t,n){for(var r=t.results,i=0;i<r.length;i++){var o=r[i],s=null!=o.children&&!e({results:o.children},!0);if((o.text||"").toUpperCase()===(c.term||"").toUpperCase()||s)return!n&&(t.data=r,void u(t))}if(n)return!0;var a=d.createTag(c);if(null!=a){var l=d.option(a);l.attr("data-select2-tag",!0),d.addOptions([l]),d.insertTag(r,a)}t.results=r,u(t)}):e.call(this,c,u)},e.prototype.createTag=function(e,t){var n=u.trim(t.term);return""===n?null:{id:n,text:n}},e.prototype.insertTag=function(e,t,n){t.unshift(n)},e.prototype._removeOldTags=function(e){this.$element.find("option[data-select2-tag]").each(function(){this.selected||u(this).remove()})},e}),e.define("select2/data/tokenizer",["jquery"],function(d){function e(e,t,n){var r=n.get("tokenizer");void 0!==r&&(this.tokenizer=r),e.call(this,t,n)}return e.prototype.bind=function(e,t,n){e.call(this,t,n),this.$search=t.dropdown.$search||t.selection.$search||n.find(".select2-search__field")},e.prototype.query=function(e,t,n){var i=this;t.term=t.term||"";var r=this.tokenizer(t,this.options,function(e){var t,n=i._normalizeItem(e);if(!i.$element.find("option").filter(function(){return d(this).val()===n.id}).length){var r=i.option(n);r.attr("data-select2-tag",!0),i._removeOldTags(),i.addOptions([r])}t=n,i.trigger("select",{data:t})});r.term!==t.term&&(this.$search.length&&(this.$search.val(r.term),this.$search.trigger("focus")),t.term=r.term),e.call(this,t,n)},e.prototype.tokenizer=function(e,t,n,r){for(var i=n.get("tokenSeparators")||[],o=t.term,s=0,a=this.createTag||function(e){return{id:e.term,text:e.term}};s<o.length;){var l=o[s];if(-1!==d.inArray(l,i)){var c=o.substr(0,s),u=a(d.extend({},t,{term:c}));null!=u?(r(u),o=o.substr(s+1)||"",s=0):s++}else s++}return{term:o}},e}),e.define("select2/data/minimumInputLength",[],function(){function e(e,t,n){this.minimumInputLength=n.get("minimumInputLength"),e.call(this,t,n)}return e.prototype.query=function(e,t,n){t.term=t.term||"",t.term.length<this.minimumInputLength?this.trigger("results:message",{message:"inputTooShort",args:{minimum:this.minimumInputLength,input:t.term,params:t}}):e.call(this,t,n)},e}),e.define("select2/data/maximumInputLength",[],function(){function e(e,t,n){this.maximumInputLength=n.get("maximumInputLength"),e.call(this,t,n)}return e.prototype.query=function(e,t,n){t.term=t.term||"",0<this.maximumInputLength&&t.term.length>this.maximumInputLength?this.trigger("results:message",{message:"inputTooLong",args:{maximum:this.maximumInputLength,input:t.term,params:t}}):e.call(this,t,n)},e}),e.define("select2/data/maximumSelectionLength",[],function(){function e(e,t,n){this.maximumSelectionLength=n.get("maximumSelectionLength"),e.call(this,t,n)}return e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),t.on("select",function(){r._checkIfMaximumSelected()})},e.prototype.query=function(e,t,n){var r=this;this._checkIfMaximumSelected(function(){e.call(r,t,n)})},e.prototype._checkIfMaximumSelected=function(e,n){var r=this;this.current(function(e){var t=null!=e?e.length:0;0<r.maximumSelectionLength&&t>=r.maximumSelectionLength?r.trigger("results:message",{message:"maximumSelected",args:{maximum:r.maximumSelectionLength}}):n&&n()})},e}),e.define("select2/dropdown",["jquery","./utils"],function(t,e){function n(e,t){this.$element=e,this.options=t,n.__super__.constructor.call(this)}return e.Extend(n,e.Observable),n.prototype.render=function(){var e=t('<span class="select2-dropdown"><span class="select2-results"></span></span>');return e.attr("dir",this.options.get("dir")),this.$dropdown=e},n.prototype.bind=function(){},n.prototype.position=function(e,t){},n.prototype.destroy=function(){this.$dropdown.remove()},n}),e.define("select2/dropdown/search",["jquery","../utils"],function(o,e){function t(){}return t.prototype.render=function(e){var t=e.call(this),n=o('<span class="select2-search select2-search--dropdown"><input class="select2-search__field" type="search" tabindex="-1" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" role="searchbox" aria-autocomplete="list" /></span>');return this.$searchContainer=n,this.$search=n.find("input"),t.prepend(n),t},t.prototype.bind=function(e,t,n){var r=this,i=t.id+"-results";e.call(this,t,n),this.$search.on("keydown",function(e){r.trigger("keypress",e),r._keyUpPrevented=e.isDefaultPrevented()}),this.$search.on("input",function(e){o(this).off("keyup")}),this.$search.on("keyup input",function(e){r.handleSearch(e)}),t.on("open",function(){r.$search.attr("tabindex",0),r.$search.attr("aria-controls",i),r.$search.trigger("focus"),window.setTimeout(function(){r.$search.trigger("focus")},0)}),t.on("close",function(){r.$search.attr("tabindex",-1),r.$search.removeAttr("aria-controls"),r.$search.removeAttr("aria-activedescendant"),r.$search.val(""),r.$search.trigger("blur")}),t.on("focus",function(){t.isOpen()||r.$search.trigger("focus")}),t.on("results:all",function(e){null!=e.query.term&&""!==e.query.term||(r.showSearch(e)?r.$searchContainer.removeClass("select2-search--hide"):r.$searchContainer.addClass("select2-search--hide"))}),t.on("results:focus",function(e){e.data._resultId?r.$search.attr("aria-activedescendant",e.data._resultId):r.$search.removeAttr("aria-activedescendant")})},t.prototype.handleSearch=function(e){if(!this._keyUpPrevented){var t=this.$search.val();this.trigger("query",{term:t})}this._keyUpPrevented=!1},t.prototype.showSearch=function(e,t){return!0},t}),e.define("select2/dropdown/hidePlaceholder",[],function(){function e(e,t,n,r){this.placeholder=this.normalizePlaceholder(n.get("placeholder")),e.call(this,t,n,r)}return e.prototype.append=function(e,t){t.results=this.removePlaceholder(t.results),e.call(this,t)},e.prototype.normalizePlaceholder=function(e,t){return"string"==typeof t&&(t={id:"",text:t}),t},e.prototype.removePlaceholder=function(e,t){for(var n=t.slice(0),r=t.length-1;0<=r;r--){var i=t[r];this.placeholder.id===i.id&&n.splice(r,1)}return n},e}),e.define("select2/dropdown/infiniteScroll",["jquery"],function(n){function e(e,t,n,r){this.lastParams={},e.call(this,t,n,r),this.$loadingMore=this.createLoadingMore(),this.loading=!1}return e.prototype.append=function(e,t){this.$loadingMore.remove(),this.loading=!1,e.call(this,t),this.showLoadingMore(t)&&(this.$results.append(this.$loadingMore),this.loadMoreIfNeeded())},e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),t.on("query",function(e){r.lastParams=e,r.loading=!0}),t.on("query:append",function(e){r.lastParams=e,r.loading=!0}),this.$results.on("scroll",this.loadMoreIfNeeded.bind(this))},e.prototype.loadMoreIfNeeded=function(){var e=n.contains(document.documentElement,this.$loadingMore[0]);if(!this.loading&&e){var t=this.$results.offset().top+this.$results.outerHeight(!1);this.$loadingMore.offset().top+this.$loadingMore.outerHeight(!1)<=t+50&&this.loadMore()}},e.prototype.loadMore=function(){this.loading=!0;var e=n.extend({},{page:1},this.lastParams);e.page++,this.trigger("query:append",e)},e.prototype.showLoadingMore=function(e,t){return t.pagination&&t.pagination.more},e.prototype.createLoadingMore=function(){var e=n('<li class="select2-results__option select2-results__option--load-more"role="option" aria-disabled="true"></li>'),t=this.options.get("translations").get("loadingMore");return e.html(t(this.lastParams)),e},e}),e.define("select2/dropdown/attachBody",["jquery","../utils"],function(f,a){function e(e,t,n){this.$dropdownParent=f(n.get("dropdownParent")||document.body),e.call(this,t,n)}return e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),t.on("open",function(){r._showDropdown(),r._attachPositioningHandler(t),r._bindContainerResultHandlers(t)}),t.on("close",function(){r._hideDropdown(),r._detachPositioningHandler(t)}),this.$dropdownContainer.on("mousedown",function(e){e.stopPropagation()})},e.prototype.destroy=function(e){e.call(this),this.$dropdownContainer.remove()},e.prototype.position=function(e,t,n){t.attr("class",n.attr("class")),t.removeClass("select2"),t.addClass("select2-container--open"),t.css({position:"absolute",top:-999999}),this.$container=n},e.prototype.render=function(e){var t=f("<span></span>"),n=e.call(this);return t.append(n),this.$dropdownContainer=t},e.prototype._hideDropdown=function(e){this.$dropdownContainer.detach()},e.prototype._bindContainerResultHandlers=function(e,t){if(!this._containerResultsHandlersBound){var n=this;t.on("results:all",function(){n._positionDropdown(),n._resizeDropdown()}),t.on("results:append",function(){n._positionDropdown(),n._resizeDropdown()}),t.on("results:message",function(){n._positionDropdown(),n._resizeDropdown()}),t.on("select",function(){n._positionDropdown(),n._resizeDropdown()}),t.on("unselect",function(){n._positionDropdown(),n._resizeDropdown()}),this._containerResultsHandlersBound=!0}},e.prototype._attachPositioningHandler=function(e,t){var n=this,r="scroll.select2."+t.id,i="resize.select2."+t.id,o="orientationchange.select2."+t.id,s=this.$container.parents().filter(a.hasScroll);s.each(function(){a.StoreData(this,"select2-scroll-position",{x:f(this).scrollLeft(),y:f(this).scrollTop()})}),s.on(r,function(e){var t=a.GetData(this,"select2-scroll-position");f(this).scrollTop(t.y)}),f(window).on(r+" "+i+" "+o,function(e){n._positionDropdown(),n._resizeDropdown()})},e.prototype._detachPositioningHandler=function(e,t){var n="scroll.select2."+t.id,r="resize.select2."+t.id,i="orientationchange.select2."+t.id;this.$container.parents().filter(a.hasScroll).off(n),f(window).off(n+" "+r+" "+i)},e.prototype._positionDropdown=function(){var e=f(window),t=this.$dropdown.hasClass("select2-dropdown--above"),n=this.$dropdown.hasClass("select2-dropdown--below"),r=null,i=this.$container.offset();i.bottom=i.top+this.$container.outerHeight(!1);var o={height:this.$container.outerHeight(!1)};o.top=i.top,o.bottom=i.top+o.height;var s=this.$dropdown.outerHeight(!1),a=e.scrollTop(),l=e.scrollTop()+e.height(),c=a<i.top-s,u=l>i.bottom+s,d={left:i.left,top:o.bottom},p=this.$dropdownParent;"static"===p.css("position")&&(p=p.offsetParent());var h={top:0,left:0};(f.contains(document.body,p[0])||p[0].isConnected)&&(h=p.offset()),d.top-=h.top,d.left-=h.left,t||n||(r="below"),u||!c||t?!c&&u&&t&&(r="below"):r="above",("above"==r||t&&"below"!==r)&&(d.top=o.top-h.top-s),null!=r&&(this.$dropdown.removeClass("select2-dropdown--below select2-dropdown--above").addClass("select2-dropdown--"+r),this.$container.removeClass("select2-container--below select2-container--above").addClass("select2-container--"+r)),this.$dropdownContainer.css(d)},e.prototype._resizeDropdown=function(){var e={width:this.$container.outerWidth(!1)+"px"};this.options.get("dropdownAutoWidth")&&(e.minWidth=e.width,e.position="relative",e.width="auto"),this.$dropdown.css(e)},e.prototype._showDropdown=function(e){this.$dropdownContainer.appendTo(this.$dropdownParent),this._positionDropdown(),this._resizeDropdown()},e}),e.define("select2/dropdown/minimumResultsForSearch",[],function(){function e(e,t,n,r){this.minimumResultsForSearch=n.get("minimumResultsForSearch"),this.minimumResultsForSearch<0&&(this.minimumResultsForSearch=1/0),e.call(this,t,n,r)}return e.prototype.showSearch=function(e,t){return!(function e(t){for(var n=0,r=0;r<t.length;r++){var i=t[r];i.children?n+=e(i.children):n++}return n}(t.data.results)<this.minimumResultsForSearch)&&e.call(this,t)},e}),e.define("select2/dropdown/selectOnClose",["../utils"],function(o){function e(){}return e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),t.on("close",function(e){r._handleSelectOnClose(e)})},e.prototype._handleSelectOnClose=function(e,t){if(t&&null!=t.originalSelect2Event){var n=t.originalSelect2Event;if("select"===n._type||"unselect"===n._type)return}var r=this.getHighlightedResults();if(!(r.length<1)){var i=o.GetData(r[0],"data");null!=i.element&&i.element.selected||null==i.element&&i.selected||this.trigger("select",{data:i})}},e}),e.define("select2/dropdown/closeOnSelect",[],function(){function e(){}return e.prototype.bind=function(e,t,n){var r=this;e.call(this,t,n),t.on("select",function(e){r._selectTriggered(e)}),t.on("unselect",function(e){r._selectTriggered(e)})},e.prototype._selectTriggered=function(e,t){var n=t.originalEvent;n&&(n.ctrlKey||n.metaKey)||this.trigger("close",{originalEvent:n,originalSelect2Event:t})},e}),e.define("select2/i18n/en",[],function(){return{errorLoading:function(){return"The results could not be loaded."},inputTooLong:function(e){var t=e.input.length-e.maximum,n="Please delete "+t+" character";return 1!=t&&(n+="s"),n},inputTooShort:function(e){return"Please enter "+(e.minimum-e.input.length)+" or more characters"},loadingMore:function(){return"Loading more results…"},maximumSelected:function(e){var t="You can only select "+e.maximum+" item";return 1!=e.maximum&&(t+="s"),t},noResults:function(){return"No results found"},searching:function(){return"Searching…"},removeAllItems:function(){return"Remove all items"}}}),e.define("select2/defaults",["jquery","require","./results","./selection/single","./selection/multiple","./selection/placeholder","./selection/allowClear","./selection/search","./selection/eventRelay","./utils","./translation","./diacritics","./data/select","./data/array","./data/ajax","./data/tags","./data/tokenizer","./data/minimumInputLength","./data/maximumInputLength","./data/maximumSelectionLength","./dropdown","./dropdown/search","./dropdown/hidePlaceholder","./dropdown/infiniteScroll","./dropdown/attachBody","./dropdown/minimumResultsForSearch","./dropdown/selectOnClose","./dropdown/closeOnSelect","./i18n/en"],function(c,u,d,p,h,f,g,m,v,y,s,t,_,$,b,w,A,x,D,S,E,C,O,T,q,L,I,j,e){function n(){this.reset()}return n.prototype.apply=function(e){if(null==(e=c.extend(!0,{},this.defaults,e)).dataAdapter){if(null!=e.ajax?e.dataAdapter=b:null!=e.data?e.dataAdapter=$:e.dataAdapter=_,0<e.minimumInputLength&&(e.dataAdapter=y.Decorate(e.dataAdapter,x)),0<e.maximumInputLength&&(e.dataAdapter=y.Decorate(e.dataAdapter,D)),0<e.maximumSelectionLength&&(e.dataAdapter=y.Decorate(e.dataAdapter,S)),e.tags&&(e.dataAdapter=y.Decorate(e.dataAdapter,w)),null==e.tokenSeparators&&null==e.tokenizer||(e.dataAdapter=y.Decorate(e.dataAdapter,A)),null!=e.query){var t=u(e.amdBase+"compat/query");e.dataAdapter=y.Decorate(e.dataAdapter,t)}if(null!=e.initSelection){var n=u(e.amdBase+"compat/initSelection");e.dataAdapter=y.Decorate(e.dataAdapter,n)}}if(null==e.resultsAdapter&&(e.resultsAdapter=d,null!=e.ajax&&(e.resultsAdapter=y.Decorate(e.resultsAdapter,T)),null!=e.placeholder&&(e.resultsAdapter=y.Decorate(e.resultsAdapter,O)),e.selectOnClose&&(e.resultsAdapter=y.Decorate(e.resultsAdapter,I))),null==e.dropdownAdapter){if(e.multiple)e.dropdownAdapter=E;else{var r=y.Decorate(E,C);e.dropdownAdapter=r}if(0!==e.minimumResultsForSearch&&(e.dropdownAdapter=y.Decorate(e.dropdownAdapter,L)),e.closeOnSelect&&(e.dropdownAdapter=y.Decorate(e.dropdownAdapter,j)),null!=e.dropdownCssClass||null!=e.dropdownCss||null!=e.adaptDropdownCssClass){var i=u(e.amdBase+"compat/dropdownCss");e.dropdownAdapter=y.Decorate(e.dropdownAdapter,i)}e.dropdownAdapter=y.Decorate(e.dropdownAdapter,q)}if(null==e.selectionAdapter){if(e.multiple?e.selectionAdapter=h:e.selectionAdapter=p,null!=e.placeholder&&(e.selectionAdapter=y.Decorate(e.selectionAdapter,f)),e.allowClear&&(e.selectionAdapter=y.Decorate(e.selectionAdapter,g)),e.multiple&&(e.selectionAdapter=y.Decorate(e.selectionAdapter,m)),null!=e.containerCssClass||null!=e.containerCss||null!=e.adaptContainerCssClass){var o=u(e.amdBase+"compat/containerCss");e.selectionAdapter=y.Decorate(e.selectionAdapter,o)}e.selectionAdapter=y.Decorate(e.selectionAdapter,v)}e.language=this._resolveLanguage(e.language),e.language.push("en");for(var s=[],a=0;a<e.language.length;a++){var l=e.language[a];-1===s.indexOf(l)&&s.push(l)}return e.language=s,e.translations=this._processTranslations(e.language,e.debug),e},n.prototype.reset=function(){function a(e){return e.replace(/[^\u0000-\u007E]/g,function(e){return t[e]||e})}this.defaults={amdBase:"./",amdLanguageBase:"./i18n/",closeOnSelect:!0,debug:!1,dropdownAutoWidth:!1,escapeMarkup:y.escapeMarkup,language:{},matcher:function e(t,n){if(""===c.trim(t.term))return n;if(n.children&&0<n.children.length){for(var r=c.extend(!0,{},n),i=n.children.length-1;0<=i;i--)null==e(t,n.children[i])&&r.children.splice(i,1);return 0<r.children.length?r:e(t,r)}var o=a(n.text).toUpperCase(),s=a(t.term).toUpperCase();return-1<o.indexOf(s)?n:null},minimumInputLength:0,maximumInputLength:0,maximumSelectionLength:0,minimumResultsForSearch:0,selectOnClose:!1,scrollAfterSelect:!1,sorter:function(e){return e},templateResult:function(e){return e.text},templateSelection:function(e){return e.text},theme:"default",width:"resolve"}},n.prototype.applyFromElement=function(e,t){var n=e.language,r=this.defaults.language,i=t.prop("lang"),o=t.closest("[lang]").prop("lang"),s=Array.prototype.concat.call(this._resolveLanguage(i),this._resolveLanguage(n),this._resolveLanguage(r),this._resolveLanguage(o));return e.language=s,e},n.prototype._resolveLanguage=function(e){if(!e)return[];if(c.isEmptyObject(e))return[];if(c.isPlainObject(e))return[e];var t;t=c.isArray(e)?e:[e];for(var n=[],r=0;r<t.length;r++)if(n.push(t[r]),"string"==typeof t[r]&&0<t[r].indexOf("-")){var i=t[r].split("-")[0];n.push(i)}return n},n.prototype._processTranslations=function(e,t){for(var n=new s,r=0;r<e.length;r++){var i=new s,o=e[r];if("string"==typeof o)try{i=s.loadPath(o)}catch(e){try{o=this.defaults.amdLanguageBase+o,i=s.loadPath(o)}catch(e){t&&window.console&&console.warn&&console.warn('Select2: The language file for "'+o+'" could not be automatically loaded. A fallback will be used instead.')}}else i=c.isPlainObject(o)?new s(o):o;n.extend(i)}return n},n.prototype.set=function(e,t){var n={};n[c.camelCase(e)]=t;var r=y._convertData(n);c.extend(!0,this.defaults,r)},new n}),e.define("select2/options",["require","jquery","./defaults","./utils"],function(r,d,i,p){function e(e,t){if(this.options=e,null!=t&&this.fromElement(t),null!=t&&(this.options=i.applyFromElement(this.options,t)),this.options=i.apply(this.options),t&&t.is("input")){var n=r(this.get("amdBase")+"compat/inputData");this.options.dataAdapter=p.Decorate(this.options.dataAdapter,n)}}return e.prototype.fromElement=function(e){var t=["select2"];null==this.options.multiple&&(this.options.multiple=e.prop("multiple")),null==this.options.disabled&&(this.options.disabled=e.prop("disabled")),null==this.options.dir&&(e.prop("dir")?this.options.dir=e.prop("dir"):e.closest("[dir]").prop("dir")?this.options.dir=e.closest("[dir]").prop("dir"):this.options.dir="ltr"),e.prop("disabled",this.options.disabled),e.prop("multiple",this.options.multiple),p.GetData(e[0],"select2Tags")&&(this.options.debug&&window.console&&console.warn&&console.warn('Select2: The `data-select2-tags` attribute has been changed to use the `data-data` and `data-tags="true"` attributes and will be removed in future versions of Select2.'),p.StoreData(e[0],"data",p.GetData(e[0],"select2Tags")),p.StoreData(e[0],"tags",!0)),p.GetData(e[0],"ajaxUrl")&&(this.options.debug&&window.console&&console.warn&&console.warn("Select2: The `data-ajax-url` attribute has been changed to `data-ajax--url` and support for the old attribute will be removed in future versions of Select2."),e.attr("ajax--url",p.GetData(e[0],"ajaxUrl")),p.StoreData(e[0],"ajax-Url",p.GetData(e[0],"ajaxUrl")));var n={};function r(e,t){return t.toUpperCase()}for(var i=0;i<e[0].attributes.length;i++){var o=e[0].attributes[i].name,s="data-";if(o.substr(0,s.length)==s){var a=o.substring(s.length),l=p.GetData(e[0],a);n[a.replace(/-([a-z])/g,r)]=l}}d.fn.jquery&&"1."==d.fn.jquery.substr(0,2)&&e[0].dataset&&(n=d.extend(!0,{},e[0].dataset,n));var c=d.extend(!0,{},p.GetData(e[0]),n);for(var u in c=p._convertData(c))-1<d.inArray(u,t)||(d.isPlainObject(this.options[u])?d.extend(this.options[u],c[u]):this.options[u]=c[u]);return this},e.prototype.get=function(e){return this.options[e]},e.prototype.set=function(e,t){this.options[e]=t},e}),e.define("select2/core",["jquery","./options","./utils","./keys"],function(o,c,u,r){var d=function(e,t){null!=u.GetData(e[0],"select2")&&u.GetData(e[0],"select2").destroy(),this.$element=e,this.id=this._generateId(e),t=t||{},this.options=new c(t,e),d.__super__.constructor.call(this);var n=e.attr("tabindex")||0;u.StoreData(e[0],"old-tabindex",n),e.attr("tabindex","-1");var r=this.options.get("dataAdapter");this.dataAdapter=new r(e,this.options);var i=this.render();this._placeContainer(i);var o=this.options.get("selectionAdapter");this.selection=new o(e,this.options),this.$selection=this.selection.render(),this.selection.position(this.$selection,i);var s=this.options.get("dropdownAdapter");this.dropdown=new s(e,this.options),this.$dropdown=this.dropdown.render(),this.dropdown.position(this.$dropdown,i);var a=this.options.get("resultsAdapter");this.results=new a(e,this.options,this.dataAdapter),this.$results=this.results.render(),this.results.position(this.$results,this.$dropdown);var l=this;this._bindAdapters(),this._registerDomEvents(),this._registerDataEvents(),this._registerSelectionEvents(),this._registerDropdownEvents(),this._registerResultsEvents(),this._registerEvents(),this.dataAdapter.current(function(e){l.trigger("selection:update",{data:e})}),e.addClass("select2-hidden-accessible"),e.attr("aria-hidden","true"),this._syncAttributes(),u.StoreData(e[0],"select2",this),e.data("select2",this)};return u.Extend(d,u.Observable),d.prototype._generateId=function(e){return"select2-"+(null!=e.attr("id")?e.attr("id"):null!=e.attr("name")?e.attr("name")+"-"+u.generateChars(2):u.generateChars(4)).replace(/(:|\.|\[|\]|,)/g,"")},d.prototype._placeContainer=function(e){e.insertAfter(this.$element);var t=this._resolveWidth(this.$element,this.options.get("width"));null!=t&&e.css("width",t)},d.prototype._resolveWidth=function(e,t){var n=/^width:(([-+]?([0-9]*\.)?[0-9]+)(px|em|ex|%|in|cm|mm|pt|pc))/i;if("resolve"==t){var r=this._resolveWidth(e,"style");return null!=r?r:this._resolveWidth(e,"element")}if("element"==t){var i=e.outerWidth(!1);return i<=0?"auto":i+"px"}if("style"!=t)return"computedstyle"!=t?t:window.getComputedStyle(e[0]).width;var o=e.attr("style");if("string"!=typeof o)return null;for(var s=o.split(";"),a=0,l=s.length;a<l;a+=1){var c=s[a].replace(/\s/g,"").match(n);if(null!==c&&1<=c.length)return c[1]}return null},d.prototype._bindAdapters=function(){this.dataAdapter.bind(this,this.$container),this.selection.bind(this,this.$container),this.dropdown.bind(this,this.$container),this.results.bind(this,this.$container)},d.prototype._registerDomEvents=function(){var t=this;this.$element.on("change.select2",function(){t.dataAdapter.current(function(e){t.trigger("selection:update",{data:e})})}),this.$element.on("focus.select2",function(e){t.trigger("focus",e)}),this._syncA=u.bind(this._syncAttributes,this),this._syncS=u.bind(this._syncSubtree,this),this.$element[0].attachEvent&&this.$element[0].attachEvent("onpropertychange",this._syncA);var e=window.MutationObserver||window.WebKitMutationObserver||window.MozMutationObserver;null!=e?(this._observer=new e(function(e){t._syncA(),t._syncS(null,e)}),this._observer.observe(this.$element[0],{attributes:!0,childList:!0,subtree:!1})):this.$element[0].addEventListener&&(this.$element[0].addEventListener("DOMAttrModified",t._syncA,!1),this.$element[0].addEventListener("DOMNodeInserted",t._syncS,!1),this.$element[0].addEventListener("DOMNodeRemoved",t._syncS,!1))},d.prototype._registerDataEvents=function(){var n=this;this.dataAdapter.on("*",function(e,t){n.trigger(e,t)})},d.prototype._registerSelectionEvents=function(){var n=this,r=["toggle","focus"];this.selection.on("toggle",function(){n.toggleDropdown()}),this.selection.on("focus",function(e){n.focus(e)}),this.selection.on("*",function(e,t){-1===o.inArray(e,r)&&n.trigger(e,t)})},d.prototype._registerDropdownEvents=function(){var n=this;this.dropdown.on("*",function(e,t){n.trigger(e,t)})},d.prototype._registerResultsEvents=function(){var n=this;this.results.on("*",function(e,t){n.trigger(e,t)})},d.prototype._registerEvents=function(){var n=this;this.on("open",function(){n.$container.addClass("select2-container--open")}),this.on("close",function(){n.$container.removeClass("select2-container--open")}),this.on("enable",function(){n.$container.removeClass("select2-container--disabled")}),this.on("disable",function(){n.$container.addClass("select2-container--disabled")}),this.on("blur",function(){n.$container.removeClass("select2-container--focus")}),this.on("query",function(t){n.isOpen()||n.trigger("open",{}),this.dataAdapter.query(t,function(e){n.trigger("results:all",{data:e,query:t})})}),this.on("query:append",function(t){this.dataAdapter.query(t,function(e){n.trigger("results:append",{data:e,query:t})})}),this.on("keypress",function(e){var t=e.which;n.isOpen()?t===r.ESC||t===r.TAB||t===r.UP&&e.altKey?(n.close(e),e.preventDefault()):t===r.ENTER?(n.trigger("results:select",{}),e.preventDefault()):t===r.SPACE&&e.ctrlKey?(n.trigger("results:toggle",{}),e.preventDefault()):t===r.UP?(n.trigger("results:previous",{}),e.preventDefault()):t===r.DOWN&&(n.trigger("results:next",{}),e.preventDefault()):(t===r.ENTER||t===r.SPACE||t===r.DOWN&&e.altKey)&&(n.open(),e.preventDefault())})},d.prototype._syncAttributes=function(){this.options.set("disabled",this.$element.prop("disabled")),this.isDisabled()?(this.isOpen()&&this.close(),this.trigger("disable",{})):this.trigger("enable",{})},d.prototype._isChangeMutation=function(e,t){var n=!1,r=this;if(!e||!e.target||"OPTION"===e.target.nodeName||"OPTGROUP"===e.target.nodeName){if(t)if(t.addedNodes&&0<t.addedNodes.length)for(var i=0;i<t.addedNodes.length;i++){t.addedNodes[i].selected&&(n=!0)}else t.removedNodes&&0<t.removedNodes.length?n=!0:o.isArray(t)&&o.each(t,function(e,t){if(r._isChangeMutation(e,t))return!(n=!0)});else n=!0;return n}},d.prototype._syncSubtree=function(e,t){var n=this._isChangeMutation(e,t),r=this;n&&this.dataAdapter.current(function(e){r.trigger("selection:update",{data:e})})},d.prototype.trigger=function(e,t){var n=d.__super__.trigger,r={open:"opening",close:"closing",select:"selecting",unselect:"unselecting",clear:"clearing"};if(void 0===t&&(t={}),e in r){var i=r[e],o={prevented:!1,name:e,args:t};if(n.call(this,i,o),o.prevented)return void(t.prevented=!0)}n.call(this,e,t)},d.prototype.toggleDropdown=function(){this.isDisabled()||(this.isOpen()?this.close():this.open())},d.prototype.open=function(){this.isOpen()||this.isDisabled()||this.trigger("query",{})},d.prototype.close=function(e){this.isOpen()&&this.trigger("close",{originalEvent:e})},d.prototype.isEnabled=function(){return!this.isDisabled()},d.prototype.isDisabled=function(){return this.options.get("disabled")},d.prototype.isOpen=function(){return this.$container.hasClass("select2-container--open")},d.prototype.hasFocus=function(){return this.$container.hasClass("select2-container--focus")},d.prototype.focus=function(e){this.hasFocus()||(this.$container.addClass("select2-container--focus"),this.trigger("focus",{}))},d.prototype.enable=function(e){this.options.get("debug")&&window.console&&console.warn&&console.warn('Select2: The `select2("enable")` method has been deprecated and will be removed in later Select2 versions. Use $element.prop("disabled") instead.'),null!=e&&0!==e.length||(e=[!0]);var t=!e[0];this.$element.prop("disabled",t)},d.prototype.data=function(){this.options.get("debug")&&0<arguments.length&&window.console&&console.warn&&console.warn('Select2: Data can no longer be set using `select2("data")`. You should consider setting the value instead using `$element.val()`.');var t=[];return this.dataAdapter.current(function(e){t=e}),t},d.prototype.val=function(e){if(this.options.get("debug")&&window.console&&console.warn&&console.warn('Select2: The `select2("val")` method has been deprecated and will be removed in later Select2 versions. Use $element.val() instead.'),null==e||0===e.length)return this.$element.val();var t=e[0];o.isArray(t)&&(t=o.map(t,function(e){return e.toString()})),this.$element.val(t).trigger("input").trigger("change")},d.prototype.destroy=function(){this.$container.remove(),this.$element[0].detachEvent&&this.$element[0].detachEvent("onpropertychange",this._syncA),null!=this._observer?(this._observer.disconnect(),this._observer=null):this.$element[0].removeEventListener&&(this.$element[0].removeEventListener("DOMAttrModified",this._syncA,!1),this.$element[0].removeEventListener("DOMNodeInserted",this._syncS,!1),this.$element[0].removeEventListener("DOMNodeRemoved",this._syncS,!1)),this._syncA=null,this._syncS=null,this.$element.off(".select2"),this.$element.attr("tabindex",u.GetData(this.$element[0],"old-tabindex")),this.$element.removeClass("select2-hidden-accessible"),this.$element.attr("aria-hidden","false"),u.RemoveData(this.$element[0]),this.$element.removeData("select2"),this.dataAdapter.destroy(),this.selection.destroy(),this.dropdown.destroy(),this.results.destroy(),this.dataAdapter=null,this.selection=null,this.dropdown=null,this.results=null},d.prototype.render=function(){var e=o('<span class="select2 select2-container"><span class="selection"></span><span class="dropdown-wrapper" aria-hidden="true"></span></span>');return e.attr("dir",this.options.get("dir")),this.$container=e,this.$container.addClass("select2-container--"+this.options.get("theme")),u.StoreData(e[0],"element",this.$element),e},d}),e.define("jquery-mousewheel",["jquery"],function(e){return e}),e.define("jquery.select2",["jquery","jquery-mousewheel","./select2/core","./select2/defaults","./select2/utils"],function(i,e,o,t,s){if(null==i.fn.select2){var a=["open","close","destroy"];i.fn.select2=function(t){if("object"==typeof(t=t||{}))return this.each(function(){var e=i.extend(!0,{},t);new o(i(this),e)}),this;if("string"!=typeof t)throw new Error("Invalid arguments for Select2: "+t);var n,r=Array.prototype.slice.call(arguments,1);return this.each(function(){var e=s.GetData(this,"select2");null==e&&window.console&&console.error&&console.error("The select2('"+t+"') method was called on an element that is not using Select2."),n=e[t].apply(e,r)}),-1<i.inArray(t,a)?this:n}}return null==i.fn.select2.defaults&&(i.fn.select2.defaults=t),o}),{define:e.define,require:e.require}}(),t=e.require("jquery.select2");return u.fn.select2.amd=e,t});
 ;
+window.CUSTODY_TYPES = {
+    "laptop": {
+        "label": "لاب توب",
+        "plural": "اللاب توب",
+        "icon": "fa-laptop",
+        "prefix": "LT",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Toshiba", "Microsoft"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "Latitude 5420"},
+            {"key": "serial_no", "label": "الرقم التسلسلي (S/N)", "required": true, "ltr": true},
+            {"key": "cpu", "label": "المعالج", "suggest": ["Core i3", "Core i5", "Core i7", "Core i9", "Core Ultra 5", "Core Ultra 7", "Ryzen 3", "Ryzen 5", "Ryzen 7", "Apple M1", "Apple M2", "Apple M3", "Apple M4"]},
+            {"key": "ram", "label": "الرامات", "options": ["4GB", "8GB", "12GB", "16GB", "24GB", "32GB", "64GB"]},
+            {"key": "storage_type", "label": "نوع التخزين", "options": ["SSD", "NVMe SSD", "HDD", "SSD + HDD"]},
+            {"key": "storage", "label": "سعة التخزين", "options": ["128GB", "256GB", "512GB", "1TB", "2TB"]},
+            {"key": "screen", "label": "حجم الشاشة", "options": ["13.3 بوصة", "14 بوصة", "15.6 بوصة", "16 بوصة", "17.3 بوصة"]},
+            {"key": "os", "label": "نظام التشغيل", "options": ["Windows 11 Pro", "Windows 11 Home", "Windows 10 Pro", "Windows 10 Home", "macOS", "Linux", "بدون نظام"]},
+            {"key": "mac", "label": "عنوان MAC", "ltr": true, "pattern": "^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$", "pattern_msg": "عنوان MAC غير صحيح، مثال: 3C:52:82:1A:2B:3C"},
+            {"key": "warranty_end", "label": "نهاية الضمان", "input": "date"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الجهاز", "input": "checks", "options": ["شاحن", "شنطة", "ماوس", "كيبورد خارجي", "دوك ستيشن", "سماعة"]}
+        ],
+        "summary": ["cpu", "ram", "storage_type", "storage", "screen"],
+        "columns": ["serial_no", "cpu", "ram", "storage", "accessories"]
+    },
+    "mobile": {
+        "label": "موبايل",
+        "plural": "الموبايلات",
+        "icon": "fa-mobile",
+        "prefix": "MB",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["Samsung", "Apple", "Xiaomi", "Oppo", "Realme", "Honor", "Huawei", "Infinix", "Vivo", "Nokia"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "Galaxy A15"},
+            {"key": "serial_no", "label": "IMEI 1", "required": true, "ltr": true, "pattern": "^[0-9]{15}$", "pattern_msg": "رقم IMEI يجب أن يكون 15 رقمًا (اطلب *#06# من الموبايل)"},
+            {"key": "imei2", "label": "IMEI 2", "ltr": true, "pattern": "^[0-9]{15}$", "pattern_msg": "رقم IMEI 2 يجب أن يكون 15 رقمًا"},
+            {"key": "storage", "label": "سعة التخزين", "options": ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"]},
+            {"key": "ram", "label": "الرامات", "options": ["2GB", "3GB", "4GB", "6GB", "8GB", "12GB", "16GB"]},
+            {"key": "color", "label": "اللون", "suggest": ["أسود", "أبيض", "رمادي", "فضي", "أزرق", "أخضر", "ذهبي"]},
+            {"key": "warranty_end", "label": "نهاية الضمان", "input": "date"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الجهاز", "input": "checks", "options": ["شاحن", "كابل", "سماعة", "جراب", "اسكرينة", "العلبة"]}
+        ],
+        "summary": ["storage", "ram", "color"],
+        "columns": ["serial_no", "imei2", "storage", "color", "accessories"]
+    },
+    "sim": {
+        "label": "شريحة",
+        "plural": "الشرائح",
+        "icon": "fa-signal",
+        "prefix": "SM",
+        "name_prefix": "خط",
+        "name": ["brand"],
+        "fields": [
+            {"key": "serial_no", "label": "رقم الخط", "required": true, "ltr": true, "pattern": "^01[0125][0-9]{8}$", "pattern_msg": "رقم الخط يجب أن يكون 11 رقمًا ويبدأ بـ 010 أو 011 أو 012 أو 015"},
+            {"key": "brand", "label": "الشبكة", "required": true, "options": ["فودافون", "أورانج", "اتصالات", "WE"]},
+            {"key": "iccid", "label": "رقم الشريحة (ICCID)", "ltr": true, "pattern": "^[0-9]{18,22}$", "pattern_msg": "رقم الشريحة (المكتوب على الكارت) من 18 إلى 22 رقمًا"},
+            {"key": "line_type", "label": "نوع الخط", "options": ["فاتورة", "كارت"]},
+            {"key": "sim_format", "label": "نوع الشريحة", "options": ["شريحة عادية", "eSIM"]},
+            {"key": "package", "label": "اسم الباقة", "placeholder": "فليكس 100"},
+            {"key": "monthly_fee", "label": "قيمة الباقة الشهرية (ج.م)", "input": "number"},
+            {"key": "data_quota", "label": "باقة الإنترنت", "suggest": ["بدون", "5GB", "10GB", "20GB", "50GB", "غير محدود"]},
+            {"key": "owner", "label": "الخط مسجل باسم", "suggest": ["الجمعية"]}
+        ],
+        "summary": ["line_type", "package", "data_quota"],
+        "columns": ["serial_no", "brand", "line_type", "package", "monthly_fee"]
+    }
+}
+;
+;
 /* نسخة تجريبية: بديل api.php يعمل داخل المتصفح ويحفظ البيانات في localStorage */
 (function ($) {
     'use strict';
-    var KEY = 'custody-demo-v1';
+    var KEY = 'custody-demo-v2';
+    var TYPES = window.CUSTODY_TYPES;   // نفس custody/types.json، يضمّنه build.py
     var STATUSES = ['متاحة', 'مسلمة', 'صيانة', 'تالفة', 'مفقودة', 'مكهنة'];
     var CONDITIONS = ['جديد', 'جيد', 'مستعمل', 'يحتاج صيانة', 'تالف'];
     var ROLES = { admin: 'مدير النظام', editor: 'مسؤول عهد', viewer: 'مشاهدة فقط' };
@@ -567,12 +671,10 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
 
     // ------------------------------------------------------------ seed data
     function seed() {
-        var db = { seq: {}, users: [], employees: [], categories: [], items: [], handovers: [], custody: [], log: [] };
+        var db = { seq: {}, users: [], employees: [], items: [], handovers: [], custody: [], log: [] };
         db.users.push({ id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', active: 1, must_change: 0, last_login: now(), created_at: now(), password: 'admin123' });
         db.users.push({ id: 2, username: 'store', name: 'مسؤول المخزن', role: 'editor', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'store1234' });
         db.seq.users = 2;
-        ['لاب توب', 'كمبيوتر مكتبي', 'شاشة', 'موبايل', 'شريحة اتصال', 'تابلت', 'طابعة', 'سيارة', 'أدوات وعدد', 'أثاث', 'مفاتيح', 'أخرى'].forEach(function (n, i) { db.categories.push({ id: i + 1, name: n }); });
-        db.seq.categories = 12;
         [['E001', 'أحمد محمد عبد الله', 'الهندسة', 'مهندس تركيب', 'القاهرة', '01012345678'],
          ['E002', 'منى علي حسن', 'المصنع', 'فني تصنيع', 'القاهرة', '01123456789'],
          ['E003', 'كريم حسن مصطفى', 'خدمة العملاء', 'مسؤول كول سنتر', 'القاهرة', '01234567890'],
@@ -584,38 +686,48 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             db.employees.push({ id: i + 1, code: e[0], name: e[1], national_id: '2' + pad(90010112345 + i * 7, 13).slice(0, 13), department: e[2], job_title: e[3], branch: e[4], phone: e[5], email: '', active: 1, notes: '', created_at: now() });
         });
         db.seq.employees = 7;
-        [[1, 'لاب توب Dell Latitude 5420', 'Dell', '5420', 'DL5420-778', 25000],
-         [1, 'لاب توب Lenovo ThinkPad E14', 'Lenovo', 'E14', 'LN-E14-221', 23000],
-         [1, 'لاب توب HP ProBook 450', 'HP', '450 G9', 'HP450-993', 21000],
-         [4, 'موبايل Samsung A15', 'Samsung', 'A15', '356789012345678', 9000],
-         [4, 'موبايل Samsung A25', 'Samsung', 'A25', '356789012399911', 11500],
-         [4, 'موبايل Xiaomi Redmi 13', 'Xiaomi', 'Redmi 13', '868123456789012', 7500],
-         [5, 'شريحة فودافون', 'Vodafone', '', '01099887766', 0],
-         [5, 'شريحة أورانج', 'Orange', '', '01288776655', 0],
-         [3, 'شاشة HP 24 بوصة', 'HP', 'P24', 'CN-HP24-55', 5500],
-         [6, 'تابلت Lenovo Tab M10', 'Lenovo', 'M10', 'LN-TAB-01', 7000],
-         [8, 'سيارة تويوتا هاي إس', 'Toyota', 'Hiace 2022', 'ط ر ب 1234', 950000],
-         [9, 'شنطة عدة فنية كاملة', 'Total', '', 'TL-KIT-07', 4200],
-         [7, 'طابعة HP LaserJet', 'HP', 'M211', 'HP-M211-31', 8500],
-         [2, 'كمبيوتر مكتبي Dell OptiPlex', 'Dell', '7090', 'DO-7090-12', 18000]
-        ].forEach(function (it, i) {
-            db.items.push({ id: i + 1, code: 'AS-' + pad(i + 1, 5), category_id: it[0], name: it[1], brand: it[2], model: it[3], serial_no: it[4], purchase_date: today(-300 + i * 9),
-                value: it[5], item_condition: i < 4 ? 'جديد' : 'جيد', status: 'متاحة', location: 'المخزن الرئيسي', notes: '', created_at: now() });
-        });
-        db.seq.items = 14;
-        db.seq.handovers = 0; db.seq.custody = 0; db.seq.log = 0;
+        db.seq.items = 0; db.seq.handovers = 0; db.seq.custody = 0; db.seq.log = 0;
         DB = db;
-        var h1 = assign(1, [{ item_id: 1 }, { item_id: 4 }, { item_id: 7 }], today(-40), 'عهدة بداية العمل');
+        var L = function (brand, model, sn, cpu, ram, st, size, screen, os, acc, value) {
+            return ['laptop', { brand: brand, model: model, serial_no: sn, cpu: cpu, ram: ram, storage_type: st, storage: size, screen: screen, os: os, accessories: acc }, value];
+        };
+        var M = function (brand, model, imei, imei2, storage, ram, color, acc, value) {
+            return ['mobile', { brand: brand, model: model, serial_no: imei, imei2: imei2, storage: storage, ram: ram, color: color, accessories: acc }, value];
+        };
+        var SIM = function (num, net, lineType, format, pkg, fee, data) {
+            return ['sim', { serial_no: num, brand: net, line_type: lineType, sim_format: format, package: pkg, monthly_fee: fee, data_quota: data, owner: 'الجمعية' }, 0];
+        };
+        [L('Dell', 'Latitude 5420', 'DL5420-778', 'Core i5', '16GB', 'SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة', 'ماوس'], 25000),
+         L('Lenovo', 'ThinkPad E14', 'LN-E14-221', 'Core i7', '16GB', 'NVMe SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة'], 27000),
+         L('HP', 'ProBook 450 G9', 'HP450-993', 'Core i5', '8GB', 'SSD', '256GB', '15.6 بوصة', 'Windows 10 Pro', ['شاحن'], 21000),
+         L('Apple', 'MacBook Air', 'C02XK1ABCD', 'Apple M2', '8GB', 'SSD', '256GB', '13.3 بوصة', 'macOS', ['شاحن'], 48000),
+         L('Asus', 'VivoBook 15', 'ASV15-3321', 'Ryzen 5', '8GB', 'SSD', '512GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن', 'ماوس'], 19000),
+         M('Samsung', 'Galaxy A15', '356789012345678', '356789012345679', '128GB', '6GB', 'أسود', ['شاحن', 'كابل', 'جراب', 'اسكرينة'], 9000),
+         M('Samsung', 'Galaxy A25', '356789012399911', '356789012399912', '256GB', '8GB', 'أزرق', ['شاحن', 'جراب'], 11500),
+         M('Xiaomi', 'Redmi 13', '868123456789012', '', '128GB', '8GB', 'أسود', ['شاحن', 'كابل'], 7500),
+         M('Apple', 'iPhone 13', '353912110000001', '', '128GB', '4GB', 'أبيض', ['كابل', 'العلبة'], 32000),
+         M('Oppo', 'A78', '862100000000044', '862100000000045', '256GB', '8GB', 'أخضر', [], 10500),
+         SIM('01099887766', 'فودافون', 'فاتورة', 'شريحة عادية', 'فليكس 100', '100', '10GB'),
+         SIM('01288776655', 'أورانج', 'فاتورة', 'شريحة عادية', 'بريميوم 150', '150', '20GB'),
+         SIM('01155443322', 'اتصالات', 'كارت', 'شريحة عادية', '', '', '5GB'),
+         SIM('01022334455', 'فودافون', 'فاتورة', 'eSIM', 'ريد 300', '300', 'غير محدود'),
+         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB')
+        ].forEach(function (x, i) {
+            A['items.save']({ type: x[0], specs: x[1], value: x[2] || '', purchase_date: today(-300 + i * 9), item_condition: i % 5 === 0 ? 'جديد' : 'جيد', location: 'المخزن الرئيسي' });
+        });
+        var h1 = assign(1, [{ item_id: 1 }, { item_id: 6 }, { item_id: 11 }], today(-40), 'عهدة بداية العمل');
         sign(h1, 'أحمد محمد عبد الله');
-        var h2 = assign(5, [{ item_id: 11 }, { item_id: 12 }], today(-25), 'سيارة الصيانة الميدانية');
+        var h2 = assign(5, [{ item_id: 3 }, { item_id: 8 }, { item_id: 12 }], today(-25), '');
         sign(h2, 'محمود السيد');
-        var h3 = assign(4, [{ item_id: 2 }, { item_id: 5 }, { item_id: 8 }], today(-12), '');
+        var h3 = assign(4, [{ item_id: 2 }, { item_id: 7 }, { item_id: 14 }], today(-12), '');
         sign(h3, 'سارة إبراهيم');
-        assign(2, [{ item_id: 9 }, { item_id: 14 }], today(-3), '');
-        assign(3, [{ item_id: 6 }], today(-1), '');
-        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 5; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
+        var h4 = assign(7, [{ item_id: 4 }], today(-8), '');
+        sign(h4, 'عمرو فتحي');
+        assign(2, [{ item_id: 5 }, { item_id: 13 }], today(-3), '');
+        assign(3, [{ item_id: 10 }], today(-1), '');
+        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 7; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
         sign(r, 'سارة إبراهيم');
-        DB.log = DB.log.slice(0, 0);
+        DB.log = [];
         log('إنشاء البيانات التجريبية', null, null, '');
         save();
     }
@@ -630,7 +742,17 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     function str(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max || 190); }
     function has(s, q) { return String(s || '').toLowerCase().indexOf(q.toLowerCase()) >= 0; }
     function copy(o) { return JSON.parse(JSON.stringify(o)); }
-    function catName(id) { var c = byId('categories', id); return c ? c.name : null; }
+    // نفس decorate_item في lib.php
+    function decorate(row) {
+        var t = TYPES[row.type], specs = $.extend({}, row.specs || {});
+        ['brand', 'model', 'serial_no'].forEach(function (k) { if (row[k] !== undefined) specs[k] = row[k]; });
+        return $.extend({}, row, {
+            type_label: t ? t.label : '', specs: specs,
+            specs_text: (t ? t.summary : []).filter(function (k) { return specs[k]; }).map(function (k) { return specs[k]; }).join(' / '),
+            accessories_text: (specs.accessories || []).join('، ')
+        });
+    }
+    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs }; }
     function docNo(type, id, date) { return (type === 'out' ? 'TS' : 'RT') + '-' + date.slice(0, 4) + '-' + pad(id, 5); }
     function signUrl(t) { return 'sign.php?t=' + t; }
 
@@ -696,8 +818,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     function handoverItems(h) {
         var col = h.type === 'out' ? 'out_handover_id' : 'in_handover_id';
         return DB.custody.filter(function (c) { return c[col] === h.id; }).map(function (c) {
-            var it = byId('items', c.item_id);
-            return $.extend({}, c, { code: it.code, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, category: catName(it.category_id) });
+            return decorate($.extend({}, c, itemFields(byId('items', c.item_id))));
         });
     }
 
@@ -714,20 +835,20 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         var state = p.state || 'active', q = str(p.q);
         return DB.custody.slice().reverse().map(function (c) {
             var it = byId('items', c.item_id), e = byId('employees', c.employee_id), ho = byId('handovers', c.out_handover_id), hi = c.in_handover_id ? byId('handovers', c.in_handover_id) : null;
-            return $.extend({}, c, { code: it.code, item_name: it.name, serial_no: it.serial_no, brand: it.brand, model: it.model, value: it.value, category: catName(it.category_id), category_id: it.category_id,
+            return decorate($.extend({}, c, itemFields(it), { item_name: it.name,
                 employee_name: e.name, employee_code: e.code, department: e.department, out_doc_no: ho.doc_no, out_ack_at: ho.ack_at, out_token: ho.token,
-                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null });
+                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null }));
         }).filter(function (r) {
             if (state === 'active' && r.in_handover_id) return false;
             if (state === 'returned' && !r.in_handover_id) return false;
             if (p.employee_id && r.employee_id !== +p.employee_id) return false;
             if (p.department && r.department !== p.department) return false;
-            if (p.category_id && r.category_id !== +p.category_id) return false;
+            if (TYPES[p.type] && r.type !== p.type) return false;
             if (p.ack === 'signed' && !r.out_ack_at) return false;
             if (p.ack === 'pending' && r.out_ack_at) return false;
             if (p.from && r.assigned_at < p.from) return false;
             if (p.to && r.assigned_at > p.to) return false;
-            if (q && ![r.item_name, r.code, r.serial_no, r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
+            if (q && ![r.item_name, r.code, r.serial_no, JSON.stringify(r.specs), r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
             return true;
         });
     }
@@ -750,13 +871,13 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     function itemRows(p) {
         var q = str(p.q);
         return DB.items.slice().reverse().filter(function (i) {
-            if (q && ![i.name, i.code, i.serial_no, i.brand, i.model].some(function (v) { return has(v, q); })) return false;
-            if (p.category_id && i.category_id !== +p.category_id) return false;
+            if (q && ![i.name, i.code, i.serial_no, i.brand, i.model, JSON.stringify(i.specs || {})].some(function (v) { return has(v, q); })) return false;
+            if (TYPES[p.type] && i.type !== p.type) return false;
             if (p.status && i.status !== p.status) return false;
             return true;
         }).map(function (i) {
             var c = DB.custody.filter(function (x) { return x.item_id === i.id && !x.in_handover_id; })[0], e = c ? byId('employees', c.employee_id) : null;
-            return $.extend({}, i, { category: catName(i.category_id), holder_id: e ? e.id : null, holder_name: e ? e.name : null, holder_department: e ? e.department : null, assigned_at: c ? c.assigned_at : null });
+            return decorate($.extend({}, i, { holder_id: e ? e.id : null, holder_name: e ? e.name : null, holder_department: e ? e.department : null, assigned_at: c ? c.assigned_at : null }));
         });
     }
 
@@ -777,7 +898,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     var A = {};
     A['auth.me'] = function () {
         return { user: { id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', must_change: 0 }, csrf: 'demo', app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand',
-            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today() };
+            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES };
     };
     A['auth.login'] = function () { return { ok: true }; };
     A['auth.logout'] = function () { return { ok: true }; };
@@ -786,7 +907,10 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     A.dashboard = function () {
         var by = {}; DB.items.forEach(function (i) { by[i.status] = (by[i.status] || 0) + 1; });
         var active = DB.custody.filter(function (c) { return !c.in_handover_id; });
-        var cats = {}; DB.items.forEach(function (i) { var n = catName(i.category_id) || 'بدون تصنيف'; cats[n] = cats[n] || { name: n, total: 0, assigned: 0 }; cats[n].total++; if (i.status === 'مسلمة') cats[n].assigned++; });
+        var types = {}; DB.items.forEach(function (i) {
+            var t = types[i.type] = types[i.type] || { type: i.type, name: TYPES[i.type].label, total: 0, assigned: 0, available: 0 };
+            t.total++; if (i.status === 'مسلمة') t.assigned++; if (i.status === 'متاحة') t.available++;
+        });
         var deps = {}; active.forEach(function (c) { var e = byId('employees', c.employee_id), n = e.department || 'بدون قسم'; deps[n] = deps[n] || { name: n, n: 0, value: 0 }; deps[n].n++; deps[n].value += +byId('items', c.item_id).value || 0; });
         var srt = function (k) { return function (a, b) { return b[k] - a[k]; }; };
         return {
@@ -794,7 +918,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             active_value: active.reduce(function (s, c) { return s + (+byId('items', c.item_id).value || 0); }, 0),
             employees_with_custody: distinct(active, 'employee_id').length,
             pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && !h.ack_at; }).length,
-            by_category: Object.keys(cats).map(function (k) { return cats[k]; }).sort(srt('total')),
+            by_type: Object.keys(types).map(function (k) { return types[k]; }).sort(srt('total')),
             by_department: Object.keys(deps).map(function (k) { return deps[k]; }).sort(srt('n')),
             recent: DB.handovers.slice().reverse().slice(0, 10).map(function (h) {
                 return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
@@ -803,22 +927,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     };
 
     A.lookups = function () {
-        return {
-            categories: DB.categories.map(function (c) { return $.extend({}, c, { items_count: DB.items.filter(function (i) { return i.category_id === c.id; }).length }); })
-                .sort(function (a, b) { return a.name.localeCompare(b.name, 'ar'); }),
-            departments: distinct(DB.employees, 'department'), branches: distinct(DB.employees, 'branch'), locations: distinct(DB.items, 'location')
-        };
-    };
-    A['categories.save'] = function (p) {
-        var name = str(p.name), id = +p.id || 0;
-        if (!name) fail('اسم التصنيف مطلوب');
-        if (DB.categories.some(function (c) { return c.name === name && c.id !== id; })) fail('التصنيف موجود بالفعل');
-        if (id) byId('categories', id).name = name; else { id = nextId('categories'); DB.categories.push({ id: id, name: name }); }
-        log('حفظ تصنيف', 'category', id, name); return { id: id };
-    };
-    A['categories.delete'] = function (p) {
-        if (DB.items.some(function (i) { return i.category_id === +p.id; })) fail('لا يمكن حذف تصنيف مرتبط بأصناف');
-        DB.categories = DB.categories.filter(function (c) { return c.id !== +p.id; }); log('حذف تصنيف', 'category', +p.id); return { ok: true };
+        return { departments: distinct(DB.employees, 'department'), branches: distinct(DB.employees, 'branch'), locations: distinct(DB.items, 'location') };
     };
 
     A['employees.list'] = employeeRows;
@@ -847,29 +956,52 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     A['items.get'] = function (p) {
         var i = byId('items', p.id); if (!i) fail('الصنف غير موجود', 404);
         return {
-            item: $.extend({}, i, { category: catName(i.category_id) }),
+            item: decorate(i),
             history: DB.custody.filter(function (c) { return c.item_id === i.id; }).reverse().map(function (c) {
                 var e = byId('employees', c.employee_id);
                 return $.extend({}, c, { employee_name: e.name, department: e.department, out_doc_no: byId('handovers', c.out_handover_id).doc_no, in_doc_no: c.in_handover_id ? byId('handovers', c.in_handover_id).doc_no : null });
             })
         };
     };
+    // نفس read_type_fields + save_item في api.php
+    function readTypeFields(type, input) {
+        var def = TYPES[type], cols = { brand: '', model: '', serial_no: '' }, specs = {};
+        def.fields.forEach(function (f) {
+            var k = f.key, kind = f.input || 'text', v;
+            if (kind === 'checks') {
+                v = f.options.filter(function (o) { return (input[k] || []).indexOf(o) >= 0; });
+                if (v.length) specs[k] = v;
+                return;
+            }
+            v = str(input[k]);
+            if (v === '') { if (f.required) fail(f.label + ' مطلوب'); return; }
+            if (kind === 'number') { if (isNaN(+v) || +v < 0) fail(f.label + ': أدخل رقمًا صحيحًا'); v = String(Math.round(+v * 100) / 100); }
+            if (f.options && f.options.indexOf(v) < 0) fail(f.label + ': اختر قيمة من القائمة');
+            if (f.pattern && !new RegExp(f.pattern).test(v)) fail(f.pattern_msg || (f.label + ' غير صحيح'));
+            if (k in cols) cols[k] = v; else specs[k] = v;
+        });
+        var name = def.name.map(function (k) { return cols[k] !== undefined ? cols[k] : specs[k]; }).filter(Boolean).join(' ');
+        return { cols: cols, specs: specs, name: ((def.name_prefix || '') + ' ' + name).trim() || def.label };
+    }
+
     A['items.save'] = function (p) {
         var id = +p.id || 0, old = id ? byId('items', id) : null;
         if (id && !old) fail('الصنف غير موجود', 404);
-        var row = { code: str(p.code, 64), category_id: p.category_id ? +p.category_id : null, name: str(p.name), brand: str(p.brand), model: str(p.model), serial_no: str(p.serial_no),
+        var type = old ? old.type : str(p.type, 16);
+        if (!TYPES[type]) fail('اختر نوع الصنف');
+        var tf = readTypeFields(type, p.specs || {});
+        var row = $.extend({}, tf.cols, { code: str(p.code, 64), type: type, name: tf.name, specs: tf.specs,
             purchase_date: str(p.purchase_date, 10) || null, value: p.value === '' || p.value === undefined || p.value === null ? null : Math.round(+p.value * 100) / 100,
-            item_condition: str(p.item_condition, 32) || 'جيد', location: str(p.location), notes: str(p.notes, 2000) };
-        if (!row.name) fail('اسم الصنف مطلوب');
+            item_condition: str(p.item_condition, 32) || 'جيد', location: str(p.location), notes: str(p.notes, 2000) });
         var st = str(p.status, 32);
         if (old && old.status === 'مسلمة') st = 'مسلمة';
         else if (st === 'مسلمة' || STATUSES.indexOf(st) < 0) st = old ? old.status : 'متاحة';
         row.status = st;
         if (row.code && DB.items.some(function (i) { return i.code === row.code && i.id !== id; })) fail('كود الأصل مستخدم لصنف آخر');
         var dup = row.serial_no && DB.items.filter(function (i) { return i.serial_no === row.serial_no && i.id !== id; })[0];
-        if (dup) fail('الرقم التسلسلي مسجل بالفعل للصنف ' + dup.code);
+        if (dup) fail(TYPES[type].fields.filter(function (f) { return f.key === 'serial_no'; })[0].label + ' مسجل بالفعل للصنف ' + dup.code);
         if (id) { if (!row.code) row.code = old.code; $.extend(old, row); log('تعديل صنف', 'item', id, row.code + ' ' + row.name); }
-        else { id = nextId('items'); if (!row.code) row.code = 'AS-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
+        else { id = nextId('items'); if (!row.code) row.code = TYPES[type].prefix + '-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
         return { id: id, code: row.code };
     };
     A['items.delete'] = function (p) {
@@ -931,12 +1063,18 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: l.user_id ? 'مدير النظام' : null }); }); };
 
     A.export = function (p) {
-        if (p.type === 'custody') {
-            csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'التصنيف', 'الصنف', 'الرقم التسلسلي', 'القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع'],
-                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.category, r.item_name, r.serial_no, r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]; }));
-        } else if (p.type === 'items') {
-            csv('items-' + today() + '.csv', ['كود الأصل', 'التصنيف', 'الصنف', 'الماركة', 'الموديل', 'الرقم التسلسلي', 'تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات'],
-                itemRows(p).map(function (r) { return [r.code, r.category, r.name, r.brand, r.model, r.serial_no, r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]; }));
+        var def = TYPES[p.type];
+        var specHeads = def ? def.fields.map(function (f) { return f.label; }) : ['النوع', 'الرقم التسلسلي / IMEI / رقم الخط', 'المواصفات', 'الملحقات'];
+        var specCells = function (r) {
+            if (!def) return [r.type_label, r.serial_no, r.specs_text, r.accessories_text];
+            return def.fields.map(function (f) { var v = r.specs[f.key]; return $.isArray(v) ? v.join('، ') : (v || ''); });
+        };
+        if (p.what === 'custody') {
+            csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'].concat(specHeads, ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']),
+                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]); }));
+        } else if (p.what === 'items') {
+            csv('items-' + today() + '.csv', ['كود الأصل', 'الصنف'].concat(specHeads, ['تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات']),
+                itemRows(p).map(function (r) { return [r.code, r.name].concat(specCells(r), [r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]); }));
         } else {
             csv('employees-' + today() + '.csv', ['الكود', 'الاسم', 'الرقم القومي', 'القسم', 'الوظيفة', 'الفرع', 'الموبايل', 'البريد', 'الحالة', 'عدد أصناف العهدة', 'قيمة العهدة'],
                 employeeRows(p).map(function (r) { return [r.code, r.name, r.national_id, r.department, r.job_title, r.branch, r.phone, r.email, +r.active ? 'نشط' : 'موقوف', r.active_count, r.active_value]; }));
@@ -1006,8 +1144,8 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             else {
                 var v = handoverView(h.id, true), e = esc;
                 body = '<div class="sign-info"><div><span class="info-label">الموظف:</span> <b>' + e(v.employee_name) + '</b></div><div><span class="info-label">القسم:</span> ' + e(v.department || '-') +
-                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة</th></tr></thead><tbody>' +
-                    v.items.map(function (it, n) { return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.name) + '</td><td>' + e(it.serial_no || '-') + '</td><td>' + e(v.type === 'out' ? it.condition_out : it.condition_in) + '</td></tr>'; }).join('') +
+                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead><tbody>' +
+                    v.items.map(function (it, n) { return '<tr><td>' + (n + 1) + '</td><td>' + e(it.name) + '<br><small class="info-label">' + e(it.type_label + ' — ' + it.code) + '</small></td><td>' + e(it.serial_no || '-') + '</td><td class="details-cell">' + detailsHtml(it) + '</td><td>' + e(v.type === 'out' ? it.condition_out : it.condition_in) + '</td></tr>'; }).join('') +
                     '</tbody></table></div><div class="sign-terms">' + (v.type === 'out' ? TERMS_OUT : TERMS_IN) + '</div>';
                 if (v.ack_at) {
                     body += '<div class="alert alert-success text-center"><i class="fa fa-check-circle fa-2x"></i><br>تم التوقيع بواسطة <b>' + e(v.ack_name) + '</b> بتاريخ <span class="d">' + v.ack_at + '</span></div><div class="text-center"><img class="sig-img" src="' + v.ack_signature + '"></div>';
@@ -1046,6 +1184,12 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     };
 
     function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    // نفس item_details_html في lib.php
+    function detailsHtml(it) {
+        var html = it.specs_text ? it.specs_text.split(' / ').map(function (x) { return '<bdi>' + esc(x) + '</bdi>'; }).join(' / ') : '';
+        if (it.accessories_text) html += (html ? '<br>' : '') + '<small><span class="info-label">الملحقات:</span> ' + esc(it.accessories_text) + '</small>';
+        return html || '-';
+    }
     function money2(v) { return Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
     function printHtml(p) {
@@ -1053,7 +1197,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         if (p.h) { h = handoverView(+p.h, true); emp = byId('employees', h.employee_id); items = h.items; title = h.type === 'out' ? 'سند تسليم عهدة' : 'سند ارتجاع عهدة'; }
         else {
             emp = byId('employees', p.emp);
-            items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return $.extend({}, c, { code: it.code, name: it.name, serial_no: it.serial_no, value: it.value, category: catName(it.category_id), doc_no: ho.doc_no }); });
+            items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return decorate($.extend({}, c, itemFields(it), { doc_no: ho.doc_no })); });
             title = items.length ? 'بيان عهدة موظف' : 'شهادة إخلاء طرف من العهد';
         }
         var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div><div class="sheet">' +
@@ -1063,11 +1207,11 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             '</td><td><span class="info-label">الرقم القومي:</span> ' + e(emp.national_id || '-') + '</td></tr><tr><td><span class="info-label">القسم:</span> ' + e(emp.department || '-') + '</td><td colspan="2"><span class="info-label">الوظيفة:</span> ' + e(emp.job_title || '-') + '</td></tr></table>';
         if (items.length) {
             var total = 0;
-            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>التصنيف</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th>' +
+            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>القيمة</th>' +
                 (h ? '<th>الحالة</th><th>ملاحظات</th>' : '<th>تاريخ التسليم</th><th>رقم السند</th>') + '</tr></thead><tbody>' +
                 items.map(function (it, n) {
                     total += +it.value || 0;
-                    return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.category || '-') + '</td><td>' + e(it.name) + '</td><td>' + e(it.serial_no || '-') + '</td><td>' + (it.value === null ? '-' : money2(it.value)) + '</td>' +
+                    return '<tr><td>' + (n + 1) + '</td><td>' + e(it.code) + '</td><td>' + e(it.name) + '<br><small class="info-label">' + e(it.type_label) + '</small></td><td>' + e(it.serial_no || '-') + '</td><td class="details-cell">' + detailsHtml(it) + '</td><td>' + (it.value === null ? '-' : money2(it.value)) + '</td>' +
                         (h ? '<td>' + e(h.type === 'out' ? it.condition_out : it.condition_in) + '</td><td>' + e((h.type === 'out' ? it.notes_out : it.notes_in) || '') + '</td>' : '<td>' + it.assigned_at + '</td><td>' + it.doc_no + '</td>') + '</tr>';
                 }).join('') + '</tbody><tfoot><tr><th colspan="5">الإجمالي (' + items.length + ' صنف)</th><th>' + money2(total) + '</th><th colspan="2"></th></tr></tfoot></table>';
         }
@@ -1099,7 +1243,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
 (function ($) {
     'use strict';
 
-    var S = { csrf: '', user: null, meta: {}, lookups: { categories: [], departments: [], branches: [], locations: [] } };
+    var S = { csrf: '', user: null, meta: {}, lookups: { departments: [], branches: [], locations: [] }, tabs: {} };
     var PAGE_SIZE = 50;
 
     // ------------------------------------------------------------ helpers
@@ -1151,9 +1295,42 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         return html;
     }
 
-    function catOptions(selected, placeholder) {
-        return options(S.lookups.categories.map(function (c) { return { value: c.id, text: c.name }; }), selected, placeholder);
+    // ---------- أنواع الأصناف (types.json): لاب توب / موبايل / شريحة
+
+    function typeKeys() { return Object.keys(S.meta.types); }
+    function typeDef(t) { return S.meta.types[t]; }
+    function fieldOf(t, key) { return typeDef(t).fields.filter(function (f) { return f.key === key; })[0]; }
+
+    function typeBadge(r) {
+        var d = typeDef(r.type);
+        return d ? '<span class="type-badge type-' + esc(r.type) + '"><i class="fa ' + d.icon + '"></i> ' + esc(d.label) + '</span>' : '';
     }
+
+    function specCell(r, key) {
+        var v = r.specs ? r.specs[key] : '';
+        if ($.isArray(v)) v = v.join('، ');
+        if (v && fieldOf(r.type, key).input === 'number') v = money(v);
+        return v ? esc(v) : '-';
+    }
+
+    // عناوين وخلايا الأعمدة الخاصة بنوع محدد
+    function typeHeads(t) {
+        return typeDef(t).columns.map(function (k) { return '<th>' + esc(fieldOf(t, k).label) + '</th>'; }).join('');
+    }
+
+    function typeCells(r, t) {
+        return typeDef(t).columns.map(function (k) { return '<td' + (fieldOf(t, k).ltr ? ' dir="ltr"' : '') + '>' + specCell(r, k) + '</td>'; }).join('');
+    }
+
+    // المعرّف + المواصفات + الملحقات في عمود واحد (لعرض "الكل")
+    function itemDetails(r) {
+        // كل جزء في <bdi> حتى لا يختلط ترتيب العربي والإنجليزي (مثل "15.6 بوصة / Core i5")
+        var html = r.specs_text ? r.specs_text.split(' / ').map(function (x) { return '<bdi>' + esc(x) + '</bdi>'; }).join(' / ') : '';
+        if (r.accessories_text) html += (html ? '<br>' : '') + '<small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>';
+        return html || '-';
+    }
+
+    function keyLabel(t) { return t ? fieldOf(t, 'serial_no').label : 'S/N / IMEI / رقم الخط'; }
 
     function datalist(id, list) {
         return '<datalist id="' + id + '">' + list.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
@@ -1194,8 +1371,8 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         return o;
     }
 
-    function exportUrl(type, filters) {
-        return 'api.php?action=export&type=' + type + '&' + $.param(filters || {});
+    function exportUrl(what, filters) {
+        return 'api.php?action=export&what=' + what + '&' + $.param(filters || {});
     }
 
     function openPrint(url) { DEMO.print(url); }
@@ -1252,18 +1429,33 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 cfg.filters + ' <button class="btn btn-success btn-action" type="submit"><span class="glyphicon glyphicon-search"></span> بحث</button>' +
                 ' <button class="btn btn-danger btn-action" type="reset"><i class="fa fa-times"></i> مسح</button></form></div></div>';
         }
+        if (cfg.tabs) html += '<div class="type-tabs"></div>';
         html += '<div class="box box-table"><div class="table-toolbar"><span class="records"></span><span class="toolbar-extra">' + (cfg.toolbar || '') + '</span></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-hover data-table"><thead><tr>' + cfg.head + '</tr></thead><tbody></tbody></table></div>' +
+            '<div class="table-scroll"><table class="table table-bordered table-hover data-table"><thead><tr></tr></thead><tbody></tbody></table></div>' +
             '<div class="pager-wrap"></div></div>';
         var $c = $('#content').html(html);
-        var rows = [], page = 0;
+        var all = [], rows = [], page = 0;
+        // تبويبات النوع: تعرض في الجدول أصناف النوع المختار فقط بأعمدته الخاصة
+        var tab = cfg.tabs ? (S.tabs[cfg.action] || '') : '';
+
+        function drawTabs() {
+            if (!cfg.tabs) return;
+            var count = function (t) { return all.filter(function (r) { return !t || r.type === t; }).length; };
+            var btn = function (t, icon, label) {
+                return '<button type="button" class="btn btn-lg btn-default' + (tab === t ? ' active tab-' + (t || 'all') : '') + '" data-tab="' + t + '"><i class="fa ' + icon + '"></i> ' +
+                    esc(label) + ' <span class="badge">' + count(t) + '</span></button>';
+            };
+            $c.find('.type-tabs').html(btn('', 'fa-th-large', 'الكل') + typeKeys().map(function (t) { return btn(t, typeDef(t).icon, typeDef(t).plural); }).join(''));
+        }
 
         function draw() {
+            rows = tab ? all.filter(function (r) { return r.type === tab; }) : all;
+            $c.find('thead tr').html(typeof cfg.head === 'function' ? cfg.head(tab) : cfg.head);
             var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
             page = Math.min(page, pages - 1);
             var slice = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
             var cols = $c.find('thead th').length;
-            $c.find('tbody').html(slice.length ? slice.map(cfg.row).join('') : '<tr><td colspan="' + cols + '" class="empty">لا توجد بيانات</td></tr>');
+            $c.find('tbody').html(slice.length ? slice.map(function (r) { return cfg.row(r, tab); }).join('') : '<tr><td colspan="' + cols + '" class="empty">لا توجد بيانات</td></tr>');
             $c.find('.records').text('عدد السجلات: ' + rows.length);
             var p = '';
             if (pages > 1) {
@@ -1280,18 +1472,26 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         function load() {
             var f = cfg.filters ? formData($c.find('form.filters')) : {};
             $c.find('tbody').html('<tr><td colspan="20" class="empty"><i class="fa fa-spinner fa-spin"></i></td></tr>');
-            return api(cfg.action, $.extend({}, cfg.params || {}, f), 'GET').then(function (data) { rows = cfg.transform ? cfg.transform(data) : data; page = 0; draw(); });
+            return api(cfg.action, $.extend({}, cfg.params || {}, f), 'GET').then(function (data) { all = cfg.transform ? cfg.transform(data) : data; page = 0; drawTabs(); draw(); });
         }
+
+        $c.on('click', '.type-tabs [data-tab]', function () {
+            tab = String($(this).data('tab'));
+            S.tabs[cfg.action] = tab;
+            page = 0;
+            drawTabs();
+            draw();
+        });
 
         $c.on('submit', 'form.filters', function (e) { e.preventDefault(); load(); });
         $c.on('reset', 'form.filters', function () { setTimeout(function () { $c.find('form.filters select.s2').trigger('change'); load(); }); });
         $c.on('click', '.pager-wrap a', function (e) { e.preventDefault(); page = +$(this).data('page'); draw(); });
         $c.on('click', '[data-export]', function () {
-            DEMO.go = exportUrl($(this).data('export'), $.extend({}, cfg.params || {}, cfg.filters ? formData($c.find('form.filters')) : {}));
+            DEMO.go = exportUrl($(this).data('export'), $.extend({}, cfg.params || {}, cfg.filters ? formData($c.find('form.filters')) : {}, tab ? { type: tab } : {}));
         });
         if (cfg.init) cfg.init($c);
         load();
-        return { reload: load, rows: function () { return rows; }, $c: $c };
+        return { reload: load, rows: function () { return rows; }, tab: function () { return tab; }, $c: $c };
     }
 
     // ------------------------------------------------------------ views
@@ -1308,6 +1508,11 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             };
             var html = '<div class="page-head"><h3><i class="fa fa-dashboard"></i> لوحة المتابعة</h3><div class="page-actions">' +
                 (canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '') + '</div></div>';
+            html += '<div class="type-kpis">' + typeKeys().map(function (t) {
+                var r = d.by_type.filter(function (x) { return x.type === t; })[0] || { total: 0, assigned: 0, available: 0 };
+                return '<a class="type-kpi type-' + t + '" href="#custody" data-tab-link="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i><div><b>' + esc(typeDef(t).plural) + '</b>' +
+                    '<span>' + r.assigned + ' في العهدة · ' + r.available + ' متاحة · ' + r.total + ' إجمالي</span></div></a>';
+            }).join('') + '</div>';
             html += '<div class="vs-kpi-grid kpi-6">' +
                 kpi(d.items_total, 'إجمالي الأصناف', 'fa-cubes', '#items') +
                 kpi(st['مسلمة'] || 0, 'في عهدة الموظفين', 'fa-exchange', '#custody') +
@@ -1319,8 +1524,8 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 kpi(money(d.active_value), 'قيمة العهد القائمة', 'fa-money', '#custody') +
                 '</div>';
             html += '<div class="dash-grid">';
-            html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب التصنيف</div>' + barTable(d.by_category.map(function (c) {
-                return { name: c.name, value: +c.total, part: +c.assigned, note: c.assigned + ' مسلمة من ' + c.total };
+            html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب النوع</div>' + barTable(d.by_type.map(function (c) {
+                return { name: c.name, value: +c.total, part: +c.assigned, note: c.assigned + ' في العهدة · ' + c.available + ' متاحة' };
             })) + '</div>';
             html += '<div class="vs-chart-card"><div class="vs-group-label">العهد القائمة حسب القسم</div>' + barTable(d.by_department.map(function (c) {
                 return { name: c.name, value: +c.n, note: c.n + ' صنف — ' + money(c.value) };
@@ -1347,28 +1552,32 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     }
 
     views.custody = function () {
-        var cats = catOptions('', 'كل التصنيفات');
-        var view = listView({
-            title: 'العهد', icon: 'fa-exchange', action: 'custody.list',
+        var check = canEdit() ? '<th><input type="checkbox" class="check-all"></th>' : '';
+        current = listView({
+            title: 'العهد', icon: 'fa-exchange', action: 'custody.list', tabs: true,
             actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '',
             filters:
-                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / رقم سند" style="width:260px"> ' +
+                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / IMEI / رقم خط / سند" style="width:300px"> ' +
                 '<select class="form-control" name="state"><option value="active">العهد القائمة</option><option value="returned">تم ارتجاعها</option><option value="all">الكل</option></select> ' +
                 '<select class="form-control" name="department">' + options(S.lookups.departments, '', 'كل الأقسام') + '</select> ' +
-                '<select class="form-control" name="category_id">' + cats + '</select> ' +
                 '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع</option><option value="pending">بانتظار التوقيع</option></select> ' +
                 '<label class="inline-label">من</label><input class="form-control" type="date" name="from"> <label class="inline-label">إلى</label><input class="form-control" type="date" name="to">',
             toolbar: (canEdit() ? '<button class="btn btn-warning btn-sm btn-action" data-act="return-selected"><i class="fa fa-undo"></i> ارتجاع المحدد</button> ' +
                 '<button class="btn btn-primary btn-sm btn-action" data-act="transfer-selected"><i class="fa fa-random"></i> نقل المحدد لموظف آخر</button> ' : '') +
                 '<button class="btn btn-success btn-sm btn-action" data-export="custody"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
-            head: (canEdit() ? '<th><input type="checkbox" class="check-all"></th>' : '') + '<th>الموظف</th><th>القسم</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th><th>تاريخ التسليم</th><th>سند التسليم</th><th>التوقيع</th><th>الارتجاع</th>',
-            row: function (r) {
+            head: function (t) {
+                return check + '<th>الموظف</th><th>القسم</th><th>كود الأصل</th>' + (t ? '<th>الصنف</th>' + typeHeads(t) : '<th>النوع</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th>') +
+                    '<th>تاريخ التسليم</th><th>سند التسليم</th><th>التوقيع</th><th>الارتجاع</th>';
+            },
+            row: function (r, t) {
                 var active = !r.in_handover_id;
                 return '<tr class="' + (active ? '' : 'row-returned') + '">' +
                     (canEdit() ? '<td>' + (active ? '<input type="checkbox" class="row-check" value="' + r.id + '" data-emp="' + r.employee_id + '">' : '') + '</td>' : '') +
                     '<td><a href="#" data-act="employee" data-id="' + r.employee_id + '">' + esc(r.employee_name) + '</a></td><td>' + esc(r.department || '-') + '</td>' +
-                    '<td class="key"><a href="#" data-act="item" data-id="' + r.item_id + '">' + esc(r.code) + '</a></td><td>' + esc(r.item_name) + ' <small class="info-label">' + esc(r.category || '') + '</small></td>' +
-                    '<td>' + esc(r.serial_no || '-') + '</td><td>' + money(r.value) + '</td><td>' + esc(r.assigned_at) + '</td>' +
+                    '<td class="key"><a href="#" data-act="item" data-id="' + r.item_id + '">' + esc(r.code) + '</a></td>' +
+                    (t ? '<td>' + esc(r.item_name) + '</td>' + typeCells(r, t)
+                        : '<td>' + typeBadge(r) + '</td><td>' + esc(r.item_name) + '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(r) + '</td>') +
+                    '<td>' + esc(r.assigned_at) + '</td>' +
                     '<td><a href="#" data-act="handover" data-id="' + r.out_handover_id + '">' + esc(r.out_doc_no) + '</a></td><td>' + ackLabel(r.out_ack_at) + '</td>' +
                     '<td>' + (active ? '<span class="label label-primary">قائمة</span>' : dt(r.returned_at) + ' <a href="#" data-act="handover" data-id="' + r.in_handover_id + '">' + esc(r.in_doc_no) + '</a>') + '</td></tr>';
             },
@@ -1376,7 +1585,6 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 $c.on('change', '.check-all', function () { $c.find('.row-check').prop('checked', this.checked); });
             }
         });
-        current = view;
     };
 
     function selectedCustody() {
@@ -1412,17 +1620,23 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
 
     views.items = function () {
         current = listView({
-            title: 'الأصناف والأصول', icon: 'fa-cubes', action: 'items.list',
-            actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="item-edit"><i class="fa fa-plus"></i> إضافة صنف</button>' : '',
+            title: 'الأصناف والأصول', icon: 'fa-cubes', action: 'items.list', tabs: true,
+            actions: canEdit() ? typeKeys().map(function (t) {
+                return '<button class="btn btn-primary btn-action" data-act="item-edit" data-type="' + t + '"><i class="fa fa-plus"></i> إضافة ' + esc(typeDef(t).label) + '</button>';
+            }).join(' ') : '',
             filters:
-                '<input class="form-control" name="q" placeholder="اسم / كود / سيريال / ماركة" style="width:240px"> ' +
-                '<select class="form-control" name="category_id">' + catOptions('', 'كل التصنيفات') + '</select> ' +
+                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / سيريال / IMEI / رقم خط" style="width:300px"> ' +
                 '<select class="form-control" name="status">' + options(S.meta.statuses, '', 'كل الحالات') + '</select>',
             toolbar: '<button class="btn btn-success btn-sm btn-action" data-export="items"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
-            head: '<th>كود الأصل</th><th>التصنيف</th><th>الصنف</th><th>الماركة / الموديل</th><th>الرقم التسلسلي</th><th>القيمة</th><th>الحالة الفنية</th><th>الوضع</th><th>في عهدة</th><th>إجراءات</th>',
-            row: function (i) {
-                return '<tr><td class="key">' + esc(i.code) + '</td><td>' + esc(i.category || '-') + '</td><td>' + esc(i.name) + '</td><td>' + esc([i.brand, i.model].filter(Boolean).join(' / ') || '-') +
-                    '</td><td>' + esc(i.serial_no || '-') + '</td><td>' + money(i.value) + '</td><td>' + esc(i.item_condition) + '</td><td>' + statusLabel(i.status) + '</td><td>' +
+            head: function (t) {
+                return '<th>كود الأصل</th>' + (t ? '<th>الصنف</th>' + typeHeads(t) : '<th>النوع</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th>') +
+                    '<th>القيمة</th><th>الحالة الفنية</th><th>الوضع</th><th>في عهدة</th><th>إجراءات</th>';
+            },
+            row: function (i, t) {
+                return '<tr><td class="key">' + esc(i.code) + '</td>' +
+                    (t ? '<td>' + esc(i.name) + '</td>' + typeCells(i, t)
+                        : '<td>' + typeBadge(i) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>') +
+                    '<td>' + money(i.value) + '</td><td>' + esc(i.item_condition) + '</td><td>' + statusLabel(i.status) + '</td><td>' +
                     (i.holder_id ? '<a href="#" data-act="employee" data-id="' + i.holder_id + '">' + esc(i.holder_name) + '</a><br><small class="info-label">منذ ' + dt(i.assigned_at) + '</small>' : '-') +
                     '</td><td class="nowrap"><button class="btn btn-default btn-xs" data-act="item" data-id="' + i.id + '"><i class="fa fa-history"></i> السجل</button> ' +
                     (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="item-edit" data-id="' + i.id + '"><i class="fa fa-pencil"></i> تعديل</button> ' : '') +
@@ -1450,19 +1664,6 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                     (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="employee-edit" data-id="' + e.id + '"><i class="fa fa-pencil"></i> تعديل</button> ' : '') +
                     (canEdit() && +e.active ? '<button class="btn btn-success btn-xs" data-act="assign" data-emp="' + e.id + '" data-emp-name="' + esc(e.name) + '"><i class="fa fa-share"></i> تسليم</button> ' : '') +
                     (isAdmin() ? '<button class="btn btn-danger btn-xs" data-act="employee-delete" data-id="' + e.id + '"><i class="fa fa-trash"></i></button>' : '') + '</td></tr>';
-            }
-        });
-    };
-
-    views.categories = function () {
-        current = listView({
-            title: 'التصنيفات', icon: 'fa-tags', action: 'lookups', transform: function (d) { S.lookups = d; return d.categories; },
-            actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="cat-edit"><i class="fa fa-plus"></i> إضافة تصنيف</button>' : '',
-            head: '<th>التصنيف</th><th>عدد الأصناف</th><th>إجراءات</th>',
-            row: function (c) {
-                return '<tr><td>' + esc(c.name) + '</td><td>' + c.items_count + '</td><td>' +
-                    (canEdit() ? '<button class="btn btn-primary btn-xs" data-act="cat-edit" data-id="' + c.id + '" data-name="' + esc(c.name) + '"><i class="fa fa-pencil"></i> تعديل</button> ' +
-                        (+c.items_count ? '' : '<button class="btn btn-danger btn-xs" data-act="cat-delete" data-id="' + c.id + '"><i class="fa fa-trash"></i></button>') : '') + '</td></tr>';
             }
         });
     };
@@ -1496,9 +1697,9 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         var out = h.type === 'out';
         var body = '<div class="handover-head"><div><span class="info-label">الموظف:</span> <b>' + esc(h.employee_name) + '</b> ' + esc(h.department ? '— ' + h.department : '') +
             '</div><div><span class="info-label">التاريخ:</span> ' + dt(h.doc_date) + '</div><div><span class="info-label">بواسطة:</span> ' + esc(h.created_by_name || '') + '</div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
             h.items.map(function (it, n) {
-                return '<tr><td>' + (n + 1) + '</td><td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td>' + esc(it.serial_no || '-') + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
+                return '<tr><td>' + (n + 1) + '</td><td>' + typeBadge(it) + '</td><td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td dir="ltr">' + esc(it.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(it) + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
                     '</td><td>' + esc((out ? it.notes_out : it.notes_in) || '') + '</td></tr>';
             }).join('') + '</tbody></table></div>' +
             (h.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(h.notes) + '</p>' : '');
@@ -1527,8 +1728,11 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         var body = '<form id="assignForm">' +
             '<div class="row"><div class="col-sm-6 form-group"><label>الموظف المستلم</label><select class="form-control" id="asEmp"></select></div>' +
             '<div class="col-sm-3 form-group"><label>تاريخ التسليم</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
-            '<div class="form-group"><label>الأصناف</label><select class="form-control" id="asItem"></select><small class="info-label">ابحث بالاسم أو الكود أو الرقم التسلسلي — تظهر الأصناف المتاحة فقط</small></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
+            '<div class="form-group"><label>الأصناف</label><div class="filter-inline as-type">' +
+            '<div class="btn-group" id="asType"><button type="button" class="btn btn-default active" data-type="">الكل</button>' +
+            typeKeys().map(function (t) { return '<button type="button" class="btn btn-default" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>'; }).join('') +
+            '</div><select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو S/N أو IMEI أو رقم الخط — تظهر الأصناف المتاحة فقط</small></div>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
             '<div class="form-group"><label>ملاحظات السند</label><textarea class="form-control" name="notes" rows="2"></textarea></div></form>';
         var $m = modal('<i class="fa fa-share"></i> تسليم عهدة جديدة', body,
             '<button class="btn btn-success btn-action" id="asSave"><i class="fa fa-check"></i> حفظ وإنشاء سند التسليم</button><button class="btn btn-default btn-action" data-dismiss="modal">إلغاء</button>', 'modal-lg');
@@ -1536,20 +1740,28 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         if (preset.emp) {
             $m.find('#asEmp').append(new Option(preset.empName, preset.emp, true, true)).trigger('change');
         }
-        var $item = $m.find('#asItem');
+        var $item = $m.find('#asItem'), asType = '';
+        $m.find('#asType').on('click', '[data-type]', function () {
+            asType = String($(this).data('type'));
+            $(this).addClass('active').siblings().removeClass('active');
+            $item.select2('open');
+        });
         $item.select2({
             dir: 'rtl', width: '100%', dropdownParent: $m, placeholder: 'أضف صنفًا...',
             language: { noResults: function () { return 'لا توجد أصناف متاحة مطابقة'; }, searching: function () { return 'جاري البحث...'; } },
             ajax: {
                 url: 'api.php', dataType: 'json', delay: 250,
-                data: function (p) { return { action: 'items.list', q: p.term || '', status: 'متاحة' }; },
+                data: function (p) { return { action: 'items.list', q: p.term || '', status: 'متاحة', type: asType }; },
                 processResults: function (r) {
                     return {
                         results: r.data.slice(0, 50).map(function (i) {
-                            return { id: i.id, text: i.code + ' — ' + i.name + (i.serial_no ? ' [' + i.serial_no + ']' : ''), item: i };
+                            return { id: i.id, text: i.type_label + ' — ' + i.code + ' — ' + i.name + (i.serial_no ? ' [' + i.serial_no + ']' : '') + (i.specs_text ? ' — ' + i.specs_text : ''), item: i };
                         })
                     };
                 }
+            },
+            templateResult: function (d) {
+                return d.item ? $('<span><i class="fa ' + typeDef(d.item.type).icon + '"></i> ' + esc(d.text) + '</span>') : d.text;
             }
         }).on('select2:select', function (e) {
             addLine(e.params.data.item);
@@ -1559,7 +1771,7 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         function addLine(i) {
             if (lines.some(function (l) { return l.id == i.id; })) return;
             lines.push(i);
-            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '"><td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td>' + esc(i.serial_no || '-') + '</td>' +
+            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '"><td>' + typeBadge(i) + '</td><td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>' +
                 '<td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, i.item_condition) + '</select></td>' +
                 '<td><input class="form-control input-sm l-notes"></td><td><button type="button" class="btn btn-danger btn-xs l-del"><i class="fa fa-times"></i></button></td></tr>');
         }
@@ -1594,10 +1806,11 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         var body = '<form id="retForm"><p><span class="info-label">الموظف:</span> <b>' + esc(rows[0].employee_name) + '</b></p>' +
             '<div class="row">' + (transfer ? '<div class="col-sm-6 form-group"><label>نقل إلى الموظف</label><select class="form-control" id="toEmp"></select></div>' : '') +
             '<div class="col-sm-3 form-group"><label>' + (transfer ? 'تاريخ النقل' : 'تاريخ الارتجاع') + '</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr><th>كود الأصل</th><th>الصنف</th><th>الحالة عند الاستلام</th>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>الحالة عند الاستلام</th>' +
             (transfer ? '' : '<th>الوضع بعد الارتجاع</th>') + '<th>ملاحظات</th></tr></thead><tbody>' +
             rows.map(function (r) {
-                return '<tr data-id="' + r.id + '"><td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + '</td><td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, r.condition_out || 'جيد') + '</select></td>' +
+                return '<tr data-id="' + r.id + '"><td>' + typeBadge(r) + '</td><td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + (r.accessories_text ? '<br><small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>' : '') +
+                    '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, r.condition_out || 'جيد') + '</select></td>' +
                     (transfer ? '' : '<td><select class="form-control input-sm l-status">' + options(S.meta.statuses.filter(function (s) { return s !== 'مسلمة'; }), 'متاحة') + '</select></td>') +
                     '<td><input class="form-control input-sm l-notes"></td></tr>';
             }).join('') + '</tbody></table></div>' +
@@ -1641,14 +1854,14 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 '<div class="vs-kpi-grid"><div class="vs-kpi"><span class="num">' + active.length + '</span><span class="lbl">أصناف في العهدة</span></div>' +
                 '<div class="vs-kpi"><span class="num">' + money(total) + '</span><span class="lbl">قيمة العهدة</span></div>' +
                 '<div class="vs-kpi' + (d.handovers.filter(function (h) { return !h.ack_at; }).length ? '' : ' zero') + '"><span class="num">' + d.handovers.filter(function (h) { return !h.ack_at; }).length + '</span><span class="lbl">سندات بانتظار التوقيع</span></div></div>' +
-                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
+                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
                 (d.custody.length ? d.custody.map(function (c) {
                     var act = !c.in_handover_id;
                     return '<tr class="' + (act ? '' : 'row-returned') + '">' + (canEdit() ? '<td>' + (act ? '<input type="checkbox" class="emp-check" value="' + c.id + '">' : '') + '</td>' : '') +
-                        '<td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td>' + esc(c.serial_no || '-') + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
+                        '<td>' + typeBadge(c) + '</td><td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td dir="ltr">' + esc(c.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(c) + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
                         '</td><td><a href="#" data-act="handover" data-id="' + c.out_handover_id + '">' + esc(c.out_doc_no) + '</a></td><td>' + ackLabel(c.out_ack_at) + '</td><td>' +
                         (act ? '<span class="label label-primary">قائمة</span>' : dt(c.returned_at) + ' — ' + esc(c.in_doc_no)) + '</td></tr>';
-                }).join('') : '<tr><td colspan="9" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
+                }).join('') : '<tr><td colspan="12" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
             var footer = (canEdit() && +e.active ? '<button class="btn btn-success btn-action" data-act="assign" data-emp="' + e.id + '" data-emp-name="' + esc(e.name) + '"><i class="fa fa-share"></i> تسليم عهدة</button>' : '') +
                 (canEdit() && active.length ? '<button class="btn btn-warning btn-action" id="empReturn"><i class="fa fa-undo"></i> ارتجاع المحدد</button><button class="btn btn-primary btn-action" id="empTransfer"><i class="fa fa-random"></i> نقل المحدد</button>' : '') +
                 '<button class="btn btn-default btn-action" data-act="print-emp" data-id="' + e.id + '"><i class="fa fa-print"></i> ' + (active.length ? 'طباعة بيان العهدة' : 'طباعة إخلاء طرف') + '</button>' +
@@ -1667,10 +1880,13 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
     function itemCard(id) {
         api('items.get', { id: id }, 'GET').then(function (d) {
             var i = d.item;
-            var info = [['الكود', i.code], ['التصنيف', i.category], ['الماركة', i.brand], ['الموديل', i.model], ['الرقم التسلسلي', i.serial_no], ['تاريخ الشراء', i.purchase_date],
-                ['القيمة', i.value !== null ? money(i.value) : ''], ['المكان', i.location], ['الحالة الفنية', i.item_condition]]
+            var spec = typeDef(i.type).fields.map(function (f) {
+                var v = specCell(i, f.key);
+                return v === '-' ? '' : '<span><span class="info-label">' + esc(f.label) + ':</span> ' + v + '</span>';
+            }).join('');
+            var info = [['الكود', i.code], ['تاريخ الشراء', i.purchase_date], ['القيمة', i.value !== null ? money(i.value) : ''], ['المكان', i.location], ['الحالة الفنية', i.item_condition]]
                 .filter(function (x) { return x[1]; }).map(function (x) { return '<span><span class="info-label">' + x[0] + ':</span> ' + esc(x[1]) + '</span>'; }).join('');
-            var body = '<div class="emp-info">' + info + ' ' + statusLabel(i.status) + '</div>' + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
+            var body = '<div class="emp-info">' + typeBadge(i) + ' ' + info + ' ' + statusLabel(i.status) + '</div><div class="emp-info spec-info">' + spec + '</div>' + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
                 '<div class="vs-group-label">سجل التداول</div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>الموظف</th><th>القسم</th><th>تاريخ التسليم</th><th>الحالة</th><th>سند التسليم</th><th>تاريخ الارتجاع</th><th>الحالة</th><th>سند الارتجاع</th></tr></thead><tbody>' +
                 (d.history.length ? d.history.map(function (c) {
                     return '<tr><td>' + esc(c.employee_name) + '</td><td>' + esc(c.department || '-') + '</td><td>' + esc(c.assigned_at) + '</td><td>' + esc(c.condition_out || '') +
@@ -1681,18 +1897,49 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
         });
     }
 
-    function itemForm(id) {
-        var load = id ? api('items.get', { id: id }, 'GET').then(function (d) { return d.item; }) : $.Deferred().resolve({ status: 'متاحة', item_condition: 'جديد' }).promise();
+    // حقل من حقول نوع الصنف حسب تعريفه في types.json
+    function typeFieldInput(t, f, v) {
+        if (f.input === 'checks') {
+            return '<div class="spec-checks">' + f.options.map(function (o) {
+                return '<label class="checkbox-inline"><input type="checkbox" class="spec-check" data-key="' + f.key + '" value="' + esc(o) + '"' + ($.isArray(v) && v.indexOf(o) >= 0 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+            }).join('') + '</div>';
+        }
+        if (f.options) return '<select class="form-control spec" data-key="' + f.key + '"' + (f.required ? ' required' : '') + '>' + options(f.options, v || '', '-- اختر --') + '</select>';
+        var type = f.input === 'date' ? 'date' : f.input === 'number' ? 'number' : 'text', dl = 'dl-' + t + '-' + f.key;
+        return '<input class="form-control spec" data-key="' + f.key + '" type="' + type + '"' + (type === 'number' ? ' step="0.01" min="0"' : '') + (f.ltr ? ' dir="ltr"' : '') +
+            (f.required ? ' required' : '') + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '') + (f.suggest ? ' list="' + dl + '"' : '') + ' value="' + esc(v || '') + '">' +
+            (f.suggest ? datalist(dl, f.suggest) : '');
+    }
+
+    function typeFieldsHtml(t, specs) {
+        return '<div class="col-xs-12"><div class="vs-group-label"><i class="fa ' + typeDef(t).icon + '"></i> بيانات ' + esc(typeDef(t).label) + '</div></div>' +
+            typeDef(t).fields.map(function (f) {
+                return fg(f.input === 'checks' ? 12 : 4, esc(f.label) + (f.required ? ' *' : ''), typeFieldInput(t, f, specs[f.key]));
+            }).join('');
+    }
+
+    function collectSpecs($form) {
+        var o = {};
+        $form.find('.spec').each(function () { o[$(this).data('key')] = $(this).val(); });
+        $form.find('.spec-check:checked').each(function () { var k = $(this).data('key'); (o[k] = o[k] || []).push(this.value); });
+        return o;
+    }
+
+    function itemForm(id, presetType) {
+        var load = id ? api('items.get', { id: id }, 'GET').then(function (d) { return d.item; })
+            : $.Deferred().resolve({ type: presetType || (current && current.tab && current.tab()) || 'laptop', status: 'متاحة', item_condition: 'جديد', specs: {} }).promise();
         load.then(function (i) {
-            var assigned = i.status === 'مسلمة';
+            var type = i.type, assigned = i.status === 'مسلمة';
+            var typePicker = id ? '<p class="form-control-static">' + typeBadge(i) + ' <small class="info-label">نوع الصنف لا يتغير بعد إضافته</small></p>'
+                : '<div class="btn-group" id="itType">' + typeKeys().map(function (t) {
+                    return '<button type="button" class="btn btn-default' + (t === type ? ' active' : '') + '" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>';
+                }).join('') + '</div>';
             var body = '<form id="itemForm" class="row">' +
                 '<input type="hidden" name="id" value="' + esc(i.id || '') + '">' +
+                fg(12, 'نوع الصنف', typePicker) +
+                '<div id="itFields" class="clearfix">' + typeFieldsHtml(type, i.specs || {}) + '</div>' +
+                '<div class="col-xs-12"><div class="vs-group-label"><i class="fa fa-archive"></i> بيانات الأصل</div></div>' +
                 fg(4, 'كود الأصل', '<input class="form-control" name="code" value="' + esc(i.code || '') + '" placeholder="يُولَّد تلقائيًا إن تُرك فارغًا">') +
-                fg(4, 'التصنيف', '<select class="form-control" name="category_id">' + catOptions(i.category_id, '-- اختر --') + '</select>') +
-                fg(4, 'اسم الصنف *', '<input class="form-control" name="name" required value="' + esc(i.name || '') + '">') +
-                fg(4, 'الماركة', '<input class="form-control" name="brand" value="' + esc(i.brand || '') + '">') +
-                fg(4, 'الموديل', '<input class="form-control" name="model" value="' + esc(i.model || '') + '">') +
-                fg(4, 'الرقم التسلسلي / IMEI', '<input class="form-control" name="serial_no" dir="ltr" value="' + esc(i.serial_no || '') + '">') +
                 fg(4, 'تاريخ الشراء', '<input class="form-control" type="date" name="purchase_date" value="' + esc(i.purchase_date || '') + '">') +
                 fg(4, 'القيمة (ج.م)', '<input class="form-control" type="number" step="0.01" min="0" name="value" value="' + esc(i.value === null || i.value === undefined ? '' : i.value) + '">') +
                 fg(4, 'المكان / المخزن', '<input class="form-control" name="location" list="dlLoc" value="' + esc(i.location || '') + '">' + datalist('dlLoc', S.lookups.locations)) +
@@ -1700,9 +1947,24 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 fg(4, 'الوضع', assigned ? '<p class="form-control-static">' + statusLabel('مسلمة') + ' <small class="info-label">يتغير بالارتجاع</small></p>'
                     : '<select class="form-control" name="status">' + options(S.meta.statuses.filter(function (s) { return s !== 'مسلمة'; }), i.status) + '</select>') +
                 fg(12, 'ملاحظات', '<textarea class="form-control" name="notes" rows="2">' + esc(i.notes || '') + '</textarea>') + '</form>';
-            var $m = modal('<i class="fa fa-cube"></i> ' + (id ? 'تعديل صنف' : 'إضافة صنف'), body, saveFooter(), 'modal-lg');
+            var title = function () { return '<i class="fa ' + typeDef(type).icon + '"></i> ' + (id ? 'تعديل ' : 'إضافة ') + esc(typeDef(type).label); };
+            var $m = modal(title(), body, saveFooter(), 'modal-lg');
+            $m.find('#itType').on('click', '[data-type]', function () {
+                type = String($(this).data('type'));
+                $(this).addClass('active').siblings().removeClass('active');
+                $m.find('#itFields').html(typeFieldsHtml(type, {}));
+                $m.find('.modal-title').html(title());
+            });
             $m.find('#btnSave').on('click', function () {
-                saveForm($m, 'items.save', $m.find('#itemForm'), 'تم حفظ الصنف').then(function () { loadLookups(); });
+                var $form = $m.find('#itemForm');
+                if (!$form[0].checkValidity()) { $form[0].reportValidity(); return; }
+                var $b = $(this).prop('disabled', true);
+                api('items.save', $.extend(formData($form), { type: type, specs: collectSpecs($form) })).then(function (r) {
+                    $m.modal('hide');
+                    toast('تم حفظ ' + typeDef(type).label + ' ' + r.code);
+                    refresh();
+                    loadLookups();
+                }).always(function () { $b.prop('disabled', false); });
             });
         });
     }
@@ -1739,14 +2001,6 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
             fg(6, 'الحالة', '<div class="checkbox"><label><input type="checkbox" name="active"' + (+u.active ? ' checked' : '') + '> نشط</label></div>') + '</form>';
         var $m = modal('<i class="fa fa-user-secret"></i> ' + (id ? 'تعديل مستخدم' : 'إضافة مستخدم'), body, saveFooter());
         $m.find('#btnSave').on('click', function () { saveForm($m, 'users.save', $m.find('#userForm'), 'تم حفظ المستخدم'); });
-    }
-
-    function categoryForm(id, name) {
-        var body = '<form id="catForm"><input type="hidden" name="id" value="' + esc(id || '') + '"><div class="form-group"><label>اسم التصنيف</label><input class="form-control" name="name" required value="' + esc(name || '') + '"></div></form>';
-        var $m = modal('<i class="fa fa-tag"></i> ' + (id ? 'تعديل تصنيف' : 'إضافة تصنيف'), body, saveFooter(), 'modal-sm');
-        $m.find('#btnSave').on('click', function () {
-            saveForm($m, 'categories.save', $m.find('#catForm'), 'تم الحفظ');
-        });
     }
 
     function passwordDialog(forced) {
@@ -1808,23 +2062,22 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
                 break;
             case 'employee': employeeCard(id); break;
             case 'item': itemCard(id); break;
-            case 'item-edit': itemForm(id); break;
+            case 'item-edit': itemForm(id, $t.data('type')); break;
             case 'employee-edit': employeeForm(id); break;
             case 'user-edit': userForm(id); break;
-            case 'cat-edit': categoryForm(id, $t.data('name')); break;
             case 'item-delete':
                 confirmBox('حذف الصنف نهائيًا؟').then(function () { api('items.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); }); });
                 break;
             case 'employee-delete':
                 confirmBox('حذف الموظف نهائيًا؟').then(function () { api('employees.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); loadLookups(); }); });
                 break;
-            case 'cat-delete':
-                confirmBox('حذف التصنيف؟').then(function () { api('categories.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); }); });
-                break;
             case 'return-selected': var r = selectedCustody(); if (r) returnDialog(r, false); break;
             case 'transfer-selected': var t = selectedCustody(); if (t) returnDialog(t, true); break;
         }
     });
+
+    // بطاقات الأنواع في لوحة المتابعة تفتح صفحة العهد على تبويب النوع
+    $(document).on('click', '[data-tab-link]', function () { S.tabs['custody.list'] = String($(this).data('tab-link')); });
 
     $(document).on('click', '[data-copy]', function (e) { e.preventDefault(); copyText($(this).data('copy'), $(this)); });
 

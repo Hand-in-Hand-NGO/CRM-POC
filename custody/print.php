@@ -23,10 +23,10 @@ if (!empty($_GET['h'])) {
         http_response_code(404);
         exit('الموظف غير موجود');
     }
-    $items = q_all('SELECT c.*, i.code, i.name, i.serial_no, i.value, cat.name AS category, ho.doc_no, ho.ack_at
-        FROM custody c JOIN items i ON i.id = c.item_id LEFT JOIN categories cat ON cat.id = i.category_id
+    $items = decorate_items(q_all('SELECT c.*, i.code, i.type, i.name, i.brand, i.model, i.serial_no, i.value, i.specs, ho.doc_no, ho.ack_at
+        FROM custody c JOIN items i ON i.id = c.item_id
         JOIN handovers ho ON ho.id = c.out_handover_id
-        WHERE c.employee_id = ? AND c.in_handover_id IS NULL ORDER BY c.assigned_at', [$emp['id']]);
+        WHERE c.employee_id = ? AND c.in_handover_id IS NULL ORDER BY c.assigned_at', [$emp['id']]));
     $title = $items ? 'بيان عهدة موظف' : 'شهادة إخلاء طرف من العهد';
 } else {
     exit;
@@ -73,7 +73,7 @@ page_head($title);
     <table class="table table-bordered table-condensed sheet-items">
         <thead>
         <tr>
-            <th>#</th><th>كود الأصل</th><th>التصنيف</th><th>الصنف</th><th>الرقم التسلسلي</th><th>القيمة</th>
+            <th>#</th><th>كود الأصل</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>القيمة</th>
             <?php if ($h): ?><th>الحالة</th><th>ملاحظات</th><?php else: ?><th>تاريخ التسليم</th><th>رقم السند</th><?php endif; ?>
         </tr>
         </thead>
@@ -82,9 +82,9 @@ page_head($title);
             <tr>
                 <td><?= $n + 1 ?></td>
                 <td><?= h($it['code']) ?></td>
-                <td><?= h($it['category'] ?: '-') ?></td>
-                <td><?= h($it['name']) ?></td>
+                <td><?= h($it['name']) ?><br><small class="info-label"><?= h($it['type_label']) ?></small></td>
                 <td><?= h($it['serial_no'] ?: '-') ?></td>
+                <td class="details-cell"><?= item_details_html($it) ?></td>
                 <td><?= $it['value'] !== null ? number_format((float)$it['value'], 2) : '-' ?></td>
                 <?php if ($h): ?>
                     <td><?= h($h['type'] === 'out' ? $it['condition_out'] : $it['condition_in']) ?></td>

@@ -51,7 +51,7 @@ app = read(APP / 'assets/app.js')
 app = replace_once(app, "function openPrint(url) { window.open(url, '_blank'); }", 'function openPrint(url) { DEMO.print(url); }')
 app = replace_once(app, 'window.location = exportUrl(', 'DEMO.go = exportUrl(')
 js = '\n;\n'.join([read(V / 'jquery.min.js'), read(V / 'bootstrap/js/bootstrap.min.js'), read(V / 'select2/select2.min.js'),
-                    read(ROOT / 'demo-api.js'), app])
+                    'window.CUSTODY_TYPES = ' + read(APP / 'types.json') + ';', read(ROOT / 'demo-api.js'), app])
 
 html = ('<!doctype html>\n<html lang="ar" dir="rtl">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>العهد الإلكترونية — نسخة تجريبية</title>\n'

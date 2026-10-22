@@ -137,3 +137,39 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
     .content-wrapper { margin-right: 0; padding: 10px; }
     .filters .form-control { width: 100% !important; }
 }
+
+/* ---------- أنواع الأصناف: لاب توب / موبايل / شريحة ---------- */
+:root { --type-laptop: var(--hih-primary); --type-mobile: var(--hih-success); --type-sim: var(--hih-warning); }
+.type-badge { display: inline-block; white-space: nowrap; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; color: #fff; background: #888; }
+.type-badge.type-laptop { background: var(--type-laptop); }
+.type-badge.type-mobile { background: var(--type-mobile); }
+.type-badge.type-sim { background: var(--type-sim); }
+
+.type-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.type-tabs .btn { border-radius: 10px !important; font-weight: 600; }
+.type-tabs .btn .badge { background: #fff; color: #555; margin-right: 4px; }
+.type-tabs .btn.active { color: #fff; box-shadow: none; }
+.type-tabs .btn.tab-all { background: var(--hih-toggle-all); border-color: var(--hih-toggle-all); }
+.type-tabs .btn.tab-laptop { background: var(--type-laptop); border-color: var(--type-laptop); }
+.type-tabs .btn.tab-mobile { background: var(--type-mobile); border-color: var(--type-mobile); }
+.type-tabs .btn.tab-sim { background: var(--type-sim); border-color: var(--type-sim); }
+
+.details-cell { text-align: right !important; font-size: 12px; min-width: 160px; }
+.spec-checks .checkbox-inline { margin: 0 0 4px 14px; padding-right: 20px; }
+.spec-checks .checkbox-inline input { margin-right: -20px; }
+#itType .btn.active, #asType .btn.active { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
+.as-type { flex-wrap: wrap; }
+.as-type .select2-container { flex: 1 1 260px; }
+.spec-info { background: var(--hih-box-bg); border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 8px 12px; }
+
+.type-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.type-kpi { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--vs-border); border-right: 4px solid #888; border-radius: 10px; padding: 12px 14px; color: var(--vs-text); text-decoration: none !important; }
+.type-kpi:hover { border-color: var(--vs-accent); color: var(--vs-text); }
+.type-kpi .fa { font-size: 26px; width: 30px; text-align: center; }
+.type-kpi b { display: block; font-size: 14px; }
+.type-kpi span { font-size: 11.5px; color: var(--vs-text-dim); }
+.type-kpi.type-laptop { border-right-color: var(--type-laptop); } .type-kpi.type-laptop .fa { color: var(--type-laptop); }
+.type-kpi.type-mobile { border-right-color: var(--type-mobile); } .type-kpi.type-mobile .fa { color: var(--type-mobile); }
+.type-kpi.type-sim { border-right-color: var(--type-sim); } .type-kpi.type-sim .fa { color: var(--type-sim); }
+.print-page .details-cell, .sign-page .details-cell { min-width: 0; font-size: 11px; }
+@media (max-width: 900px) { .type-kpis { grid-template-columns: 1fr; } }

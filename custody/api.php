@@ -143,53 +143,107 @@ function items_query()
     $params = [];
     $where = ['1=1'];
     if (($s = in_str('q')) !== '') {
-        $where[] = "(i.name LIKE ? ESCAPE '!' OR i.code LIKE ? ESCAPE '!' OR i.serial_no LIKE ? ESCAPE '!' OR i.brand LIKE ? ESCAPE '!' OR i.model LIKE ? ESCAPE '!')";
-        array_push($params, like($s), like($s), like($s), like($s), like($s));
+        $where[] = "(i.name LIKE ? ESCAPE '!' OR i.code LIKE ? ESCAPE '!' OR i.serial_no LIKE ? ESCAPE '!' OR i.brand LIKE ? ESCAPE '!' OR i.model LIKE ? ESCAPE '!' OR i.specs LIKE ? ESCAPE '!')";
+        array_push($params, like($s), like($s), like($s), like($s), like($s), like($s));
     }
-    if ($c = in_int('category_id')) {
-        $where[] = 'i.category_id = ?';
-        $params[] = $c;
+    if (isset(asset_types()[$t = in_str('type', 16)])) {
+        $where[] = 'i.type = ?';
+        $params[] = $t;
     }
     if (($st = in_str('status')) !== '') {
         $where[] = 'i.status = ?';
         $params[] = $st;
     }
     $where = implode(' AND ', $where);
-    return q_all("SELECT i.*, cat.name AS category, e.id AS holder_id, e.name AS holder_name, e.department AS holder_department, c.assigned_at
+    return decorate_items(q_all("SELECT i.*, e.id AS holder_id, e.name AS holder_name, e.department AS holder_department, c.assigned_at
         FROM items i
-        LEFT JOIN categories cat ON cat.id = i.category_id
         LEFT JOIN custody c ON c.item_id = i.id AND c.in_handover_id IS NULL
         LEFT JOIN employees e ON e.id = c.employee_id
-        WHERE $where ORDER BY i.id DESC", $params);
+        WHERE $where ORDER BY i.id DESC", $params));
+}
+
+// يقرأ حقول نوع الصنف من الطلب ويتحقق منها حسب types.json
+function read_type_fields($type)
+{
+    $def = asset_types()[$type];
+    $input = (array)in('specs', []);
+    $cols = ['brand' => '', 'model' => '', 'serial_no' => ''];
+    $specs = [];
+    foreach ($def['fields'] as $f) {
+        $k = $f['key'];
+        $input_type = $f['input'] ?? 'text';
+        if ($input_type === 'checks') {
+            $v = array_values(array_intersect($f['options'], array_map('strval', (array)($input[$k] ?? []))));
+            if ($v) {
+                $specs[$k] = $v;
+            }
+            continue;
+        }
+        $v = mb_substr(trim((string)($input[$k] ?? '')), 0, 190);
+        if ($v === '') {
+            if (!empty($f['required'])) {
+                fail($f['label'] . ' مطلوب');
+            }
+            continue;
+        }
+        if ($input_type === 'number') {
+            if (!is_numeric($v) || $v < 0) {
+                fail($f['label'] . ': أدخل رقمًا صحيحًا');
+            }
+            $v = (string)round((float)$v, 2);
+        } elseif ($input_type === 'date' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
+            fail($f['label'] . ': صيغة التاريخ غير صحيحة');
+        }
+        if (!empty($f['options']) && !in_array($v, $f['options'], true)) {
+            fail($f['label'] . ': اختر قيمة من القائمة');
+        }
+        if (!empty($f['pattern']) && !preg_match('/' . $f['pattern'] . '/u', $v)) {
+            fail($f['pattern_msg'] ?? ($f['label'] . ' غير صحيح'));
+        }
+        if (array_key_exists($k, $cols)) {
+            $cols[$k] = $v;
+        } else {
+            $specs[$k] = $v;
+        }
+    }
+    $nameParts = [];
+    foreach ($def['name'] as $k) {
+        if (($cols[$k] ?? $specs[$k] ?? '') !== '') {
+            $nameParts[] = $cols[$k] ?? $specs[$k];
+        }
+    }
+    $name = trim(($def['name_prefix'] ?? '') . ' ' . implode(' ', $nameParts));
+    return [$cols, $specs, $name ?: $def['label']];
 }
 
 function save_item()
 {
     need('edit');
     $id = in_int('id');
+    $old = $id ? q_one('SELECT * FROM items WHERE id = ?', [$id]) : null;
+    if ($id && !$old) {
+        fail('الصنف غير موجود', 404);
+    }
+    // نوع الصنف لا يتغير بعد إضافته
+    $type = $old ? $old['type'] : in_str('type', 16);
+    if (!isset(asset_types()[$type])) {
+        fail('اختر نوع الصنف');
+    }
+    [$cols, $specs, $name] = read_type_fields($type);
     $value = in('value');
-    $row = [
+    $row = array_merge($cols, [
         'code' => in_str('code', 64),
-        'category_id' => in_int('category_id'),
-        'name' => in_str('name'),
-        'brand' => in_str('brand'),
-        'model' => in_str('model'),
-        'serial_no' => in_str('serial_no'),
+        'type' => $type,
+        'name' => $name,
+        'specs' => $specs ? json_encode($specs, JSON_UNESCAPED_UNICODE) : null,
         'purchase_date' => in_date('purchase_date'),
         'value' => ($value === null || $value === '') ? null : round((float)$value, 2),
         'item_condition' => in_str('item_condition', 32) ?: 'جيد',
         'location' => in_str('location'),
         'notes' => in_str('notes', 2000),
-    ];
-    if ($row['name'] === '') {
-        fail('اسم الصنف مطلوب');
-    }
+    ]);
     if (!in_array($row['item_condition'], ITEM_CONDITIONS, true)) {
         fail('حالة الصنف غير صحيحة');
-    }
-    $old = $id ? q_one('SELECT * FROM items WHERE id = ?', [$id]) : null;
-    if ($id && !$old) {
-        fail('الصنف غير موجود', 404);
     }
     // حالة "مسلمة" تتغير فقط من خلال سندات التسليم والارتجاع
     $status = in_str('status', 32);
@@ -202,8 +256,14 @@ function save_item()
     if ($row['code'] !== '' && q_val('SELECT id FROM items WHERE code = ? AND id <> ?', [$row['code'], $id ?: 0])) {
         fail('كود الأصل مستخدم لصنف آخر');
     }
+    $keyLabel = '';
+    foreach (asset_types()[$type]['fields'] as $f) {
+        if ($f['key'] === 'serial_no') {
+            $keyLabel = $f['label'];
+        }
+    }
     if ($row['serial_no'] !== '' && ($dup = q_val('SELECT code FROM items WHERE serial_no = ? AND id <> ?', [$row['serial_no'], $id ?: 0]))) {
-        fail('الرقم التسلسلي مسجل بالفعل للصنف ' . $dup);
+        fail($keyLabel . ' مسجل بالفعل للصنف ' . $dup);
     }
     db()->beginTransaction();
     if ($id) {
@@ -220,7 +280,7 @@ function save_item()
         $row['created_at'] = now();
         $id = insert('items', $row);
         if ($auto) {
-            $row['code'] = 'AS-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
+            $row['code'] = asset_types()[$type]['prefix'] . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
             update('items', $id, ['code' => $row['code']]);
         }
         log_activity('إضافة صنف', 'item', $id, $row['code'] . ' ' . $row['name']);
@@ -249,9 +309,9 @@ function custody_query()
         $where[] = 'e.department = ?';
         $params[] = $d;
     }
-    if ($cat = in_int('category_id')) {
-        $where[] = 'i.category_id = ?';
-        $params[] = $cat;
+    if (isset(asset_types()[$t = in_str('type', 16)])) {
+        $where[] = 'i.type = ?';
+        $params[] = $t;
     }
     $ack = in('ack', '');
     if ($ack === 'signed') {
@@ -260,8 +320,8 @@ function custody_query()
         $where[] = 'ho.ack_at IS NULL';
     }
     if (($s = in_str('q')) !== '') {
-        $where[] = "(i.name LIKE ? ESCAPE '!' OR i.code LIKE ? ESCAPE '!' OR i.serial_no LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!' OR e.code LIKE ? ESCAPE '!' OR ho.doc_no LIKE ? ESCAPE '!')";
-        array_push($params, like($s), like($s), like($s), like($s), like($s), like($s));
+        $where[] = "(i.name LIKE ? ESCAPE '!' OR i.code LIKE ? ESCAPE '!' OR i.serial_no LIKE ? ESCAPE '!' OR i.specs LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!' OR e.code LIKE ? ESCAPE '!' OR ho.doc_no LIKE ? ESCAPE '!')";
+        array_push($params, like($s), like($s), like($s), like($s), like($s), like($s), like($s));
     }
     if ($from = in_date('from')) {
         $where[] = 'c.assigned_at >= ?';
@@ -272,17 +332,16 @@ function custody_query()
         $params[] = $to;
     }
     $where = implode(' AND ', $where);
-    return q_all("SELECT c.*, i.code, i.name AS item_name, i.serial_no, i.brand, i.model, i.value, cat.name AS category,
+    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name AS item_name, i.serial_no, i.brand, i.model, i.value, i.specs,
             e.name AS employee_name, e.code AS employee_code, e.department,
             ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, ho.token AS out_token,
             hi.doc_no AS in_doc_no, hi.ack_at AS in_ack_at
         FROM custody c
         JOIN items i ON i.id = c.item_id
-        LEFT JOIN categories cat ON cat.id = i.category_id
         JOIN employees e ON e.id = c.employee_id
         JOIN handovers ho ON ho.id = c.out_handover_id
         LEFT JOIN handovers hi ON hi.id = c.in_handover_id
-        WHERE $where ORDER BY c.id DESC", $params);
+        WHERE $where ORDER BY c.id DESC", $params));
 }
 
 function create_handover($type, $employeeId, $date, $notes)
@@ -420,6 +479,7 @@ function handle($action)
                 'conditions' => ITEM_CONDITIONS,
                 'roles' => ROLES,
                 'today' => today(),
+                'types' => asset_types(),
             ];
 
         case 'auth.login':
@@ -472,9 +532,12 @@ function handle($action)
                 'active_value' => (float)q_val('SELECT COALESCE(SUM(i.value),0) FROM custody c JOIN items i ON i.id = c.item_id WHERE c.in_handover_id IS NULL'),
                 'employees_with_custody' => (int)q_val('SELECT COUNT(DISTINCT employee_id) FROM custody WHERE in_handover_id IS NULL'),
                 'pending_ack' => (int)q_val("SELECT COUNT(*) FROM handovers WHERE type = 'out' AND ack_at IS NULL"),
-                'by_category' => q_all('SELECT COALESCE(cat.name, \'بدون تصنيف\') AS name, COUNT(*) AS total,
-                        SUM(CASE WHEN i.status = \'مسلمة\' THEN 1 ELSE 0 END) AS assigned
-                    FROM items i LEFT JOIN categories cat ON cat.id = i.category_id GROUP BY cat.name ORDER BY total DESC'),
+                'by_type' => array_map(function ($r) {
+                    return ['type' => $r['type'], 'name' => type_label($r['type']), 'total' => (int)$r['total'], 'assigned' => (int)$r['assigned'], 'available' => (int)$r['available']];
+                }, q_all("SELECT type, COUNT(*) AS total,
+                        SUM(CASE WHEN status = 'مسلمة' THEN 1 ELSE 0 END) AS assigned,
+                        SUM(CASE WHEN status = 'متاحة' THEN 1 ELSE 0 END) AS available
+                    FROM items GROUP BY type ORDER BY total DESC")),
                 'by_department' => q_all("SELECT COALESCE(NULLIF(e.department, ''), 'بدون قسم') AS name, COUNT(*) AS n, COALESCE(SUM(i.value),0) AS value
                     FROM custody c JOIN employees e ON e.id = c.employee_id JOIN items i ON i.id = c.item_id
                     WHERE c.in_handover_id IS NULL GROUP BY e.department ORDER BY n DESC"),
@@ -487,39 +550,10 @@ function handle($action)
         case 'lookups':
             need('view');
             return [
-                'categories' => q_all('SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.category_id = c.id) AS items_count FROM categories c ORDER BY c.name'),
                 'departments' => array_column(q_all("SELECT DISTINCT department FROM employees WHERE department IS NOT NULL AND department <> '' ORDER BY department"), 'department'),
                 'branches' => array_column(q_all("SELECT DISTINCT branch FROM employees WHERE branch IS NOT NULL AND branch <> '' ORDER BY branch"), 'branch'),
                 'locations' => array_column(q_all("SELECT DISTINCT location FROM items WHERE location IS NOT NULL AND location <> '' ORDER BY location"), 'location'),
             ];
-
-        case 'categories.save':
-            need('edit');
-            $name = in_str('name');
-            $id = in_int('id');
-            if ($name === '') {
-                fail('اسم التصنيف مطلوب');
-            }
-            if (q_val('SELECT id FROM categories WHERE name = ? AND id <> ?', [$name, $id ?: 0])) {
-                fail('التصنيف موجود بالفعل');
-            }
-            if ($id) {
-                update('categories', $id, ['name' => $name]);
-            } else {
-                $id = insert('categories', ['name' => $name]);
-            }
-            log_activity('حفظ تصنيف', 'category', $id, $name);
-            return ['id' => $id];
-
-        case 'categories.delete':
-            need('edit');
-            $id = in_int('id');
-            if (q_val('SELECT COUNT(*) FROM items WHERE category_id = ?', [$id])) {
-                fail('لا يمكن حذف تصنيف مرتبط بأصناف');
-            }
-            q('DELETE FROM categories WHERE id = ?', [$id]);
-            log_activity('حذف تصنيف', 'category', $id);
-            return ['ok' => true];
 
         // ---------- employees
         case 'employees.list':
@@ -535,11 +569,11 @@ function handle($action)
             }
             return [
                 'employee' => $e,
-                'custody' => q_all("SELECT c.*, i.code, i.name AS item_name, i.serial_no, i.value, cat.name AS category,
+                'custody' => decorate_items(q_all("SELECT c.*, i.code, i.type, i.name AS item_name, i.brand, i.model, i.serial_no, i.value, i.specs,
                         ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, hi.doc_no AS in_doc_no
-                    FROM custody c JOIN items i ON i.id = c.item_id LEFT JOIN categories cat ON cat.id = i.category_id
+                    FROM custody c JOIN items i ON i.id = c.item_id
                     JOIN handovers ho ON ho.id = c.out_handover_id LEFT JOIN handovers hi ON hi.id = c.in_handover_id
-                    WHERE c.employee_id = ? ORDER BY (c.in_handover_id IS NULL) DESC, c.id DESC", [$id]),
+                    WHERE c.employee_id = ? ORDER BY (c.in_handover_id IS NULL) DESC, c.id DESC", [$id])),
                 'handovers' => q_all('SELECT id, doc_no, type, doc_date, ack_at FROM handovers WHERE employee_id = ? ORDER BY id DESC', [$id]),
             ];
 
@@ -565,12 +599,12 @@ function handle($action)
         case 'items.get':
             need('view');
             $id = in_int('id');
-            $item = q_one('SELECT i.*, cat.name AS category FROM items i LEFT JOIN categories cat ON cat.id = i.category_id WHERE i.id = ?', [$id]);
+            $item = q_one('SELECT * FROM items WHERE id = ?', [$id]);
             if (!$item) {
                 fail('الصنف غير موجود', 404);
             }
             return [
-                'item' => $item,
+                'item' => decorate_item($item),
                 'history' => q_all('SELECT c.*, e.name AS employee_name, e.department, ho.doc_no AS out_doc_no, hi.doc_no AS in_doc_no
                     FROM custody c JOIN employees e ON e.id = c.employee_id JOIN handovers ho ON ho.id = c.out_handover_id
                     LEFT JOIN handovers hi ON hi.id = c.in_handover_id WHERE c.item_id = ? ORDER BY c.id DESC', [$id]),
@@ -740,25 +774,36 @@ function handle($action)
         // ---------- excel (csv)
         case 'export':
             need('view');
-            $type = in('type');
-            if ($type === 'custody') {
-                $rows = array_map(function ($r) {
-                    return [$r['out_doc_no'], $r['employee_code'], $r['employee_name'], $r['department'], $r['code'], $r['category'], $r['item_name'],
-                        $r['serial_no'], $r['value'], $r['assigned_at'], $r['condition_out'], $r['out_ack_at'] ? 'موقّع' : 'بانتظار التوقيع',
-                        $r['returned_at'], $r['condition_in'], $r['in_doc_no']];
+            $what = in('what');
+            // عند تحديد نوع (لاب توب / موبايل / شريحة) تُصدَّر كل حقوله في أعمدة منفصلة
+            $typeDef = asset_types()[in_str('type', 16)] ?? null;
+            $specHeads = $typeDef ? array_column($typeDef['fields'], 'label') : ['النوع', 'الرقم التسلسلي / IMEI / رقم الخط', 'المواصفات', 'الملحقات'];
+            $specCells = function ($r) use ($typeDef) {
+                if (!$typeDef) {
+                    return [$r['type_label'], $r['serial_no'], $r['specs_text'], $r['accessories_text']];
+                }
+                return array_map(function ($f) use ($r) {
+                    $v = $r['specs'][$f['key']] ?? '';
+                    return is_array($v) ? implode('، ', $v) : $v;
+                }, $typeDef['fields']);
+            };
+            if ($what === 'custody') {
+                $rows = array_map(function ($r) use ($specCells) {
+                    return array_merge([$r['out_doc_no'], $r['employee_code'], $r['employee_name'], $r['department'], $r['code'], $r['item_name']], $specCells($r),
+                        [$r['value'], $r['assigned_at'], $r['condition_out'], $r['out_ack_at'] ? 'موقّع' : 'بانتظار التوقيع', $r['returned_at'], $r['condition_in'], $r['in_doc_no']]);
                 }, custody_query());
-                csv_out('custody-' . today() . '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'التصنيف', 'الصنف',
-                    'الرقم التسلسلي', 'القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع'], $rows);
+                csv_out('custody-' . today() . '.csv', array_merge(['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'], $specHeads,
+                    ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']), $rows);
             }
-            if ($type === 'items') {
-                $rows = array_map(function ($r) {
-                    return [$r['code'], $r['category'], $r['name'], $r['brand'], $r['model'], $r['serial_no'], $r['purchase_date'], $r['value'],
-                        $r['item_condition'], $r['status'], $r['holder_name'], $r['location'], $r['notes']];
+            if ($what === 'items') {
+                $rows = array_map(function ($r) use ($specCells) {
+                    return array_merge([$r['code'], $r['name']], $specCells($r),
+                        [$r['purchase_date'], $r['value'], $r['item_condition'], $r['status'], $r['holder_name'], $r['location'], $r['notes']]);
                 }, items_query());
-                csv_out('items-' . today() . '.csv', ['كود الأصل', 'التصنيف', 'الصنف', 'الماركة', 'الموديل', 'الرقم التسلسلي', 'تاريخ الشراء', 'القيمة',
-                    'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات'], $rows);
+                csv_out('items-' . today() . '.csv', array_merge(['كود الأصل', 'الصنف'], $specHeads,
+                    ['تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات']), $rows);
             }
-            if ($type === 'employees') {
+            if ($what === 'employees') {
                 $rows = array_map(function ($r) {
                     return [$r['code'], $r['name'], $r['national_id'], $r['department'], $r['job_title'], $r['branch'], $r['phone'], $r['email'],
                         $r['active'] ? 'نشط' : 'موقوف', $r['active_count'], $r['active_value']];

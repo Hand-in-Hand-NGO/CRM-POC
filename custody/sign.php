@@ -66,14 +66,14 @@ page_head('توقيع سند العهدة');
 
             <div class="table-scroll">
             <table class="table table-bordered table-condensed">
-                <thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>الرقم التسلسلي</th><th>الحالة</th></tr></thead>
+                <thead><tr><th>#</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead>
                 <tbody>
                 <?php foreach ($items as $n => $it): ?>
                     <tr>
                         <td><?= $n + 1 ?></td>
-                        <td><?= h($it['code']) ?></td>
-                        <td><?= h($it['name']) ?><?php if ($it['category']): ?> <small class="info-label">(<?= h($it['category']) ?>)</small><?php endif; ?></td>
+                        <td><?= h($it['name']) ?><br><small class="info-label"><?= h($it['type_label'] . ' — ' . $it['code']) ?></small></td>
                         <td><?= h($it['serial_no'] ?: '-') ?></td>
+                        <td class="details-cell"><?= item_details_html($it) ?></td>
                         <td><?= h($h['type'] === 'out' ? $it['condition_out'] : $it['condition_in']) ?></td>
                     </tr>
                 <?php endforeach; ?>

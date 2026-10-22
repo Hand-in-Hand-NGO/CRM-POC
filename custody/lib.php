@@ -56,15 +56,25 @@ function db()
     return $pdo;
 }
 
+const SCHEMA_VERSION = 2;
+
 function install_schema(PDO $pdo, $driver)
 {
+    $v = 0;
     try {
-        $v = $pdo->query("SELECT v FROM meta WHERE k = 'schema_version'")->fetchColumn();
-        if ($v) {
-            return;
-        }
+        $v = (int)$pdo->query("SELECT v FROM meta WHERE k = 'schema_version'")->fetchColumn();
     } catch (PDOException $e) {
         // الجداول غير موجودة بعد
+    }
+    if ($v >= SCHEMA_VERSION) {
+        return;
+    }
+    if ($v === 1) {
+        // الإصدار 2: نوع الصنف (لاب توب / موبايل / شريحة) ومواصفاته
+        $pdo->exec("ALTER TABLE items ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT 'laptop'");
+        $pdo->exec('ALTER TABLE items ADD COLUMN specs TEXT');
+        $pdo->exec("UPDATE meta SET v = '" . SCHEMA_VERSION . "' WHERE k = 'schema_version'");
+        return;
     }
     $pk = $driver === 'mysql' ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
     $tbl = $driver === 'mysql' ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4' : '';
@@ -82,12 +92,8 @@ function install_schema(PDO $pdo, $driver)
     if ($count === 0) {
         $st = $pdo->prepare('INSERT INTO users (username, name, password_hash, role, active, must_change, created_at) VALUES (?, ?, ?, ?, 1, 1, ?)');
         $st->execute(['admin', 'مدير النظام', password_hash('admin123', PASSWORD_DEFAULT), 'admin', now()]);
-        $st = $pdo->prepare('INSERT INTO categories (name) VALUES (?)');
-        foreach (['لاب توب', 'كمبيوتر مكتبي', 'شاشة', 'موبايل', 'شريحة اتصال', 'تابلت', 'طابعة', 'سيارة', 'أدوات وعدد', 'أثاث', 'مفاتيح', 'أخرى'] as $name) {
-            $st->execute([$name]);
-        }
     }
-    $pdo->prepare('INSERT INTO meta (k, v) VALUES (?, ?)')->execute(['schema_version', '1']);
+    $pdo->prepare('INSERT INTO meta (k, v) VALUES (?, ?)')->execute(['schema_version', (string)SCHEMA_VERSION]);
 }
 
 function q($sql, $params = [])
@@ -217,12 +223,68 @@ function doc_no($type, $id, $date)
     return ($type === 'out' ? 'TS' : 'RT') . '-' . substr($date, 0, 4) . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
 }
 
+// أنواع الأصناف وحقول كل نوع (types.json)
+function asset_types()
+{
+    static $types = null;
+    if ($types === null) {
+        $types = json_decode(file_get_contents(__DIR__ . '/types.json'), true);
+    }
+    return $types;
+}
+
+function type_label($type)
+{
+    return asset_types()[$type]['label'] ?? $type;
+}
+
+// يضيف للصف: اسم النوع، المواصفات كمصفوفة، وملخص نصي للمواصفات والملحقات
+function decorate_item(array $row)
+{
+    $types = asset_types();
+    $t = $types[$row['type'] ?? ''] ?? null;
+    $specs = json_decode((string)($row['specs'] ?? ''), true) ?: [];
+    foreach (['brand', 'model', 'serial_no'] as $col) {
+        if (isset($row[$col])) {
+            $specs[$col] = $row[$col];
+        }
+    }
+    $row['type_label'] = $t ? $t['label'] : '';
+    $row['specs'] = $specs;
+    $parts = [];
+    foreach ($t ? $t['summary'] : [] as $k) {
+        if (($specs[$k] ?? '') !== '') {
+            $parts[] = $specs[$k];
+        }
+    }
+    $row['specs_text'] = implode(' / ', $parts);
+    $row['accessories_text'] = implode('، ', (array)($specs['accessories'] ?? []));
+    return $row;
+}
+
+function decorate_items(array $rows)
+{
+    return array_map('decorate_item', $rows);
+}
+
+// خلية "المواصفات والملحقات" في السندات المطبوعة وصفحة التوقيع
+function item_details_html(array $it)
+{
+    $html = $it['specs_text'] !== '' ? implode(' / ', array_map(function ($x) {
+        return '<bdi>' . h($x) . '</bdi>';
+    }, explode(' / ', $it['specs_text']))) : '';
+    if ($it['accessories_text'] !== '') {
+        $html .= ($html !== '' ? '<br>' : '') . '<small><span class="info-label">الملحقات:</span> ' . h($it['accessories_text']) . '</small>';
+    }
+    return $html !== '' ? $html : '-';
+}
+
 function handover_items($handoverId, $type)
 {
     $col = $type === 'out' ? 'out_handover_id' : 'in_handover_id';
-    return q_all("SELECT c.*, i.code, i.name, i.brand, i.model, i.serial_no, i.value, cat.name AS category
-        FROM custody c JOIN items i ON i.id = c.item_id LEFT JOIN categories cat ON cat.id = i.category_id
-        WHERE c.$col = ? ORDER BY c.id", [$handoverId]);
+    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name, i.brand, i.model, i.serial_no, i.value, i.specs
+        FROM custody c JOIN items i ON i.id = c.item_id
+        WHERE c.$col = ? ORDER BY c.id", [$handoverId]));
 }
 
 // صفحة HTML مشتركة (head) لكل الصفحات
