@@ -2245,7 +2245,6 @@ function renderApp(){
   h += renderSubbar();
   if (S.mainView==='calendar'){
     h += renderPools();
-    h += renderPlanStrip();
     h += renderPalette();
     h += S.viewMode==='week' ? renderWeek() : renderMonth();
   } else {
@@ -2311,6 +2310,7 @@ function renderSubbar(){
     h += '<div class="week-nav"><button class="nav-arrow" title="السابق"'+A('prevPeriod')+'>'+pathIc('M9 6l6 6-6 6',15,null,2)+'</button>'+
       '<div class="week-label">'+periodLabel+'</div>'+
       '<button class="nav-arrow" title="التالي"'+A('nextPeriod')+'>'+pathIc('M15 6l-6 6 6 6',15,null,2)+'</button></div>';
+    h += renderPlanActions();
   }
   h += '</div>';
   if (S.mainView==='calendar'){
@@ -2363,17 +2363,16 @@ function renderPoolModal(){
   h += '</tbody></table>' + (list.length ? '' : '<div class="table-empty">لا توجد حالات</div>') + '</div></div>';
   return h;
 }
-function renderPlanStrip(){
+// planning shortcuts, shown in the calendar toolbar (no separate bar)
+function renderPlanActions(){
   if (!isAdmin()) return '';
-  var h = '<div class="plan-strip info">';
-  var risk = riskTasks().length;
+  var h = '', risk = riskTasks().length;
   h += '<div class="plan-actions">';
   var fn = fundedNew().length;
   if (fn) h += '<button class="btn btn-fund btn-sm"'+A('openFunded')+'>'+ic('send',13,'#fff')+' تمويل جديد ('+fn+')</button>';
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
   h += '<button class="btn btn-secondary btn-sm"'+A('copyLastWeek')+'>'+ic('copy',13)+' نسخ خطة الأسبوع اللي فات</button>';
-  h += '</div></div>';
-  return h;
+  return h + '</div>';
 }
 
 function renderPalette(){
