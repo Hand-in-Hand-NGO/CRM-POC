@@ -669,6 +669,10 @@
     .focus-name{font-size:22px;font-weight:800;color:var(--text);}
     .focus-phone{margin:8px 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
     .send-btns{display:inline-flex;gap:6px;}
+    .rec-send{display:flex;gap:5px;flex-wrap:wrap;}
+    .rec-send .send-btn{padding:4px 8px;font-size:11.5px;white-space:nowrap;}
+    .rec-sent{margin-top:4px;font-size:11px;color:#15803d;display:flex;align-items:center;gap:3px;}
+    .cms-table tbody tr.rec-new{background:#eef9f1 !important;}
     .send-btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:8px;padding:6px 11px;font-family:inherit;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;}
     .send-btn.wa{background:#25a95a;} .send-btn.wa:hover{background:#1f8f4c;}
     .send-btn.sms{background:#0093e9;} .send-btn.sms:hover{background:#0080cc;}
@@ -1098,7 +1102,7 @@ function defaultSettings(){
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
-    msgBookTpl:'أهلًا {الاسم}، تم حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
+    msgBookTpl:'أهلًا {الاسم}، تم تأكيد حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\n{ملاحظات}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
     msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} بكرة {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
     msgInfoTpl:'أهلًا {الاسم}، دي بيانات موعد {النوع}:\nالميعاد: {الميعاد}\nالمكان: {المكان}\nاللوكيشن: {الخريطة}\n{ملاحظات}\n– مؤسسة هاند إن هاند',
   };
@@ -1654,7 +1658,7 @@ var ACT = {
     if (v==='مركز الاتصال' || v==='مشرف كول سنتر') S.mainView = 'queue';
     render();
   },
-  setAgent: function(v){ S.agentId = v; S.callOpen = null; render(); },
+  setAgent: function(v){ S.agentId = v; S.callOpen = null; S.justConfirmed = null; render(); },
   setMainView: function(v){ S.mainView = v; S.callOpen = null; render(); },
   simAdvance: function(min){ S.simOffset += parseInt(min,10)*60000; toast('تم تقديم الوقت (محاكاة) إلى ' + fmtTime(now())); render(); },
   simReset: function(){ S.simOffset = 0; render(); },
@@ -1783,7 +1787,7 @@ var ACT = {
     var cf = S.confirmations[key] || {tries:0};
     cf.at = now(); cf.agentId = isCC() ? S.agentId : confirmOwner(t, cid); cf.tries = (cf.tries||0) + 1;
     var outcome = result==='confirmed' ? 'confirmed' : result==='cancelled' ? 'cancelled' : 'confirmNoAnswer', msg;
-    if (result==='confirmed'){ cf.status = 'confirmed'; msg = c.name + ' أكد الحضور ' + dayLabel(t.dateOffset); }
+    if (result==='confirmed'){ cf.status = 'confirmed'; S.justConfirmed = key; msg = c.name + ' أكد الحضور ' + dayLabel(t.dateOffset) + ' – ابعتله تأكيد الحجز'; }
     else if (result==='cancelled'){
       cf.status = 'cancelled';
       delete S.bookings[t.type][cid]; t.callStatus[cid] = 'cancelled';
@@ -1831,12 +1835,13 @@ var ACT = {
   },
   openTaskCases: function(tid){ ACT.openAddCasesTask(tid); S.casesTab = 'list'; S.detailBulkSelected = []; render(); },
   setCasesTab: function(v){ S.casesTab = v; render(); },
+  doneConfirmed: function(){ S.justConfirmed = null; render(); },
   sendInfo: function(key, channel){
-    var p = key.split('|'), t = findTask(p[0]), c = caseById(p[1]); if (!t || !c) return;
-    var m = sendMsg('info', t, c.id, channel), text = encodeURIComponent(m.text);
+    var p = key.split('|'), t = findTask(p[0]), c = caseById(p[1]), kind = p[2] || 'info'; if (!t || !c) return;
+    var m = sendMsg(kind, t, c.id, channel), text = encodeURIComponent(m.text);
     var url = channel==='whatsapp' ? 'https://wa.me/' + intlPhone(c.phone) + '?text=' + text : 'sms:+' + intlPhone(c.phone) + '?body=' + text;
     try { window.open(url, '_blank', 'noopener'); } catch(e){}
-    toast('اتفتحت رسالة ' + CHANNELS[channel] + ' لـ ' + c.name + ' فيها بيانات الموعد واللوكيشن');
+    toast('اتفتحت رسالة ' + CHANNELS[channel] + ' لـ ' + c.name + (kind==='booking' ? ' فيها تأكيد الحجز وبيانات الموعد واللوكيشن' : ' فيها بيانات الموعد واللوكيشن'));
     render();
   },
   // leave the "add from pool" tab without saving: drop the unsaved picks
@@ -1971,7 +1976,7 @@ var ACT = {
     S.callDraft = {callType:'صادر', outcome:'', bookTid:tid, bookTime: t && t.loc==='convoy' ? (t.meetingTime||'') : '', note:''};
     render();
   },
-  closeCall: function(){ S.callOpen = null; render(); },
+  closeCall: function(){ S.callOpen = null; S.callJustBooked = null; render(); },
   setCallField: function(v, field){
     S.callDraft[field] = v;
     if (field==='callType' && v==='وارد' && FAILED_OUTCOMES.indexOf(S.callDraft.outcome)!==-1) S.callDraft.outcome = '';
@@ -2003,7 +2008,7 @@ var ACT = {
       delete S.nextCallAt[key]; delete t.callStatus[cid];
       entry.bookTid = to.id; entry.bookTime = d.bookTime;
       msg = 'تم حجز ' + c.name + ' في ' + dayLabel(to.dateOffset) + (d.bookTime ? ' الساعة ' + fmtClock(d.bookTime) : '');
-      if (S.settings.msgOn){ sendMsg('booking', to, cid); msg += ' · اتبعتت رسالة ' + CHANNELS[S.settings.msgChannel]; }
+      if (S.settings.msgOn){ sendMsg('booking', to, cid).auto = true; msg += ' · اتبعتت رسالة ' + CHANNELS[S.settings.msgChannel]; }
     } else {
       t.callStatus[cid] = o;
       if (FAILED_OUTCOMES.indexOf(o)!==-1){
@@ -2024,6 +2029,11 @@ var ACT = {
       }
     }
     if (entry) S.callLog.push(entry);
+    if (o==='booked' && entry){
+      S.callJustBooked = entry.id;
+      S.callDraft = {callType:'صادر', outcome:'', bookTid:entry.bookTid, bookTime:'', note:''};
+      toast(msg + ' – ابعت التأكيد من السجل تحت'); return render();
+    }
     S.callOpen = null;
     toast(msg); render();
   },
@@ -2035,7 +2045,7 @@ var ACT = {
     delete S.nextCallAt[nextCallKey(from.id, cid)];
     S.callLog.push({id:'L'+Date.now(), taskId:from.id, caseId:cid, agentId:isCC() ? S.agentId : 'a1', at:now(), outcome:'booked', callType:'صادر',
       bookTid:to.id, note:'حُجزت في موعد بديل: ' + locLabelFor(to) + ' – ' + dayLabel(to.dateOffset)});
-    if (S.settings.msgOn) sendMsg('booking', to, cid);
+    if (S.settings.msgOn) sendMsg('booking', to, cid).auto = true;
     toast('تم حجز الحالة في ' + dayLabel(to.dateOffset) + (S.settings.msgOn ? ' · اتبعتت رسالة ' + CHANNELS[S.settings.msgChannel] : '')); render();
   },
   toggleLog: function(key){ S.logOpen[key] = !S.logOpen[key]; render(); },
@@ -2537,6 +2547,7 @@ function renderQueue(){
     kpi(bookedToday, 'حجوزات النهارده')+'</div>';
 
   var confList = confirmItems(agent);
+  if (S.justConfirmed) h += renderConfirmedCard(S.justConfirmed);
   if (confList.length){
     h += '<div class="q-section"><div class="q-section-head">تأكيد حضور بكرة <span class="cnt">'+confList.length+'</span></div>'+
       confList.map(function(x){ return renderConfirmRow(x); }).join('')+'</div>';
@@ -2575,6 +2586,7 @@ function renderAgentFocus(){
     '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
   h += renderInbound();
   if (S.inbound.pick) return h + renderInboundCase() + '</div>';
+  if (S.justConfirmed) return h + renderConfirmedCard(S.justConfirmed) + '</div>';
   if (confNow.length) return h + renderConfirmCard(confNow[0], conf.length) + '</div>';
   if (!seq.length){
     h += '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">مفيش مكالمة مستحقة دلوقتي</div>'+
@@ -2720,13 +2732,19 @@ function renderCallModal(){
 
   // history table
   var logs = logsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
-  h += '<table class="cms-table"><thead><tr><th>نوع المكالمة</th><th>استجابة المكالمة</th><th>تاريخ الحجز</th><th>وقت الحجز</th><th>تم الاتصال فى</th><th>تم الاتصال بواسطة</th><th>نتيجة التواصل</th></tr></thead><tbody>';
-  if (!logs.length) h += '<tr><td colspan="7" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>';
+  h += '<table class="cms-table"><thead><tr><th>نوع المكالمة</th><th>استجابة المكالمة</th><th>تاريخ الحجز</th><th>وقت الحجز</th><th>تم الاتصال فى</th><th>تم الاتصال بواسطة</th><th>نتيجة التواصل</th><th>تأكيد الحجز</th></tr></thead><tbody>';
+  if (!logs.length) h += '<tr><td colspan="8" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>';
   logs.forEach(function(l){
     var od = outcomeDef(l.outcome), bt = l.bookTid ? findTask(l.bookTid) : null;
-    h += '<tr><td>'+esc(l.callType||'صادر')+'</td><td><span style="color:'+od.color+';font-weight:700;">'+od.label+'</span></td>'+
+    // a booking that still holds -> send the confirmation with the appointment info
+    var live = bt && (l.outcome==='booked' || l.outcome==='bookedAlt') && (S.bookings[bt.type]||{})[cid]===bt.id;
+    var sentB = live ? S.messages.filter(function(m){ return m.caseId===cid && m.tid===bt.id && m.kind==='booking' && m.by && !m.auto; }) : [];
+    var confirmCell = live ? '<div class="rec-send"><button class="send-btn wa"'+A('sendInfo', bt.id+'|'+cid+'|booking', 'whatsapp')+'>'+pathIc(WA_ICON_PATH,13,'#fff',2)+' إرسال واتساب</button>'+
+      '<button class="send-btn sms"'+A('sendInfo', bt.id+'|'+cid+'|booking', 'sms')+'>'+ic('send',12,'#fff')+' إرسال SMS</button></div>'+
+      (sentB.length ? '<div class="rec-sent">'+ic('check',11,'#15803d',2.4)+' اتبعت '+sentB.map(function(m){ return CHANNELS[m.channel]+' '+fmtTime(m.at); }).join('، ')+'</div>' : '') : '-';
+    h += '<tr'+(l.id===S.callJustBooked ? ' class="rec-new"' : '')+'><td>'+esc(l.callType||'صادر')+'</td><td><span style="color:'+od.color+';font-weight:700;">'+od.label+'</span></td>'+
       '<td dir="ltr" style="text-align:right;">'+(bt ? isoDate(bt.dateOffset) : '-')+'</td><td>'+(l.bookTime ? fmtClock(l.bookTime) : '-')+'</td>'+
-      '<td>'+fmtWhen(l.at)+'</td><td>'+esc(agentName(l.agentId))+'</td><td>'+(l.note ? esc(l.note) : '-')+'</td></tr>';
+      '<td>'+fmtWhen(l.at)+'</td><td>'+esc(agentName(l.agentId))+'</td><td>'+(l.note ? esc(l.note) : '-')+'</td><td>'+confirmCell+'</td></tr>';
   });
   h += '</tbody></table>';
   if (seedFailed(cid)) h += '<div class="log-legacy">+ '+seedFailed(cid)+' محاولات سابقة قبل تفعيل سجل المكالمات</div>';
@@ -3117,6 +3135,18 @@ function renderConfirmCard(x, total){
   h += '<div class="q-sub" style="margin-top:10px;">باقي '+(total-1)+' تأكيد</div>';
   return h + '</div>';
 }
+function renderConfirmedCard(key){
+  var p = key.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid); if (!t || !c) return '';
+  var m = TASK_TYPES[t.type], sent = S.messages.filter(function(x){ return x.caseId===cid && x.tid===t.id && x.kind==='booking' && x.by && !x.auto && x.at >= (S.confirmations[key]||{}).at; });
+  return '<div class="focus-card confirm-card done"><div class="bar" style="background:#15803d;"></div>'+
+    '<div class="focus-top"><span class="confirm-chip">'+ic('check',13,'#15803d',2.4)+' أكد الحضور</span><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+m.short+'</span></div>'+
+    '<div class="focus-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span></div>'+
+    '<div class="q-sub" style="margin:6px 0 10px;">ابعت للحالة تأكيد الحجز وبيانات الموعد واللوكيشن</div>'+
+    '<div class="rec-send"><button class="send-btn wa"'+A('sendInfo', t.id+'|'+cid+'|booking', 'whatsapp')+'>'+pathIc(WA_ICON_PATH,14,'#fff',2)+' إرسال واتساب</button>'+
+      '<button class="send-btn sms"'+A('sendInfo', t.id+'|'+cid+'|booking', 'sms')+'>'+ic('send',13,'#fff')+' إرسال SMS</button></div>'+
+    (sent.length ? '<div class="rec-sent">'+ic('check',11,'#15803d',2.4)+' اتبعت '+sent.map(function(x){ return CHANNELS[x.channel]+' '+fmtTime(x.at); }).join('، ')+'</div>' : '')+
+    '<div class="confirm-actions"><button class="btn btn-primary"'+A('doneConfirmed')+'>المكالمة اللي بعدها '+pathIc('M15 6l-6 6 6 6',13,'#fff',2)+'</button></div></div>';
+}
 function renderConfirmRow(x){
   var t = x.t, cid = x.cid, c = caseById(cid), m = TASK_TYPES[t.type], key = nextCallKey(t.id, cid);
   return '<div class="q-item'+(x.later?' later':'')+'"><div class="bar" style="background:#15803d;"></div><div class="confirm-row">'+
@@ -3381,7 +3411,7 @@ function renderMsgs(cid){
   var l = msgsFor(cid).slice().sort(function(a,b){ return b.at-a.at; });
   if (!l.length) return '';
   return '<div class="msg-list">'+l.map(function(m){
-    return '<div class="msg-item"><div class="msg-meta">'+(MSG_KIND[m.kind]||'رسالة')+' · '+CHANNELS[m.channel]+(m.by ? ' · '+esc(agentName(m.by)) : '')+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
+    return '<div class="msg-item"><div class="msg-meta">'+(MSG_KIND[m.kind]||'رسالة')+' · '+CHANNELS[m.channel]+(m.auto || !m.by ? ' · أوتوماتيك' : ' · '+esc(agentName(m.by)))+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
   }).join('')+'</div>';
 }
 
