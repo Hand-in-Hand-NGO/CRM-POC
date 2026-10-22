@@ -807,8 +807,10 @@
     .stats-panel{
       position:fixed;top:0;left:0;width:640px;max-width:calc(100vw - 80px);height:100vh;background:var(--vs-bg-raised);
       border:1px solid var(--vs-border);box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:39;font-family:var(--vs-font-ui);color:var(--vs-text);
-      display:flex;flex-direction:column;overflow:hidden;animation:vsSlide .25s ease;
+      display:flex;flex-direction:column;overflow:hidden;
     }
+    .stats-panel.anim{animation:vsSlide .25s ease;}
+    .stats-scrim{position:fixed;inset:0;background:rgba(15,18,26,.18);z-index:38;}
     @keyframes vsSlide{from{transform:translateX(-100%);}to{transform:translateX(0);}}
     .stats-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--vs-border-soft);background:var(--vs-bg-raised);flex:none;}
     .stats-title{font-weight:700;font-size:15.5px;color:var(--vs-text);display:flex;align-items:center;gap:8px;}
@@ -3425,6 +3427,7 @@ document.addEventListener('change', function(e){
 document.addEventListener('keydown', function(e){
   if (e.key==='Escape' && S.callOpen){ ACT.closeCall(); return; }
   if (e.key==='Escape' && S.poolOpen){ ACT.closePool(); return; }
+  if (e.key==='Escape' && S.dashOpen && !S.overlay){ ACT.closeDash(); return; }
   if (e.key==='Escape' && S.overlay){
     if (S.overlay==='confirm') ACT.cancelConfirm();
     else if (S.overlay==='addCases') ACT.closeAddCases();
@@ -3643,7 +3646,10 @@ function renderDash(){
   var h = '<button class="stats-toggle'+(S.dashOpen?' open':'')+'" title="إحصائيات الكول سنتر"'+A('toggleDash')+'>'+pathIc(S.dashOpen ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6',15,'#fff',2.4)+'</button>';
   if (!S.dashOpen) return h;
   var D = dashData(), s = D.sum, R = D.R;
-  h += '<div class="stats-panel"><div class="stats-head"><span class="stats-title">'+ic('gauge',17,'#2f6fed')+' إحصائيات الكول سنتر</span><span>'+
+  // slide in only on the render that opens it (the page re-renders on its own: toasts, 30s refresh)
+  var anim = S.dashAnim; S.dashAnim = false;
+  h += '<div class="stats-scrim"'+A('closeDash')+'></div>';
+  h += '<div class="stats-panel'+(anim?' anim':'')+'"><div class="stats-head"><span class="stats-title">'+ic('gauge',17,'#2f6fed')+' إحصائيات الكول سنتر</span><span>'+
     '<button class="vs-btn" title="تحديث"'+A('dashRefresh')+'>'+ic('history',13)+'</button>'+
     '<button class="vs-btn green"'+A('dashExport')+'>'+ic('list',13,'#fff')+' تصدير إلى Excel</button></span></div>';
   h += '<div class="stats-body-scroll" data-scroll="dash">';
@@ -3729,7 +3735,8 @@ function dashCsv(){
   return '﻿' + rows.map(function(r){ return r.join(','); }).join('\r\n');
 }
 Object.assign(ACT, {
-  toggleDash: function(){ S.dashOpen = !S.dashOpen; render(); },
+  toggleDash: function(){ S.dashOpen = !S.dashOpen; S.dashAnim = S.dashOpen; render(); },
+  closeDash: function(){ S.dashOpen = false; render(); },
   dashSetPeriod: function(k){ S.dashPeriod = k; S.dashStep = 0; render(); },
   dashStepBy: function(n){ S.dashStep = Math.min(0, S.dashStep + parseInt(n,10)); render(); },
   dashAgent: function(v){ S.dashAgent = v; render(); },
