@@ -768,8 +768,6 @@
     .audit-detail{color:var(--text-muted);}
     .audit-task{color:var(--text-muted);font-size:11.5px;margin-top:2px;}
     .audit-who{color:var(--text-faint);font-size:11px;margin-top:2px;display:flex;gap:4px;align-items:center;}
-    .ops-modal{width:980px;max-width:96vw;}
-    .ops-modal .vs-level-table .dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
     .att-box{border:1px solid var(--border);border-radius:8px;background:var(--surface-2,#f8fafc);padding:7px 10px;display:flex;align-items:center;gap:8px;min-height:38px;}
     .att-box b{font-size:18px;color:var(--text);}
     .att-box span{font-size:10.5px;color:var(--text-faint);line-height:1.4;}
@@ -1128,7 +1126,7 @@ var S = {
   queueAgent:'', capacityDay:null, capDraft:null,
   settingsDraft:null, convoyEdit:null,
   toast:null,
-  audit:[], confirmations:{}, opsWeek:null, auditQ:'', messages:[],
+  audit:[], confirmations:{}, auditQ:'', messages:[],
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1817,13 +1815,9 @@ var ACT = {
     d.targetMode = 'booking'; d.target = String(ids.length); d.fundCompany = company;
     render();
   },
-  openOps: function(){ S.overlay = 'ops'; S.opsWeek = S.weekOffset; render(); },
-  opsStep: function(n){ S.opsWeek += parseInt(n,10); render(); },
-  openNoShow: function(){ S.overlay = 'noShow'; render(); },
   openAudit: function(){ S.overlay = 'audit'; S.auditQ = ''; render(); },
   auditSearch: function(v){ S.auditQ = v; render(); },
-  closePanel: function(){ S.overlay = S.overlay==='noShow' && S.opsWeek!=null && S.noShowFromOps ? 'ops' : null; S.noShowFromOps = false; render(); },
-  openNoShowFromOps: function(){ S.noShowFromOps = true; S.overlay = 'noShow'; render(); },
+  closePanel: function(){ S.overlay = null; render(); },
   openTaskFrom: function(tid){ ACT.openDetail(tid); },
 
   // ---------- add cases ----------
@@ -2269,7 +2263,6 @@ function renderTopbar(){
     (S.simOffset ? '<button'+A('simReset')+' title="رجوع للوقت الحقيقي">الوقت الحقيقي</button>' : '')+'</span>';
   if (isAdmin()) h += '<a class="top-btn" href="funding.html" style="text-decoration:none;">'+ic('send',14)+'صفحة التمويل</a>';
   if (canAssign()){
-    h += '<button class="top-btn"'+A('openOps')+'>'+ic('gauge',14)+'داش بورد الأوبريشن</button>';
     h += '<button class="top-btn"'+A('openAudit')+'>'+ic('history',14)+'سجل التعديلات</button>';
   }
   if (isAdmin()){
@@ -2778,8 +2771,6 @@ function renderOverlays(){
     case 'capacity': return renderCapacity();
     case 'settings': return renderSettings();
     case 'risk': return renderRisk();
-    case 'ops': return renderOps();
-    case 'noShow': return renderNoShow();
     case 'audit': return renderAudit();
     case 'funded': return renderFunded();
   }
@@ -3175,85 +3166,6 @@ function renderRisk(){
   return '<div class="scrim"'+A('closePanel')+'></div><div class="modal" style="width:760px;max-width:94vw;">'+
     panelHead('محتاجة تدخل', 'مهام باقي عليها '+S.settings.riskDays+' يوم أو أقل والمحجوز أقل من '+S.settings.riskPct+'%')+
     '<div class="modal-body" data-scroll="risk">'+riskTable(list)+'</div></div>';
-}
-
-function opsWeekData(w){
-  var from = w*7, days = [], tOff = todayOffset();
-  for (var i=0;i<7;i++) days.push(from+i);
-  var tasks = S.tasks.filter(function(t){ return t.dateOffset>=from && t.dateOffset<from+7; });
-  var pub = tasks.filter(function(t){ return t.status==='published'; });
-  var o = {days:days, tasks:tasks, pub:pub, goal:0, booked:0, bookedAttend:0, cap:0, planned:0, attended:0, noShow:0, waitSum:0, waitN:0, byType:{}};
-  Object.keys(TASK_TYPES).forEach(function(k){ o.byType[k] = {tasks:0, goal:0, booked:0, attended:0, noShow:0}; });
-  days.forEach(function(off){ o.cap += capFor(off); });
-  tasks.forEach(function(t){ o.planned += taskAttendLoad(t); });
-  pub.forEach(function(t){
-    var g = bookingGoal(t), b = taskBookedCount(t), a = attendanceCounts(t), x = o.byType[t.type];
-    o.goal += g; o.booked += b; o.bookedAttend += expectedAttend(t.type, b); o.attended += a.attended; o.noShow += a.noShow;
-    x.tasks++; x.goal += g; x.booked += b; x.attended += a.attended; x.noShow += a.noShow;
-    t.candidateIds.forEach(function(cid){
-      if ((S.bookings[t.type]||{})[cid]!==t.id) return;
-      var c = caseById(cid); if (!c) return;
-      o.waitSum += c.waitingDays + (t.dateOffset - tOff); o.waitN++;
-    });
-  });
-  return o;
-}
-function renderOps(){
-  var w = S.opsWeek!=null ? S.opsWeek : S.weekOffset, D = opsWeekData(w), from = w*7;
-  var plan = pct(D.booked, D.goal), used = pct(D.planned, D.cap), bookedCap = pct(D.bookedAttend, D.cap), att = D.attended + D.noShow;
-  var repeat = CASES.filter(function(c){ return isRepeatNoShow(c.id); }).length, risk = riskTasks();
-  var h = '<div class="scrim"'+A('closePanel')+'></div><div class="modal ops-modal">'+
-    panelHead(ic('gauge',17,'#2f6fed')+' داش بورد الأوبريشن', '',
-      '<div class="vs-picker"><button class="vs-step"'+A('opsStep','-1')+'>'+pathIc('M9 6l6 6-6 6',13,null,2)+'</button>'+
-      '<span class="vs-picker-btn">'+ic('calendar',13,'#2f6fed')+' <span dir="ltr">'+isoDate(from)+' - '+isoDate(from+6)+'</span></span>'+
-      '<button class="vs-step"'+A('opsStep','1')+'>'+pathIc('M15 6l-6 6 6 6',13,null,2)+'</button></div>');
-  h += '<div class="modal-body" data-scroll="ops">';
-  h += '<div class="vs-kpi-grid" style="grid-template-columns:repeat(3,1fr);">'+
-    kpiBox(plan+'<small>%</small>', 'تحقيق خطة الأسبوع ('+D.booked+' من '+D.goal+' حجز)', D.goal ? (plan>=80?'good':plan>=50?'warn':'bad') : 'zero')+
-    kpiBox(used+'<small>%</small>', 'الطاقة المخططة – حضور ('+D.planned+' من '+D.cap+')', D.cap ? (used>100?'bad':'') : 'zero')+
-    kpiBox(bookedCap+'<small>%</small>', 'الطاقة المتغطية بالحجوزات ('+D.bookedAttend+' حضور متوقع)', D.booked ? '' : 'zero')+
-    kpiBox((D.waitN ? Math.round(D.waitSum/D.waitN) : 0)+'<small> يوم</small>', 'متوسط الانتظار من اللجنة للزيارة', D.waitN ? '' : 'zero')+
-    kpiBox(risk.length, 'مهام محتاجة تدخل', risk.length ? 'bad' : 'good')+
-    kpiBox(repeat, 'حالات غياب متكرر', repeat ? 'warn' : 'zero')+'</div>';
-
-  // per type
-  h += '<div class="vs-chart-group"><p class="vs-group-label">حسب نوع الزيارة</p>'+chartCard('تحقيق الخطة لكل نوع', isoDate(from)+' - '+isoDate(from+6),
-    '<table class="vs-level-table"><thead><tr><th>النوع</th><th>المهام</th><th>مطلوب حجز</th><th>المحجوز</th><th>التحقيق</th><th>حضر</th><th>لم يحضر</th></tr></thead><tbody>'+
-    Object.keys(TASK_TYPES).map(function(k){
-      var x = D.byType[k], p = pct(x.booked, x.goal);
-      return '<tr><td><span class="dot" style="background:'+DASH_TYPE_COLORS[k]+'"></span> '+TASK_TYPES[k].label+'</td><td>'+x.tasks+'</td><td>'+x.goal+'</td><td>'+x.booked+'</td>'+
-        '<td>'+(x.goal ? '<b class="'+(p>=100?'cap-ok':p<50?'cap-over':'')+'">'+p+'%</b>' : '-')+'</td><td>'+x.attended+'</td><td>'+x.noShow+'</td></tr>';
-    }).join('')+'</tbody><tfoot><tr><td>الإجمالي</td><td>'+D.pub.length+'</td><td>'+D.goal+'</td><td>'+D.booked+'</td><td>'+(D.goal ? plan+'%' : '-')+'</td><td>'+D.attended+'</td><td>'+D.noShow+'</td></tr></tfoot></table>')+'</div>';
-
-  // capacity per day
-  h += '<div class="vs-chart-group"><p class="vs-group-label">الطاقة الاستيعابية</p>'+chartCard('الطاقة مقابل الحضور المخطط والمتوقع لكل يوم', '',
-    svgBars(D.days.map(function(off){ return WEEKDAYS_AR[weekdayOf(off)]; }), [
-      {name:'الطاقة', color:'#d6dceb', values:D.days.map(capFor)},
-      {name:'الحضور المخطط', color:'#93b4f5', values:D.days.map(function(off){ return dayLoad(off)[0].load; })},
-      {name:'متوقع يحضر من المحجوز', color:'#2f6fed', values:D.days.map(function(off){ return S.tasks.filter(function(t){ return t.dateOffset===off && t.status==='published'; }).reduce(function(n,t){ return n + expectedAttend(t.type, taskBookedCount(t)); }, 0); })}],
-      {h:220}))+'</div>';
-
-  h += '<div class="vs-chart-group"><p class="vs-group-label">محتاجة تدخل</p>'+chartCard('مهام قريبة والمحجوز فيها قليل', '', riskTable(risk))+'</div>';
-  h += '<div class="vs-chart-group"><p class="vs-group-label">الغياب</p>'+chartCard('حالات الغياب المتكرر', '',
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;"><span>'+repeat+' حالة غابت '+S.settings.noShowFlag+' مرات أو أكتر · '+(att ? 'نسبة الحضور الأسبوع ده '+pct(D.attended, att)+'%' : 'مفيش زيارات اتسجل حضورها الأسبوع ده')+'</span>'+
-    '<button class="btn btn-secondary btn-sm"'+A('openNoShowFromOps')+'>تقرير الغياب</button></div>')+'</div>';
-  return h + '</div></div>';
-}
-
-function renderNoShow(){
-  var rows = CASES.map(function(c){ return {c:c, days:noShowDays(c.id)}; }).filter(function(x){ return x.days.length; })
-    .sort(function(a,b){ return b.days.length - a.days.length || b.days[0] - a.days[0]; });
-  var h = '<div class="scrim"'+A('closePanel')+'></div><div class="modal" style="width:760px;max-width:94vw;">'+
-    panelHead('تقرير الغياب', 'الحالات اللي غابت عن مواعيد محجوزة · "غياب متكرر" من '+S.settings.noShowFlag+' مرات')+'<div class="modal-body" data-scroll="noshow">';
-  if (!rows.length) return h + '<div class="table-empty">مفيش حالات غياب</div></div></div>';
-  h += '<table class="cases-table"><thead><tr><th>كود الحالة</th><th>الاسم</th><th>المحافظة</th><th>المرحلة</th><th>مرات الغياب</th><th>آخر غياب</th><th>الإجراء</th></tr></thead><tbody>'+
-    rows.map(function(x){
-      var rep = x.days.length >= S.settings.noShowFlag;
-      return '<tr><td dir="ltr" style="text-align:right;">'+x.c.code+'</td><td style="font-weight:700;">'+esc(x.c.name)+'</td><td>'+esc(x.c.gov)+'</td><td>'+TASK_TYPES[x.c.stage].short+'</td>'+
-        '<td><b class="'+(rep?'cap-over':'')+'">'+x.days.length+'</b></td><td>'+shortDate(x.days[0])+'</td>'+
-        '<td>'+(rep ? '<span class="ns-badge">أولوية أقل + تأكيد إجباري</span>' : '<span class="field-hint" style="margin:0;">أولوية إعادة حجز</span>')+'</td></tr>';
-    }).join('')+'</tbody></table>';
-  return h + '</div></div>';
 }
 
 function auditList(list, compact){
