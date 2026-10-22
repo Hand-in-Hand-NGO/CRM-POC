@@ -602,7 +602,7 @@ function opsInfo(c){
   if (!allocOf(c)) return null;
   var o = F.ops[c.id];
   if (!o || o.status==='new') return {cls:'ops-wait', txt:'مستني الأوبريشن يعمل مهمة الحجز', key:'new'};
-  if (o.status==='scheduled') return {cls:'ops-sched', txt:'في مهمة حجز يوم ' + o.day + (o.draft ? ' (مسودة)' : ''), key:'scheduled'};
+  if (o.status==='scheduled') return {cls:'ops-sched', txt:'في مهمة حجز يوم ' + o.day, key:'scheduled'};
   if (o.status==='booked') return {cls:'ops-booked', txt:'تم الحجز يوم ' + o.day, key:'booked'};
   if (o.status==='attended') return {cls:'ops-booked', txt:'حضر يوم ' + o.day, key:'attended'};
   if (o.status==='noShow') return {cls:'ops-bad', txt:'لم يحضر يوم ' + o.day, key:'noShow'};
