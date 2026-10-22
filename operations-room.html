@@ -1653,6 +1653,7 @@ var ACT = {
   // ---------- header ----------
   setRole: function(v){
     S.role = v; closeAllOverlays();
+    S.justConfirmed = null;   // the "send confirmation" card belongs to whoever pressed "هيحضر"
     if (v==='مركز الاتصال' || v==='مشرف كول سنتر') S.mainView = 'queue';
     render();
   },
