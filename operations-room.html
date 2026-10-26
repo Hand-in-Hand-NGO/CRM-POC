@@ -1107,7 +1107,7 @@ function defaultSettings(){
 // State
 // =====================================================================
 var S = {
-  role:'مدير النظام', agentId:'a1', mainView:'calendar',
+  role:'أوبريشن', agentId:'a1', mainView:'calendar',
   weekOffset:0, monthOffset:0, viewMode:'week',
   activeTypes:['measurement','newDelivery','maintEval','maintDelivery'],
   tasks:[], bookings:{measurement:{}, newDelivery:{}, maintEval:{}, maintDelivery:{}}, attendance:{},
@@ -1147,7 +1147,7 @@ function shortDate(off){ var d = dateOf(off); return d.getDate() + ' ' + MONTHS_
 function isoDate(off){ var d = dateOf(off); return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
 function locLabelFor(t){ return t.loc==='convoy' ? ('قافلة – ' + (t.gov || '—')) : 'داخل المؤسسة'; }
 
-function isAdmin(){ return S.role==='مدير النظام'; }
+function isAdmin(){ return S.role==='أوبريشن'; }
 function isCC(){ return S.role==='مركز الاتصال'; }
 function isSupervisor(){ return S.role==='مشرف كول سنتر'; }
 // supervisor can redistribute / reassign cases but can't change the plan (counts, dates, publish, delete)
@@ -1554,7 +1554,7 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   function task(id, type, off, loc, gov, target, cands, status, extra){
     return Object.assign({id:id, type:type, dateOffset:T+off, loc:loc, gov:gov, target:target, candidateIds:cands,
       callStatus:{}, assignee:{}, priority:{}, standby:[], confirmCall:false, mode:'booking', status:status, publishedAt: status==='published' ? now()-86400000*2 : null,
-      publishedBy: status==='published' ? 'مدير النظام' : null, meetingPoint:'', mapUrl:'', meetingTime:'', convoyNotes:''}, extra||{});
+      publishedBy: status==='published' ? 'أوبريشن' : null, meetingPoint:'', mapUrl:'', meetingTime:'', convoyNotes:''}, extra||{});
   }
   S.tasks = [
     task('t1','measurement',0,'org',null,12,['C-1001','C-1007','C-1010','C-1013','C-1015','C-1016','C-1017','C-1023','C-1036'],'published'),
@@ -1589,10 +1589,10 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   findTask('t3').priority = {'C-1018':true};
   S.tasks.forEach(function(t){ if (t.status==='published') autoAssign(t); });
   S.tasks.slice().reverse().forEach(function(t, k){
-    S.audit.push({at:now() - (3+k)*86400000, who:'مدير النظام', action:'إنشاء مهمة', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:t.target + ' حجز'});
+    S.audit.push({at:now() - (3+k)*86400000, who:'أوبريشن', action:'إنشاء مهمة', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:t.target + ' حجز'});
   });
   [].forEach(function(t){
-    S.audit.unshift({at:t.publishedAt, who:'مدير النظام', action:'نشر', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:''});
+    S.audit.unshift({at:t.publishedAt, who:'أوبريشن', action:'نشر', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:''});
   });
   S.audit.sort(function(a,b){ return b.at - a.at; });
 
@@ -1651,11 +1651,11 @@ var ACT = {
   setRole: function(v){
     S.role = v; closeAllOverlays();
     S.justConfirmed = null;   // the "send confirmation" card belongs to whoever pressed "هيحضر"
-    if (v==='مركز الاتصال' || v==='مشرف كول سنتر') S.mainView = 'queue';
+    S.mainView = (v==='مركز الاتصال' || v==='مشرف كول سنتر') ? 'queue' : 'calendar';
     render();
   },
   setAgent: function(v){ S.agentId = v; S.callOpen = null; S.justConfirmed = null; render(); },
-  setMainView: function(v){ S.mainView = v; S.callOpen = null; render(); },
+  setMainView: function(v){ S.mainView = isAdmin() ? 'calendar' : v; S.callOpen = null; render(); },
 
   // ---------- calendar navigation ----------
   onToday: function(){
@@ -2137,7 +2137,7 @@ var ACT = {
 };
 
 function publishOne(t){
-  t.status = 'published'; t.publishedAt = now(); t.publishedBy = 'مدير النظام';
+  t.status = 'published'; t.publishedAt = now(); t.publishedBy = 'أوبريشن';
   autoAssign(t);
 }
 function legacyCopy(text){
@@ -2246,7 +2246,7 @@ function renderApp(){
 }
 
 function renderTopbar(){
-  var roles = ['مدير النظام','مشرف كول سنتر','مركز الاتصال','عرض فقط'];
+  var roles = ['أوبريشن','مشرف كول سنتر','مركز الاتصال','عرض فقط'];
   var h = '<header class="topbar"><div class="brandblock"><div class="brand-mark">'+ic('calendar',18,'#fff')+'</div>'+
     '<div><div class="page-title">غرفة العمليات</div></div></div>';
   h += '<div class="topbar-right">';
@@ -2271,7 +2271,7 @@ function renderSubbar(){
   var dueCount = queueItems(isCC() ? S.agentId : '').filter(function(x){ return isCC() ? ['due','other','later'].indexOf(x.group)!==-1 : x.group==='due'; }).length +
     confirmItems(isCC() ? S.agentId : '').length;
   var h = '<div class="subbar"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
-  h += '<div class="main-tabs">'+
+  if (!isAdmin()) h += '<div class="main-tabs">'+
     '<button class="main-tab'+(S.mainView==='calendar'?' active':'')+'"'+A('setMainView','calendar')+'>'+ic('calendar',14)+'التقويم</button>'+
     '<button class="main-tab'+(S.mainView==='queue'?' active':'')+'"'+A('setMainView','queue')+'>'+ic('list',14)+(isCC() ? 'قائمتي النهارده' : 'قوائم الكول سنتر')+
     ' <span class="count">'+dueCount+'</span></button></div>';
@@ -2366,7 +2366,7 @@ function renderPalette(){
     h += '<div class="palette-chip'+(admin?'':' disabled')+'" style="--tint:'+m.tint+';--edge:'+m.color+';" draggable="'+(admin?'true':'false')+'" data-drag-type="'+k+'">'+
       '<div class="palette-ic">'+pathIc(m.iconPath,16,m.color,1.7)+'</div><div class="palette-text"><span class="palette-label">'+m.label+'</span>'+
       '</div>'+
-      (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحان لمدير النظام فقط">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
+      (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحين للأوبريشن بس">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
   });
   return h + '</div></div>';
 }
