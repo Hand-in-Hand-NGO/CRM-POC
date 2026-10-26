@@ -704,6 +704,9 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .edit-progress{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+    .edit-progress .progress-track{margin:0;}
+    .ro-form{pointer-events:none;opacity:.8;}
     .cases-btn{width:100%;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:right;
       border:1px solid var(--border);background:#fff;border-radius:10px;padding:10px 12px;margin:16px 0 12px;cursor:pointer;font-family:inherit;color:var(--text);}
     .cases-btn:hover{border-color:#93b8ff;background:#f7faff;}
@@ -1432,7 +1435,7 @@ function freeCapacity(off, exceptId){
 function draftAttend(d){ return parseInt(d.attend,10)||0; }
 function draftTarget(d){ return d.targetMode==='attendance' ? recommendedFor(d.type, draftAttend(d)) : (parseInt(d.target,10)||0); }
 // default attendees = what the free capacity of the day is expected to bring
-function defaultAttend(type, off){ return freeCapacity(off); }   // what is left of the day's capacity
+function defaultAttend(type, off, exceptId){ return freeCapacity(off, exceptId); }   // what is left of the day's capacity
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
@@ -1689,8 +1692,8 @@ var ACT = {
   setCreateAttend: function(v){ S.createDraft.attend = v; render(); },
   setCreateMode: function(m){
     var d = S.createDraft; if (d.targetMode===m) return;
-    if (m==='booking') d.target = String(draftTarget(d) || recommendedFor(d.type, freeCapacity(d.dateOffset)));
-    else if (!draftAttend(d)) d.attend = String(defaultAttend(d.type, d.dateOffset));   // keep what the user typed
+    if (m==='booking') d.target = String(draftTarget(d) || recommendedFor(d.type, freeCapacity(d.dateOffset, d.editId)));
+    else if (!draftAttend(d)) d.attend = String(defaultAttend(d.type, d.dateOffset, d.editId));   // keep what the user typed
     d.targetMode = m; render();
   },
   govSearch: function(v){ S.govSearch = v; S.govDropdownOpen = true; render(); },
@@ -1745,11 +1748,6 @@ var ACT = {
   },
   setRepeatWeeks: function(v){ S.createDraft.repeat.weeks = v; render(); },
   toggleCreateConfirm: function(){ S.createDraft.confirmCall = !S.createDraft.confirmCall; render(); },
-  toggleTaskConfirm: function(){
-    var t = findTask(S.detailTaskId); if (!t) return;
-    t.confirmCall = !t.confirmCall; audit(t.confirmCall ? 'تفعيل تأكيد الحضور' : 'إلغاء تأكيد الحضور', t); render();
-  },
-
   // ---------- copy last week ----------
   copyLastWeek: function(){
     var r = weekRange(S.weekOffset), tOff = todayOffset();
@@ -1888,10 +1886,51 @@ var ACT = {
 
   // ---------- detail drawer ----------
   openDetail: function(tid){
-    S.overlay = 'detail'; S.detailTaskId = tid; S.callOpen = null; S.convoyEdit = null; S.detailCaseSearch = '';
-    S.detailBulkSelected = []; S.editingTarget = false; S.logOpen = {}; render();
+    var t = findTask(tid); if (!t) return;
+    S.overlay = 'detail'; S.detailTaskId = tid; S.callOpen = null; S.detailCaseSearch = '';
+    S.detailBulkSelected = []; S.logOpen = {};
+    S.createDraft = draftFromTask(t); S.govSearch = t.gov || ''; S.govDropdownOpen = false;
+    render();
   },
-  closeDetail: function(){ S.overlay = null; S.detailTaskId = null; S.callOpen = null; render(); },
+  closeDetail: function(){ S.overlay = null; S.detailTaskId = null; S.callOpen = null; S.createDraft = null; render(); },
+  setEditDate: function(v){
+    var d = S.createDraft, m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v||''); if (!d || !m) return;
+    var off = daysBetween(BASE_SUNDAY, new Date(+m[1], +m[2]-1, +m[3]));
+    if (off < todayOffset()){ toast('مينفعش تختار يوم فات'); return render(); }
+    d.dateOffset = off; render();
+  },
+  saveTaskEdit: function(){
+    var d = S.createDraft, t = d && findTask(d.editId); if (!t || !isAdmin()) return;
+    var target = draftTarget(d); if (target<=0 || (d.loc==='convoy' && !d.gov)) return;
+    var booked = taskBookedCount(t);
+    if (d.dateOffset!==t.dateOffset && booked){ toast('فيه حالات محجوزة – مينفعش تتنقل ليوم تاني'); return render(); }
+    var att = d.targetMode==='attendance' ? draftAttend(d) : null;
+    var after = S.tasks.map(function(x){ return x.id===t.id ? Object.assign({}, x, {dateOffset:d.dateOffset, target:target, mode:d.targetMode, attendTarget:att}) : x; });
+    var apply = function(){
+      var ch = [];
+      if (t.dateOffset!==d.dateOffset) ch.push('اليوم: ' + dayLabel(t.dateOffset) + ' ← ' + dayLabel(d.dateOffset));
+      if (t.target!==target) ch.push('الحجز: ' + t.target + ' ← ' + target);
+      if (t.loc!==d.loc || (t.gov||'')!==(d.loc==='convoy' ? d.gov : '')) ch.push('المكان: ' + locLabelFor(t) + ' ← ' + (d.loc==='convoy' ? 'قافلة – ' + d.gov : 'داخل المؤسسة'));
+      if (!!t.confirmCall!==!!d.confirmCall) ch.push(d.confirmCall ? 'تفعيل تأكيد الحضور' : 'إلغاء تأكيد الحضور');
+      t.dateOffset = d.dateOffset; t.target = target; t.mode = d.targetMode; t.attendTarget = att;
+      t.loc = d.loc; t.gov = d.loc==='convoy' ? d.gov : null; t.confirmCall = !!d.confirmCall;
+      if (d.loc==='convoy'){
+        var cv = [d.meetingPoint||'', d.mapUrl||'', d.meetingTime||'', d.convoyNotes||''].join('|')!==[t.meetingPoint||'', t.mapUrl||'', t.meetingTime||'', t.convoyNotes||''].join('|');
+        if (cv) ch.push('بيانات القافلة');
+        t.meetingPoint = (d.meetingPoint||'').trim(); t.mapUrl = (d.mapUrl||'').trim(); t.meetingTime = d.meetingTime||''; t.convoyNotes = (d.convoyNotes||'').trim();
+      }
+      if (ch.length) audit('تعديل المهمة', t, ch.join(' · '));
+      S.overlay = null; S.detailTaskId = null; S.createDraft = null; S.confirm = null;
+      toast(ch.length ? 'تم حفظ التعديلات' : 'مفيش تعديلات'); render();
+    };
+    var withCap = function(){ guardCapacity(d.dateOffset, after, apply, 'detail'); };
+    if (target < booked){
+      S.overlay = 'confirm';
+      S.confirm = {title:'تأكيد التغيير', tone:'primary', message:'الحجز الجديد (' + target + ') أقل من العدد المحجوز حاليًا (' + booked + '). هل تريد المتابعة؟',
+        confirmLabel:'تأكيد التغيير', returnTo:'detail', onConfirm:withCap};
+      render();
+    } else withCap();
+  },
   detailSearch: function(v){ S.detailCaseSearch = v; render(); },
   toggleMineOnly: function(){ S.detailMineOnly = !S.detailMineOnly; render(); },
   deleteTask: function(){
@@ -1901,22 +1940,6 @@ var ACT = {
       confirmLabel:'حذف المهمة', returnTo:'detail',
       onConfirm:function(){ audit('حذف المهمة', findTask(tid)); S.tasks = S.tasks.filter(function(t){ return t.id!==tid; }); S.overlay = null; S.confirm = null; S.detailTaskId = null; render(); }};
     render();
-  },
-  startEditTarget: function(){ var t = findTask(S.detailTaskId); S.editingTarget = true; S.editingTargetValue = String(t.target); render(); },
-  cancelEditTarget: function(){ S.editingTarget = false; render(); },
-  editTargetVal: function(v){ S.editingTargetValue = v; render(); },
-  saveTarget: function(){
-    var t = findTask(S.detailTaskId); if (!t) return;
-    var nt = parseInt(S.editingTargetValue,10)||0; var booked = taskBookedCount(t);
-    var after = S.tasks.map(function(x){ return x.id===t.id ? Object.assign({}, x, {target:nt}) : x; });
-    var apply = function(){ audit('تعديل عدد الحجوزات', t, t.target + ' ← ' + nt); t.target = nt; t.mode = 'booking'; S.editingTarget = false; S.overlay = 'detail'; S.confirm = null; render(); };
-    var withCap = function(){ guardCapacity(t.dateOffset, after, apply, 'detail'); };
-    if (nt < booked){
-      S.overlay = 'confirm';
-      S.confirm = {title:'تأكيد التغيير', tone:'primary', message:'الحجز المطلوب الجديد (' + nt + ') أقل من العدد المحجوز حاليًا (' + booked + '). هل تريد المتابعة؟',
-        confirmLabel:'تأكيد التغيير', returnTo:'detail', onConfirm:withCap};
-      render();
-    } else withCap();
   },
   toggleBulk: function(cid){
     var i = S.detailBulkSelected.indexOf(cid);
@@ -1944,10 +1967,6 @@ var ACT = {
     audit(v ? 'توكيل المهمة لموظف' : 'إلغاء توكيل المهمة', t, v ? agentName(v) : 'توزيع على كل الموظفين');
     toast(v ? 'المهمة كلها بقت مع ' + agentName(v) + (n ? ' (' + n + ' حالة)' : '') : 'الحالات اتوزعت على كل الموظفين');
     render();
-  },
-  redistribute: function(tid){
-    var t = findTask(tid); var n = autoAssign(t, true); audit('إعادة توزيع', t, n + ' حالة');
-    toast('تمت إعادة توزيع ' + n + ' حالة مفتوحة بالتساوي على الموظفين'); render();
   },
   assignCase: function(v, key){
     var p = key.split('|'); var t = findTask(p[0]); if (!t) return;
@@ -2106,21 +2125,6 @@ var ACT = {
 
   // ---------- convoy info ----------
   setConvoyField: function(v, field){ S.createDraft[field] = v; render(); },
-  startConvoyEdit: function(){
-    var t = findTask(S.detailTaskId);
-    S.convoyEdit = {meetingPoint:t.meetingPoint||'', mapUrl:t.mapUrl||'', meetingTime:t.meetingTime||'', convoyNotes:t.convoyNotes||''};
-    render();
-  },
-  convoyInput: function(v, field){ S.convoyEdit[field] = v; render(); },
-  cancelConvoyEdit: function(){ S.convoyEdit = null; render(); },
-  saveConvoy: function(){
-    var t = findTask(S.detailTaskId), e = S.convoyEdit;
-    audit('تعديل بيانات القافلة', t);
-    t.meetingPoint = e.meetingPoint.trim(); t.mapUrl = e.mapUrl.trim(); t.meetingTime = e.meetingTime; t.convoyNotes = e.convoyNotes.trim();
-    S.convoyEdit = null;
-    toast(t.status==='published' ? 'تم حفظ بيانات القافلة وظهرت للكول سنتر' : 'تم حفظ بيانات القافلة');
-    render();
-  },
   copyText: function(text){
     var done = function(){ toast('تم نسخ اللينك'); render(); };
     try { if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text); done(); }); return; } } catch(e){}
@@ -2128,11 +2132,6 @@ var ACT = {
   },
 
   // ---------- confirm ----------
-  moveTaskDate: function(v){
-    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v||''); if (!m) return;
-    moveTask(S.detailTaskId, daysBetween(BASE_SUNDAY, new Date(+m[1], +m[2]-1, +m[3])), 'detail');
-    if (S.overlay==='detail') render();
-  },
   confirmAction: function(){ var cb = S.confirm && S.confirm.onConfirm; if (cb) cb(); else { S.overlay = null; S.confirm = null; render(); } },
   cancelConfirm: function(){ var r = (S.confirm && S.confirm.returnTo) || null; S.overlay = r; S.confirm = null; render(); },
 };
@@ -2771,10 +2770,22 @@ function drawerHead(m, title, sub, extra, closeAct){
 
 function renderCreate(){
   var d = S.createDraft, m = TASK_TYPES[d.type];
+  var edit = !!d.editId, t = edit ? findTask(d.editId) : null, ro = edit && !isAdmin();
   var target = draftTarget(d), attMode = d.targetMode==='attendance';
   var canCreate = target>0 && (d.loc==='org' || !!d.gov);
-  var h = '<div class="scrim"'+A('closeCreate')+'></div><aside class="drawer">' + drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', 'closeCreate');
-  h += '<div class="drawer-body" data-scroll="create">';
+  var closeAct = edit ? 'closeDetail' : 'closeCreate';
+  var head = edit
+    ? drawerHead(m, m.label, dayLabel(t.dateOffset) + (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر '+esc(taskSeriesText(t))+'</span>' : ''),
+        isAdmin() ? '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>' : '', closeAct)
+    : drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', closeAct);
+  var h = '<div class="scrim"'+A(closeAct)+'></div><aside class="drawer">' + head;
+  h += '<div class="drawer-body" data-scroll="'+(edit ? 'detail' : 'create')+'">';
+  var bk = edit ? taskBookedCount(t) : 0;
+  h += '<div class="'+(ro ? 'ro-form' : '')+'">';
+  if (edit){
+    h += '<div class="field"><label class="field-label">اليوم</label><input class="text-input" type="date" style="max-width:200px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(d.dateOffset)+'" data-k="edit-date" data-change="setEditDate"'+(bk ? ' disabled' : '')+'/>'+
+      (bk ? '<div class="field-hint">فيه '+bk+' حالة محجوزة – مينفعش تتنقل ليوم تاني</div>' : '')+'</div>';
+  }
   if (d.fundCompany) h += '<div class="fund-note">'+ic('send',13,'#0093e9')+' حالات ممولة من <b>'+esc(d.fundCompany)+'</b> ('+d.candidateIds.length+' حالة) – اختار اليوم والمكان</div>';
   h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
     '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
@@ -2799,9 +2810,9 @@ function renderCreate(){
     '<button class="seg-btn'+(!attMode?' on':'')+'"'+A('setCreateMode','booking')+'>الحجز</button></div></div>';
   // capacity after adding
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target, mode:d.targetMode, attendTarget: attMode ? draftAttend(d) : null};
-  var loads = dayLoad(d.dateOffset, S.tasks.concat([fake]));
+  var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]));
   var anyOver = loads.some(function(x){ return x.load > x.cap; });
-  h += '<div class="cap-box'+(anyOver?' over':'')+'" style="margin-top:10px;margin-bottom:0;"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+' بعد إضافة المهمة'+
+  h += '<div class="cap-box'+(anyOver?' over':'')+'" style="margin-top:10px;margin-bottom:0;"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+(edit ? '' : ' بعد إضافة المهمة')+
     (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
   h += '';
   if (target>0){
@@ -2813,6 +2824,7 @@ function renderCreate(){
   }
   h += '</div>';
   var rp = d.repeat, offs = repeatOffsets(d);
+  if (!edit){
   h += '<div class="field"><label class="field-label">التكرار</label><div class="seg">'+
     '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
     '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
@@ -2834,18 +2846,38 @@ function renderCreate(){
     (d.candidateIds.length ? '<div class="field-hint">الحالات المرشحة هتتضاف لأول مهمة بس</div>' : '');
   }
   h += '</div>';
+  }
   h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
-  {
+  h += '</div>';   // end of the (read-only for non admins) form
+  if (edit){
+    var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
+    h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
+      ' <span class="field-hint" style="margin:0;">('+t.candidateIds.length+' · مفتوحة '+nOpen+')</span></button></div>';
+    if (canAssign()){
+      h += '<div class="owner-row"><label>'+ic('user',13)+' الموظف المسؤول عن المهمة</label><select class="filter-select" data-change="setTaskOwner">'+
+        '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
+    }
+  } else {
     var n = d.candidateIds.length;
-    h += '<div class="field"><label class="field-label">الحالات المرشحة</label>';
-    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة مرشحة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>الحالات</button></div>';
+    h += '<div class="field"><label class="field-label">الحالات</label>';
+    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>الحالات</button></div>';
     if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>'+ic('users',13)+' الحالات</button>';
     h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
   h += '</div><div class="drawer-foot">'+
-    '<button class="btn btn-primary"'+A('createTask')+(canCreate?'':' disabled')+'>'+ic('send',13,'#fff')+' إنشاء المهمة</button>'+
-    '<button class="btn btn-secondary"'+A('closeCreate')+'>إلغاء</button></div></aside>';
+    (edit
+      ? (isAdmin() ? '<button class="btn btn-primary"'+A('saveTaskEdit')+(canCreate?'':' disabled')+'>'+ic('check',13,'#fff',2.4)+' حفظ التعديلات</button>' : '')+
+        '<button class="btn btn-secondary"'+A('closeDetail')+'>إغلاق</button>'
+      : '<button class="btn btn-primary"'+A('createTask')+(canCreate?'':' disabled')+'>'+ic('send',13,'#fff')+' إنشاء المهمة</button>'+
+        '<button class="btn btn-secondary"'+A('closeCreate')+'>إلغاء</button>')+'</div></aside>';
   return h;
+}
+function draftFromTask(t){
+  var att = t.mode==='attendance' && t.attendTarget;
+  return {editId:t.id, type:t.type, dateOffset:t.dateOffset, loc:t.loc, gov:t.gov||'', target:String(t.target), targetMode: att ? 'attendance' : 'booking',
+    attend:String(att ? t.attendTarget : expectedAttend(t.type, t.target)), confirmCall:!!t.confirmCall,
+    repeat:{on:false, freq:'week', days:[], weeks:'4', monthBy:'date', months:'3'}, candidateIds:t.candidateIds.slice(), priority:Object.assign({}, t.priority||{}),
+    meetingPoint:t.meetingPoint||'', mapUrl:t.mapUrl||'', meetingTime:t.meetingTime||'', convoyNotes:t.convoyNotes||''};
 }
 
 function addCasesCtx(){
@@ -2964,94 +2996,8 @@ function renderAddCases(){
 // =====================================================================
 function renderDetail(){
   var t = findTask(S.detailTaskId); if (!t) return '';
-  var m = TASK_TYPES[t.type], admin = isAdmin();
-  var goal = bookingGoal(t), booked = taskBookedCount(t), remaining = Math.max(0, goal-booked);
-  var pct = goal>0 ? Math.min(100, Math.round(booked/goal*100)) : 0, full = goal>0 && booked>=goal;
-  var extra = '';
-  if (admin){
-    extra += '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>';
-  }
-  var sub = dayLabel(t.dateOffset) +
-    (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر '+esc(taskSeriesText(t))+'</span>' : '');
-  var h = '<div class="scrim"'+A('closeDetail')+'></div><aside class="drawer" style="width:520px;">' + drawerHead(m, m.label, sub, extra, 'closeDetail');
-  h += '<div class="drawer-body" data-scroll="detail">';
-  h += '<div class="info-grid"><div class="info-item"><div class="k">مكان الزيارة</div><div class="v">'+esc(locLabelFor(t))+'</div></div>'+
-    '<div class="info-item"><div class="k">المحافظة</div><div class="v">'+esc(t.loc==='convoy' ? (t.gov||'—') : '—')+'</div></div>';
-  h += '</div>';
-  if (t.loc==='convoy'){
-    if (admin && S.convoyEdit){
-      h += '<div class="convoy-box">' + convoyFields(S.convoyEdit, 'convoyInput', 'e') +
-        '<div class="panel-foot" style="margin-top:0;"><button class="btn btn-primary btn-sm"'+A('saveConvoy')+'>حفظ بيانات القافلة</button><button class="btn btn-secondary btn-sm"'+A('cancelConvoyEdit')+'>إلغاء</button></div></div>';
-    } else {
-      h += renderConvoyBox(t);
-      if (admin) h += '<div style="margin:-6px 0 14px;"><button class="ghost-btn"'+A('startConvoyEdit')+'>'+pathIc(CONVOY_ICON_PATH,12)+' تعديل بيانات القافلة</button></div>';
-    }
-  }
-
-  if (!isCC()){
-    var loads = dayLoad(t.dateOffset), over = loads.filter(function(x){ return x.load > x.cap; });
-    h += '<div class="cap-box'+(over.length?' over':'')+'" style="padding:8px 12px;"><div class="reco-row"><span class="cap-box-title" style="margin:0;">'+ic('gauge',13)+' طاقة اليوم: '+
-      (over.length ? '<span class="cap-over">تجاوز في '+over.map(function(x){ return x.label; }).join('، ')+'</span>' : '<span class="cap-ok">ضمن الطاقة</span>')+'</span>'+
-      '<button class="link-btn"'+A('openCapacity', t.dateOffset)+'>التفاصيل</button></div></div>';
-  }
-
-  var targetEdit = '';
-  if (admin){
-    targetEdit = '<div class="field" style="margin-top:14px;"><label class="field-label">تعديل عدد الحجوزات</label>' + (S.editingTarget
-      ? '<div class="target-edit-row"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.editingTargetValue)+'" data-k="edittarget" data-input="editTargetVal"/>'+
-        '<button class="btn btn-primary btn-sm"'+A('saveTarget')+'>حفظ</button><button class="btn btn-secondary btn-sm"'+A('cancelEditTarget')+'>إلغاء</button></div>'
-      : '<button class="btn btn-secondary btn-sm"'+A('startEditTarget')+'>تعديل العدد</button>') + '</div>'+
-      '<div class="field"><label class="field-label">نقل المهمة ليوم تاني</label><input class="text-input" type="date" style="max-width:200px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(t.dateOffset)+'" data-k="move-date" data-change="moveTaskDate"/>'+
-      (booked ? '<div class="field-hint">فيه '+booked+' حالة محجوزة – مينفعش تتنقل</div>' : '')+'</div>';
-  }
-
-
-  h += '<div class="metric-grid"><div class="metric-box"><div class="metric-val">'+goal+'</div><div class="metric-lbl">مطلوب حجز</div></div>'+
-    '<div class="metric-box"><div class="metric-val">'+(t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, goal))+'</div><div class="metric-lbl">'+(t.mode==='attendance' && t.attendTarget ? 'المطلوب حضورهم' : 'متوقع يحضر')+'</div></div>'+
-    '<div class="metric-box"><div class="metric-val">'+booked+'</div><div class="metric-lbl">تم الحجز</div></div>'+
-    '<div class="metric-box"><div class="metric-val">'+remaining+'</div><div class="metric-lbl">المتبقي</div></div></div>'+
-    '<div class="big-progress-label"><span style="font-size:11.5px;color:var(--text-muted);">التقدم</span><span class="big-progress-num">'+booked+' من '+goal+'</span></div>'+
-    '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>'+
-    (full ? '<div style="margin-bottom:6px;"><span class="full-badge">تم اكتمال الحجز المطلوب</span></div>' : '');
-  if (!isCC() && atRisk(t)) h += '<div class="risk-box">'+ic('alert',13,'#b45309')+' المهمة باقي عليها '+(t.dateOffset-todayOffset()===0 ? 'النهارده' : (t.dateOffset-todayOffset())+' يوم')+' والمحجوز '+(goal ? Math.round(booked/goal*100) : 0)+'% بس من المطلوب</div>';
-
-  // day-before confirmation
-  var cst = confirmStats(t);
-  h += '<div class="confirm-box">';
-  if (admin) h += '<label class="switch-row" style="margin:0;"><input type="checkbox"'+(t.confirmCall?' checked':'')+A('toggleTaskConfirm')+'/> الكول سنتر يأكد الحضور قبل الموعد بيوم</label>';
-  else h += '<div style="font-weight:700;">تأكيد الحضور قبل الموعد بيوم: '+(t.confirmCall ? 'مفعّل' : 'غير مفعّل')+'</div>';
-  if (cst.confirmed + cst.cancelled + cst.pending) h += '<div class="confirm-stats"><span class="cap-ok">أكد '+cst.confirmed+'</span><span class="cap-over">اعتذر '+cst.cancelled+'</span><span>لسه '+cst.pending+'</span>'+
-    (!t.confirmCall ? '<span class="field-hint" style="margin:0;">حالات الغياب المتكرر بتتأكد دايمًا</span>' : '')+'</div>';
-  h += '</div>';
-  if ((t.standby||[]).length){
-    h += '<div class="standby-box"><div class="standby-title">قائمة الاحتياطي ('+t.standby.length+')</div>'+t.standby.map(function(cid, i){
-      var c = caseById(cid); return '<div class="standby-row"><b>#'+(i+1)+'</b> '+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span></div>';
-    }).join('')+'</div>';
-  }
-
-  h += targetEdit;
-
-  // cases -> opened in the "الحالات" popup (task cases + add from the pool)
-  var cnt = {booked:0, open:0, closed:0};
-  t.candidateIds.forEach(function(cid){ var k = caseStatus(t, cid).key; if (k==='booked' || k==='attended') cnt.booked++; else if (isOpenStatus(k)) cnt.open++; else cnt.closed++; });
-  var mine = isCC() ? t.candidateIds.filter(function(cid){ return t.assignee[cid]===S.agentId; }).length : 0;
-  h += '<button class="cases-btn"'+A('openTaskCases', t.id)+'>'+ic('users',16)+'<span class="cases-btn-t">الحالات <b>('+t.candidateIds.length+')</b></span>'+
-    '<span class="cases-btn-s">محجوز '+cnt.booked+' · مفتوحة '+cnt.open+' · مقفولة '+cnt.closed+(isCC() ? ' · مسندة لك '+mine : '')+'</span>'+pathIc('M15 6l-6 6 6 6',15,null,2)+'</button>';
-  if (canAssign()){
-    if (t.status==='published' && !t.owner) h += '<div style="display:flex;gap:8px;margin-bottom:10px;"><button class="btn btn-secondary btn-sm"'+A('redistribute', t.id)+'>'+ic('users',13)+' إعادة التوزيع بالتساوي</button></div>';
-    h += '<div class="owner-row"><label>'+ic('user',13)+' الموظف المسؤول عن المهمة</label><select class="filter-select" data-change="setTaskOwner">'+
-      '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
-    if (t.status==='published'){
-      var per = {}; AGENTS.forEach(function(a){ per[a.id] = 0; });
-      t.candidateIds.forEach(function(cid){ var a = t.assignee[cid]; if (a && per[a]!=null && isOpenStatus(caseStatus(t,cid).key)) per[a]++; });
-      h += '<div class="field-hint" style="margin:-4px 0 10px;">'+AGENTS.map(function(a){ return esc(a.name)+' ('+per[a.id]+')'; }).join(' · ')+'</div>';
-    }
-  }
-  if (canAssign()){
-    var log = S.audit.filter(function(a){ return a.tid===t.id; });
-    h += '<div class="section-head" style="margin-top:16px;"><span class="section-title">سجل التعديلات ('+log.length+')</span></div>'+auditList(log, true);
-  }
-  return h + '</div></aside>';
+  if (!S.createDraft || S.createDraft.editId!==t.id){ S.createDraft = draftFromTask(t); S.govSearch = t.gov || ''; S.govDropdownOpen = false; }
+  return renderCreate();
 }
 
 function renderCaseRow(t, cid){
