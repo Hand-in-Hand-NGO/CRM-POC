@@ -2304,7 +2304,7 @@ function renderSubbar(){
   return h;
 }
 
-var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'حصالة تسليم طرف جديد', maintEval:'حصالة تقييم صيانة', maintDelivery:'حصالة تسليم صيانة'};
+var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
 // cases available to book in a stage (any governorate)
 function poolCases(type){
   var ctx = {id:'__pool', type:type, loc:'org', gov:null, dateOffset:todayOffset()};
