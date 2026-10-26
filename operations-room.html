@@ -3315,11 +3315,11 @@ function renderSettings(){
         '<span>متوسط '+Math.round(dA.avgAttended)+' حضر من '+Math.round(dA.avgBooked)+' حجز في اليوم · آخر '+dA.days+' يوم</span></div></div>'+
         '<div><label>عشان الطاقة دي تتملى</label><div class="att-box"><b>'+(cap ? Math.ceil(cap/dA.att - 1e-9) : 0)+'</b><span>حجز في اليوم عشان يحضر '+cap+'</span></div></div>';
     })()+'</div></div>';
-  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid">'+
-    setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+'</div></div>';
-  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">التنبيهات والاحتياطي</div><div class="set-grid four">'+
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid four">'+
+    setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">التنبيهات والاحتياطي</div><div class="set-grid">'+
     setNum('riskDays','تنبيه "محتاجة تدخل" قبل الموعد بـ','يوم')+setNum('riskPct','لو المحجوز أقل من','%')+
-    setNum('standbyMax','عدد الاحتياطي لكل مهمة','حالة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
+    setNum('standbyMax','عدد الاحتياطي لكل مهمة','حالة')+'</div></div>';
   var sd = S.settingsDraft, sample = S.tasks.filter(function(t){ return t.loc==='convoy'; })[0] || S.tasks[0], scid = sample && sample.candidateIds[0];
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">رسائل الحالات (SMS / واتساب)</div>'+
     '<label class="switch-row"><input type="checkbox"'+(sd.msgOn?' checked':'')+A('toggleSetting','msgOn')+'/> ابعت رسالة للحالة أوتوماتيك بعد "تم الحجز"</label>'+
