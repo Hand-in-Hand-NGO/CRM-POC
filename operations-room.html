@@ -152,6 +152,10 @@
       background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;padding:3px 7px;margin-bottom:9px;
     }
     .progress-line{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
+    .book-nums{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;}
+    .book-nums div{background:var(--surface-alt);border-radius:7px;padding:3px 8px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+    .book-nums span{font-size:11px;color:var(--text-muted);font-weight:600;white-space:nowrap;}
+    .book-nums b{font-size:14px;font-weight:800;color:var(--text);}
     .progress-num{font-size:13px;font-weight:800;color:var(--text);}
     .progress-tag{font-size:10.5px;color:var(--text-faint);}
     .progress-track{height:6px;border-radius:99px;background:var(--neutral-tint);overflow:hidden;}
@@ -2428,12 +2432,9 @@ function renderTaskCard(t){
     (risky ? '<span class="risk-badge">محتاجة تدخل</span>' : '')+
     (t.seriesId ? '<span class="rep-badge" title="تتكرر '+esc(taskSeriesText(t))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
-    '<div class="progress-line"><span class="progress-num">'+booked+' من '+goal+'</span><span class="progress-tag">حجز · متوقع يحضر '+expectedAttend(t.type, goal)+'</span></div>'+
+    '<div class="book-nums"><div><span>الحجز الكامل</span><b>'+goal+'</b></div><div><span>الحجز الفعلي</span><b style="color:'+m.color+';">'+booked+'</b></div></div>'+
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
-  if (t.dateOffset <= todayOffset() && booked){
-    var a = attendanceCounts(t);
-    h += '<div class="candidates-line">الاستقبال: <span class="cap-ok">حضر '+a.attended+'</span> · <span class="cap-over">لم يحضر '+a.noShow+'</span>'+(a.pending ? ' · لسه '+a.pending : '')+'</div>';
-  } else {
+  if (t.dateOffset > todayOffset()){
     h += '<div class="candidates-line">المرشحين: '+t.candidateIds.length+((t.standby||[]).length ? ' · احتياطي '+t.standby.length : '')+'</div>';
     if (!isCC() && t.dateOffset - todayOffset() === 1){
       var cs = confirmStats(t);
