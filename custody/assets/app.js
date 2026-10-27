@@ -430,7 +430,8 @@
     views.users = function () {
         current = listView({
             title: 'المستخدمين', icon: 'fa-user-secret', action: 'users.list',
-            actions: '<button class="btn btn-primary btn-action" data-act="user-edit"><i class="fa fa-plus"></i> إضافة مستخدم</button>',
+            actions: '<button class="btn btn-success btn-action" data-act="backup"><i class="fa fa-download"></i> تحميل نسخة احتياطية</button> ' +
+                '<button class="btn btn-primary btn-action" data-act="user-edit"><i class="fa fa-plus"></i> إضافة مستخدم</button>',
             head: '<th>اسم المستخدم</th><th>الاسم</th><th>الصلاحية</th><th>الحالة</th><th>آخر دخول</th><th>إجراءات</th>',
             row: function (u) {
                 return '<tr><td dir="ltr">' + esc(u.username) + '</td><td>' + esc(u.name) + '</td><td>' + esc(S.meta.roles[u.role] || u.role) + '</td><td>' +
@@ -822,6 +823,7 @@
             case 'employee': employeeCard(id); break;
             case 'item': itemCard(id); break;
             case 'item-edit': itemForm(id, $t.data('type')); break;
+            case 'backup': window.location = 'api.php?action=backup.download'; break;
             case 'employee-edit': employeeForm(id); break;
             case 'user-edit': userForm(id); break;
             case 'item-delete':

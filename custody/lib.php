@@ -223,6 +223,21 @@ function doc_no($type, $id, $date)
     return ($type === 'out' ? 'TS' : 'RT') . '-' . substr($date, 0, 4) . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
 }
 
+// نسخة احتياطية متسقة من قاعدة SQLite وهي شغالة (تشمل كل البيانات وصور التوقيعات)
+function backup_sqlite($dest)
+{
+    if (cfg('db')['driver'] !== 'sqlite') {
+        throw new RuntimeException('النسخ الاحتياطي من هنا لقاعدة SQLite فقط، ولقاعدة MySQL استخدم mysqldump');
+    }
+    if (!is_dir(dirname($dest))) {
+        mkdir(dirname($dest), 0775, true);
+    }
+    if (is_file($dest)) {
+        unlink($dest);
+    }
+    db()->exec('VACUUM INTO ' . db()->quote($dest));
+}
+
 // أنواع الأصناف وحقول كل نوع (types.json)
 function asset_types()
 {

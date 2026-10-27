@@ -590,5 +590,10 @@
 // روابط صفحة التوقيع تفتح نسخة الديمو بدل sign.php، والتصدير يمر عبر DEMO.go
 (function ($) {
     $(document).on('click', 'a[href^="sign.php"]', function (e) { e.preventDefault(); DEMO.sign($(this).attr('href')); });
-    Object.defineProperty(window.DEMO, 'go', { set: function (url) { DEMO.exportCsv(url); } });
+    Object.defineProperty(window.DEMO, 'go', {
+        set: function (url) {
+            if (url.indexOf('backup.download') >= 0) { alert('النسخة الاحتياطية متاحة على السيرفر فقط، والنسخة التجريبية محفوظة في المتصفح.'); return; }
+            DEMO.exportCsv(url);
+        }
+    });
 })(jQuery);

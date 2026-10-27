@@ -54,10 +54,27 @@ location ~ ^/custody/(config|config\.local|lib|schema)\.php$ { deny all; }
 'db' => ['sqlite_path' => '/var/lib/custody/custody.sqlite'],
 ```
 
-## النسخ الاحتياطي
+## النسخ الاحتياطي والاسترجاع
 
-- **SQLite**: انسخ ملف `data/custody.sqlite` (ومعاه `-wal` و `-shm` لو موجودين) بشكل دوري.
-- **MySQL**: `mysqldump custody > backup.sql`.
+كل بيانات السيستم، ومعاها **صور توقيعات الموظفين**، في ملف واحد هو `data/custody.sqlite`. مفيش مرفقات في فولدرات تانية. **متنسخش الملف بإيدك والسيستم شغال**، لأن ممكن النسخة تطلع ناقصة. استخدم واحدة من الطريقتين دول:
+
+1. **من المتصفح:** صفحة **المستخدمين** ← زرار **تحميل نسخة احتياطية** (للمدير بس). بينزّل نسخة كاملة باسم `custody-backup-التاريخ.sqlite`.
+2. **أوتوماتيك كل يوم:** `php backup.php` بيحفظ نسخة في `data/backups/` وبيحتفظ بآخر 30 نسخة. تقدر تغير المكان والعدد من `backup_dir` و `backup_keep` في `config.local.php`.
+   - **ويندوز (XAMPP):** Task Scheduler ← Create Basic Task ← يومي ← Start a program:
+     Program: `C:\xampp\php\php.exe`  ·  Arguments: `backup.php`  ·  Start in: `C:\xampp\htdocs\custody`
+   - **لينكس:** `sudo crontab -u www-data -e` وضيف السطر: `0 2 * * * php /var/www/html/custody/backup.php`
+
+انقل النسخ لمكان تاني برة السيرفر (هارد خارجي، Google Drive…)، علشان لو السيرفر نفسه باظ.
+
+**الاسترجاع:**
+1. وقّف Apache.
+2. امسح `data/custody.sqlite` وأي ملفات `custody.sqlite-wal` و `custody.sqlite-shm` جنبه.
+3. حط ملف النسخة مكانه باسم `custody.sqlite`.
+4. شغّل Apache تاني.
+
+مع النسخة، احتفظ كمان بـ `config.local.php` لو عدّلته.
+
+**MySQL:** لو غيّرت القاعدة لـ MySQL استخدم `mysqldump custody > backup.sql`، وللاسترجاع `mysql custody < backup.sql`.
 
 ## تعديل حقول الأنواع
 
@@ -76,6 +93,7 @@ location ~ ^/custody/(config|config\.local|lib|schema)\.php$ { deny all; }
 | `api.php` | كل العمليات (JSON) مع التحقق من الصلاحيات وCSRF |
 | `sign.php` | صفحة توقيع الموظف (عامة بالرابط الخاص بكل سند) |
 | `print.php` | طباعة السندات وبيان العهدة وإخلاء الطرف |
+| `backup.php` | نسخة احتياطية أوتوماتيك من سطر الأوامر (مقفول من المتصفح) |
 | `types.json` | أنواع الأصناف (لاب توب / موبايل / شريحة) وحقول كل نوع |
 | `lib.php` / `schema.php` / `config.php` | قاعدة البيانات والجلسات والإعدادات. قاعدة البيانات القديمة بتتحدّث لوحدها |
 | `assets/theme.css` | فونت وألوان HandinHand CMS |

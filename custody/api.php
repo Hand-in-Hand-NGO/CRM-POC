@@ -767,6 +767,22 @@ function handle($action)
             return ['id' => $id];
 
         // ---------- activity log
+        case 'backup.download':
+            need('admin');
+            $file = cfg('backup_dir') . '/download-' . bin2hex(random_bytes(8)) . '.sqlite';
+            try {
+                backup_sqlite($file);
+            } catch (RuntimeException $e) {
+                fail($e->getMessage());
+            }
+            log_activity('تحميل نسخة احتياطية', null, null, round(filesize($file) / 1024) . ' KB');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="custody-backup-' . date('Y-m-d_His') . '.sqlite"');
+            header('Content-Length: ' . filesize($file));
+            readfile($file);
+            unlink($file);
+            exit;
+
         case 'log.list':
             need('admin');
             return q_all('SELECT l.*, u.name AS user_name FROM activity_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 500');
@@ -831,7 +847,7 @@ try {
             fail('انتهت صلاحية الصفحة، أعد تحميلها', 419);
         }
     } elseif (!in_array($action, ['auth.me', 'dashboard', 'lookups', 'employees.list', 'employees.get', 'items.list', 'items.get',
-        'custody.list', 'handovers.list', 'handovers.get', 'users.list', 'log.list', 'export'], true)) {
+        'custody.list', 'handovers.list', 'handovers.get', 'users.list', 'log.list', 'export', 'backup.download'], true)) {
         fail('طريقة الطلب غير مسموحة', 405);
     }
     $result = handle($action);

@@ -1,6 +1,6 @@
 Options -Indexes
 DirectoryIndex index.php
 
-<FilesMatch "^(config\.php|config\.local\.php|lib\.php|schema\.php)$">
+<FilesMatch "^(config\.php|config\.local\.php|lib\.php|schema\.php|backup\.php)$">
     Require all denied
 </FilesMatch>

@@ -50,6 +50,7 @@ body = replace_once(body, '<div class="header-user">',
 app = read(APP / 'assets/app.js')
 app = replace_once(app, "function openPrint(url) { window.open(url, '_blank'); }", 'function openPrint(url) { DEMO.print(url); }')
 app = replace_once(app, 'window.location = exportUrl(', 'DEMO.go = exportUrl(')
+app = replace_once(app, "window.location = 'api.php?action=backup.download'", "DEMO.go = 'api.php?action=backup.download'")
 js = '\n;\n'.join([read(V / 'jquery.min.js'), read(V / 'bootstrap/js/bootstrap.min.js'), read(V / 'select2/select2.min.js'),
                     'window.CUSTODY_TYPES = ' + read(APP / 'types.json') + ';', read(ROOT / 'demo-api.js'), app])
 
