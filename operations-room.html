@@ -1443,6 +1443,7 @@ function priorityOf(ctx, c){
     var ab = activeBooking(ctx.type, c.id);
     eligible = false; why = ab.attended ? 'تمت الزيارة (حضر)' : (ab.tid===ctx.id ? 'محجوزة في هذه المهمة' : 'محجوزة في موعد آخر');
   }
+  else if (fundHold(c.id)){ eligible = false; why = 'موقوفة للتمويل – ' + fundHold(c.id); }
   else if (c.ready===false){ eligible = false; why = ctx.type==='newDelivery' ? 'الطرف لسه في التصنيع' : 'الصيانة لسه ما خلصتش'; }
   else if (c.postponed && c.postponed.contact==='case'){ eligible = false; why = 'مؤجل – الحالة هتتواصل مع المؤسسة'; }
   else if (c.postponed && c.postponed.until > ctx.dateOffset){ eligible = false; why = 'مؤجل هندسيًا حتى ' + shortDate(c.postponed.until); }
@@ -3128,7 +3129,7 @@ function readStore(k, def){ try { var v = localStorage.getItem(k); return v ? JS
 function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 function loadFunding(){
   FUND = readStore(FUND_KEY, null) || {companies:[], alloc:{}, batches:[]};
-  FUND.alloc = FUND.alloc || {};
+  FUND.alloc = FUND.alloc || {}; FUND.holds = FUND.holds || {}; FUND.plans = FUND.plans || [];
   CASES.forEach(function(c){
     if (c.baseFunding===undefined) c.baseFunding = c.funding;
     var a = FUND.alloc[c.id]; c.funding = a ? a.company : c.baseFunding;
@@ -3136,6 +3137,12 @@ function loadFunding(){
   (FUND.companies||[]).forEach(function(n){ if (FUNDING_OPTIONS.indexOf(n)===-1) FUNDING_OPTIONS.push(n); });
 }
 function fundOf(cid){ return FUND.alloc[cid] || null; }
+// plan name when the CSR holds the case for funding (operations can't put it in a task)
+function fundHold(cid){
+  if (typeof FUND==='undefined' || !FUND || !FUND.holds || !FUND.holds[cid]) return '';
+  var pid = FUND.holds[cid].plan, pl = (FUND.plans||[]).filter(function(p){ return p.id===pid; })[0];
+  return pl ? pl.name : 'خطة تمويل';
+}
 // where a funded case stands in the operations room
 function fundOpsStatus(c){
   var tOff = todayOffset(), tid = (S.bookings[c.stage]||{})[c.id];
@@ -3151,6 +3158,10 @@ function fundOpsStatus(c){
 function syncFundingOps(){
   var out = {};
   Object.keys(FUND.alloc).forEach(function(cid){ var c = caseById(cid); if (c) out[cid] = fundOpsStatus(c); });
+  CASES.forEach(function(c){
+    if (out[c.id] || (c.stage!=='newDelivery' && c.stage!=='maintDelivery')) return;
+    var st = fundOpsStatus(c); if (st.status!=='new') out[c.id] = st;
+  });
   var str = JSON.stringify(out);
   if (str !== fundOpsLast){ fundOpsLast = str; writeStore(FUND_OPS_KEY, out); }
 }

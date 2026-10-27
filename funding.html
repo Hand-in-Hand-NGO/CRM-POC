@@ -341,6 +341,12 @@ label { font-weight: bold; }
     .table > tbody > tr > td { font-size: 12.5px; padding: 6px 8px; }
     .table tbody tr.row-funded > td { background: #f7f7f7; color: #888; }
     .table tbody tr.row-sel > td { background: #fff7d6 !important; }
+    .table tbody tr.row-held > td { background: #fff3e6; }
+    .hold-chip { display: inline-block; background: #fff0e0; color: var(--hih-warning); border: 1px solid var(--hih-warning); border-radius: 15px; padding: 0 8px; font-size: 12px; white-space: nowrap; }
+    .fund-toggle .btn.active.toggle-held { background: var(--hih-warning); color: #fff; }
+    .plans { display: flex; flex-direction: column; gap: 8px; }
+    .plan-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 8px 12px; background: #fffaf3; }
+    .plan-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     td.key { font-weight: 700; direction: ltr; }
     .limb-chip { display: inline-block; margin-top: 3px; background: #fff4e5; color: #b45309; border: 1px solid #f0c98a; border-radius: 15px; padding: 0 7px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .stage-lbl { display: inline-block; border-radius: 15px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
@@ -581,26 +587,36 @@ function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); ret
 var F = {
   store: null, ops: {},
   company: '', newCompany: '',
-  filters: {q:'', gov:'', level:'', stage:'', fund:'none', company:'', multi:false},
+  filters: {q:'', gov:'', level:'', stage:'', fund:'free', company:'', multi:false, plan:''},
   sort: 'waitDesc', sel: [], modal: null, toast: null,
 };
 function loadStores(){
   F.store = readStore(FUND_KEY, null) || {companies:[], alloc:{}, batches:[]};
   F.store.alloc = F.store.alloc || {}; F.store.batches = F.store.batches || []; F.store.companies = F.store.companies || [];
+  F.store.holds = F.store.holds || {}; F.store.plans = F.store.plans || [];
   F.ops = readStore(FUND_OPS_KEY, {}) || {};
 }
 function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
 
+// the funding page works on the two stores only
+var STORES = {newDelivery:'مخزن الأطراف', maintDelivery:'مخزن أطراف الصيانة'};
+function inStores(c){ return !!STORES[c.stage]; }
 function allocOf(c){ return F.store.alloc[c.id] || null; }
 function funderOf(c){ var a = allocOf(c); return a ? a.company : (c.funding!=='بدون' ? c.funding : ''); }
 function isFunded(c){ return !!funderOf(c); }
-function isSelectable(c){ return !isFunded(c); }
+// a case held in a funding plan: operations can't put it in a booking task until the plan is sent or released
+function holdOf(c){ return F.store.holds[c.id] || null; }
+function planById(id){ for (var i=0;i<F.store.plans.length;i++){ if (F.store.plans[i].id===id) return F.store.plans[i]; } return null; }
+function planCases(id){ return Object.keys(F.store.holds).filter(function(cid){ return F.store.holds[cid].plan===id; }).map(caseById).filter(Boolean); }
+// already in an operations task (scheduled / booked / attended)
+function inTask(c){ var o = F.ops[c.id]; return !!(o && o.status && o.status!=='new'); }
+function isSelectable(c){ return inStores(c) && !isFunded(c) && !holdOf(c) && !inTask(c); }
 function isMaint(c){ return TASK_TYPES[c.stage].order==='maintenance'; }
 
 function opsInfo(c){
-  if (!allocOf(c)) return null;
   var o = F.ops[c.id];
+  if (!allocOf(c) && !(o && o.status && o.status!=='new')) return null;
   if (!o || o.status==='new') return {cls:'ops-wait', txt:'مستني الأوبريشن يعمل مهمة الحجز', key:'new'};
   if (o.status==='scheduled') return {cls:'ops-sched', txt:'في مهمة حجز يوم ' + o.day, key:'scheduled'};
   if (o.status==='booked') return {cls:'ops-booked', txt:'تم الحجز يوم ' + o.day, key:'booked'};
@@ -622,12 +638,15 @@ function opts(list, cur, allLabel){ return '<option value="">'+(allLabel||'ال�
 function filtered(){
   var f = F.filters, q = f.q.trim();
   var list = CASES.filter(function(c){
+    if (!inStores(c)) return false;
     if (q && c.name.indexOf(q)===-1 && c.code.toUpperCase().indexOf(q.toUpperCase())===-1 && c.phone.indexOf(q)===-1) return false;
     if (f.gov && c.gov!==f.gov) return false;
     if (f.level && c.level!==f.level) return false;
     if (f.stage && c.stage!==f.stage) return false;
-    if (f.fund==='none' && isFunded(c)) return false;
+    if (f.fund==='free' && !isSelectable(c)) return false;     // not funded, not held, not already in a task
+    if (f.fund==='held' && !holdOf(c)) return false;
     if (f.fund==='funded' && !isFunded(c)) return false;
+    if (f.plan && !(holdOf(c) && holdOf(c).plan===f.plan)) return false;
     if (f.company && funderOf(c)!==f.company) return false;
     if (f.multi && !otherLimbs(c).length) return false;
     return true;
@@ -663,6 +682,7 @@ function renderApp(){
   h += '<div class="content">';
   h += renderFunder();
   h += renderFilters();
+  h += renderPlans();
   h += renderTable();
   h += renderStats();
   h += '</div>';
@@ -684,11 +704,11 @@ function renderFunder(){
 
 function renderFilters(){
   var f = F.filters;
-  var stages = [['','الكل','t-all']].concat(Object.keys(TASK_TYPES).map(function(k){ return [k, TASK_TYPES[k].label, TASK_TYPES[k].order==='new' ? 't-new' : 't-maint']; }));
-  var funds = [['all','الكل','toggle-all'],['none','غير ممول','toggle-off'],['funded','ممول','toggle-on']];
+  var stages = [['','الكل','t-all'],['newDelivery',STORES.newDelivery,'t-new'],['maintDelivery',STORES.maintDelivery,'t-maint']];
+  var funds = [['all','الكل','toggle-all'],['free','متاح','toggle-off'],['held','موقوف في خطة','toggle-held'],['funded','ممول','toggle-on']];
   var sorts = [['waitDesc','مدة الانتظار (الأطول الأول)'],['ageAsc','السن: الأصغر الأول'],['ageDesc','السن: الأكبر الأول'],['gov','المحافظة'],['person','الحالة (الأطراف جنب بعض)']];
   return '<div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-filter"></i>بحث وفلاتر</div><div class="panel-body">'+
-    '<div class="form-group" style="margin-bottom:10px;"><label style="display:block;">المرحلة</label><div class="btn-group stage-tabs">'+stages.map(function(s){
+    '<div class="form-group" style="margin-bottom:10px;"><label style="display:block;">المخزن</label><div class="btn-group stage-tabs">'+stages.map(function(s){
       return '<button class="btn btn-default '+s[2]+(f.stage===s[0]?' active':'')+'"'+A('setStage', s[0])+'>'+s[1]+'</button>';
     }).join('')+'</div></div>'+
     '<div class="filters">'+
@@ -696,10 +716,12 @@ function renderFilters(){
       '<button class="btn btn-danger btn-action btn-sm"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح</button></div></div>'+
     '<div class="form-group"><label>المحافظة</label><select class="form-control w-sel" data-change="setFilter" data-a="gov">'+opts(GOVERNORATES, f.gov)+'</select></div>'+
     '<div class="form-group"><label>الطرف (مستوى البتر)</label><select class="form-control w-sel" data-change="setFilter" data-a="level">'+opts(LEVEL_OPTIONS, f.level)+'</select></div>'+
-    '<div class="form-group"><label>التمويل</label><div class="btn-group fund-toggle">'+funds.map(function(x){
+    '<div class="form-group"><label>الحالة</label><div class="btn-group fund-toggle">'+funds.map(function(x){
       return '<button class="btn btn-default '+x[2]+(f.fund===x[0]?' active':'')+'"'+A('setFund', x[0])+'>'+x[1]+'</button>';
     }).join('')+'</div></div>'+
     '<div class="form-group"><label>الشركة الممولة</label><select class="form-control w-sel" data-change="setFilter" data-a="company">'+opts(companies(), f.company)+'</select></div>'+
+    (F.store.plans.length ? '<div class="form-group"><label>خطة التمويل</label><select class="form-control w-sel" data-change="setFilter" data-a="plan"><option value="">كل الخطط</option>'+
+      F.store.plans.map(function(p){ return '<option value="'+p.id+'"'+(f.plan===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select></div>' : '')+
     '<div class="form-group"><label>ترتيب حسب</label><select class="form-control w-sel" style="width:200px;" data-change="setSort">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(F.sort===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
     '<div class="form-group"><label>&nbsp;</label><label class="chk-inline"><input type="checkbox"'+(f.multi?' checked':'')+A('toggleMulti')+'/> حالات ليها أكتر من طرف</label></div>'+
     '</div></div></div>';
@@ -710,27 +732,44 @@ function renderTable(){
   var h = '<div class="toolbar"><span class="count">عدد الطلبات: <b>'+list.length+'</b></span>'+
     (sel.length ? '<span class="count">· تم تحديد <b>'+sel.length+'</b></span><button class="btn btn-default btn-xs btn-action"'+A('clearSel')+'><i class="fa fa-times"></i> إزالة التحديد</button>' : '')+
     '<span class="spacer"></span>'+
+    '<button class="btn btn-warning btn-action"'+A('openHold')+(sel.length ? '' : ' disabled')+'><i class="fa fa-pause-circle"></i> إيقاف في خطة'+(sel.length ? ' ('+sel.length+')' : '')+'</button>'+
     '<button class="btn btn-primary btn-action"'+A('openConfirm')+(sel.length && F.company ? '' : ' disabled')+'><i class="fa fa-check"></i> '+
       (F.company ? 'تمويل بواسطة '+esc(F.company)+(sel.length ? ' ('+sel.length+')' : '') : 'اختار الشركة الأول')+'</button>'+
     '<button class="btn btn-success btn-action"'+A('exportCsv')+'><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button></div>';
   h += '<div class="table-scroll"><table class="table table-bordered"><thead><tr>'+
-    '<th style="width:34px;"></th><th>كود الحالة</th><th>الاسم</th><th>التليفون</th><th>المحافظة</th><th>السن</th><th>الطرف</th><th>المرحلة</th><th>مدة الانتظار</th><th>التمويل</th><th>حالة الحجز (غرفة العمليات)</th><th></th>'+
+    '<th style="width:34px;"></th><th>كود الحالة</th><th>الاسم</th><th>التليفون</th><th>المحافظة</th><th>السن</th><th>الطرف</th><th>المخزن</th><th>مدة الانتظار</th><th>التمويل / الخطة</th><th>حالة الحجز (غرفة العمليات)</th><th></th>'+
     '</tr></thead><tbody>';
   list.forEach(function(c){
-    var funded = isFunded(c), on = sel.indexOf(c.id)!==-1, others = otherLimbs(c), a = allocOf(c), oi = opsInfo(c);
-    var cls = (isMaint(c) ? 'row-maint' : 'row-new') + (on ? ' row-sel' : '') + (funded ? ' row-funded' : '');
+    var funded = isFunded(c), on = sel.indexOf(c.id)!==-1, others = otherLimbs(c), a = allocOf(c), oi = opsInfo(c), hd = holdOf(c), pl = hd && planById(hd.plan);
+    var cls = (isMaint(c) ? 'row-maint' : 'row-new') + (on ? ' row-sel' : '') + (funded ? ' row-funded' : '') + (hd ? ' row-held' : '');
     h += '<tr class="'+cls+'">'+
-      '<td><input type="checkbox"'+(on?' checked':'')+(funded?' disabled':'')+A('toggleSel', c.id)+'/></td>'+
+      '<td><input type="checkbox"'+(on?' checked':'')+(isSelectable(c)?'':' disabled')+A('toggleSel', c.id)+'/></td>'+
       '<td class="key">'+c.code+(others.length ? '<br><span class="limb-chip"'+A('showLimbs', c.id)+' title="الحالة ليها طرف تاني">+ '+others.map(function(o){ return o.code; }).join('، ')+'</span>' : '')+'</td>'+
       '<td style="font-weight:700;">'+esc(c.name)+'</td><td dir="ltr">'+fmtPhone(c.phone)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
-      '<td><span class="stage-lbl '+(isMaint(c)?'st-maint':'st-new')+'">'+TASK_TYPES[c.stage].label+'</span></td>'+
+      '<td><span class="stage-lbl '+(isMaint(c)?'st-maint':'st-new')+'">'+STORES[c.stage]+'</span></td>'+
       '<td>'+c.waitingDays+' يوم</td>'+
-      '<td>'+(funded ? '<span class="chip">'+esc(funderOf(c))+'</span>'+(a ? '<div class="muted" style="font-size:11px;">'+isoFromMs(a.at)+'</div>' : '') : '<span class="muted">غير ممول</span>')+'</td>'+
+      '<td>'+(funded ? '<span class="chip">'+esc(funderOf(c))+'</span>'+(a ? '<div class="muted" style="font-size:11px;">'+isoFromMs(a.at)+'</div>' : '')
+        : hd ? '<span class="hold-chip"><i class="fa fa-pause-circle"></i> موقوفة – '+esc(pl ? pl.name : 'خطة')+'</span>' : '<span class="muted">غير ممول</span>')+'</td>'+
       '<td>'+(oi ? '<span class="ops-lbl '+oi.cls+'">'+oi.txt+'</span>' : '<span class="muted">-</span>')+'</td>'+
-      '<td>'+(a ? '<button class="btn btn-default btn-xs btn-action"'+A('askUnfund', c.id)+'><i class="fa fa-undo"></i> إلغاء التمويل</button>' : '')+'</td></tr>';
+      '<td>'+(a ? '<button class="btn btn-default btn-xs btn-action"'+A('askUnfund', c.id)+'><i class="fa fa-undo"></i> إلغاء التمويل</button>'
+        : hd ? '<button class="btn btn-default btn-xs btn-action"'+A('releaseOne', c.id)+'><i class="fa fa-play-circle"></i> فك الإيقاف</button>' : '')+'</td></tr>';
   });
   if (!list.length) h += '<tr><td colspan="12" class="muted" style="padding:24px;">لا توجد طلبات مطابقة</td></tr>';
   return h + '</tbody></table></div>';
+}
+
+function renderPlans(){
+  if (!F.store.plans.length) return '';
+  return '<div class="panel panel-primary"><div class="panel-heading"><i class="fa fa-pause-circle"></i>خطط التمويل (حالات موقوفة)</div><div class="panel-body plans">'+
+    F.store.plans.map(function(p){
+      var cs = planCases(p.id), st = {};
+      cs.forEach(function(c){ st[c.stage] = (st[c.stage]||0) + 1; });
+      return '<div class="plan-row"><div class="plan-info"><b>'+esc(p.name)+'</b> <span class="muted">· '+cs.length+' حالة'+
+        Object.keys(st).map(function(k){ return ' · '+STORES[k]+' '+st[k]; }).join('')+' · '+isoFromMs(p.at)+' · '+esc(p.by)+'</span></div>'+
+        '<div class="plan-actions"><button class="btn btn-default btn-xs btn-action"'+A('showPlan', p.id)+'><i class="fa fa-eye"></i> عرض الحالات</button>'+
+        '<button class="btn btn-primary btn-xs btn-action"'+A('sendPlan', p.id)+(cs.length ? '' : ' disabled')+'><i class="fa fa-paper-plane"></i> '+(F.company ? 'تمويل بواسطة '+esc(F.company)+' وإرسال للأوبريشن' : 'اختار الشركة عشان تبعتها للأوبريشن')+'</button>'+
+        '<button class="btn btn-default btn-xs btn-action"'+A('askReleasePlan', p.id)+'><i class="fa fa-play-circle"></i> فك إيقاف الخطة</button></div></div>';
+    }).join('')+'</div></div>';
 }
 
 function renderStats(){
@@ -778,14 +817,27 @@ function renderModal(){
       : '<button class="btn btn-default btn-action"'+A('closeModal')+'>تمام</button>';
     return modalShell('الحالة ليها كود تاني', body, foot);
   }
+  if (m.kind==='hold'){
+    var hb = '<div class="info-box">هتتوقف <b>'+F.sel.length+'</b> حالة: الأوبريشن مش هيقدر يحطها في أي مهمة حجز لحد ما تبعت الخطة للأوبريشن أو تفك الإيقاف.</div>'+
+      '<div class="form-group"><label>الخطة</label><select class="form-control" data-change="setHoldPlan">'+
+        '<option value="">+ خطة جديدة</option>'+F.store.plans.map(function(p){ return '<option value="'+p.id+'"'+(m.plan===p.id?' selected':'')+'>'+esc(p.name)+' ('+planCases(p.id).length+')</option>'; }).join('')+'</select></div>'+
+      (!m.plan ? '<div class="form-group"><label>اسم الخطة الجديدة</label><input class="form-control" data-k="plan-name" value="'+esc(m.name)+'" data-input="setHoldName" placeholder="مثال: خطة فودافون نوفمبر"/></div>' : '');
+    return modalShell('إيقاف الحالات في خطة', hb, '<button class="btn btn-warning btn-action"'+A('confirmHold')+(m.plan || (m.name||'').trim() ? '' : ' disabled')+'><i class="fa fa-pause-circle"></i> إيقاف</button>'+
+      '<button class="btn btn-default btn-action"'+A('closeModal')+'>إلغاء</button>');
+  }
+  if (m.kind==='releasePlan'){
+    var rp = planById(m.plan);
+    return modalShell('فك إيقاف الخطة', '<div>هيتفك إيقاف <b>'+planCases(m.plan).length+'</b> حالة في <b>'+esc(rp.name)+'</b> وترجع متاحة للأوبريشن، والخطة هتتمسح.</div>',
+      '<button class="btn btn-danger btn-action"'+A('releasePlan', m.plan)+'><i class="fa fa-play-circle"></i> فك الإيقاف</button><button class="btn btn-default btn-action"'+A('closeModal')+'>رجوع</button>');
+  }
   if (m.kind==='confirm'){
-    var ids = F.sel.slice(), byStage = {};
+    var ids = (m.ids || F.sel).slice(), byStage = {};
     ids.forEach(function(id){ var c = caseById(id); byStage[c.stage] = (byStage[c.stage]||0) + 1; });
     var missing = [];
     ids.forEach(function(id){ var c = caseById(id); otherLimbs(c).forEach(function(o){ if (isSelectable(o) && ids.indexOf(o.id)===-1) missing.push({c:c, o:o}); }); });
     var body = '<div class="info-box">هيتسجل تمويل <b>'+ids.length+'</b> حالة بواسطة <b>'+esc(F.company)+'</b> ويظهروا في غرفة العمليات عشان الأوبريشن يعمل مهمة الحجز ويحدد اليوم.</div>'+
-      '<table class="stats-table" style="margin-bottom:10px;"><thead><tr><th>المرحلة</th><th>عدد الحالات</th></tr></thead><tbody>'+
-      Object.keys(byStage).map(function(k){ return '<tr class="row-period"><td class="stats-label">'+TASK_TYPES[k].label+'</td><td class="stats-num">'+byStage[k]+'</td></tr>'; }).join('')+'</tbody></table>'+
+      '<table class="stats-table" style="margin-bottom:10px;"><thead><tr><th>المخزن</th><th>عدد الحالات</th></tr></thead><tbody>'+
+      Object.keys(byStage).map(function(k){ return '<tr class="row-period"><td class="stats-label">'+(STORES[k]||TASK_TYPES[k].label)+'</td><td class="stats-num">'+byStage[k]+'</td></tr>'; }).join('')+'</tbody></table>'+
       (missing.length ? '<div class="warn-box"><i class="fa fa-exclamation-triangle"></i> حالات ليها كود تاني مش متحدد:<ul style="margin:6px 0 0;padding-right:18px;">'+
         missing.map(function(x){ return '<li><b>'+esc(x.c.name)+'</b> – متحدد <span dir="ltr">'+x.c.code+'</span> والكود التاني <span dir="ltr">'+x.o.code+'</span> ('+esc(x.o.level)+') مش متحدد</li>'; }).join('')+'</ul></div>' : '');
     var foot = '<button class="btn btn-success btn-action"'+A('confirmFunding')+'><i class="fa fa-check"></i> تأكيد التمويل وإرسال لغرفة العمليات</button>'+
@@ -821,7 +873,7 @@ var ACT = {
   setFilter: function(v, key){ F.filters[key] = v; render(); },
   setSort: function(v){ F.sort = v; render(); },
   toggleMulti: function(){ F.filters.multi = !F.filters.multi; render(); },
-  clearFilters: function(){ F.filters = {q:'', gov:'', level:'', stage:'', fund:'none', company:'', multi:false}; render(); },
+  clearFilters: function(){ F.filters = {q:'', gov:'', level:'', stage:'', fund:'free', company:'', multi:false, plan:''}; render(); },
   clearSel: function(){ F.sel = []; render(); },
   toggleSel: function(cid){
     var c = caseById(cid); if (!c || !isSelectable(c)) return;
@@ -840,13 +892,50 @@ var ACT = {
   openConfirm: function(){ if (!F.sel.length || !F.company) return; F.modal = {kind:'confirm'}; render(); },
   confirmFunding: function(){
     loadStores();                                   // merge with anything saved from another tab
-    var ids = F.sel.filter(function(id){ return !F.store.alloc[id]; }), at = Date.now(), batch = 'b' + at;
-    ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER, batch:batch}; });
-    F.store.batches.push({id:batch, company:F.company, at:at, by:CSR_USER, ids:ids});
+    var m = F.modal || {}, src = m.ids || F.sel;
+    var ids = src.filter(function(id){ return !F.store.alloc[id]; }), at = Date.now(), batch = 'b' + at;
+    ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER, batch:batch}; delete F.store.holds[id]; });
+    if (m.plan) F.store.plans = F.store.plans.filter(function(p){ return p.id!==m.plan; });   // plan sent -> done
+    F.store.batches.push({id:batch, company:F.company, at:at, by:CSR_USER, ids:ids, plan: m.plan ? (planById(m.plan)||{}).name : null});
     if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
-    F.sel = []; F.modal = null;
+    if (!m.ids) F.sel = [];
+    F.modal = null; F.filters.plan = '';
     toast('تم تمويل ' + ids.length + ' حالة بواسطة ' + F.company + ' واتبعتوا لغرفة العمليات');
     render();
+  },
+  openHold: function(){ if (!F.sel.length) return; F.modal = {kind:'hold', plan: F.store.plans.length ? F.store.plans[F.store.plans.length-1].id : '', name:''}; render(); },
+  setHoldPlan: function(v){ F.modal.plan = v; render(); },
+  setHoldName: function(v){ F.modal.name = v; render(); },
+  confirmHold: function(){
+    var m = F.modal; loadStores();
+    var pid = m.plan, at = Date.now();
+    if (!pid){ pid = 'p' + at; F.store.plans.push({id:pid, name:m.name.trim(), at:at, by:CSR_USER}); }
+    var ids = F.sel.filter(function(id){ var c = caseById(id); return c && isSelectable(c); });
+    ids.forEach(function(id){ F.store.holds[id] = {plan:pid, at:at, by:CSR_USER}; });
+    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    F.sel = []; F.modal = null;
+    toast('اتوقفت ' + ids.length + ' حالة في ' + planById(pid).name + ' – الأوبريشن مش هيقدر يحطها في مهمة');
+    render();
+  },
+  showPlan: function(id){ F.filters.plan = id; F.filters.fund = 'held'; render(); },
+  sendPlan: function(id){
+    if (!F.company){ toast('اختار الشركة الممولة الأول'); return render(); }
+    var ids = planCases(id).map(function(c){ return c.id; }); if (!ids.length) return;
+    F.modal = {kind:'confirm', ids:ids, plan:id}; render();
+  },
+  askReleasePlan: function(id){ F.modal = {kind:'releasePlan', plan:id}; render(); },
+  releasePlan: function(id){
+    loadStores(); var n = 0;
+    Object.keys(F.store.holds).forEach(function(cid){ if (F.store.holds[cid].plan===id){ delete F.store.holds[cid]; n++; } });
+    F.store.plans = F.store.plans.filter(function(p){ return p.id!==id; });
+    saveStore(); F.modal = null; if (F.filters.plan===id) F.filters.plan = '';
+    toast('اتفك إيقاف ' + n + ' حالة ورجعت متاحة للأوبريشن'); render();
+  },
+  releaseOne: function(cid){
+    loadStores(); var h = F.store.holds[cid]; if (!h) return;
+    delete F.store.holds[cid];
+    if (!planCases(h.plan).length) F.store.plans = F.store.plans.filter(function(p){ return p.id!==h.plan; });
+    saveStore(); toast('اتفك إيقاف الحالة'); render();
   },
   askUnfund: function(cid){ F.modal = {kind:'unfund', cid:cid}; render(); },
   unfund: function(cid){
