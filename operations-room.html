@@ -712,6 +712,34 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .sup-wrap{padding:16px 22px 40px;}
+    .sup-wrap .queue-wrap{padding:0;}
+    .sup-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+    .sup-tabs button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:10px 14px;font-family:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+    .sup-tabs button.on{color:var(--text);border-bottom-color:var(--text);}
+    .sup-tabs .count{background:#fde7c4;color:#b45309;border-radius:999px;padding:0 7px;font-size:11px;}
+    .agent-tabs{margin-bottom:14px;}
+    .assign-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0;font-size:13px;}
+    .assign-to{display:inline-flex;align-items:center;gap:8px;}
+    .assign-table{border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:520px;background:#fff;}
+    .assign-table tr.row-on td{background:#eef4ff;}
+    table.routing td{padding:9px 12px;}
+    table.routing tr.r-main td{background:var(--surface-alt);}
+    .r-sub{padding-right:16px;display:inline-block;color:var(--text-muted);}
+    .focus-wrap.wide{max-width:1180px;}
+    .nc-card{background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.05);overflow:hidden;}
+    .nc-card .cms-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(90deg,#d3f1f8 0%,#ebf6ed 17%,#fff9e4 34%,#f9e7de 47%,#f8f2e4 57%,#d9eaf4 64%,#e9efec 74%,#baeae6 100%);}
+    .nc-body{padding:16px 18px;}
+    .nc-body .cms-row{grid-template-columns:170px minmax(0,1fr) 170px minmax(0,1fr);}
+    .nc-sep{border-top:1px solid #e5e7eb;margin:8px 0 14px;}
+    .cms-input.nc-miss{border-color:#dd4b39;background:#fff6f5;}
+    .nc-result{border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px;}
+    .nc-result.ok{background:#e9f7ee;border:1px solid #bfe5cc;color:#14532d;}
+    .nc-result.bad{background:#fff4e5;border:1px solid #f0c98a;color:#8a4b08;}
+    .nc-result.pending{background:#f4f6fa;border:1px dashed var(--border);color:var(--text-muted);display:flex;gap:6px;align-items:center;}
+    .nc-res-title{display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:4px;}
+    .nc-res-row{font-size:12.5px;margin-top:3px;}
+    tr.k-done td{opacity:.6;}
     .count-box{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px;background:var(--surface-alt);}
     .count-box.over{border-color:#f3b9c3;}
     .count-box .num-input{background:#fff;}
@@ -1141,6 +1169,8 @@ var S = {
   settingsDraft:null, convoyEdit:null,
   toast:null,
   audit:[], confirmations:{}, auditQ:'', messages:[],
+  routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
+  agentTab:'calls', nc:null, newCases:[], committee:[],
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1269,9 +1299,9 @@ function noShowBadge(cid){ var n = noShowCount(cid); return n >= S.settings.noSh
 function confirmNeeded(t, cid){ return !!t.confirmCall || isRepeatNoShow(cid); }
 // the agent who owns the confirmation call: the assigned agent, else whoever booked the case
 function confirmOwner(t, cid){
-  if (t.assignee[cid]) return t.assignee[cid];
-  for (var i = S.callLog.length-1; i >= 0; i--){ var l = S.callLog[i]; if (l.caseId===cid && l.bookTid===t.id) return l.agentId; }
-  return AGENTS[0].id;
+  var ok = agentsFor('confirm'), a = t.assignee[cid];
+  if (!a) for (var i = S.callLog.length-1; i >= 0; i--){ var l = S.callLog[i]; if (l.caseId===cid && l.bookTid===t.id){ a = l.agentId; break; } }
+  return a && ok.indexOf(a)!==-1 ? a : ok[0];
 }
 function confirmItems(agent){
   var tOff = todayOffset(), out = [];
@@ -1517,6 +1547,46 @@ function agentLoads(){
   });
   return loads;
 }
+// =====================================================================
+// Call types and who handles them (set by the call-center supervisor)
+// =====================================================================
+var CALL_CATS = [
+  {k:'inbound', label:'المكالمات الواردة كلها', dir:'in'},
+  {k:'newCase', label:'إضافة حالات جديدة', dir:'in'},
+  {k:'measurement', label:'حجز المقاسات', dir:'out'},
+  {k:'delivery', label:'حجز الاستلامات (طرف جديد + صيانة)', dir:'out'},
+  {k:'maintEval', label:'حجز تقييم الصيانة', dir:'out'},
+  {k:'confirm', label:'تأكيد الحجز', dir:'out'},
+  {k:'committee', label:'تبليغ اللجنة', dir:'out'},
+];
+var OUTBOUND_CATS = CALL_CATS.filter(function(c){ return c.dir==='out'; }).map(function(c){ return c.k; });
+function catLabel(k){ for (var i=0;i<CALL_CATS.length;i++){ if (CALL_CATS[i].k===k) return CALL_CATS[i].label; } return k; }
+function catOfType(type){ return type==='newDelivery' || type==='maintDelivery' ? 'delivery' : type; }
+function defaultRouting(){ var r = {}; CALL_CATS.forEach(function(c){ r[c.k] = AGENTS.map(function(a){ return a.id; }); }); return r; }
+function agentsFor(cat){ var l = (S.routing && S.routing[cat]) || []; return l.length ? l : AGENTS.map(function(a){ return a.id; }); }
+function canDo(agent, cat){ return agentsFor(cat).indexOf(agent)!==-1; }
+function leastLoaded(ids, loads){ var best = ids[0]; ids.forEach(function(a){ if ((loads[a]||0) < (loads[best]||0)) best = a; }); return best; }
+// after the routing changes: open calls held by an agent who no longer takes that type move to one who does
+function applyRouting(){
+  var loads = agentLoads(), moved = 0, tOff = todayOffset();
+  S.tasks.forEach(function(t){
+    if (t.status!=='published' || t.dateOffset < tOff || t.owner) return;
+    var ok = agentsFor(catOfType(t.type));
+    t.candidateIds.forEach(function(cid){
+      var a = t.assignee[cid];
+      if (!a || ok.indexOf(a)!==-1 || !isOpenStatus(caseStatus(t,cid).key)) return;
+      var b = leastLoaded(ok, loads); t.assignee[cid] = b; loads[a]--; loads[b] = (loads[b]||0) + 1; moved++;
+    });
+  });
+  var okK = agentsFor('committee'), kl = {};
+  S.committee.forEach(function(k){ if (k.status!=='notified') kl[k.assignee] = (kl[k.assignee]||0) + 1; });
+  S.committee.forEach(function(k){
+    if (k.status==='notified' || okK.indexOf(k.assignee)!==-1) return;
+    var b = leastLoaded(okK, kl); kl[k.assignee]--; k.assignee = b; kl[b] = (kl[b]||0) + 1; moved++;
+  });
+  return moved;
+}
+
 function autoAssign(t, rebalance){
   // a task given to one agent: every open case goes to that agent
   if (t.owner){
@@ -1539,9 +1609,9 @@ function autoAssign(t, rebalance){
   t.candidateIds.forEach(function(cid){
     if (!isOpenStatus(caseStatus(t,cid).key)) return;
     if (t.assignee[cid] && !rebalance) return;
-    var best = AGENTS[0].id;
-    AGENTS.forEach(function(a){ if (loads[a.id] < loads[best]) best = a.id; });
-    t.assignee[cid] = best; loads[best]++; count++;
+    // only agents who take this call type (see "توزيع أنواع المكالمات")
+    var best = leastLoaded(agentsFor(catOfType(t.type)), loads);
+    t.assignee[cid] = best; loads[best] = (loads[best]||0) + 1; count++;
   });
   return count;
 }
@@ -1602,6 +1672,15 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.attendance[nextCallKey('t1','C-1001')] = {status:'attended', timeIn:'09:10'};
 
   findTask('t3').confirmCall = true; findTask('t2').confirmCall = true;
+  S.routing = defaultRouting();
+  // committee decisions waiting to be told to the case (تبليغ اللجنة)
+  S.committee = [
+    {id:'K1', name:'مروان أحمد سعيد', gov:'القاهرة', phone:'01012345671', decision:'مقبول – طرف تحت الركبة', day:T-1},
+    {id:'K2', name:'ياسمين خالد عمر', gov:'الجيزة', phone:'01112345672', decision:'مقبول – طرف تحت الكوع', day:T-1},
+    {id:'K3', name:'عبد الله محمود حسن', gov:'أسيوط', phone:'01212345673', decision:'مؤجل – استكمال الأوراق', day:T-2},
+    {id:'K4', name:'سلمى إبراهيم فتحي', gov:'المنيا', phone:'01512345674', decision:'مقبول – طرف فوق الركبة', day:T},
+    {id:'K5', name:'حازم يوسف عادل', gov:'سوهاج', phone:'01012345675', decision:'مؤجل – إعادة كشف بعد 3 شهور', day:T},
+  ].map(function(k, i){ k.assignee = AGENTS[i % AGENTS.length].id; k.status = null; k.tries = 0; return k; });
   findTask('t1').priority = {'C-1013':true, 'C-1007':true};
   findTask('t2').priority = {'C-1005':true, 'C-1011':true};
   findTask('t3').priority = {'C-1018':true};
@@ -1849,6 +1928,68 @@ var ACT = {
   },
   openTaskCases: function(tid){ ACT.openAddCasesTask(tid); S.casesTab = 'list'; S.detailBulkSelected = []; render(); },
   setCasesTab: function(v){ S.casesTab = v; render(); },
+  // supervisor
+  setSupTab: function(v){ S.supTab = v; S.assignSel = []; render(); },
+  setAssignF: function(v, k){ S.assignF[k] = v; S.assignSel = []; render(); },
+  clearAssignF: function(){ S.assignF = {cat:'', day:'', gov:'', agent:'', q:''}; S.assignSel = []; render(); },
+  toggleAssignSel: function(key){ var i = S.assignSel.indexOf(key); if (i===-1) S.assignSel.push(key); else S.assignSel.splice(i,1); render(); },
+  setAssignTo: function(v){ S.assignTo = v; render(); },
+  assignRow: function(v, key){
+    if (!isSupervisor() || !v) return;
+    setRowAgent(key, v); S.audit.unshift({at:now(), who:actorName(), action:'إسناد مكالمة', tid:key.split('|')[1], label:'', detail:agentName(v)}); render();
+  },
+  assignBulk: function(){
+    if (!isSupervisor() || !S.assignTo) return;
+    var keys = S.assignSel.length ? S.assignSel.slice() : filteredAssignRows().map(function(r){ return r.key; });
+    keys.forEach(function(k){ setRowAgent(k, S.assignTo); });
+    S.audit.unshift({at:now(), who:actorName(), action:'إسناد مكالمات', tid:null, label:'', detail:keys.length + ' مكالمة ← ' + agentName(S.assignTo)});
+    toast('اتسند ' + keys.length + ' مكالمة لـ ' + agentName(S.assignTo)); S.assignSel = []; render();
+  },
+  setTaskOwnerFor: function(v, tid){ var keep = S.detailTaskId; S.detailTaskId = tid; ACT.setTaskOwner(v); S.detailTaskId = keep; },
+  toggleRoute: function(cat, agent){
+    if (!isSupervisor()) return;
+    var cats = cat==='__out' ? OUTBOUND_CATS : [cat];
+    var on = cats.every(function(c){ return (S.routing[c]||[]).indexOf(agent)!==-1; });
+    var blocked = false;
+    cats.forEach(function(c){
+      var l = S.routing[c] = S.routing[c] || [];
+      if (on){ if (l.length > 1) l.splice(l.indexOf(agent),1); else blocked = true; }
+      else if (l.indexOf(agent)===-1) l.push(agent);
+    });
+    if (blocked) toast('لازم كل نوع مكالمات يبقى عليه موظف واحد على الأقل');
+    var moved = applyRouting();
+    S.audit.unshift({at:now(), who:actorName(), action:'توزيع أنواع المكالمات', tid:null, label:'', detail:agentName(agent) + ' · ' + (cat==='__out' ? 'الصادرة كلها' : catLabel(cat)) + (on ? ' ✗' : ' ✓')});
+    if (moved && !blocked) toast('اتطبق التوزيع – ' + moved + ' مكالمة اتنقلت لموظف بيستقبل النوع ده');
+    render();
+  },
+  // agent
+  setAgentTab: function(v){ S.agentTab = v; render(); },
+  ncSet: function(v, k){ S.nc[k] = v; if (k==='nextStep' || k==='level') render(); else render(); },
+  ncToggle: function(k){ S.nc[k] = !S.nc[k]; render(); },
+  ncReset: function(){ S.nc = emptyNewCase(); render(); },
+  ncAdd: function(){
+    var nc = S.nc, miss = ncMissing(nc);
+    if (miss.length){ nc.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(f){ return f[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
+    var res = ncResult(nc), dob = parseDay(nc.dob), age = dob ? Math.floor((startOfDay(nowDate()) - dob) / (365.25*86400000)) : 0;
+    var result = res.ok ? 'مقبول الشروط' : res.list.map(function(x){ return x.t; }).join(' + ');
+    var next = res.ok ? (nc.nextStep==='measurement' ? 'حجز مقاس مباشر' : 'قسم الأبحاث') : 'مؤجل';
+    var msg;
+    if (res.ok && nc.nextStep==='measurement'){
+      var id = 'C-' + (2000 + S.newCases.length + 1);
+      var c = mk(id, nc.name.trim(), nc.gov, 'تمويل مؤسسة', nc.level, age, 0, '', 'measurement', 0, 0);
+      c.phone = nc.phone; c.person = id; c.baseFunding = c.funding;
+      CASES.push(c); CASE_MAP[id] = c;
+      msg = 'اتضافت ' + c.name + ' ونزلت في حصالة التقييم الطبي والقياسات للحجز';
+    } else msg = res.ok ? 'اتضافت ' + nc.name + ' واتحولت لقسم الأبحاث' : 'اتسجلت ' + nc.name + ' – ' + result;
+    S.newCases.push({name:nc.name.trim(), phone:nc.phone, result:result, next:next, by:S.agentId, at:now()});
+    S.audit.unshift({at:now(), who:actorName(), action:'إضافة حالة جديدة', tid:null, label:nc.name, detail:result + ' · ' + next});
+    S.nc = emptyNewCase(); toast(msg); render();
+  },
+  committeeResult: function(id, result){
+    var k = S.committee.filter(function(x){ return x.id===id; })[0]; if (!k) return;
+    k.tries++; k.status = result; k.at = now();
+    toast(result==='notified' ? 'اتبلّغ ' + k.name + ' بقرار اللجنة' : k.name + ' لم يرد – هتفضل في القائمة'); render();
+  },
   doneConfirmed: function(){ S.justConfirmed = null; render(); },
   sendInfo: function(key, channel){
     var p = key.split('|'), t = findTask(p[0]), c = caseById(p[1]), kind = p[2] || 'info'; if (!t || !c) return;
@@ -2528,6 +2669,13 @@ function queueItems(agent){
 function queueOrder(a, b){ return (b.prio - a.prio) || (a.t.dateOffset - b.t.dateOffset) || (b.p.score - a.p.score); }
 function renderQueue(){
   if (isCC()) return renderAgentFocus();
+  var tabs = '<div class="sup-tabs">'+[['lists','قوائم الاتصال'],['assign','إسناد المكالمات'],['routing','توزيع أنواع المكالمات']].map(function(x){
+    return '<button class="'+(S.supTab===x[0]?'on':'')+'"'+A('setSupTab', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
+  if (S.supTab==='assign') return '<div class="sup-wrap">'+tabs+renderAssign()+'</div>';
+  if (S.supTab==='routing') return '<div class="sup-wrap">'+tabs+renderRouting()+'</div>';
+  return '<div class="sup-wrap">'+tabs+renderLists()+'</div>';
+}
+function renderLists(){
   var agent = isCC() ? S.agentId : S.queueAgent;
   var items = queueItems(agent);
   var groups = {due:[], later:[], other:[], htr:[]};
@@ -2589,9 +2737,13 @@ function renderAgentFocus(){
   var seq = due.concat(other).concat(hunt);
   var conf = confirmItems(S.agentId), confNow = conf.filter(function(x){ return !x.later; });
   var total = due.length + other.length + later.length + hunt.length + conf.length;
-  var h = '<div class="focus-wrap"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
+  var tabs = agentTabs(); if (!tabs.some(function(x){ return x[0]===S.agentTab; })) S.agentTab = 'calls';
+  var h = '<div class="focus-wrap'+(S.agentTab==='newCase'?' wide':'')+'"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
     '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
-  h += renderInbound();
+  if (tabs.length > 1) h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return '<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
+  if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
+  if (S.agentTab==='committee') return h + renderCommittee() + '</div>';
+  if (canDo(S.agentId, 'inbound')) h += renderInbound();
   if (S.inbound.pick) return h + renderInboundCase() + '</div>';
   if (S.justConfirmed) return h + renderConfirmedCard(S.justConfirmed) + '</div>';
   if (confNow.length) return h + renderConfirmCard(confNow[0], conf.length) + '</div>';
@@ -3305,6 +3457,227 @@ function renderMsgs(cid){
   return '<div class="msg-list">'+l.map(function(m){
     return '<div class="msg-item"><div class="msg-meta">'+(MSG_KIND[m.kind]||'رسالة')+' · '+CHANNELS[m.channel]+(m.auto || !m.by ? ' · أوتوماتيك' : ' · '+esc(agentName(m.by)))+' · '+fmtWhen(m.at)+' · <span class="cap-ok">اتبعتت</span></div><div class="msg-text">'+esc(m.text)+'</div></div>';
   }).join('')+'</div>';
+}
+
+
+// =====================================================================
+// Call-center supervisor: assign calls / tasks, route call types
+// =====================================================================
+function assignRows(){
+  var rows = [], tOff = todayOffset();
+  S.tasks.forEach(function(t){
+    if (t.status!=='published' || t.dateOffset < tOff) return;
+    t.candidateIds.forEach(function(cid){
+      var st = caseStatus(t, cid); if (!isOpenStatus(st.key)) return;
+      var c = caseById(cid); if (!c) return;
+      rows.push({key:'b|'+t.id+'|'+cid, cat:catOfType(t.type), type:TASK_TYPES[t.type].short, day:t.dateOffset, place:locLabelFor(t), status:st.label, agent:t.assignee[cid]||'', name:c.name, code:c.code, gov:c.gov, task:t});
+    });
+  });
+  confirmItems('').forEach(function(x){
+    var c = caseById(x.cid);
+    rows.push({key:'c|'+x.t.id+'|'+x.cid, cat:'confirm', type:'تأكيد الحجز', day:x.t.dateOffset, place:locLabelFor(x.t), status: x.cf && x.cf.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:confirmOwner(x.t, x.cid), name:c.name, code:c.code, gov:c.gov, task:x.t});
+  });
+  S.committee.forEach(function(k){
+    if (k.status==='notified') return;
+    rows.push({key:'k|'+k.id, cat:'committee', type:'تبليغ اللجنة', day:k.day, place:k.decision, status: k.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:k.assignee, name:k.name, code:'', gov:k.gov});
+  });
+  return rows;
+}
+function filteredAssignRows(){
+  var f = S.assignF, q = (f.q||'').trim();
+  return assignRows().filter(function(r){
+    if (f.cat && r.cat!==f.cat) return false;
+    if (f.day!=='' && f.day!=null && String(r.day)!==String(f.day)) return false;
+    if (f.gov && r.gov!==f.gov) return false;
+    if (f.agent==='__none' && r.agent) return false;
+    if (f.agent && f.agent!=='__none' && r.agent!==f.agent) return false;
+    if (q && r.name.indexOf(q)===-1 && (r.code||'').indexOf(q.toUpperCase())===-1) return false;
+    return true;
+  }).sort(function(a,b){ return a.day-b.day || a.cat.localeCompare(b.cat); });
+}
+function setRowAgent(key, agent){
+  var p = key.split('|');
+  if (p[0]==='k'){ var k = S.committee.filter(function(x){ return x.id===p[1]; })[0]; if (k) k.assignee = agent; return; }
+  var t = findTask(p[1]); if (t) t.assignee[p[2]] = agent;
+}
+function renderAssign(){
+  var f = S.assignF, all = assignRows(), rows = filteredAssignRows(), sel = S.assignSel;
+  var days = []; all.forEach(function(r){ if (days.indexOf(r.day)===-1) days.push(r.day); }); days.sort(function(a,b){ return a-b; });
+  var govs = []; all.forEach(function(r){ if (govs.indexOf(r.gov)===-1) govs.push(r.gov); });
+  var agentOpts = function(cur, none){ return (none ? '<option value="">'+none+'</option>' : '')+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(cur===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join(''); };
+  var h = '<div class="q-title" style="margin-bottom:10px;">إسناد المكالمات</div>';
+  h += '<div class="filters-bar">'+
+    '<div class="filter-field"><label>بحث</label><input class="filter-search" placeholder="الاسم أو الكود" value="'+esc(f.q)+'" data-k="as-q" data-input="setAssignF" data-a="q"/></div>'+
+    '<div class="filter-field"><label>نوع المكالمة</label><select class="filter-select" data-change="setAssignF" data-a="cat"><option value="">الكل</option>'+
+      CALL_CATS.filter(function(c){ return c.dir==='out'; }).map(function(c){ return '<option value="'+c.k+'"'+(f.cat===c.k?' selected':'')+'>'+c.label+'</option>'; }).join('')+'</select></div>'+
+    '<div class="filter-field"><label>الميعاد</label><select class="filter-select" data-change="setAssignF" data-a="day"><option value="">كل الأيام</option>'+
+      days.map(function(d){ return '<option value="'+d+'"'+(String(f.day)===String(d)?' selected':'')+'>'+dayLabel(d)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="filter-field"><label>المحافظة</label><select class="filter-select" data-change="setAssignF" data-a="gov"><option value="">الكل</option>'+
+      govs.map(function(g){ return '<option'+(f.gov===g?' selected':'')+'>'+esc(g)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="filter-field"><label>الموظف الحالي</label><select class="filter-select" data-change="setAssignF" data-a="agent"><option value="">الكل</option><option value="__none"'+(f.agent==='__none'?' selected':'')+'>غير مسندة</option>'+agentOpts(f.agent)+'</select></div>'+
+    '<button class="clear-btn"'+A('clearAssignF')+'>مسح الفلاتر</button></div>';
+  h += '<div class="assign-bar"><span><b>'+rows.length+'</b> مكالمة'+(sel.length ? ' · تم تحديد <b>'+sel.length+'</b>' : '')+'</span>'+
+    '<span class="assign-to">إسناد '+(sel.length ? 'المحدد' : 'كل اللي ظاهر')+' لـ <select class="filter-select" data-change="setAssignTo"><option value="">اختار الموظف</option>'+agentOpts(S.assignTo)+'</select>'+
+    '<button class="btn btn-primary btn-sm"'+A('assignBulk')+(S.assignTo && rows.length ? '' : ' disabled')+'>'+ic('user',13,'#fff')+' إسناد ('+(sel.length || rows.length)+')</button></span></div>';
+  h += '<div class="assign-table"><table class="cases-table"><thead><tr><th style="width:34px;"></th><th>الحالة</th><th>نوع المكالمة</th><th>الميعاد</th><th>المكان / القرار</th><th>المحافظة</th><th>الوضع</th><th>الموظف</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var on = sel.indexOf(r.key)!==-1;
+    h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+A('toggleAssignSel', r.key)+'/></td>'+
+      '<td style="font-weight:700;">'+esc(r.name)+(r.code ? ' <span class="case-code" dir="ltr">'+r.code+'</span>' : '')+'</td><td>'+esc(r.type)+'</td><td>'+dayLabel(r.day)+'</td><td>'+esc(r.place)+'</td><td>'+esc(r.gov)+'</td><td>'+esc(r.status)+'</td>'+
+      '<td><select class="mini-select" data-change="assignRow" data-a="'+r.key+'">'+(r.agent ? '' : '<option value="">غير مسندة</option>')+agentOpts(r.agent)+'</select>'+
+      (r.agent && !canDo(r.agent, r.cat) ? '<div class="field-hint" style="margin:2px 0 0;color:var(--warning);">النوع ده مش في توزيعه</div>' : '')+'</td></tr>';
+  });
+  h += '</tbody></table>'+(rows.length ? '' : '<div class="table-empty">مفيش مكالمات مطابقة</div>')+'</div>';
+  // whole tasks
+  var tOff = todayOffset(), tasks = S.tasks.filter(function(t){ return t.status==='published' && t.dateOffset>=tOff; }).sort(function(a,b){ return a.dateOffset-b.dateOffset; });
+  h += '<div class="q-title" style="margin:22px 0 10px;">إسناد مهمة كاملة</div><div class="assign-table"><table class="cases-table"><thead><tr><th>المهمة</th><th>الميعاد</th><th>المكان</th><th>مكالمات مفتوحة</th><th>إسناد الحجز</th></tr></thead><tbody>'+
+    tasks.map(function(t){
+      var m = TASK_TYPES[t.type], open = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
+      return '<tr><td><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span></td><td>'+dayLabel(t.dateOffset)+'</td><td>'+esc(locLabelFor(t))+'</td><td>'+open+'</td>'+
+        '<td><select class="mini-select" data-change="setTaskOwnerFor" data-a="'+t.id+'"><option value="">توزيع على كل الموظفين</option>'+
+        AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></td></tr>';
+    }).join('')+'</tbody></table></div>';
+  return h;
+}
+function renderRouting(){
+  var r = S.routing;
+  var h = '<div class="q-title" style="margin-bottom:4px;">توزيع أنواع المكالمات</div><div class="q-sub" style="margin-bottom:12px;">كل موظف بيستقبل أنواع المكالمات المعلّمة قصاده بس، والمكالمات الجديدة بتتوزع على أساس الجدول ده</div>';
+  h += '<div class="assign-table"><table class="cases-table routing"><thead><tr><th>نوع المكالمة</th>'+AGENTS.map(function(a){ return '<th style="text-align:center;">'+esc(a.name)+'</th>'; }).join('')+'</tr></thead><tbody>';
+  function row(k, label, cls){
+    return '<tr class="'+(cls||'')+'"><td>'+label+'</td>'+AGENTS.map(function(a){
+      var on = k==='__out' ? OUTBOUND_CATS.every(function(c){ return (r[c]||[]).indexOf(a.id)!==-1; }) : (r[k]||[]).indexOf(a.id)!==-1;
+      return '<td style="text-align:center;"><input type="checkbox"'+(on?' checked':'')+A('toggleRoute', k, a.id)+'/></td>';
+    }).join('')+'</tr>';
+  }
+  h += row('inbound', '<b>المكالمات الواردة كلها</b>', 'r-main');
+  h += row('newCase', 'إضافة حالات جديدة');
+  h += row('__out', '<b>المكالمات الصادرة كلها</b>', 'r-main');
+  OUTBOUND_CATS.forEach(function(k){ h += row(k, '<span class="r-sub">'+catLabel(k)+'</span>'); });
+  return h + '</tbody></table></div>';
+}
+
+// =====================================================================
+// Agent: register a new case (same fields as the CMS form) with a live eligibility result
+// =====================================================================
+var UNSUPPORTED_LEVELS = ['مفصل الحوض','مفصل الكتف','أصابع اليد'];
+var NC_OPTS = {
+  callType:['وارد','صادر'], nationality:['مصري','سوداني','سوري','أخرى'], insured:['نعم','لا'], marital:['أعزب','متزوج','مطلق','أرمل'], gender:['ذكر','أنثى'],
+  education:['بدون','ابتدائي','إعدادي','ثانوي','جامعي','فوق جامعي'], job:['لا يعمل','طالب','عامل','موظف','أعمال حرة','ربة منزل','أخرى'],
+  heard:['فيسبوك','صديق / قريب','مستشفى','تليفزيون','أخرى'], chronic:['لا يوجد','سكر','ضغط','قلب','أخرى'],
+  side:['الأيمن','الأيسر','الاتنين'], cause:['حادث','سكر','ورم','عيب خلقي','أخرى'], devices:['نعم','لا'], sponsor:['بدون','إدخال كفيل جديد'], responsible:['لا','نعم'],
+};
+function emptyNewCase(){
+  return {date:isoDate(todayOffset()), callType:'', nationality:'', insured:'', nid:'', name:'', marital:'', gender:'', dob:'', gov:'', district:'', area:'',
+    address:'', idAddress:'', phone:'', phone1:'', phone2:'', education:'', job:'', heard:'', chronic:'', weight:'', level:'', side:'', ampDate:'', cause:'',
+    causeDetails:'', lastSurgery:'', devices:'', sponsor:'', notes:'', notes2:'', qualityNotes:'', fundedNoResearch:false, responsible:'لا', nextStep:'research', tried:false};
+}
+// [right field, left field] per row – same order as the CMS screen
+var NC_ROWS = [
+  [['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select']],
+  [['nationality','الجنسية',1,'select'], ['insured','مؤمن عليه',1,'select']],
+  [['nid','رقم الهوية',1,'num'], ['name','اسم الحالة',1,'text']],
+  [['marital','الحالة الإجتماعية',1,'select'], ['gender','النوع',1,'select']],
+  [['dob','تاريخ الميلاد',1,'date'], ['gov','المحافظة',1,'gov']],
+  [['district','القسم او المركز',1,'text'], ['area','المنطقة او الشياخة',0,'text']],
+  [['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']],
+  [['phone','الهاتف',1,'num'], ['phone1','رقم هاتف 1',0,'num']],
+  [['phone2','رقم هاتف 2',0,'num'], ['education','المؤهل الدراسى',1,'select']],
+  [['job','الوظيفة',1,'select'], ['heard','كيف عرفتنا',1,'select']],
+  [['chronic','الأمراض المزمنة',1,'select'], ['weight','الوزن',1,'num']],
+  [['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select']],
+  [['ampDate','تاريخ البتر',1,'date'], ['cause','سبب البتر',1,'select']],
+  [['causeDetails','تفاصيل سبب البتر',1,'area'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date']],
+  [['devices','يوجد أجهزة',1,'select'], null],
+  [['sponsor','الكفيل',0,'select'], null],
+  [['notes','الملاحظات',0,'area'], ['notes2','الملاحظات 2',0,'area']],
+  [['qualityNotes','ملاحظات الجودة',0,'area'], null],
+];
+function parseDay(v){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v||''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function addMonths(d, n){ var x = new Date(d.getTime()); x.setMonth(x.getMonth()+n); return x; }
+function fmtDay(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+// eligibility shown before "أضف"
+function ncResult(nc){
+  var out = [], today = startOfDay(nowDate());
+  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ده ('+nc.level+') مش بنشتغل فيه حاليًا'});
+  var ls = parseDay(nc.lastSurgery);
+  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6))});
+  var dob = parseDay(nc.dob);
+  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60))});
+  var w = parseInt(nc.weight,10);
+  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكتر من 120)'});
+  if (out.length) return {ok:false, list:out};
+  if (!nc.level || !ls || !dob || !nc.weight) return {ok:null, list:[]};
+  return {ok:true, list:[{k:'ok', t:'مقبول الشروط', d:''}]};
+}
+function ncMissing(nc){
+  var miss = [];
+  NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f && f[2] && !String(nc[f[0]]||'').trim()) miss.push(f); }); });
+  return miss;
+}
+function ncField(f, nc){
+  if (!f) return '<div></div><div></div>';
+  var k = f[0], v = nc[k], miss = nc.tried && f[2] && !String(v||'').trim(), cls = 'cms-input'+(miss?' nc-miss':'');
+  var lab = '<label class="cms-label">'+f[1]+(f[2] ? ' <span class="req">*</span>' : '')+'</label>', inp;
+  if (f[3]==='select' || f[3]==='gov' || f[3]==='level'){
+    var list = f[3]==='gov' ? GOVERNORATES : f[3]==='level' ? LEVEL_OPTIONS.concat(UNSUPPORTED_LEVELS) : NC_OPTS[k];
+    inp = '<select class="'+cls+'" data-change="ncSet" data-a="'+k+'"><option value="">'+f[1]+'</option>'+list.map(function(o){ return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>';
+  } else if (f[3]==='date'){
+    inp = '<input class="'+cls+'" type="date" value="'+esc(v)+'" data-k="nc-'+k+'" data-change="ncSet" data-a="'+k+'"/>';
+  } else if (f[3]==='area'){
+    inp = '<textarea class="'+cls+'" rows="2" placeholder="'+f[1]+'" data-k="nc-'+k+'" data-input="ncSet" data-a="'+k+'">'+esc(v)+'</textarea>';
+  } else {
+    inp = '<input class="'+cls+'"'+(f[3]==='num' ? ' type="text" inputmode="numeric"' : '')+' placeholder="'+f[1]+'" value="'+esc(v)+'" data-k="nc-'+k+'" data-input="ncSet" data-a="'+k+'"/>';
+  }
+  return lab + '<div class="cms-field">'+inp+'</div>';
+}
+function renderNewCase(){
+  var nc = S.nc || (S.nc = emptyNewCase()), res = ncResult(nc);
+  var dup = nc.phone && nc.phone.length >= 10 ? CASES.concat(DELIVERED).filter(function(c){ return c.phone===nc.phone; })[0] : null;
+  var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('user',15,'#535252')+' إضافة حالة جديدة</div></div><div class="nc-body">';
+  NC_ROWS.forEach(function(r){ h += '<div class="cms-row">'+ncField(r[0], nc)+ncField(r[1], nc)+'</div>'; });
+  h += '<div class="cms-row"><label class="cms-label">ممول بدون بحث</label><div class="cms-field"><input type="checkbox"'+(nc.fundedNoResearch?' checked':'')+A('ncToggle','fundedNoResearch')+'/></div></div>';
+  h += '<div class="nc-sep"></div><div class="cms-row">'+ncField(['responsible','هل يوجد مسئول عن الحالة',1,'select'], nc)+'</div>';
+  h += '<div class="nc-sep"></div><div class="cms-row"><label class="cms-label">الخطوة التالية <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="ncSet" data-a="nextStep">'+
+    '<option value="research"'+(nc.nextStep==='research'?' selected':'')+'>قسم الأبحاث</option>'+
+    '<option value="measurement"'+(nc.nextStep==='measurement'?' selected':'')+(res.ok===false?' disabled':'')+'>حجز مقاس مباشر</option></select></div></div>';
+  if (dup) h += '<div class="rule-hint warn">الرقم ده متسجل قبل كده لحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>';
+  // result before "أضف"
+  if (res.ok===null) h += '<div class="nc-result pending">'+ic('clock',14)+' النتيجة هتظهر لما تكمّل: مستوى البتر، وتاريخ الميلاد، والوزن، وتاريخ آخر جراحة</div>';
+  else h += '<div class="nc-result '+(res.ok?'ok':'bad')+'"><div class="nc-res-title">'+(res.ok ? ic('check',15,'#15803d',2.4) : ic('alert',15,'#b45309'))+' النتيجة: <b>'+res.list[0].t+'</b></div>'+
+    res.list.map(function(x){ return x.d ? '<div class="nc-res-row">• <b>'+x.t+'</b>: '+esc(x.d)+'</div>' : ''; }).join('')+
+    (res.ok ? '<div class="nc-res-row">الخطوة التالية: <b>'+(nc.nextStep==='measurement' ? 'حجز مقاس مباشر – الحالة هتنزل في حصالة التقييم الطبي والقياسات' : 'قسم الأبحاث')+'</b></div>' : '')+'</div>';
+  h += '<div class="cms-actions"><button class="cms-btn cms-add"'+A('ncAdd')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('ncReset')+'>'+ic('x',12,'#fff',3)+' مسح</button></div>';
+  h += '</div></div>';
+  var mine = S.newCases.filter(function(x){ return x.by===S.agentId; });
+  if (mine.length){
+    h += '<div class="nc-card" style="margin-top:14px;"><div class="cms-head"><div class="cms-title">اتسجل النهارده ('+mine.length+')</div></div><table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>النتيجة</th><th>الخطوة التالية</th><th>الوقت</th></tr></thead><tbody>'+
+      mine.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.name)+'</td><td dir="ltr" style="text-align:right;">'+esc(x.phone)+'</td><td>'+esc(x.result)+'</td><td>'+esc(x.next)+'</td><td>'+fmtTime(x.at)+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  }
+  return h;
+}
+
+// =====================================================================
+// Agent: committee decision calls (تبليغ اللجنة)
+// =====================================================================
+function committeeFor(agent){ return S.committee.filter(function(k){ return k.assignee===agent; }); }
+function renderCommittee(){
+  var list = committeeFor(S.agentId), open = list.filter(function(k){ return k.status!=='notified'; });
+  var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' تبليغ قرار اللجنة ('+open.length+')</div></div>';
+  if (!list.length) return h + '<div class="table-empty">مفيش مكالمات تبليغ مسندة ليك</div></div>';
+  h += '<table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>قرار اللجنة</th><th>تاريخ اللجنة</th><th>الوضع</th><th></th></tr></thead><tbody>'+
+    list.map(function(k){
+      var done = k.status==='notified';
+      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td dir="ltr" style="text-align:right;">'+fmtPhone(k.phone)+'</td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'</td><td>'+dayLabel(k.day)+'</td>'+
+        '<td>'+(done ? '<span class="cap-ok">اتبلّغ</span>' : k.status==='noAnswer' ? '<span class="cap-over">لم يرد ('+k.tries+')</span>' : 'لسه')+'</td>'+
+        '<td>'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeResult', k.id, 'notified')+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>لم يرد</button>')+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+  return h;
+}
+function agentTabs(){
+  var me = S.agentId, tabs = [['calls','مكالماتي']];
+  if (canDo(me, 'newCase')) tabs.push(['newCase','إضافة حالة جديدة']);
+  if (canDo(me, 'committee') || committeeFor(me).length) tabs.push(['committee','تبليغ اللجنة', committeeFor(me).filter(function(k){ return k.status!=='notified'; }).length]);
+  return tabs;
 }
 
 // =====================================================================
