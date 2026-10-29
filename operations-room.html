@@ -825,6 +825,11 @@
     .wd-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
     .wd-chip{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-muted);}
     .wd-chip.on{background:#eef4ff;border-color:#93b8ff;color:#1d4ed8;font-weight:700;}
+    .k-phone{white-space:nowrap;}
+    .k-phone span{display:inline-block;margin-left:8px;font-variant-numeric:tabular-nums;}
+    .k-copy{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:8px;background:#0093e9;color:#fff;font:inherit;font-size:11.5px;font-weight:700;padding:3px 9px;cursor:pointer;vertical-align:middle;}
+    .k-copy.done{background:#31c860;}
+    .k-acts{white-space:nowrap;}
     .more-btn{display:flex;align-items:center;gap:7px;width:100%;border:1px dashed var(--border-strong);background:var(--surface);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--brand-meas);cursor:pointer;margin-bottom:14px;}
     .more-btn:hover{background:#f7faff;border-color:#93b8ff;}
     .more-btn.on{border-style:solid;background:#f7faff;}
@@ -2285,7 +2290,10 @@ var ACT = {
   },
   toggleLog: function(key){ S.logOpen[key] = !S.logOpen[key]; render(); },
   copyPhone: function(p){
-    var done = function(){ toast('تم نسخ الرقم ' + fmtPhone(p)); render(); };
+    var done = function(){
+      S.copiedPhone = p; toast('تم نسخ الرقم ' + fmtPhone(p)); render();
+      clearTimeout(ACT._copyT); ACT._copyT = setTimeout(function(){ S.copiedPhone = null; render(); }, 1200);
+    };
     try {
       if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(p).then(done, function(){ legacyCopy(p); done(); }); return; }
     } catch(e){}
@@ -3800,9 +3808,9 @@ function renderCommittee(){
   h += '<table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>قرار اللجنة</th><th>تاريخ اللجنة</th><th>الوضع</th><th></th></tr></thead><tbody>'+
     list.map(function(k){
       var done = k.status==='notified';
-      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td dir="ltr" style="text-align:right;">'+fmtPhone(k.phone)+'</td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'</td><td>'+dayLabel(k.day)+'</td>'+
+      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td class="k-phone"><span dir="ltr">'+fmtPhone(k.phone)+'</span><button class="k-copy'+(S.copiedPhone===k.phone?' done':'')+'"'+A('copyPhone', k.phone)+'>'+(S.copiedPhone===k.phone ? ic('check',12,null,2.4)+'تم' : ic('copy',12)+'نسخ')+'</button></td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'</td><td>'+dayLabel(k.day)+'</td>'+
         '<td>'+(done ? '<span class="cap-ok">اتبلّغ</span>' : k.status==='noAnswer' ? '<span class="cap-over">لم يرد ('+k.tries+')</span>' : 'لسه')+'</td>'+
-        '<td>'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeResult', k.id, 'notified')+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>لم يرد</button>')+'</td></tr>';
+        '<td class="k-acts">'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeResult', k.id, 'notified')+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>لم يرد</button>')+'</td></tr>';
     }).join('')+'</tbody></table></div>';
   return h;
 }
