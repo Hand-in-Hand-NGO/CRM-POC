@@ -2377,8 +2377,7 @@ function capTable(loads){
 var root = null, pendingCaret = null;
 function render(){
   if (!root) return;
-  var rem = sendDueReminders();
-  if (rem && !S.toast) S.toast = 'اتبعت ' + rem + ' تذكير للحالات المحجوزة بكرة';
+  sendDueReminders();
   var ae = document.activeElement, focusK = null, selS = null, selE = null;
   if (ae && ae.getAttribute && ae.getAttribute('data-k')){
     focusK = ae.getAttribute('data-k');
