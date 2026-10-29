@@ -556,6 +556,17 @@
     .q-empty{border:1px dashed var(--border-strong);border-radius:11px;padding:22px;text-align:center;color:var(--text-faint);font-size:12.5px;background:var(--surface);}
     .side-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:12px;}
     .side-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+    .hold-badge{display:inline-flex;align-items:center;gap:3px;background:#eef1f5;color:#475569;border:1px solid #cbd3dd;border-radius:20px;padding:0 7px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+    .hold-badge.big{font-size:11.5px;padding:2px 9px;}
+    .held-row td{background:#f6f7f9;color:var(--text-muted);}
+    .hold-btn{color:#475569;}
+    .btn-held{background:#eef1f5;color:#334155;border:1px solid #cbd3dd;}
+    .hold-info,.hold-warn{display:flex;gap:8px;align-items:flex-start;border-radius:10px;padding:9px 11px;font-size:12px;margin-bottom:10px;line-height:1.7;}
+    .hold-info{background:#eef1f5;color:#334155;}
+    .hold-warn{background:var(--warning-tint);color:#8a4b08;}
+    .reason-pills{display:flex;flex-wrap:wrap;gap:6px;}
+    .reason-pills button{border:1px solid var(--border-strong);background:var(--surface);border-radius:20px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--text);}
+    .reason-pills button.on{background:#334155;border-color:#334155;color:#fff;}
     .ag-card{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--surface-alt);}
     .ag-card:last-child{margin-bottom:0;}
     .ag-head{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
@@ -1187,6 +1198,7 @@ var S = {
   audit:[], confirmations:{}, auditQ:'', messages:[],
   routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
+  opsHolds:{}, holdDlg:null,
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1324,7 +1336,7 @@ function confirmItems(agent){
   S.tasks.forEach(function(t){
     if (t.status!=='published' || t.dateOffset - tOff !== 1) return;
     t.candidateIds.forEach(function(cid){
-      if ((S.bookings[t.type]||{})[cid]!==t.id || !confirmNeeded(t, cid)) return;
+      if ((S.bookings[t.type]||{})[cid]!==t.id || !confirmNeeded(t, cid) || caseHoldLabel(cid)) return;
       if (agent && confirmOwner(t, cid)!==agent) return;
       var cf = S.confirmations[nextCallKey(t.id, cid)];
       if (cf && (cf.status==='confirmed' || cf.status==='cancelled')) return;
@@ -1507,6 +1519,7 @@ function priorityOf(ctx, c){
     eligible = false; why = ab.attended ? 'تمت الزيارة (حضر)' : (ab.tid===ctx.id ? 'محجوزة في هذه المهمة' : 'محجوزة في موعد آخر');
   }
   else if (fundHold(c.id)){ eligible = false; why = 'موقوفة للتمويل – ' + fundHold(c.id); }
+  else if (opsHold(c.id)){ eligible = false; why = 'موقوفة – ' + opsHold(c.id).reason; }
   else if (c.ready===false){ eligible = false; why = ctx.type==='newDelivery' ? 'الطرف لسه في التصنيع' : 'الصيانة لسه ما خلصتش'; }
   else if (c.postponed && c.postponed.contact==='case'){ eligible = false; why = 'مؤجل – الحالة هتتواصل مع المؤسسة'; }
   else if (c.postponed && c.postponed.until > ctx.dateOffset){ eligible = false; why = 'مؤجل هندسيًا حتى ' + shortDate(c.postponed.until); }
@@ -1749,7 +1762,7 @@ function nextCallFor(t, cid){
   return n > now() ? n : 0;
 }
 function canCall(t, cid){
-  if (!isCC()) return false;
+  if (!isCC() || caseHoldLabel(cid)) return false;
   var a = t.assignee[cid];
   return !a || a === S.agentId;
 }
@@ -1919,6 +1932,26 @@ var ACT = {
   // ---------- panels ----------
   openRisk: function(){ S.overlay = 'risk'; render(); },
   openFunded: function(){ S.overlay = 'funded'; render(); },
+  openHolds: function(){ S.overlay = 'holds'; render(); },
+  togglePoolHeld: function(){ S.poolHeld = !S.poolHeld; render(); },
+  askHold: function(cid){ S.holdDlg = {cid:cid, reason:'', note:''}; render(); },
+  setHoldReason: function(r){ S.holdDlg.reason = r; render(); },
+  setHoldNote: function(v){ S.holdDlg.note = v; },
+  closeHoldDlg: function(){ S.holdDlg = null; render(); },
+  confirmHold: function(){
+    var d = S.holdDlg; if (!d || !d.reason) return;
+    var c = caseById(d.cid);
+    S.opsHolds[d.cid] = {reason:d.reason, note:d.note.trim(), by:actorName(), at:now()};
+    saveOpsHolds();
+    S.audit.unshift({at:now(), who:actorName(), action:'إيقاف حالة', tid:null, label:c.name + ' (' + c.code + ')', detail:d.reason});
+    S.holdDlg = null; toast('اتوقفت ' + c.name + ' – مش هتتحط في مهام ومش هتظهر للكول سنتر'); render();
+  },
+  releaseHold: function(cid){
+    var c = caseById(cid); if (!opsHold(cid)) return;
+    delete S.opsHolds[cid]; saveOpsHolds();
+    S.audit.unshift({at:now(), who:actorName(), action:'فك إيقاف حالة', tid:null, label:c.name + ' (' + c.code + ')', detail:''});
+    toast('اتفك إيقاف ' + c.name + ' ورجعت متاحة'); render();
+  },
   // funded cases of one company + stage -> new booking task (operations picks the day)
   createFromFunding: function(k){
     var p = k.split('|'), company = p[0], type = p[1], ctx = {id:'__fund', type:type, loc:'org', gov:null, dateOffset:todayOffset()};
@@ -2425,6 +2458,7 @@ function renderApp(){
   h += renderOverlays();
   h += renderCallModal();
   h += renderPoolModal();
+  h += renderHoldDlg();
   h += renderDash();
   if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
   h += '</div>';
@@ -2504,7 +2538,7 @@ function renderPools(){
 function renderPoolModal(){
   var k = S.poolOpen; if (!k) return '';
   var m = TASK_TYPES[k], q = (S.poolSearch||'').trim();
-  var list = poolCases(k).filter(function(c){ return !q || c.name.indexOf(q)!==-1 || c.gov.indexOf(q)!==-1; });
+  var held = heldCases(k), list = poolCases(k).concat(S.poolHeld ? held : []).filter(function(c){ return !q || c.name.indexOf(q)!==-1 || c.gov.indexOf(q)!==-1; });
   var srt = S.poolSort;
   if (srt) list = list.slice().sort(function(a,b){
     if (srt==='gov') return a.gov.localeCompare(b.gov, 'ar') || a.age - b.age;
@@ -2521,8 +2555,13 @@ function renderPoolModal(){
     '<div class="drawer-sub">الحالات المتاحة للحجز في مرحلة «'+m.label+'» · '+poolCases(k).length+' حالة</div></div><button class="icon-btn"'+A('closePool')+'>'+ic('x',15,null,2)+'</button></div>';
   h += '<div class="modal-body" data-scroll="pool"><div style="display:flex;gap:8px;margin-bottom:10px;"><input class="case-search" style="flex:1;" placeholder="بحث بالاسم أو المحافظة" value="'+esc(S.poolSearch)+'" data-k="pool-q" data-input="poolSearch"/>'+
     '<select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select></div>';
-  h += '<table class="cases-table"><thead><tr><th>#</th><th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'</tr></thead><tbody>';
-  list.forEach(function(c, i){ h += '<tr><td class="rank-num">'+(i+1)+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td></tr>'; });
+  if (held.length) h += '<label class="switch-row" style="margin:0 0 10px;"><input type="checkbox"'+(S.poolHeld?' checked':'')+A('togglePoolHeld')+'/> اعرض الحالات الموقوفة كمان ('+held.length+')</label>';
+  h += '<table class="cases-table"><thead><tr><th>#</th><th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'<th></th></tr></thead><tbody>';
+  list.forEach(function(c, i){
+    var hl = caseHoldLabel(c.id);
+    h += '<tr'+(hl ? ' class="held-row"' : '')+'><td class="rank-num">'+(hl ? '–' : i+1)+'</td><td style="font-weight:700;">'+esc(c.name)+(hl ? ' <span class="hold-badge">'+ic('lock',10)+esc(hl)+'</span>' : '')+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td>'+
+      '<td style="text-align:left;">'+holdBtn(c.id)+'</td></tr>';
+  });
   h += '</tbody></table>' + (list.length ? '' : '<div class="table-empty">لا توجد حالات</div>') + '</div></div>';
   return h;
 }
@@ -2534,6 +2573,8 @@ function renderPlanActions(){
   var fn = fundedNew().length;
   if (fn) h += '<button class="btn btn-fund btn-sm"'+A('openFunded')+'>'+ic('send',13,'#fff')+' تمويل جديد ('+fn+')</button>';
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
+  var hc = heldCases().length;
+  if (hc) h += '<button class="btn btn-held btn-sm"'+A('openHolds')+'>'+ic('lock',13,'#475569')+' حالات موقوفة ('+hc+')</button>';
   var wr = weekRange(S.weekOffset), drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=wr[0] && t.dateOffset<=wr[1]; }).length;
   if (drafts && S.viewMode==='week') h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر خطة الأسبوع ('+drafts+')</button>';
   return h + '</div>';
@@ -2663,6 +2704,7 @@ function queueItems(agent){
     var full = t.target>0 && taskBookedCount(t) >= bookingGoal(t);
     t.candidateIds.forEach(function(cid){
       if (agent && t.assignee[cid]!==agent) return;
+      if (caseHoldLabel(cid)) return;                 // held cases are off the call lists
       var st = caseStatus(t, cid);
       if (!isOpenStatus(st.key)) return;
       var nxt = nextCallFor(t, cid);
@@ -2963,6 +3005,7 @@ function renderOverlays(){
     case 'risk': return renderRisk();
     case 'audit': return renderAudit();
     case 'funded': return renderFunded();
+    case 'holds': return renderHolds();
   }
   return '';
 }
@@ -3223,7 +3266,7 @@ function renderCaseRow(t, cid){
   if (admin && open) h += prioStar(isPrio, 'togglePrioTask', t.id+'|'+cid);
   else if (isPrio) h += '<span class="prio-txt">★</span>';
   h += '<span class="case-code" dir="ltr">'+c.code+'</span><span class="case-name">'+esc(c.name)+'</span>'+(isPrio ? '<span class="prio-badge">أولوية اتصال</span>' : '')+noShowBadge(cid)+'</div>'+
-    '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+statusTag(st)+'</div>';
+    '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+(caseHoldLabel(cid) ? '<span class="hold-badge big">'+ic('lock',11)+esc(caseHoldLabel(cid))+'</span>' : statusTag(st))+'</div>';
   h += '<div class="case-meta">'+phoneChip(c)+'<span class="meta-sep">|</span>';
   if (isSupervisor() && t.status==='published' && open){
     h += '<span class="assignee">'+ic('user',11)+'<select class="mini-select" data-change="assignCase" data-a="'+t.id+'|'+cid+'"><option value="">غير مسندة</option>'+
@@ -3242,6 +3285,7 @@ function renderCaseRow(t, cid){
   }
   h += '<button class="ghost-btn"'+A('toggleLog', key)+'>'+ic('history',12)+'سجل المكالمات ('+logsFor(cid).length+')</button>';
   if (st.key==='hardToReach' && canAssign()) h += '<button class="ghost-btn"'+A('reactivate', cid)+'>'+ic('undo',12)+'إعادة تفعيل</button>';
+  if (admin) h += holdBtn(cid);
   h += '</div>';
   if (S.logOpen[key]) h += renderLog(cid);
   return h + '</div>';
@@ -3356,6 +3400,19 @@ function fundHold(cid){
   var pid = FUND.holds[cid].plan, pl = (FUND.plans||[]).filter(function(p){ return p.id===pid; })[0];
   return pl ? pl.name : 'خطة تمويل';
 }
+// operations can hold a case: nobody books it, the call center doesn't see it, until operations releases it
+var OPS_HOLD_KEY = 'hih_ops_holds_v1';
+var HOLD_REASONS = ['نقص أوراق','مراجعة طبية','طلب من الحالة','مراجعة إدارية','مشكلة في التمويل','أخرى'];
+function opsHold(cid){ return S.opsHolds[cid] || null; }
+// any hold (operations or funding plan): the call center can't work on the case
+function caseHoldLabel(cid){
+  var o = opsHold(cid); if (o) return 'موقوفة – ' + o.reason;
+  var f = fundHold(cid); return f ? 'موقوفة للتمويل – ' + f : '';
+}
+function saveOpsHolds(){ writeStore(OPS_HOLD_KEY, S.opsHolds); }
+function heldCases(type){
+  return CASES.filter(function(c){ return (!type || c.stage===type) && (opsHold(c.id) || fundHold(c.id)); });
+}
 // where a funded case stands in the operations room
 function fundOpsStatus(c){
   var tOff = todayOffset(), tid = (S.bookings[c.stage]||{})[c.id];
@@ -3389,6 +3446,42 @@ window.addEventListener('storage', function(e){
   if (after > before) toast('وصل تمويل جديد من الـ CSR – ' + (after-before) + ' حالة');
   render();
 });
+function holdBtn(cid){
+  if (!isAdmin()) return '';
+  if (opsHold(cid)) return '<button class="ghost-btn"'+A('releaseHold', cid)+'>'+ic('undo',12)+'فك الإيقاف</button>';
+  if (fundHold(cid)) return '<span class="field-hint" style="margin:0;">بيتفك من صفحة التمويل</span>';
+  return '<button class="ghost-btn hold-btn"'+A('askHold', cid)+'>'+ic('lock',12)+'إيقاف</button>';
+}
+function renderHoldDlg(){
+  var d = S.holdDlg; if (!d) return '';
+  var c = caseById(d.cid);
+  var tasks = S.tasks.filter(function(t){ return t.dateOffset>=todayOffset() && t.candidateIds.indexOf(d.cid)!==-1; });
+  var booked = tasks.filter(function(t){ return (S.bookings[t.type]||{})[d.cid]===t.id; });
+  return '<div class="scrim scrim-top"'+A('closeHoldDlg')+'></div><div class="modal modal-sm"><div class="modal-head"><div><div class="drawer-title">إيقاف الحالة</div>'+
+    '<div class="drawer-sub">'+esc(c.name)+' · <span dir="ltr">'+c.code+'</span></div></div><button class="icon-btn"'+A('closeHoldDlg')+'>'+ic('x',15,null,2)+'</button></div>'+
+    '<div class="modal-body"><div class="hold-info">'+ic('lock',13,'#475569')+'<div>الحالة مش هتتحط في أي مهمة، ومش هتظهر في قوايم الكول سنتر لحد ما تفك الإيقاف.</div></div>'+
+    (tasks.length ? '<div class="hold-warn">'+ic('alert',13,'#b45309')+'<div>الحالة موجودة في '+tasks.length+' مهمة'+(booked.length ? ' ومحجوزة يوم '+dayLabel(booked[0].dateOffset)+' – الحجز هيفضل زي ما هو بس مكالمة التأكيد هتقف' : ' – هتفضل في المهمة بس محدش هيتصل بيها')+'.</div></div>' : '')+
+    '<div class="field"><label class="field-label">سبب الإيقاف</label><div class="reason-pills">'+HOLD_REASONS.map(function(r){
+      return '<button class="'+(d.reason===r?'on':'')+'"'+A('setHoldReason', r)+'>'+r+'</button>'; }).join('')+'</div></div>'+
+    '<div class="field"><label class="field-label">ملاحظة (اختياري)</label><textarea class="note-input" rows="2" data-k="hold-note" data-input="setHoldNote" placeholder="مثال: مستني صورة البطاقة">'+esc(d.note)+'</textarea></div></div>'+
+    '<div class="modal-foot"><button class="btn btn-danger"'+A('confirmHold')+(d.reason ? '' : ' disabled')+'>'+ic('lock',13,'#fff')+' إيقاف الحالة</button><button class="btn btn-secondary"'+A('closeHoldDlg')+'>إلغاء</button></div></div>';
+}
+function renderHolds(){
+  var list = heldCases();
+  var h = '<div class="scrim"'+A('closePanel')+'></div><div class="modal" style="width:860px;max-width:95vw;">'+
+    panelHead(ic('lock',16,'#475569')+' الحالات الموقوفة', list.length+' حالة – مش بتتحط في مهام ومش بتظهر للكول سنتر')+'<div class="modal-body" data-scroll="holds">';
+  if (!list.length) return h + '<div class="table-empty">مفيش حالات موقوفة</div></div></div>';
+  h += '<table class="cases-table"><thead><tr><th>كود الحالة</th><th>الاسم</th><th>المرحلة</th><th>السبب</th><th>أوقفها</th><th></th></tr></thead><tbody>';
+  list.forEach(function(c){
+    var o = opsHold(c.id), m = TASK_TYPES[c.stage];
+    h += '<tr><td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+'</td>'+
+      '<td><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span></td>'+
+      '<td>'+(o ? esc(o.reason)+(o.note ? '<div class="field-hint" style="margin:0;">'+esc(o.note)+'</div>' : '') : 'خطة تمويل: '+esc(fundHold(c.id)))+'</td>'+
+      '<td>'+(o ? esc(o.by)+'<div class="field-hint" style="margin:0;">'+fmtWhen(o.at)+'</div>' : 'صفحة التمويل (CSR)')+'</td>'+
+      '<td style="text-align:left;">'+holdBtn(c.id)+'</td></tr>';
+  });
+  return h + '</tbody></table></div></div>';
+}
 function renderFunded(){
   var list = fundedNew(), groups = {};
   list.forEach(function(c){
@@ -3812,7 +3905,8 @@ document.addEventListener('keydown', function(e){
   if (e.key==='Escape' && S.poolOpen){ ACT.closePool(); return; }
   if (e.key==='Escape' && S.dashOpen && !S.overlay){ ACT.closeDash(); return; }
   if (e.key==='Escape' && S.overlay){
-    if (S.overlay==='confirm') ACT.cancelConfirm();
+    if (S.holdDlg) ACT.closeHoldDlg();
+    else if (S.overlay==='confirm') ACT.cancelConfirm();
     else if (S.overlay==='addCases') ACT.closeAddCases();
     else { closeAllOverlays(); render(); }
   }
@@ -4295,6 +4389,7 @@ Object.assign(ACT, {
 // =====================================================================
 root = document.getElementById('root');
 loadFunding();
+S.opsHolds = readStore(OPS_HOLD_KEY, {}) || {};
 render();
 // keep clocks / countdowns fresh without disturbing typing
 setInterval(function(){
