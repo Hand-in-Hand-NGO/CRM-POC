@@ -695,7 +695,7 @@ function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
 
 // the funding page works on the two stores only
-var STORES = {newDelivery:'مخزن الأطراف', maintDelivery:'مخزن أطراف الصيانة'};
+var STORES = {newDelivery:'مخزن الأطراف الجديد', maintDelivery:'مخزن أطراف الصيانة'};
 function inStores(c){ return !!STORES[c.stage]; }
 function allocOf(c){ return F.store.alloc[c.id] || null; }
 function funderOf(c){ var a = allocOf(c); return a ? a.company : (c.funding!=='بدون' ? c.funding : ''); }

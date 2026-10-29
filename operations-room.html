@@ -2519,7 +2519,7 @@ function renderSubbar(){
   return h;
 }
 
-var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
+var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
 // cases available to book in a stage (any governorate)
 function poolCases(type){
   var ctx = {id:'__pool', type:type, loc:'org', gov:null, dateOffset:todayOffset()};
@@ -2531,7 +2531,7 @@ function renderPools(){
   return '<div class="pools-wrap"><div class="section-cap">'+ic('users',13)+' الحالات المتاحة للحجز</div><div class="pools-row">' + Object.keys(TASK_TYPES).map(function(k){
     var m = TASK_TYPES[k], n = poolCases(k).length;
     return '<button class="pool-btn" style="--edge:'+m.color+';--tint:'+m.tint+';"'+A('openPool', k)+'>'+
-      '<span class="pool-num">'+n+'</span><span class="pool-text"><span class="pool-name">'+POOL_NAMES[k]+'</span><span class="pool-sub">حالة متاحة · عرض القائمة</span></span>'+
+      '<span class="pool-num">'+n+'</span><span class="pool-text"><span class="pool-name">'+POOL_NAMES[k]+'</span></span>'+
       '<span class="pool-ic">'+pathIc(m.iconPath,16,m.color)+'</span></button>';
   }).join('') + '</div></div>';
 }
