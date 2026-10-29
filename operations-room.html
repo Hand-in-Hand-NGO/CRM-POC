@@ -97,15 +97,17 @@
     .palette-hint{font-size:11.5px;color:var(--text-faint);}
     .palette-chips{display:flex;gap:10px;flex-wrap:wrap;}
     .palette-chip{
-      display:flex;align-items:center;gap:9px;padding:10px 16px;border-radius:12px;border:1.5px dashed var(--edge);
-      background:var(--tint);cursor:grab;user-select:none;min-width:168px;
-      transition:transform .12s ease, box-shadow .12s ease;
+      display:flex;align-items:center;gap:8px;padding:6px 14px 6px 10px;border-radius:999px;border:1.5px dashed var(--edge);
+      background:#fff;cursor:grab;user-select:none;
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
     }
+    .palette-chip:hover{background:var(--tint);}
+    .palette-chip .grip{display:inline-flex;opacity:.7;}
     .palette-chip:active{cursor:grabbing;}
     .palette-chip:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
     .palette-chip.disabled{opacity:.55;cursor:not-allowed;border-style:solid;}
     .palette-chip.disabled:hover{transform:none;box-shadow:none;}
-    .palette-ic{width:30px;height:30px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:var(--shadow-sm);}
+    .palette-ic{width:24px;height:24px;border-radius:50%;background:var(--edge);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
     .palette-text{display:flex;flex-direction:column;gap:1px;}
     .palette-label{font-size:13px;font-weight:700;color:var(--edge);}
     .palette-sub{font-size:10.5px;color:var(--text-muted);}
@@ -138,6 +140,7 @@
       box-shadow:var(--shadow-sm); position:relative; overflow:hidden; transition:opacity .12s ease, box-shadow .12s ease;
     }
     .task-card:hover{box-shadow:var(--shadow-md);}
+    .task-card.today-card{border:2px solid var(--edge);background:var(--tint);box-shadow:0 0 0 3px color-mix(in srgb, var(--edge) 22%, transparent), var(--shadow-md);}
     .task-card.dim{opacity:.32;}
     .task-card .bar{position:absolute;top:0;bottom:0;right:0;width:4px;}
     .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px;}
@@ -640,14 +643,19 @@
     .prio-star.on{color:#e0a100;}
     .prio-txt{color:#b7791f;font-weight:800;}
     .prio-badge{display:inline-block;font-size:10.5px;font-weight:800;background:#fff4d6;color:#8a5a00;border:1px solid #f0d58a;border-radius:5px;padding:1px 6px;margin-right:4px;white-space:nowrap;}
-    .pools-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 22px;background:var(--surface);border-bottom:1px solid var(--border);}
+    .pools-wrap{padding:12px 22px 14px;background:var(--bg);border-bottom:1px solid var(--border);}
+    .section-cap{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;}
+    .pools-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
     .pool-btn{
-      display:flex;align-items:center;gap:8px;border:1px solid var(--edge);background:var(--tint);border-radius:11px;padding:10px 12px;cursor:pointer;
-      font-family:inherit;text-align:right;
+      display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-right:4px solid var(--edge);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;
+      font-family:inherit;text-align:right;box-shadow:var(--shadow-sm);transition:box-shadow .12s ease, transform .12s ease;
     }
-    .pool-btn:hover{box-shadow:var(--shadow-sm);}
-    .pool-name{flex:1;font-size:13px;font-weight:800;color:var(--edge);}
-    .pool-count{background:var(--surface);color:var(--text);border-radius:999px;padding:2px 10px;font-size:13px;font-weight:800;}
+    .pool-btn:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+    .pool-num{font-size:24px;font-weight:800;color:var(--edge);line-height:1;min-width:30px;text-align:center;}
+    .pool-text{flex:1;display:flex;flex-direction:column;gap:2px;}
+    .pool-name{font-size:13px;font-weight:800;color:var(--text);}
+    .pool-sub{font-size:11px;color:var(--text-faint);}
+    .pool-ic{width:32px;height:32px;border-radius:9px;background:var(--tint);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
     .focus-wrap{max-width:760px;margin:22px auto 60px;padding:0 16px;}
     .focus-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
     .focus-total{display:flex;flex-direction:column;align-items:center;background:#101828;color:#fff;border-radius:12px;padding:8px 18px;}
@@ -736,6 +744,7 @@
     .limb-badge{background:#fff4e5;color:#b45309;border:1px solid #f0c98a;border-radius:999px;padding:0 7px;font-size:10.5px;font-weight:700;white-space:nowrap;}
     .btn-risk{background:var(--warning-tint);color:var(--warning);border:1px solid #f0c98a;}
     .task-card.at-risk{border-color:#f0b35a;box-shadow:0 0 0 2px #fde7c4;}
+    .task-card.today-card.at-risk{border-color:var(--edge);box-shadow:0 0 0 3px color-mix(in srgb, var(--edge) 22%, transparent), var(--shadow-md);}
     .risk-badge{background:var(--warning-tint);color:var(--warning);border:1px solid #f0c98a;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;}
     .rep-badge{display:inline-flex;align-items:center;color:var(--text-muted);}
     .rep-txt{display:inline-flex;align-items:center;gap:3px;color:var(--text-muted);}
@@ -1749,28 +1758,6 @@ var ACT = {
   },
   setRepeatWeeks: function(v){ S.createDraft.repeat.weeks = v; render(); },
   toggleCreateConfirm: function(){ S.createDraft.confirmCall = !S.createDraft.confirmCall; render(); },
-  // ---------- copy last week ----------
-  copyLastWeek: function(){
-    var r = weekRange(S.weekOffset), tOff = todayOffset();
-    var src = S.tasks.filter(function(t){ return t.dateOffset>=r[0]-7 && t.dateOffset<=r[1]-7 && t.dateOffset+7 >= tOff; });
-    if (!src.length){ toast('مفيش مهام في الأسبوع اللي فات تتنسخ' + (r[0]-7 < tOff ? ' (أو أيامها عدّت)' : '')); return render(); }
-    S.overlay = 'confirm';
-    S.confirm = {title:'نسخ خطة الأسبوع اللي فات', tone:'primary',
-      message:'هيتعمل ' + src.length + ' مهمة في نفس الأيام من الأسبوع ده (من غير حالات مرشحة ولا حجوزات)، وبعدها تضيف الحالات وتعدّل اللي محتاجه.',
-      items: src.map(function(t){ return {label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset+7) + ' · ' + t.target + ' حجز'}; }),
-      confirmLabel:'نسخ المهام',
-      onConfirm:function(){
-        src.forEach(function(x, i){
-          var t = {id:'t'+Date.now()+'_c'+i, type:x.type, dateOffset:x.dateOffset+7, loc:x.loc, gov:x.gov, target:x.target, mode:x.mode||'booking', attendTarget:x.attendTarget||null,
-            candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], confirmCall:!!x.confirmCall, seriesId:null, seriesLabel:null, owner:x.owner||null,
-            status:'published', publishedAt:now(), publishedBy:actorName(), meetingPoint:x.meetingPoint||'', mapUrl:x.mapUrl||'', meetingTime:x.meetingTime||'', convoyNotes:x.convoyNotes||''};
-          S.tasks.push(t); audit('نسخ من الأسبوع اللي فات', t, t.target + ' حجز');
-        });
-        S.overlay = null; S.confirm = null; toast('تم نسخ ' + src.length + ' مهمة'); render();
-      }};
-    render();
-  },
-
   // ---------- day-before confirmation ----------
   confirmResult: function(key, result){
     var p = key.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid); if (!t || !c) return;
@@ -2296,12 +2283,6 @@ function renderSubbar(){
     h += renderPlanActions();
   }
   h += '</div>';
-  if (S.mainView==='calendar'){
-    h += '<div class="type-filters"><span class="type-filter-label">نوع المهمة:</span>' + Object.keys(TASK_TYPES).map(function(k){
-      var m = TASK_TYPES[k], on = S.activeTypes.indexOf(k)!==-1;
-      return '<div class="type-chip'+(on?' active':'')+'" style="--tint:'+m.tint+';--edge:'+m.color+';"'+A('toggleType',k)+'><span class="sw" style="background:'+(on?m.color:'#cdd1d9')+';"></span>'+m.short+'</div>';
-    }).join('') + '</div>';
-  }
   h += '</div>';
   return h;
 }
@@ -2315,11 +2296,12 @@ function poolCases(type){
 }
 function renderPools(){
   if (!isAdmin()) return '';
-  return '<div class="pools-row">' + Object.keys(TASK_TYPES).map(function(k){
-    var m = TASK_TYPES[k];
-    return '<button class="pool-btn" style="--edge:'+m.color+';--tint:'+m.tint+';"'+A('openPool', k)+'>'+pathIc(m.iconPath,15,m.color)+
-      '<span class="pool-name">'+POOL_NAMES[k]+'</span><span class="pool-count">'+poolCases(k).length+'</span></button>';
-  }).join('') + '</div>';
+  return '<div class="pools-wrap"><div class="section-cap">'+ic('users',13)+' الحالات المتاحة للحجز</div><div class="pools-row">' + Object.keys(TASK_TYPES).map(function(k){
+    var m = TASK_TYPES[k], n = poolCases(k).length;
+    return '<button class="pool-btn" style="--edge:'+m.color+';--tint:'+m.tint+';"'+A('openPool', k)+'>'+
+      '<span class="pool-num">'+n+'</span><span class="pool-text"><span class="pool-name">'+POOL_NAMES[k]+'</span><span class="pool-sub">حالة متاحة · عرض القائمة</span></span>'+
+      '<span class="pool-ic">'+pathIc(m.iconPath,16,m.color)+'</span></button>';
+  }).join('') + '</div></div>';
 }
 function renderPoolModal(){
   var k = S.poolOpen; if (!k) return '';
@@ -2354,18 +2336,18 @@ function renderPlanActions(){
   var fn = fundedNew().length;
   if (fn) h += '<button class="btn btn-fund btn-sm"'+A('openFunded')+'>'+ic('send',13,'#fff')+' تمويل جديد ('+fn+')</button>';
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
-  h += '<button class="btn btn-secondary btn-sm"'+A('copyLastWeek')+'>'+ic('copy',13)+' نسخ خطة الأسبوع اللي فات</button>';
   return h + '</div>';
 }
 
 function renderPalette(){
   var admin = isAdmin();
-  var h = '<div class="palette-row"><div class="palette-head"><div class="palette-title">إضافة حجز جديد إلى الخطة</div>'+
+  var h = '<div class="palette-row"><div class="palette-head"><div class="section-cap">'+pathIc('M12 5v14M5 12h14',13,null,2.2)+' مهمة حجز جديدة – اسحب النوع على اليوم في التقويم</div>'+
     '</div><div class="palette-chips">';
   Object.keys(TASK_TYPES).forEach(function(k){
     var m = TASK_TYPES[k];
     h += '<div class="palette-chip'+(admin?'':' disabled')+'" style="--tint:'+m.tint+';--edge:'+m.color+';" draggable="'+(admin?'true':'false')+'" data-drag-type="'+k+'">'+
-      '<div class="palette-ic">'+pathIc(m.iconPath,16,m.color,1.7)+'</div><div class="palette-text"><span class="palette-label">'+m.label+'</span>'+
+      '<span class="grip">'+pathIc('M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',14,m.color,3)+'</span>'+
+      '<div class="palette-ic">'+pathIc(m.iconPath,14,'#fff',1.9)+'</div><div class="palette-text"><span class="palette-label">'+m.label+'</span>'+
       '</div>'+
       (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحين للأوبريشن بس">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
   });
@@ -2422,7 +2404,8 @@ function renderTaskCard(t){
   var dim = S.activeTypes.indexOf(t.type)===-1;
   var admin = isAdmin();
   var risky = !isCC() && atRisk(t);
-  var h = '<article class="task-card'+(dim?' dim':'')+(risky?' at-risk':'')+'" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
+  var today = t.dateOffset===todayOffset();
+  var h = '<article class="task-card'+(dim?' dim':'')+(risky?' at-risk':'')+(today?' today-card':'')+'" style="--edge:'+m.color+';--tint:'+m.tint+';" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
     '<div class="bar" style="background:'+m.color+';"></div><div class="card-top"><div class="card-type"><div class="card-ic" style="background:'+m.tint+';">'+pathIc(m.iconPath,14,m.color)+'</div>'+
     '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
@@ -2430,7 +2413,7 @@ function renderTaskCard(t){
     (risky ? '<span class="risk-badge">محتاجة تدخل</span>' : '')+
     (t.seriesId ? '<span class="rep-badge" title="تتكرر '+esc(taskSeriesText(t))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
-    '<div class="book-nums"><span>الحجز الفعلي <b style="color:'+m.color+';">'+booked+'</b></span><span>الكامل <b>'+goal+'</b></span></div>'+
+    '<div class="book-nums"><span>حجز <b style="color:'+m.color+';">'+booked+'</b> من <b>'+goal+'</b></span></div>'+
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
   if (t.dateOffset > todayOffset()){
     if ((t.standby||[]).length) h += '<div class="candidates-line">احتياطي '+t.standby.length+'</div>';
