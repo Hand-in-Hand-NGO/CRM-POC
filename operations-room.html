@@ -117,6 +117,9 @@
     .calendar-grid{display:flex;gap:0;padding:16px 22px 40px;align-items:flex-start;}
     .day-col{flex:1 1 0;min-width:0;border-right:1px solid var(--border);padding:0 9px;transition:background .12s ease;}
     .day-col:first-child{border-right:none;}
+    .day-col.is-today{background:#eef4ff;border-radius:12px;box-shadow:inset 0 0 0 2px #93b8ff;padding-top:8px;margin-top:-8px;padding-bottom:8px;border-right-color:transparent;}
+    .day-col.is-today + .day-col{border-right-color:transparent;}
+    .day-col.is-today .day-num{color:var(--brand-meas);}
     .day-col.drop-hot .day-body{background:#eef4ff;border-color:#93b8ff;}
     .day-header{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px;}
     .day-header-left{display:flex;align-items:center;gap:7px;}
@@ -2607,7 +2610,7 @@ function renderWeek(){
   for (var i=0;i<7;i++){
     var off = S.weekOffset*7 + i, d = dateOf(off), isToday = off===todayOffset();
     var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
-    h += '<section class="day-col" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
+    h += '<section class="day-col'+(off===todayOffset()?' is-today':'')+'" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
       '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
       (isAdmin() && off >= todayOffset() ? '<span class="day-add-wrap"><button class="day-add" title="إضافة حجز لهذا اليوم"'+A('openCreateDay', off)+'>+</button>'+
         (S.dayMenu===off ? '<span class="day-menu">'+Object.keys(TASK_TYPES).map(function(k){
@@ -2652,7 +2655,7 @@ function renderTaskCard(t){
   var admin = isAdmin();
   var risky = !isCC() && atRisk(t);
   var today = t.dateOffset===todayOffset();
-  var h = '<article class="task-card'+(dim?' dim':'')+(t.status==='draft'?' draft':'')+(risky?' at-risk':'')+(today?' today-card':'')+'" style="--edge:'+m.color+';--tint:'+m.tint+';" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
+  var h = '<article class="task-card'+(dim?' dim':'')+(t.status==='draft'?' draft':'')+(risky?' at-risk':'')+'" style="--edge:'+m.color+';--tint:'+m.tint+';" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
     '<div class="bar" style="background:'+m.color+';"></div><div class="card-top"><div class="card-type"><div class="card-ic" style="background:'+m.tint+';">'+pathIc(m.iconPath,14,m.color)+'</div>'+
     '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
