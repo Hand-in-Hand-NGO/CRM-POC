@@ -2817,8 +2817,7 @@ function renderAgentFocus(){
   if (tabs.length > 1) h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return '<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
   if (S.agentTab==='committee') return h + renderCommittee() + '</div>';
-  if (canDo(S.agentId, 'inbound')) h += renderInbound();
-  if (S.inbound.pick) return h + renderInboundCase() + '</div>';
+  if (S.agentTab==='inbound') return h + renderInbound() + (S.inbound.pick ? renderInboundCase() : '') + '</div>';
   if (S.justConfirmed) return h + renderConfirmedCard(S.justConfirmed) + '</div>';
   if (confNow.length) return h + renderConfirmCard(confNow[0], conf.length) + '</div>';
   if (!seq.length){
@@ -3808,7 +3807,8 @@ function renderCommittee(){
   return h;
 }
 function agentTabs(){
-  var me = S.agentId, tabs = [['calls','مكالماتي']];
+  var me = S.agentId, tabs = [['calls','الحجز']];
+  if (canDo(me, 'inbound')) tabs.push(['inbound','مكالمة واردة']);
   if (canDo(me, 'newCase')) tabs.push(['newCase','إضافة حالة جديدة']);
   if (canDo(me, 'committee') || committeeFor(me).length) tabs.push(['committee','تبليغ اللجنة', committeeFor(me).filter(function(k){ return k.status!=='notified'; }).length]);
   return tabs;
