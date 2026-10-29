@@ -1990,14 +1990,15 @@ var ACT = {
     render();
   },
   setTaskOwner: function(v){
-    var t = findTask(S.detailTaskId); if (!t) return;
+    var t = findTask(S.detailTaskId); if (!t || !isSupervisor()) return;
     t.owner = v || null;
     var n = autoAssign(t, true);
-    audit(v ? 'توكيل المهمة لموظف' : 'إلغاء توكيل المهمة', t, v ? agentName(v) : 'توزيع على كل الموظفين');
+    audit(v ? 'إسناد الحجز لموظف' : 'إلغاء إسناد الحجز', t, v ? agentName(v) : 'توزيع على كل الموظفين');
     toast(v ? 'المهمة كلها بقت مع ' + agentName(v) + (n ? ' (' + n + ' حالة)' : '') : 'الحالات اتوزعت على كل الموظفين');
     render();
   },
   assignCase: function(v, key){
+    if (!isSupervisor()) return;
     var p = key.split('|'); var t = findTask(p[0]); if (!t) return;
     if (v) t.assignee[p[1]] = v; else delete t.assignee[p[1]];
     audit('تغيير الموظف المسؤول', t, (caseById(p[1])||{}).name + ' ← ' + agentName(v));
@@ -2861,8 +2862,8 @@ function renderCreate(){
     var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
     h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
       ' <span class="field-hint" style="margin:0;">('+t.candidateIds.length+' · مفتوحة '+nOpen+')</span></button></div>';
-    if (canAssign()){
-      h += '<div class="owner-row"><label>'+ic('user',13)+' الموظف المسؤول عن المهمة</label><select class="filter-select" data-change="setTaskOwner">'+
+    if (isSupervisor()){
+      h += '<div class="owner-row"><label>'+ic('user',13)+' إسناد الحجز</label><select class="filter-select" data-change="setTaskOwner">'+
         '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
     }
   } else {
@@ -3049,7 +3050,7 @@ function renderCaseRow(t, cid){
   h += '<span class="case-code" dir="ltr">'+c.code+'</span><span class="case-name">'+esc(c.name)+'</span>'+(isPrio ? '<span class="prio-badge">أولوية اتصال</span>' : '')+noShowBadge(cid)+'</div>'+
     '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+statusTag(st)+'</div>';
   h += '<div class="case-meta">'+phoneChip(c)+'<span class="meta-sep">|</span>';
-  if (canAssign() && t.status==='published' && open){
+  if (isSupervisor() && t.status==='published' && open){
     h += '<span class="assignee">'+ic('user',11)+'<select class="mini-select" data-change="assignCase" data-a="'+t.id+'|'+cid+'"><option value="">غير مسندة</option>'+
       AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.assignee[cid]===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join('')+'</select></span>';
   } else if (t.status==='published'){
