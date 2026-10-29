@@ -712,6 +712,14 @@
     .mode-seg .seg-btn{padding:0 12px;white-space:nowrap;}
     /* ---- confirmations, standby, early warning, audit, ops dashboard ---- */
     .plan-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .count-box{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px;background:var(--surface-alt);}
+    .count-box.over{border-color:#f3b9c3;}
+    .count-box .num-input{background:#fff;}
+    .hist-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:8px 10px;background:#eef4ff;border-radius:8px;font-size:12.5px;color:var(--text-muted);}
+    .hist-lbl{font-weight:700;}
+    .hist-val b{font-size:15px;color:var(--text);}
+    .hist-val.calc b{color:#2563eb;}
+    .cap-line{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
     .edit-progress{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
     .edit-progress .progress-track{margin:0;}
     .ro-form{pointer-events:none;opacity:.8;}
@@ -1571,10 +1579,10 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
     task('t2','measurement',2,'convoy','أسوان',8,['C-1003','C-1005','C-1008','C-1011','C-1037'],'published',{meetingPoint:'مستشفى أسوان الجامعي – البوابة الرئيسية', mapUrl:'https://maps.google.com/?q=Aswan+University+Hospital', meetingTime:'09:00', convoyNotes:'الحالات تحضر معاها البطاقة وأي تقارير طبية. الأطفال لازم يكون معاهم ولي أمر.'}),
     task('t3','newDelivery',1,'org',null,6,['C-1002','C-1006','C-1009','C-1018','C-1022'],'published'),
     task('t9','maintDelivery',1,'org',null,16,['C-1029','C-1012','C-1014','C-1021','C-1039'],'published'),
-    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1031','C-1035'],'published',{meetingPoint:'مركز شباب سوهاج', mapUrl:'https://maps.google.com/?q=Sohag+Youth+Center', meetingTime:'10:00', convoyNotes:''}),
+    task('t4','maintDelivery',3,'convoy','سوهاج',10,['C-1004','C-1031','C-1035'],'draft',{meetingPoint:'مركز شباب سوهاج', mapUrl:'https://maps.google.com/?q=Sohag+Youth+Center', meetingTime:'10:00', convoyNotes:''}),
     task('t5','maintEval',4,'org',null,5,['C-1043','C-1044','C-1046'],'published'),
     task('t6','newDelivery',-4,'org',null,5,['C-1028','C-1038'],'published'),
-    task('t7','measurement',9,'convoy','المنيا',10,['C-1027'],'published'),
+    task('t7','measurement',9,'convoy','المنيا',10,['C-1027'],'draft'),
     task('t8','maintEval',-10,'org',null,4,['C-1041','C-1042'],'published'),
   ];
   var b = S.bookings;
@@ -1601,7 +1609,7 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.tasks.slice().reverse().forEach(function(t, k){
     S.audit.push({at:now() - (3+k)*86400000, who:'أوبريشن', action:'إنشاء مهمة', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:t.target + ' حجز'});
   });
-  [].forEach(function(t){
+  S.tasks.filter(function(t){ return t.status==='published'; }).forEach(function(t){
     S.audit.unshift({at:t.publishedAt, who:'أوبريشن', action:'نشر', tid:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t) + ' – ' + dayLabel(t.dateOffset), detail:''});
   });
   S.audit.sort(function(a,b){ return b.at - a.at; });
@@ -1686,6 +1694,38 @@ var ACT = {
   },
 
   // ---------- publish ----------
+  // ---------- drafts / publish ----------
+  publishWeek: function(){
+    var r = weekRange(S.weekOffset);
+    var drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
+    if (!drafts.length) return;
+    S.overlay = 'confirm';
+    S.confirm = {
+      title:'نشر خطة الأسبوع', tone:'primary',
+      message:'هيتنشر ' + drafts.length + ' مهمة للكول سنتر وحالاتها هتتوزع على الموظفين.',
+      items: drafts.map(function(t){ return {label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset)}; }),
+      confirmLabel:'نشر الآن',
+      onConfirm:function(){
+        drafts.forEach(function(t){ publishOne(t); audit('نشر', t, 'نشر خطة الأسبوع'); });
+        S.overlay = null; S.confirm = null; toast('اتنشر ' + drafts.length + ' مهمة وبقت ظاهرة للكول سنتر'); render();
+      }
+    };
+    render();
+  },
+  publishTask: function(tid){
+    var t = findTask(tid); if (!t) return;
+    publishOne(t); audit('نشر', t); toast('اتنشرت المهمة وحالاتها اتوزعت على الموظفين'); render();
+  },
+  unpublishTask: function(tid){
+    var t = findTask(tid); if (!t) return;
+    S.overlay = 'confirm';
+    S.confirm = {title:'إرجاع المهمة لمسودة', tone:'warn',
+      message:'المهمة هتختفي من الكول سنتر لحد ما تتنشر تاني. الحجوزات وسجل المكالمات اللي تمت هيفضلوا محفوظين.',
+      confirmLabel:'إرجاع لمسودة', returnTo:'detail',
+      onConfirm:function(){ t.status = 'draft'; audit('إرجاع لمسودة', t); S.overlay = 'detail'; S.confirm = null; toast('المهمة رجعت مسودة'); render(); }};
+    render();
+  },
+
   // ---------- create drawer ----------
   closeCreate: function(){ S.overlay = null; S.createDraft = null; S.govDropdownOpen = false; render(); },
   setCreateLoc: function(loc){ S.createDraft.loc = loc; render(); },
@@ -1722,7 +1762,7 @@ var ACT = {
         id:'t'+Date.now()+'_'+i, type:d.type, dateOffset:off, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
         target:tg, mode:d.targetMode, attendTarget: d.targetMode==='attendance' ? draftAttend(d) : null, candidateIds: i===0 ? d.candidateIds.slice() : [], priority: i===0 ? Object.assign({}, d.priority||{}) : {}, callStatus:{}, assignee:{},
         standby:[], confirmCall: !!d.confirmCall, seriesId: series ? series.id : null, seriesLabel: series ? series.label : null, owner:null,
-        status:'published', publishedAt:null, publishedBy:null,
+        status:'draft', publishedAt:null, publishedBy:null,
         meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
         meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '', convoyNotes: d.loc==='convoy' ? (d.convoyNotes||'').trim() : '',
       };
@@ -1734,11 +1774,12 @@ var ACT = {
     var apply = function(){
       made.forEach(function(t){
         S.tasks.push(t);
-        publishOne(t);
-        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار ' + series.label : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : ''));
+        if (publish === '1') publishOne(t);
+        audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار ' + series.label : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : '') + (publish==='1' ? ' · نُشرت' : ' · مسودة'));
       });
       S.overlay = null; S.createDraft = null; S.confirm = null;
-      toast(made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة وظهرت للكول سنتر' : 'تم إنشاء المهمة وظهرت للكول سنتر');
+      toast(made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة' + (publish==='1' ? ' ونشرها' : ' كمسودات')
+        : publish==='1' ? 'تم إنشاء المهمة ونشرها للكول سنتر' : 'تم إنشاء المهمة كمسودة – مش هتظهر للكول سنتر قبل النشر');
       render();
     };
     if (!overDays.length){ apply(); return; }
@@ -2336,6 +2377,8 @@ function renderPlanActions(){
   var fn = fundedNew().length;
   if (fn) h += '<button class="btn btn-fund btn-sm"'+A('openFunded')+'>'+ic('send',13,'#fff')+' تمويل جديد ('+fn+')</button>';
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
+  var wr = weekRange(S.weekOffset), drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=wr[0] && t.dateOffset<=wr[1]; }).length;
+  if (drafts && S.viewMode==='week') h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر خطة الأسبوع ('+drafts+')</button>';
   return h + '</div>';
 }
 
@@ -2405,10 +2448,11 @@ function renderTaskCard(t){
   var admin = isAdmin();
   var risky = !isCC() && atRisk(t);
   var today = t.dateOffset===todayOffset();
-  var h = '<article class="task-card'+(dim?' dim':'')+(risky?' at-risk':'')+(today?' today-card':'')+'" style="--edge:'+m.color+';--tint:'+m.tint+';" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
+  var h = '<article class="task-card'+(dim?' dim':'')+(t.status==='draft'?' draft':'')+(risky?' at-risk':'')+(today?' today-card':'')+'" style="--edge:'+m.color+';--tint:'+m.tint+';" draggable="'+(admin?'true':'false')+'" data-drag-task="'+t.id+'"'+A('openDetail', t.id)+'>'+
     '<div class="bar" style="background:'+m.color+';"></div><div class="card-top"><div class="card-type"><div class="card-ic" style="background:'+m.tint+';">'+pathIc(m.iconPath,14,m.color)+'</div>'+
     '<span class="card-title">'+m.short+'</span></div><div class="card-badges">'+
     (admin && convoyMissing(t).length ? '<span class="draft-badge" style="background:#fceced;color:var(--danger);border-color:#f3b9c3;" title="ناقص: '+esc(convoyMissing(t).join('، '))+'">بيانات القافلة ناقصة</span>' : '')+
+    (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '')+
     (full ? '<span class="full-badge">تم اكتمال الحجز المطلوب</span>' : '')+
     (risky ? '<span class="risk-badge">محتاجة تدخل</span>' : '')+
     (t.seriesId ? '<span class="rep-badge" title="تتكرر '+esc(taskSeriesText(t))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
@@ -2444,7 +2488,7 @@ function renderMonth(){
       (over ? '<span title="تجاوز الطاقة الاستيعابية" class="cap-over">'+ic('alert',13)+'</span>' : '')+'</div><div class="month-dots">';
     tasks.slice(0,4).forEach(function(t){
       var c = TASK_TYPES[t.type].color;
-      h += '<span class="month-dot" style="'+'background:'+c+';'+'" title="'+esc(TASK_TYPES[t.type].short+' – '+locLabelFor(t))+'"></span>';
+      h += '<span class="month-dot" style="'+(t.status==='draft' ? 'border:1.5px solid '+c+';background:transparent;' : 'background:'+c+';')+'" title="'+esc(TASK_TYPES[t.type].short+' – '+locLabelFor(t))+'"></span>';
     });
     if (tasks.length>4) h += '<span class="month-more">+'+(tasks.length-4)+'</span>';
     h += '</div></div>';
@@ -2759,8 +2803,12 @@ function renderCreate(){
   var canCreate = target>0 && (d.loc==='org' || !!d.gov);
   var closeAct = edit ? 'closeDetail' : 'closeCreate';
   var head = edit
-    ? drawerHead(m, m.label, dayLabel(t.dateOffset) + (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر '+esc(taskSeriesText(t))+'</span>' : ''),
-        isAdmin() ? '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>' : '', closeAct)
+    ? drawerHead(m, m.label, dayLabel(t.dateOffset) + ' · ' + (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '<span class="pub-badge">منشورة</span>') +
+        (t.seriesId ? ' · <span class="rep-txt">'+ic('history',11)+' تتكرر '+esc(taskSeriesText(t))+'</span>' : ''),
+        isAdmin() ? (t.status==='draft'
+            ? '<button class="btn btn-primary btn-sm"'+A('publishTask', t.id)+'>'+ic('send',12,'#fff')+' نشر</button>'
+            : '<button class="icon-btn" title="إرجاع لمسودة"'+A('unpublishTask', t.id)+'>'+ic('undo',15)+'</button>')+
+          '<button class="icon-btn danger" title="حذف المهمة"'+A('deleteTask')+'>'+ic('trash',15)+'</button>' : '', closeAct)
     : drawerHead(m, 'إنشاء مهمة جديدة', m.label + ' · ' + dayLabel(d.dateOffset), '', closeAct);
   var h = '<div class="scrim"'+A(closeAct)+'></div><aside class="drawer">' + head;
   h += '<div class="drawer-body" data-scroll="'+(edit ? 'detail' : 'create')+'">';
@@ -2786,53 +2834,29 @@ function renderCreate(){
     h += '</div></div>';
     h += convoyFields(d, 'setConvoyField', 'c');
   }
-  h += '<div class="field"><label class="field-label">'+(attMode ? 'عدد الحالات المطلوب حضورها' : 'عدد الحجوزات')+'</label><div class="target-mode-row">'+
+  // ---- one box: the count, the day's capacity after it, and the historical rate
+  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target, mode:d.targetMode, attendTarget: attMode ? draftAttend(d) : null};
+  var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]));
+  var anyOver = loads.some(function(x){ return x.load > x.cap; });
+  h += '<div class="count-box'+(anyOver?' over':'')+'"><label class="field-label">'+(attMode ? 'عدد الحالات المطلوب حضورها' : 'عدد الحجوزات')+'</label><div class="target-mode-row">'+
     (attMode
       ? '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.attend)+'" data-k="attend" data-input="setCreateAttend"/>'
       : '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>')+
     '<div class="seg mode-seg"><button class="seg-btn'+(attMode?' on':'')+'"'+A('setCreateMode','attendance')+'>الحضور</button>'+
     '<button class="seg-btn'+(!attMode?' on':'')+'"'+A('setCreateMode','booking')+'>الحجز</button></div></div>';
-  // capacity after adding
-  var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target, mode:d.targetMode, attendTarget: attMode ? draftAttend(d) : null};
-  var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]));
-  var anyOver = loads.some(function(x){ return x.load > x.cap; });
-  h += '<div class="cap-box'+(anyOver?' over':'')+'" style="margin-top:10px;margin-bottom:0;"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+(edit ? '' : ' بعد إضافة المهمة')+
-    (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
-  h += '';
   if (target>0){
-    var r = rateFor(d.type);
-    h += '<div class="reco-box">'+ic('spark',13,'#2563eb')+(attMode
-      ? ' عشان يحضر <b>'+draftAttend(d)+'</b> محتاج تحجز <b>'+target+'</b> حالة'
-      : ' <b>'+target+'</b> حجز · متوقع يحضر <b>'+expectedAttend(d.type, target)+'</b>')+
-      '<div class="calls-rate">متوسط الحضور اليومي '+Math.round(r.att*100)+'%</div></div>';
+    // the arrow goes from the number you typed to the one worked out from the historical attendance rate
+    var r = rateFor(d.type), attN = attMode ? draftAttend(d) : expectedAttend(d.type, target);
+    var arrow = attMode ? pathIc('M5 12h14M13 6l6 6-6 6',15,'#2563eb',2.2) : pathIc('M19 12H5M11 6l-6 6 6 6',15,'#2563eb',2.2);
+    h += '<div class="hist-line"><span class="hist-lbl">النسب التاريخية ('+Math.round(r.att*100)+'%):</span>'+
+      '<span class="hist-val'+(attMode?' calc':'')+'">حجز <b>'+target+'</b></span>'+arrow+'<span class="hist-val'+(attMode?'':' calc')+'">حضور <b>'+attN+'</b></span></div>';
   }
+  h += '<div class="cap-line"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+(edit ? '' : ' بعد إضافة المهمة')+
+    (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
   h += '</div>';
-  var rp = d.repeat, offs = repeatOffsets(d);
-  if (!edit){
-  h += '<div class="field"><label class="field-label">التكرار</label><div class="seg">'+
-    '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
-    '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
-    '<button class="seg-btn'+(rp.on && rp.freq==='month'?' on':'')+'"'+A('setRepeat','month')+'>تتكرر شهريًا</button></div>';
-  if (rp.on && rp.freq==='month'){
-    h += '<div class="wd-row">'+
-      '<button class="wd-chip'+(rp.monthBy==='date'?' on':'')+'"'+A('setRepeatMonthBy','date')+'>'+esc(monthRepeatLabel(d.dateOffset,'date'))+'</button>'+
-      '<button class="wd-chip'+(rp.monthBy==='weekday'?' on':'')+'"'+A('setRepeatMonthBy','weekday')+'>'+esc(monthRepeatLabel(d.dateOffset,'weekday'))+'</button></div>'+
-      '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>'+
-      '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، ')+'</span></div>'+
-      (d.candidateIds.length ? '<div class="field-hint">الحالات المرشحة هتتضاف لأول مهمة بس</div>' : '');
-  }
-  if (rp.on && rp.freq==='week'){
-    h += '<div class="wd-row">'+[0,1,2,3,4,5,6].map(function(wd){
-      return '<button class="wd-chip'+(rp.days.indexOf(wd)!==-1?' on':'')+'"'+A('toggleRepeatDay', wd)+'>'+WEEKDAYS_AR[wd]+'</button>';
-    }).join('')+'</div>'+
-    '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.weeks)+'" data-k="rep-weeks" data-input="setRepeatWeeks"/><span>أسابيع</span>'+
-    '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة'+(offs.length ? ' · من '+shortDate(offs[0])+' لـ '+shortDate(offs[offs.length-1]) : '')+'</span></div>'+
-    (d.candidateIds.length ? '<div class="field-hint">الحالات المرشحة هتتضاف لأول مهمة بس</div>' : '');
-  }
-  h += '</div>';
-  }
-  h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
-  h += '</div>';   // end of the (read-only for non admins) form
+  h += '</div>';   // end of the (read-only for non admins) part
+
+  // ---- cases
   if (edit){
     var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
     h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
@@ -2848,11 +2872,41 @@ function renderCreate(){
     if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>'+ic('users',13)+' الحالات</button>';
     h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
+
+  // ---- repeat (only when creating) + day-before confirmation
+  h += '<div class="'+(ro ? 'ro-form' : '')+'">';
+  var rp = d.repeat, offs = repeatOffsets(d);
+  if (!edit){
+  h += '<div class="field"><label class="field-label">التكرار</label><div class="seg">'+
+    '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
+    '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
+    '<button class="seg-btn'+(rp.on && rp.freq==='month'?' on':'')+'"'+A('setRepeat','month')+'>تتكرر شهريًا</button></div>';
+  if (rp.on && rp.freq==='month'){
+    h += '<div class="wd-row">'+
+      '<button class="wd-chip'+(rp.monthBy==='date'?' on':'')+'"'+A('setRepeatMonthBy','date')+'>'+esc(monthRepeatLabel(d.dateOffset,'date'))+'</button>'+
+      '<button class="wd-chip'+(rp.monthBy==='weekday'?' on':'')+'"'+A('setRepeatMonthBy','weekday')+'>'+esc(monthRepeatLabel(d.dateOffset,'weekday'))+'</button></div>'+
+      '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>'+
+      '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، ')+'</span></div>'+
+      (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
+  }
+  if (rp.on && rp.freq==='week'){
+    h += '<div class="wd-row">'+[0,1,2,3,4,5,6].map(function(wd){
+      return '<button class="wd-chip'+(rp.days.indexOf(wd)!==-1?' on':'')+'"'+A('toggleRepeatDay', wd)+'>'+WEEKDAYS_AR[wd]+'</button>';
+    }).join('')+'</div>'+
+    '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.weeks)+'" data-k="rep-weeks" data-input="setRepeatWeeks"/><span>أسابيع</span>'+
+    '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة'+(offs.length ? ' · من '+shortDate(offs[0])+' لـ '+shortDate(offs[offs.length-1]) : '')+'</span></div>'+
+    (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
+  }
+  h += '</div>';
+  }
+  h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
+  h += '</div>';
   h += '</div><div class="drawer-foot">'+
     (edit
       ? (isAdmin() ? '<button class="btn btn-primary"'+A('saveTaskEdit')+(canCreate?'':' disabled')+'>'+ic('check',13,'#fff',2.4)+' حفظ التعديلات</button>' : '')+
         '<button class="btn btn-secondary"'+A('closeDetail')+'>إغلاق</button>'
-      : '<button class="btn btn-primary"'+A('createTask')+(canCreate?'':' disabled')+'>'+ic('send',13,'#fff')+' إنشاء المهمة</button>'+
+      : '<button class="btn btn-primary"'+A('createTask','0')+(canCreate?'':' disabled')+'>إنشاء كمسودة</button>'+
+        '<button class="btn btn-secondary"'+A('createTask','1')+(canCreate?'':' disabled')+'>'+ic('send',13)+' إنشاء ونشر</button>'+
         '<button class="btn btn-secondary"'+A('closeCreate')+'>إلغاء</button>')+'</div></aside>';
   return h;
 }
@@ -3135,7 +3189,7 @@ function fundOpsStatus(c){
   }
   var in_ = S.tasks.filter(function(t){ return t.type===c.stage && t.dateOffset>=tOff && t.candidateIds.indexOf(c.id)!==-1; })
     .sort(function(a,b){ return a.dateOffset-b.dateOffset; })[0];
-  if (in_) return {status:'scheduled', day:isoDate(in_.dateOffset), tid:in_.id, type:in_.type};
+  if (in_) return {status:'scheduled', day:isoDate(in_.dateOffset), tid:in_.id, type:in_.type, draft: in_.status==='draft'};
   return {status:'new'};
 }
 function syncFundingOps(){
