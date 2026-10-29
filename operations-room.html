@@ -556,6 +556,22 @@
     .q-empty{border:1px dashed var(--border-strong);border-radius:11px;padding:22px;text-align:center;color:var(--text-faint);font-size:12.5px;background:var(--surface);}
     .side-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:12px;}
     .side-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+    .ag-card{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--surface-alt);}
+    .ag-card:last-child{margin-bottom:0;}
+    .ag-head{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+    .ag-av{width:30px;height:30px;border-radius:50%;background:var(--brand-meas-tint);color:var(--brand-meas);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .ag-id{flex:1;min-width:0;}
+    .ag-id b{display:block;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ag-bar{height:4px;border-radius:4px;background:var(--neutral-tint);margin-top:5px;overflow:hidden;}
+    .ag-bar i{display:block;height:100%;background:var(--brand-meas);border-radius:4px;}
+    .ag-rate{font-size:11px;font-weight:800;color:var(--success);background:var(--success-tint);border-radius:20px;padding:2px 8px;flex-shrink:0;}
+    .ag-rate.none{color:var(--text-faint);background:var(--neutral-tint);}
+    .ag-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+    .ag-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 2px;text-align:center;}
+    .ag-stat b{display:block;font-size:15px;font-weight:800;color:var(--text);line-height:1.3;}
+    .ag-stat span{display:block;font-size:10.5px;color:var(--text-muted);}
+    .ag-stat.warn b{color:var(--warning);}
+    .ag-stat.ok b{color:var(--success);}
     .agent-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;padding:7px 0;border-bottom:1px solid var(--neutral-tint);font-size:12px;}
     .agent-row:last-child{border-bottom:none;}
     .agent-row .nums{display:flex;gap:10px;color:var(--text-muted);font-size:11.5px;}
@@ -2715,12 +2731,20 @@ function renderLists(){
   h += '<div>';
   if (!isCC()){
     var loads = agentLoads();
+    var maxLoad = Math.max.apply(null, AGENTS.map(function(a){ return loads[a.id] || 0; }).concat([1]));
     h += '<div class="side-card"><div class="side-title">'+ic('users',14)+'توزيع الحالات على الموظفين</div>';
     AGENTS.forEach(function(a){
       var due = queueItems(a.id).filter(function(x){ return x.group==='due'; }).length;
       var calls = S.callLog.filter(function(l){ return l.agentId===a.id && isSameDate(new Date(l.at), today); });
       var bk = calls.filter(function(l){ return l.outcome==='booked' || l.outcome==='bookedAlt'; }).length;
-      h += '<div class="agent-row"><b>'+esc(a.name)+'</b><span class="nums"><span>مفتوحة <b>'+loads[a.id]+'</b></span><span>مستحقة <b>'+due+'</b></span><span>مكالمات <b>'+calls.length+'</b></span><span>حجز <b>'+bk+'</b></span></span></div>';
+      var open = loads[a.id] || 0, rate = calls.length ? Math.round(bk / calls.length * 100) : null;
+      var stat = function(v, l, cls){ return '<div class="ag-stat'+(cls?' '+cls:'')+'"><b>'+v+'</b><span>'+l+'</span></div>'; };
+      h += '<div class="ag-card">'+
+        '<div class="ag-head"><span class="ag-av">'+esc(a.name.trim().charAt(0))+'</span>'+
+          '<div class="ag-id"><b>'+esc(a.name)+'</b><div class="ag-bar"><i style="width:'+Math.round(open/maxLoad*100)+'%"></i></div></div>'+
+          '<span class="ag-rate'+(!rate?' none':'')+'" title="نسبة الحجز من مكالمات النهارده">'+(rate===null?'—':'حجز '+rate+'%')+'</span></div>'+
+        '<div class="ag-stats">'+stat(open,'مفتوحة')+stat(due,'مستحقة',due?'warn':'')+stat(calls.length,'مكالمات')+stat(bk,'حجز',bk?'ok':'')+'</div>'+
+      '</div>';
     });
     h += '</div>';
   }
