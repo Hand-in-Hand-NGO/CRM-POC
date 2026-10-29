@@ -822,6 +822,11 @@
     .wd-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
     .wd-chip{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 10px;font-family:inherit;font-size:12px;cursor:pointer;color:var(--text-muted);}
     .wd-chip.on{background:#eef4ff;border-color:#93b8ff;color:#1d4ed8;font-weight:700;}
+    .more-btn{display:flex;align-items:center;gap:7px;width:100%;border:1px dashed var(--border-strong);background:var(--surface);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--brand-meas);cursor:pointer;margin-bottom:14px;}
+    .more-btn:hover{background:#f7faff;border-color:#93b8ff;}
+    .more-btn.on{border-style:solid;background:#f7faff;}
+    .more-sum{margin-inline-start:auto;font-size:11.5px;font-weight:500;color:var(--text-muted);}
+    .more-body{padding:2px 2px 0;}
     .repeat-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;flex-wrap:wrap;}
     .confirm-chip{background:#e9f7ee;color:#15803d;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;display:inline-flex;gap:4px;align-items:center;}
     .confirm-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
@@ -1906,6 +1911,7 @@ var ACT = {
     render();
   },
   setRepeatWeeks: function(v){ S.createDraft.repeat.weeks = v; render(); },
+  toggleCreateMore: function(){ S.createMore = !S.createMore; render(); },
   toggleCreateConfirm: function(){ S.createDraft.confirmCall = !S.createDraft.confirmCall; render(); },
   // ---------- day-before confirmation ----------
   confirmResult: function(key, result){
@@ -3033,10 +3039,6 @@ function renderCreate(){
   h += '<div class="drawer-body" data-scroll="'+(edit ? 'detail' : 'create')+'">';
   var bk = edit ? taskBookedCount(t) : 0;
   h += '<div class="'+(ro ? 'ro-form' : '')+'">';
-  if (edit){
-    h += '<div class="field"><label class="field-label">اليوم</label><input class="text-input" type="date" style="max-width:200px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(d.dateOffset)+'" data-k="edit-date" data-change="setEditDate"'+(bk ? ' disabled' : '')+'/>'+
-      (bk ? '<div class="field-hint">فيه '+bk+' حالة محجوزة – مينفعش تتنقل ليوم تاني</div>' : '')+'</div>';
-  }
   if (d.fundCompany) h += '<div class="fund-note">'+ic('send',13,'#0093e9')+' حالات ممولة من <b>'+esc(d.fundCompany)+'</b> ('+d.candidateIds.length+' حالة) – اختار اليوم والمكان</div>';
   h += '<div class="field"><label class="field-label">مكان الزيارة</label><div class="seg">'+
     '<button class="seg-btn'+(d.loc==='org'?' on':'')+'"'+A('setCreateLoc','org')+'>داخل المؤسسة</button>'+
@@ -3067,21 +3069,27 @@ function renderCreate(){
     // the arrow goes from the number you typed to the one worked out from the historical attendance rate
     var r = rateFor(d.type), attN = attMode ? draftAttend(d) : expectedAttend(d.type, target);
     var arrow = attMode ? pathIc('M5 12h14M13 6l6 6-6 6',15,'#2563eb',2.2) : pathIc('M19 12H5M11 6l-6 6 6 6',15,'#2563eb',2.2);
-    h += '<div class="hist-line"><span class="hist-lbl">النسب التاريخية ('+Math.round(r.att*100)+'%):</span>'+
+    h += '<div class="hist-line"><span class="hist-lbl">النسب التاريخية:</span>'+
       '<span class="hist-val'+(attMode?' calc':'')+'">حجز <b>'+target+'</b></span>'+arrow+'<span class="hist-val'+(attMode?'':' calc')+'">حضور <b>'+attN+'</b></span></div>';
   }
-  h += '<div class="cap-line"><div class="cap-box-title">'+ic('gauge',13)+' طاقة يوم '+dayLabel(d.dateOffset)+(edit ? '' : ' بعد إضافة المهمة')+
+  h += '<div class="cap-line"><div class="cap-box-title">'+ic('gauge',13)+' الطاقة الاستيعابية لليوم'+(edit ? '' : ' بعد إضافة المهمة')+
     (anyOver ? ' <span class="cap-over">– يوجد تجاوز</span>' : '')+'</div>'+capTable(loads)+'</div>';
   h += '</div>';
   h += '</div>';   // end of the (read-only for non admins) part
 
-  // ---- cases
+  // ---- cases, repeat and day-before confirmation sit under «المزيد»
+  var hMain = h, moreSum = [];
+  h = '';
   if (edit){
     var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
     h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
       ' <span class="field-hint" style="margin:0;">('+t.candidateIds.length+' · مفتوحة '+nOpen+')</span></button></div>';
+    if (t.candidateIds.length) moreSum.push(t.candidateIds.length + ' حالة');
+  } else if (d.candidateIds.length) moreSum.push(d.candidateIds.length + ' حالة');
+  var ownerRow = '';
+  if (edit){
     if (isSupervisor()){
-      h += '<div class="owner-row"><label>'+ic('user',13)+' إسناد الحجز</label><select class="filter-select" data-change="setTaskOwner">'+
+      ownerRow = '<div class="owner-row"><label>'+ic('user',13)+' إسناد الحجز</label><select class="filter-select" data-change="setTaskOwner">'+
         '<option value="">توزيع على كل الموظفين</option>'+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(t.owner===a.id?' selected':'')+'>'+esc(a.name)+' – المهمة كلها</option>'; }).join('')+'</select></div>';
     }
   } else {
@@ -3120,6 +3128,13 @@ function renderCreate(){
   }
   h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
   h += '</div>';
+  if (rp.on) moreSum.push('متكررة');
+  if (d.confirmCall) moreSum.push('تأكيد الحضور');
+  var moreBody = h;
+  h = hMain + ownerRow + '<button class="more-btn'+(S.createMore?' on':'')+'"'+A('toggleCreateMore')+'>'+
+    pathIc(S.createMore ? 'M5 12h14' : 'M12 5v14M5 12h14',14,null,2.4)+'المزيد'+
+    (moreSum.length && !S.createMore ? '<span class="more-sum">'+moreSum.join(' · ')+'</span>' : '')+'</button>'+
+    (S.createMore ? '<div class="more-body">'+moreBody+'</div>' : '');
   h += '</div><div class="drawer-foot">'+
     (edit
       ? (isAdmin() ? '<button class="btn btn-primary"'+A('saveTaskEdit')+(canCreate?'':' disabled')+'>'+ic('check',13,'#fff',2.4)+' حفظ التعديلات</button>' : '')+
