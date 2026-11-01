@@ -97,6 +97,10 @@
     .palette-hint{font-size:11.5px;color:var(--text-faint);}
     .palette-chips{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
     .palette-spacer{flex:1;}
+    .forever-btn{border:1px solid var(--border-strong);background:var(--surface);border-radius:20px;padding:0 14px;font:inherit;font-size:20px;line-height:28px;font-weight:700;cursor:pointer;color:var(--text);}
+    .forever-btn.on{background:var(--brand-meas);border-color:var(--brand-meas);color:#fff;}
+    .series-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:8px 12px;}
+    .series-row .btn{margin-inline-start:auto;}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -1218,7 +1222,7 @@ var S = {
   audit:[], confirmations:{}, auditQ:'', messages:[],
   routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
-  opsHolds:{}, holdDlg:null,
+  opsHolds:{}, holdDlg:null, series:{},
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1387,12 +1391,14 @@ function riskTasks(){ return S.tasks.filter(atRisk).sort(function(a,b){ return a
 // ---------- recurring tasks ----------
 function weekdayOf(off){ return dateOf(off).getDay(); }
 var ORDINALS_AR = ['أول','تاني','تالت','رابع','آخر'];
-function repeatOffsets(d){
+// forever series: dates are generated up to `until` (the rest is added as the calendar moves forward)
+function repeatOffsets(d, until){
   var r = d.repeat;
   if (!r || !r.on) return [d.dateOffset];
+  if (r.forever && until==null) until = d.dateOffset + (r.freq==='month' ? 183 : 55);
   if (r.freq==='month'){
     // same date every month, or the same weekday of the month (e.g. 2nd Tuesday; 5th = last)
-    var base = dateOf(d.dateOffset), months = Math.max(1, Math.min(24, parseInt(r.months,10)||1)), out = [];
+    var base = dateOf(d.dateOffset), months = r.forever ? Math.ceil((until - d.dateOffset)/28) + 1 : Math.max(1, Math.min(24, parseInt(r.months,10)||1)), out = [];
     var nth = Math.ceil(base.getDate()/7), wd = base.getDay();
     for (var m = 0; m < months; m++){
       var y = base.getFullYear(), mo = base.getMonth() + m, last = new Date(y, mo+1, 0).getDate(), day;
@@ -1403,11 +1409,11 @@ function repeatOffsets(d){
       } else day = Math.min(base.getDate(), last);
       out.push(daysBetween(BASE_SUNDAY, new Date(y, mo, day)));
     }
-    return out;
+    return r.forever ? out.filter(function(o){ return o <= until; }) : out;
   }
   if (!r.days.length) return [d.dateOffset];
-  var start = d.dateOffset - weekdayOf(d.dateOffset), weeks = Math.max(1, Math.min(26, parseInt(r.weeks,10)||1)), res = [];
-  for (var w = 0; w < weeks; w++) r.days.forEach(function(x){ var off = start + w*7 + x; if (off >= d.dateOffset) res.push(off); });
+  var start = d.dateOffset - weekdayOf(d.dateOffset), weeks = r.forever ? Math.ceil((until - start + 1)/7) : Math.max(1, Math.min(26, parseInt(r.weeks,10)||1)), res = [];
+  for (var w = 0; w < weeks; w++) r.days.forEach(function(x){ var off = start + w*7 + x; if (off >= d.dateOffset && (!r.forever || off <= until)) res.push(off); });
   return res.sort(function(a,b){ return a-b; });
 }
 function repeatLabel(days){ return days.slice().sort().map(function(wd){ return WEEKDAYS_AR[wd]; }).join(' و'); }
@@ -1415,7 +1421,24 @@ function monthRepeatLabel(off, by){
   var dt = dateOf(off), nth = Math.ceil(dt.getDate()/7);
   return by==='weekday' ? (ORDINALS_AR[Math.min(nth,5)-1] + ' ' + WEEKDAYS_AR[dt.getDay()] + ' في الشهر') : ('يوم ' + dt.getDate() + ' من كل شهر');
 }
-function seriesText(d){ return d.repeat.freq==='month' ? monthRepeatLabel(d.dateOffset, d.repeat.monthBy) : 'كل ' + repeatLabel(d.repeat.days); }
+function seriesText(d){ return (d.repeat.freq==='month' ? monthRepeatLabel(d.dateOffset, d.repeat.monthBy) : 'كل ' + repeatLabel(d.repeat.days)) + (d.repeat.forever ? ' · ∞' : ''); }
+// keep forever series filled up to what the calendar shows (+ a few weeks)
+function viewEndOffset(){
+  if (S.viewMode==='month'){ var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset+1, 0); return daysBetween(BASE_SUNDAY, md) + 7; }
+  return S.weekOffset*7 + 13;
+}
+function extendSeries(){
+  var until = Math.max(viewEndOffset(), todayOffset() + 55);
+  Object.keys(S.series).forEach(function(id){
+    var sr = S.series[id]; if (!sr.forever || sr.until >= until) return;
+    repeatOffsets({dateOffset:sr.start, repeat:sr.repeat}, until).forEach(function(off){
+      if (off <= sr.until) return;
+      var t = Object.assign({}, sr.tpl, {id:'t'+Date.now()+'_'+off, dateOffset:off, candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], status:'draft', publishedAt:null, publishedBy:null});
+      S.tasks.push(t); if (sr.publish) publishOne(t);
+    });
+    sr.until = until;
+  });
+}
 function taskSeriesText(t){ return t.seriesLabel || (t.seriesDays ? 'كل ' + repeatLabel(t.seriesDays) : ''); }
 
 function alternativeTasksFor(t, cid){
@@ -1888,7 +1911,7 @@ var ACT = {
     var target = draftTarget(d);
     if (target<=0 || (d.loc==='convoy' && !d.gov)) return;
     var offs = repeatOffsets(d); if (!offs.length) return;
-    var series = offs.length > 1 ? {id:'s'+Date.now(), label:seriesText(d)} : null;
+    var series = offs.length > 1 || (d.repeat.on && d.repeat.forever) ? {id:'s'+Date.now(), label:seriesText(d)} : null;
     var made = [], pool = S.tasks.slice();
     offs.forEach(function(off, i){
       var tg = target;
@@ -1906,13 +1929,20 @@ var ACT = {
     var after = S.tasks.concat(made), overDays = [];
     made.forEach(function(t){ if (overDays.indexOf(t.dateOffset)===-1 && newOverloads(t.dateOffset, after).length) overDays.push(t.dateOffset); });
     var apply = function(){
+      if (series && d.repeat.forever){
+        var f = made[0];
+        S.series[series.id] = {forever:true, start:d.dateOffset, repeat:JSON.parse(JSON.stringify(d.repeat)), until:made[made.length-1].dateOffset, publish: publish==='1',
+          tpl:{type:f.type, loc:f.loc, gov:f.gov, target:f.target, mode:f.mode, attendTarget:f.attendTarget, confirmCall:f.confirmCall, seriesId:series.id, seriesLabel:series.label, owner:null,
+               meetingPoint:f.meetingPoint, mapUrl:f.mapUrl, meetingTime:f.meetingTime, convoyNotes:f.convoyNotes}};
+      }
       made.forEach(function(t){
         S.tasks.push(t);
         if (publish === '1') publishOne(t);
         audit('إنشاء مهمة', t, t.target + ' حجز' + (series ? ' · تكرار ' + series.label : '') + (d.fundCompany ? ' · تمويل ' + d.fundCompany : '') + (publish==='1' ? ' · نُشرت' : ' · مسودة'));
       });
       S.overlay = null; S.createDraft = null; S.confirm = null;
-      toast(made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة' + (publish==='1' ? ' ونشرها' : ' كمسودات')
+      toast(series && d.repeat.forever ? 'المهمة هتتكرر ' + series.label + ' – المهام بتتعمل أول بأول في التقويم' + (publish==='1' ? ' وبتتنشر' : ' كمسودات')
+        : made.length > 1 ? 'تم إنشاء ' + made.length + ' مهمة متكررة' + (publish==='1' ? ' ونشرها' : ' كمسودات')
         : publish==='1' ? 'تم إنشاء المهمة ونشرها للكول سنتر' : 'تم إنشاء المهمة كمسودة – مش هتظهر للكول سنتر قبل النشر');
       render();
     };
@@ -1932,6 +1962,17 @@ var ACT = {
     render();
   },
   setRepeatWeeks: function(v){ S.createDraft.repeat.weeks = v; render(); },
+  toggleRepeatForever: function(){ var r = S.createDraft.repeat; r.forever = !r.forever; render(); },
+  stopSeries: function(tid){
+    var t = findTask(tid), sr = t && S.series[t.seriesId]; if (!sr) return;
+    sr.forever = false;
+    // drop the later tasks of the series that nobody worked on yet
+    var gone = S.tasks.filter(function(x){ return x.seriesId===t.seriesId && x.dateOffset > t.dateOffset && !x.candidateIds.length; });
+    S.tasks = S.tasks.filter(function(x){ return gone.indexOf(x)===-1; });
+    S.tasks.forEach(function(x){ if (x.seriesId===t.seriesId) x.seriesLabel = (x.seriesLabel||'').replace(' · ∞',''); });
+    audit('إيقاف التكرار', t, 'آخر مهمة ' + dayLabel(t.dateOffset) + (gone.length ? ' · اتشالت ' + gone.length + ' مهمة بعدها' : ''));
+    toast('التكرار وقف – دي آخر مهمة في السلسلة'); render();
+  },
   toggleCreateMore: function(){ S.createMore = !S.createMore; render(); },
   toggleCreateConfirm: function(){ S.createDraft.confirmCall = !S.createDraft.confirmCall; render(); },
   // ---------- day-before confirmation ----------
@@ -2460,6 +2501,7 @@ var root = null, pendingCaret = null;
 function render(){
   if (!root) return;
   sendDueReminders();
+  extendSeries();
   var ae = document.activeElement, focusK = null, selS = null, selE = null;
   if (ae && ae.getAttribute && ae.getAttribute('data-k')){
     focusK = ae.getAttribute('data-k');
@@ -3135,23 +3177,29 @@ function renderCreate(){
     '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
     '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
     '<button class="seg-btn'+(rp.on && rp.freq==='month'?' on':'')+'"'+A('setRepeat','month')+'>تتكرر شهريًا</button></div>';
+  var foreverBtn = '<button class="forever-btn'+(rp.forever?' on':'')+'"'+A('toggleRepeatForever')+' title="تتكرر على طول من غير تاريخ نهاية">∞</button>';
+  var foreverHint = 'هتتكرر على طول · المهام بتتعمل أول بأول في التقويم، وتقدر توقف التكرار من جوه أي مهمة';
   if (rp.on && rp.freq==='month'){
     h += '<div class="wd-row">'+
       '<button class="wd-chip'+(rp.monthBy==='date'?' on':'')+'"'+A('setRepeatMonthBy','date')+'>'+esc(monthRepeatLabel(d.dateOffset,'date'))+'</button>'+
       '<button class="wd-chip'+(rp.monthBy==='weekday'?' on':'')+'"'+A('setRepeatMonthBy','weekday')+'>'+esc(monthRepeatLabel(d.dateOffset,'weekday'))+'</button></div>'+
-      '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>'+
-      '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، ')+'</span></div>'+
+      '<div class="repeat-row"><span>لمدة</span>'+(rp.forever ? '' : '<input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>')+foreverBtn+
+      '<span class="field-hint" style="margin:0;">'+(rp.forever ? foreverHint : 'هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، '))+'</span></div>'+
       (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
   }
   if (rp.on && rp.freq==='week'){
     h += '<div class="wd-row">'+[0,1,2,3,4,5,6].map(function(wd){
       return '<button class="wd-chip'+(rp.days.indexOf(wd)!==-1?' on':'')+'"'+A('toggleRepeatDay', wd)+'>'+WEEKDAYS_AR[wd]+'</button>';
     }).join('')+'</div>'+
-    '<div class="repeat-row"><span>لمدة</span><input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.weeks)+'" data-k="rep-weeks" data-input="setRepeatWeeks"/><span>أسابيع</span>'+
-    '<span class="field-hint" style="margin:0;">هيتعمل <b>'+offs.length+'</b> مهمة'+(offs.length ? ' · من '+shortDate(offs[0])+' لـ '+shortDate(offs[offs.length-1]) : '')+'</span></div>'+
+    '<div class="repeat-row"><span>لمدة</span>'+(rp.forever ? '' : '<input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.weeks)+'" data-k="rep-weeks" data-input="setRepeatWeeks"/><span>أسابيع</span>')+foreverBtn+
+    '<span class="field-hint" style="margin:0;">'+(rp.forever ? foreverHint : 'هيتعمل <b>'+offs.length+'</b> مهمة'+(offs.length ? ' · من '+shortDate(offs[0])+' لـ '+shortDate(offs[offs.length-1]) : ''))+'</span></div>'+
     (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
   }
   h += '</div>';
+  } else if (t.seriesId && S.series[t.seriesId] && S.series[t.seriesId].forever){
+    h += '<div class="field"><label class="field-label">التكرار</label><div class="series-row">'+ic('history',13)+'<span>بتتكرر '+esc(taskSeriesText(t))+'</span>'+
+      (isAdmin() ? '<button class="btn btn-secondary btn-sm"'+A('stopSeries', t.id)+'>إيقاف التكرار بعد المهمة دي</button>' : '')+'</div></div>';
+    moreSum.push('متكررة ∞');
   }
   h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
   h += '</div>';
