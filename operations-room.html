@@ -1959,7 +1959,6 @@ var ACT = {
   openRisk: function(){ S.overlay = 'risk'; render(); },
   openFunded: function(){ S.overlay = 'funded'; render(); },
   openHolds: function(){ S.overlay = 'holds'; render(); },
-  togglePoolHeld: function(){ S.poolHeld = !S.poolHeld; render(); },
   askHold: function(cid){ S.holdDlg = {cid:cid, reason:'', note:''}; render(); },
   setHoldReason: function(r){ S.holdDlg.reason = r; render(); },
   setHoldNote: function(v){ S.holdDlg.note = v; },
@@ -2567,7 +2566,7 @@ function renderPools(){
 function renderPoolModal(){
   var k = S.poolOpen; if (!k) return '';
   var m = TASK_TYPES[k], q = (S.poolSearch||'').trim();
-  var held = heldCases(k), list = poolCases(k).concat(S.poolHeld ? held : []).filter(function(c){ return !q || c.name.indexOf(q)!==-1 || c.gov.indexOf(q)!==-1; });
+  var list = poolCases(k).filter(function(c){ return !q || c.name.indexOf(q)!==-1 || c.gov.indexOf(q)!==-1; });
   var srt = S.poolSort;
   if (srt) list = list.slice().sort(function(a,b){
     if (srt==='gov') return a.gov.localeCompare(b.gov, 'ar') || a.age - b.age;
@@ -2584,13 +2583,8 @@ function renderPoolModal(){
     '<div class="drawer-sub">الحالات المتاحة للحجز في مرحلة «'+m.label+'» · '+poolCases(k).length+' حالة</div></div><button class="icon-btn"'+A('closePool')+'>'+ic('x',15,null,2)+'</button></div>';
   h += '<div class="modal-body" data-scroll="pool"><div style="display:flex;gap:8px;margin-bottom:10px;"><input class="case-search" style="flex:1;" placeholder="بحث بالاسم أو المحافظة" value="'+esc(S.poolSearch)+'" data-k="pool-q" data-input="poolSearch"/>'+
     '<select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select></div>';
-  if (held.length) h += '<label class="switch-row" style="margin:0 0 10px;"><input type="checkbox"'+(S.poolHeld?' checked':'')+A('togglePoolHeld')+'/> اعرض الحالات الموقوفة كمان ('+held.length+')</label>';
-  h += '<table class="cases-table"><thead><tr><th>#</th><th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'<th></th></tr></thead><tbody>';
-  list.forEach(function(c, i){
-    var hl = caseHoldLabel(c.id);
-    h += '<tr'+(hl ? ' class="held-row"' : '')+'><td class="rank-num">'+(hl ? '–' : i+1)+'</td><td style="font-weight:700;">'+esc(c.name)+(hl ? ' <span class="hold-badge">'+ic('lock',10)+esc(hl)+'</span>' : '')+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td>'+
-      '<td style="text-align:left;">'+holdBtn(c.id)+'</td></tr>';
-  });
+  h += '<table class="cases-table"><thead><tr><th>#</th><th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'</tr></thead><tbody>';
+  list.forEach(function(c, i){ h += '<tr><td class="rank-num">'+(i+1)+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td></tr>'; });
   h += '</tbody></table>' + (list.length ? '' : '<div class="table-empty">لا توجد حالات</div>') + '</div></div>';
   return h;
 }
