@@ -2447,8 +2447,8 @@ function levelClass(x){ var l = loadLevel(x); return l==='over' ? 'over' : l==='
 function capTable(loads){
   return '<table class="cap-table">' + loads.map(function(x){
     var lv = levelClass(x); var pct = x.cap>0 ? Math.min(100, Math.round(x.load/x.cap*100)) : (x.load>0 ? 100 : 0);
-    return '<tr><td><div style="font-weight:700;">'+esc(x.label)+'</div><div class="sub">'+esc(x.sub)+'</div>'+
-      '<div class="cap-track" style="margin-top:4px;"><div class="cap-fill bg-'+lv+'" style="width:'+pct+'%;"></div></div></td>'+
+    return '<tr><td style="width:100%;">'+
+      '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+pct+'%;"></div></div></td>'+
       '<td class="num cap-'+lv+'">'+(isFinite(x.cap) ? x.load+' من '+x.cap : x.load+' · بدون حد')+'</td></tr>';
   }).join('') + '</table>';
 }
@@ -3100,20 +3100,19 @@ function renderCreate(){
   h += '</div>';
   h += '</div>';   // end of the (read-only for non admins) part
 
-  // ---- cases, repeat and day-before confirmation sit under «المزيد»
-  var hMain = h, moreSum = [];
+  // ---- cases (shown), then repeat and day-before confirmation under «المزيد»
+  var hMain = h, moreSum = [], casesHtml = '';
   h = '';
   if (edit){
     var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
-    h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
+    casesHtml += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
       ' <span class="field-hint" style="margin:0;">('+t.candidateIds.length+' · مفتوحة '+nOpen+')</span></button></div>';
     var cst = confirmStats(t);
     if (cst.confirmed + cst.cancelled + cst.pending){
       h += '<div class="confirm-stats">'+ic('check',13,'#15803d',2.2)+'<b>تأكيد الحضور:</b><span class="cap-ok">أكد '+cst.confirmed+'</span><span class="cap-over">اعتذر '+cst.cancelled+'</span><span>لسه '+cst.pending+'</span></div>';
       moreSum.push('أكد ' + cst.confirmed + ' من ' + (cst.confirmed + cst.cancelled + cst.pending));
     }
-    if (t.candidateIds.length) moreSum.push(t.candidateIds.length + ' حالة');
-  } else if (d.candidateIds.length) moreSum.push(d.candidateIds.length + ' حالة');
+  }
   var ownerRow = '';
   if (edit){
     if (isSupervisor()){
@@ -3122,10 +3121,10 @@ function renderCreate(){
     }
   } else {
     var n = d.candidateIds.length;
-    h += '<div class="field"><label class="field-label">الحالات</label>';
-    if (n) h += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>الحالات</button></div>';
-    if (!n) h += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>'+ic('users',13)+' الحالات</button>';
-    h += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
+    casesHtml += '<div class="field"><label class="field-label">الحالات</label>';
+    if (n) casesHtml += '<div class="addcases-summary"><span>تمت إضافة <b style="color:var(--text)">'+n+'</b> حالة'+' · <span class="prio-txt">★ أولوية اتصال: '+Object.keys(d.priority||{}).length+'</span></span><button class="link-btn"'+A('openAddCasesDraft')+'>الحالات</button></div>';
+    if (!n) casesHtml += '<button class="btn btn-outline-dashed btn-block"'+A('openAddCasesDraft')+((d.loc==='convoy' && !d.gov) ? ' disabled' : '')+'>'+ic('users',13)+' الحالات</button>';
+    casesHtml += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
 
   // ---- repeat (only when creating) + day-before confirmation
@@ -3159,7 +3158,7 @@ function renderCreate(){
   if (rp.on) moreSum.push('متكررة');
   if (d.confirmCall) moreSum.push('تأكيد الحضور');
   var moreBody = h;
-  h = hMain + ownerRow + '<button class="more-btn'+(S.createMore?' on':'')+'"'+A('toggleCreateMore')+'>'+
+  h = hMain + casesHtml + ownerRow + '<button class="more-btn'+(S.createMore?' on':'')+'"'+A('toggleCreateMore')+'>'+
     pathIc(S.createMore ? 'M5 12h14' : 'M12 5v14M5 12h14',14,null,2.4)+'المزيد'+
     (moreSum.length && !S.createMore ? '<span class="more-sum">'+moreSum.join(' · ')+'</span>' : '')+'</button>'+
     (S.createMore ? '<div class="more-body">'+moreBody+'</div>' : '');
