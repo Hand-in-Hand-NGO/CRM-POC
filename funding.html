@@ -426,7 +426,7 @@ label { font-weight: bold; }
     .plan-top b { font-size: 13px; color: #333; }
     .plan-top .meta { font-size: 11px; color: #999; }
     .plan-top .n { margin-right: auto; background: #fff0e0; color: #c25a00; border-radius: 12px; padding: 1px 9px; font-weight: 700; font-size: 12px; white-space: nowrap; }
-    .plan-stores { display: flex; gap: 10px; font-size: 11px; margin: 6px 0 8px; }
+    .plan-stores { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; margin: 6px 0 8px; }
     .plan-send { display: flex; gap: 6px; }
     .plan-send select { flex: 1; height: 30px; font-size: 12px; border: 1px solid var(--hih-input-border); border-radius: 8px; padding: 0 6px; font-family: inherit; }
     .plan-send .btn, .plan-links .btn { border-radius: 8px; font-size: 12px; }
@@ -694,8 +694,9 @@ function loadStores(){
 function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
 
-// the funding page works on the two stores only
-var STORES = {newDelivery:'مخزن الأطراف الجديد', maintDelivery:'مخزن أطراف الصيانة'};
+// every pool of the operations room (same names)
+var STORES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
+function storeLbl(k, extra){ return '<span class="store-lbl" style="color:'+TASK_TYPES[k].color+';"><i style="background:'+TASK_TYPES[k].color+';"></i>'+STORES[k]+(extra!=null ? ' '+extra : '')+'</span>'; }
 function inStores(c){ return !!STORES[c.stage]; }
 function allocOf(c){ return F.store.alloc[c.id] || null; }
 function funderOf(c){ var a = allocOf(c); return a ? a.company : (c.funding!=='بدون' ? c.funding : ''); }
@@ -792,7 +793,7 @@ function render(){
   if (k){ var el = root.querySelector('[data-k="'+k+'"]'); if (el){ el.focus(); try { if (ss!=null) el.setSelectionRange(ss, se); } catch(e){} } }
 }
 function renderApp(){
-  var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b><small>اختيار حالات المخازن للشركات الممولة وإرسالها لغرفة العمليات</small></div></div>'+
+  var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b><small>اختيار حالات الحصالات للشركات الممولة وإرسالها لغرفة العمليات</small></div></div>'+
     '<div class="hdr-user"><span class="av"><i class="fa fa-user"></i></span>'+esc(CSR_USER)+'</div></header>';
   h += '<aside class="main-sidebar"><span class="logo">HiH</span>'+
     '<a href="operations-room.html" title="غرفة العمليات"'+A('goOps')+'><i class="fa fa-calendar"></i></a>'+
@@ -825,7 +826,7 @@ function renderKpis(){
 function renderFilters(){
   var f = F.filters, base = baseFiltered(true).filter(function(c){ return matchState(c, f.fund); });
   var cnt = function(st){ return base.filter(function(c){ return !st || c.stage===st; }).length; };
-  var stages = [['','كل المخازن','t-all'],['newDelivery',STORES.newDelivery,'t-new'],['maintDelivery',STORES.maintDelivery,'t-maint']];
+  var stages = [['','كل الحصالات','t-all']].concat(Object.keys(STORES).map(function(k){ return [k, STORES[k], TASK_TYPES[k].order==='maintenance' ? 't-maint' : 't-new']; }));
   var h = '<div class="card" style="margin-bottom:14px;"><div class="card-body">'+
     '<div class="store-tabs">'+stages.map(function(s){
       return '<button class="'+s[2]+(f.stage===s[0]?' on':'')+'"'+A('setStage', s[0])+'>'+(s[0] ? '<i class="fa fa-cube"></i>' : '<i class="fa fa-th-large"></i>')+s[1]+'<span class="n">'+cnt(s[0])+'</span></button>';
@@ -868,7 +869,7 @@ function renderTable(){
   }
   h += '<div class="table-scroll"><table class="ftable"><thead><tr>'+
     '<th class="cb"><input type="checkbox" title="تحديد كل المتاح"'+(allOn?' checked':'')+(selectable.length?'':' disabled')+A('toggleAll')+'/></th>'+
-    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>الطرف</th><th>المخزن</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>حالة التمويل</th><th>غرفة العمليات</th><th></th>'+
+    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>الطرف</th><th>الحصالة</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>حالة التمويل</th><th>غرفة العمليات</th><th></th>'+
     '</tr></thead><tbody>';
   var maxWait = 365;   // bar = share of a year
   list.forEach(function(c){
@@ -887,7 +888,7 @@ function renderTable(){
       '<td><div class="who"><b>'+esc(c.name)+'</b><div class="sub"><span class="code">'+c.code+'</span><span dir="ltr">'+fmtPhone(c.phone)+'</span>'+
         (others.length ? '<span class="limb-chip"'+A('showLimbs', c.id)+' title="الحالة ليها طرف تاني"><i class="fa fa-clone"></i> '+others.map(function(o){ return o.code; }).join('، ')+'</span>' : '')+'</div></div></td>'+
       '<td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
-      '<td><span class="store-lbl '+(isMaint(c)?'st-maint':'st-new')+'"><i></i>'+STORES[c.stage]+'</span></td>'+
+      '<td>'+storeLbl(c.stage)+'</td>'+
       '<td><div class="wait '+wc+'"><b>'+c.waitingDays+' يوم</b><div class="bar"><i style="width:'+Math.min(100, Math.round(c.waitingDays/maxWait*100))+'%"></i></div></div></td>'+
       '<td>'+pill+'</td>'+
       '<td>'+(oi ? '<span class="ops-lbl '+oi.cls+'"><i class="fa fa-'+oi.ic+'"></i>'+oi.txt+'</span>' : '<span class="muted">—</span>')+'</td>'+
@@ -916,7 +917,7 @@ function renderPlans(){
     var cs = planCases(p.id), st = {}, co = F.planCo[p.id] || F.company || '';
     cs.forEach(function(c){ st[c.stage] = (st[c.stage]||0) + 1; });
     h += '<div class="plan"><div class="plan-top"><div><b>'+esc(p.name)+'</b><div class="meta">'+isoFromMs(p.at)+' · '+esc(p.by)+'</div></div><span class="n">'+cs.length+' حالة</span></div>'+
-      '<div class="plan-stores">'+Object.keys(st).map(function(k){ return '<span class="store-lbl '+(k==='maintDelivery'?'st-maint':'st-new')+'"><i></i>'+STORES[k]+' '+st[k]+'</span>'; }).join('')+'</div>'+
+      '<div class="plan-stores">'+Object.keys(st).map(function(k){ return storeLbl(k, st[k]); }).join('')+'</div>'+
       '<div class="plan-send"><select data-change="setPlanCo" data-a="'+p.id+'"><option value="">— الشركة —</option>'+companies().map(function(c){ return '<option'+(co===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select>'+
         '<button class="btn btn-primary btn-sm"'+A('sendPlan', p.id)+(cs.length && co ? '' : ' disabled')+'><i class="fa fa-paper-plane"></i> تمويل</button></div>'+
       '<div class="plan-links"><button class="btn btn-default btn-xs"'+A('showPlan', p.id)+'><i class="fa fa-eye"></i> عرض الحالات</button>'+
@@ -1002,7 +1003,7 @@ function renderModal(){
     var missing = [];
     ids.forEach(function(id){ var c = caseById(id); otherLimbs(c).forEach(function(o){ if (isSelectable(o) && ids.indexOf(o.id)===-1) missing.push({c:c, o:o}); }); });
     var body = '<div class="note note-info"><i class="fa fa-paper-plane"></i><div>هيتسجل تمويل <b>'+ids.length+'</b> حالة بواسطة <b>'+esc(co)+'</b> ويظهروا في غرفة العمليات تحت «تمويل جديد» عشان الأوبريشن يعمل مهمة الحجز.</div></div>'+
-      '<div class="sum-grid">'+Object.keys(byStage).map(function(k){ return '<div><b>'+byStage[k]+'</b><span class="store-lbl '+(k==='maintDelivery'?'st-maint':'st-new')+'"><i></i>'+(STORES[k]||TASK_TYPES[k].label)+'</span></div>'; }).join('')+'</div>'+
+      '<div class="sum-grid">'+Object.keys(byStage).map(function(k){ return '<div><b>'+byStage[k]+'</b>'+storeLbl(k)+'</div>'; }).join('')+'</div>'+
       (missing.length ? '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>حالات ليها كود تاني مش متحدد:<ul style="margin:4px 0 0;padding-right:18px;">'+
         missing.map(function(x){ return '<li><b>'+esc(x.c.name)+'</b> – متحدد <span class="code">'+x.c.code+'</span> والكود التاني <span class="code">'+x.o.code+'</span> ('+esc(x.o.level)+')</li>'; }).join('')+'</ul></div></div>' : '');
     var foot = '<button class="btn btn-success"'+A('confirmFunding')+'><i class="fa fa-check"></i> تأكيد التمويل والإرسال</button>'+
@@ -1132,7 +1133,7 @@ var ACT = {
   exportCsv: function(){
     function q(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
     var LBL = {free:'متاحة', held:'موقوفة في خطة', funded:'ممولة', ops:'موقوفة من الأوبريشن', task:'في مهمة حجز'};
-    var rows = [['كود الحالة','الاسم','التليفون','المحافظة','السن','الطرف','المخزن','مدة الانتظار','الحالة','الشركة الممولة','غرفة العمليات'].map(q)];
+    var rows = [['كود الحالة','الاسم','التليفون','المحافظة','السن','الطرف','الحصالة','مدة الانتظار','الحالة','الشركة الممولة','غرفة العمليات'].map(q)];
     filtered().forEach(function(c){ var oi = opsInfo(c); rows.push([c.code, c.name, c.phone, c.gov, c.age, c.level, STORES[c.stage], c.waitingDays, LBL[stateOf(c)], funderOf(c)||'', oi ? oi.txt : ''].map(q)); });
     var blob = new Blob(['﻿' + rows.map(function(r){ return r.join(','); }).join('\r\n')], {type:'text/csv;charset=utf-8'});
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'التمويل-' + isoFromMs(Date.now()) + '.csv';
