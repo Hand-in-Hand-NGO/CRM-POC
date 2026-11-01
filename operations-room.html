@@ -2657,7 +2657,7 @@ function renderCapMini(off){
   if (isUnlimited(off)) return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
     '<div class="cap-mini-top"><span>'+ic('gauge',11)+' بدون حد</span><b style="color:var(--brand-meas);">حضور '+loads[0].load+'</b></div>'+
     '<div class="cap-track"><div class="cap-fill" style="width:100%;background:repeating-linear-gradient(90deg,#bcd3ff 0 6px,transparent 6px 10px);"></div></div></div>';
-  var label = lv==='over' ? 'تجاوز الطاقة' : lv==='warn' ? 'قرب الامتلاء' : 'الطاقة';
+  var label = 'الطاقة';
   return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
     '<div class="cap-mini-top"><span>'+ic('gauge',11)+' '+label+'</span><b class="cap-'+lv+'">'+Math.round(Math.min(pct,9.99)*100)+'%</b></div>'+
     '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+Math.min(100, Math.round(pct*100))+'%;"></div></div></div>';
