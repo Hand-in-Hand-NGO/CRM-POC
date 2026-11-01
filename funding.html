@@ -795,7 +795,7 @@ function renderApp(){
   var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b><small>اختيار حالات المخازن للشركات الممولة وإرسالها لغرفة العمليات</small></div></div>'+
     '<div class="hdr-user"><span class="av"><i class="fa fa-user"></i></span>'+esc(CSR_USER)+'</div></header>';
   h += '<aside class="main-sidebar"><span class="logo">HiH</span>'+
-    '<a href="operations-room.html" title="غرفة العمليات"><i class="fa fa-calendar"></i></a>'+
+    '<a href="operations-room.html" title="غرفة العمليات"'+A('goOps')+'><i class="fa fa-calendar"></i></a>'+
     '<a class="active" href="#" title="صفحة التمويل"><i class="fa fa-money"></i></a></aside>';
   h += '<div class="content">' + renderKpis() + '<div class="layout"><div class="main">' + renderFilters() + renderTable() + '</div>'+
     '<aside class="side">' + renderPlans() + renderStats() + renderHistory() + '</aside></div></div>';
@@ -1026,6 +1026,10 @@ function renderModal(){
 // Actions
 // =====================================================================
 var ACT = {
+  // opened from the operations room: go back to that tab instead of loading another file
+  goOps: function(v, a, b, e){
+    if (window.opener && !window.opener.closed){ if (e) e.preventDefault(); window.opener.focus(); window.close(); }
+  },
   setCompany: function(v){
     if (v==='__new'){ F.newCompany = ''; F.modal = {kind:'company'}; return render(); }
     F.company = v; render();
