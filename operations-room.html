@@ -97,6 +97,10 @@
     .palette-hint{font-size:11.5px;color:var(--text-faint);}
     .palette-chips{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
     .palette-spacer{flex:1;}
+    .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
+    .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
+    .day-col.other-month{opacity:.5;}
+    .day-month{font-size:11px;font-weight:700;color:var(--text-faint);margin-inline-start:4px;}
     .confirm-stats{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;background:var(--success-tint);border-radius:10px;padding:8px 12px;margin:-6px 0 14px;}
     .palette-chip{
       display:flex;align-items:center;gap:8px;padding:6px 14px 6px 10px;border-radius:999px;border:1.5px dashed var(--edge);
@@ -1427,7 +1431,11 @@ function alternativeTasksFor(t, cid){
 // =====================================================================
 // Capacity
 // =====================================================================
-function capFor(off){ return S.dayCapacity[off]!=null ? S.dayCapacity[off] : S.settings.dailyCapacity; }
+// a day set to -1 has no limit (operations can add as many as they want)
+var UNLIMITED = -1;
+function capFor(off){ var c = S.dayCapacity[off]!=null ? S.dayCapacity[off] : S.settings.dailyCapacity; return c===UNLIMITED ? Infinity : c; }
+function isUnlimited(off){ return S.dayCapacity[off]===UNLIMITED; }
+function capTxt(cap){ return isFinite(cap) ? String(cap) : 'بدون حد'; }
 // capacity = how many cases the place can receive in a day, so it is used by attendance, not by bookings
 function taskAttendLoad(t){ return t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, bookingGoal(t)); }
 function dayLoad(off, tasks, capOverride){
@@ -1519,6 +1527,7 @@ function bookingGoal(t){ return t.target || 0; }
 function expectedAttend(type, bookings){ return Math.round((bookings||0) * rateFor(type).att); }
 function freeCapacity(off, exceptId){
   var load = S.tasks.filter(function(t){ return t.dateOffset===off && t.id!==exceptId; }).reduce(function(n,t){ return n + taskAttendLoad(t); }, 0);
+  if (isUnlimited(off)) return Math.max(0, S.settings.dailyCapacity - load) || S.settings.dailyCapacity;   // a sensible default to start from
   return Math.max(0, capFor(off) - load);
 }
 // attendance mode: the user enters how many should attend; bookings = attendees / historical attendance rate
@@ -2314,21 +2323,22 @@ var ACT = {
 
   // ---------- day capacity ----------
   openCapacity: function(off){
-    off = parseInt(off,10); var c = capFor(off);
-    S.capacityDay = off;
-    S.capDraft = String(c);
+    off = parseInt(off,10);
+    S.capacityDay = off; S.capUnlimited = isUnlimited(off);
+    S.capDraft = String(S.capUnlimited ? S.settings.dailyCapacity : capFor(off));
     S.overlay = 'capacity'; render();
   },
   closeCapacity: function(){ S.overlay = null; S.capacityDay = null; render(); },
   capInput: function(v){ S.capDraft = v; render(); },
+  toggleCapUnlimited: function(){ S.capUnlimited = !S.capUnlimited; render(); },
   capReset: function(){
-    S.capDraft = String(S.settings.dailyCapacity);
+    S.capDraft = String(S.settings.dailyCapacity); S.capUnlimited = false;
     render();
   },
   saveCapacity: function(){
-    var off = S.capacityDay, cap = Math.max(0, parseInt(S.capDraft,10)||0);
+    var off = S.capacityDay, cap = S.capUnlimited ? Infinity : Math.max(0, parseInt(S.capDraft,10)||0);
     var over = dayLoad(off, S.tasks, cap).filter(function(x){ return x.load > x.cap; });
-    var apply = function(){ S.audit.unshift({at:now(), who:actorName(), action:'تعديل طاقة يوم', tid:null, label:dayLabel(off), detail:capFor(off) + ' ← ' + cap}); S.dayCapacity[off] = cap; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
+    var apply = function(){ S.audit.unshift({at:now(), who:actorName(), action:'تعديل طاقة يوم', tid:null, label:dayLabel(off), detail:capTxt(capFor(off)) + ' ← ' + capTxt(cap)}); S.dayCapacity[off] = isFinite(cap) ? cap : UNLIMITED; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
     if (!over.length){ apply(); return; }
     S.overlay = 'confirm';
     S.confirm = {title:'تحذير: الطاقة أقل من المخطط', tone:'warn',
@@ -2436,7 +2446,7 @@ function capTable(loads){
     var lv = levelClass(x); var pct = x.cap>0 ? Math.min(100, Math.round(x.load/x.cap*100)) : (x.load>0 ? 100 : 0);
     return '<tr><td><div style="font-weight:700;">'+esc(x.label)+'</div><div class="sub">'+esc(x.sub)+'</div>'+
       '<div class="cap-track" style="margin-top:4px;"><div class="cap-fill bg-'+lv+'" style="width:'+pct+'%;"></div></div></td>'+
-      '<td class="num cap-'+lv+'">'+x.load+' من '+x.cap+'</td></tr>';
+      '<td class="num cap-'+lv+'">'+(isFinite(x.cap) ? x.load+' من '+x.cap : x.load+' · بدون حد')+'</td></tr>';
   }).join('') + '</table>';
 }
 
@@ -2614,13 +2624,17 @@ function renderPalette(){
   return h + '<span class="palette-spacer"></span>' + renderPlanActions() + '</div></div>';
 }
 
-function renderWeek(){
+function renderWeek(){ return renderWeekRow(S.weekOffset*7, null); }
+// one week of day columns; the month view stacks these rows (days of other months are faded)
+function renderWeekRow(startOff, month){
   var h = '<main class="calendar-grid">';
   var showCap = !isCC();
   for (var i=0;i<7;i++){
-    var off = S.weekOffset*7 + i, d = dateOf(off), isToday = off===todayOffset();
+    var off = startOff + i, d = dateOf(off), isToday = off===todayOffset();
     var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
-    h += '<section class="day-col'+(off===todayOffset()?' is-today':'')+'" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
+    var other = month!=null && d.getMonth()!==month;
+    h += '<section class="day-col'+(isToday?' is-today':'')+(other?' other-month':'')+'" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span>'+
+      (month!=null && (d.getDate()===1 || i===0) ? '<span class="day-month">'+MONTHS_AR[d.getMonth()]+'</span>' : '')+'</div>'+
       '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
       '</span></div>';
     if (showCap) h += renderCapMini(off);
@@ -2639,7 +2653,10 @@ function renderCapMini(off){
   var pct = dayPct(off);
   var lv = 'ok';
   loads.forEach(function(x){ var l = loadLevel(x); if (l==='over') lv = 'over'; else if (l==='warn' && lv!=='over') lv = 'warn'; });
-  var title = loads.map(function(x){ return x.label + ': ' + x.load + ' من ' + x.cap; }).join('\n');
+  var title = loads.map(function(x){ return x.label + ': ' + x.load + ' من ' + capTxt(x.cap); }).join('\n');
+  if (isUnlimited(off)) return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
+    '<div class="cap-mini-top"><span>'+ic('gauge',11)+' بدون حد</span><b style="color:var(--brand-meas);">حضور '+loads[0].load+'</b></div>'+
+    '<div class="cap-track"><div class="cap-fill" style="width:100%;background:repeating-linear-gradient(90deg,#bcd3ff 0 6px,transparent 6px 10px);"></div></div></div>';
   var label = lv==='over' ? 'تجاوز الطاقة' : lv==='warn' ? 'قرب الامتلاء' : 'الطاقة';
   return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
     '<div class="cap-mini-top"><span>'+ic('gauge',11)+' '+label+'</span><b class="cap-'+lv+'">'+Math.round(Math.min(pct,9.99)*100)+'%</b></div>'+
@@ -2684,26 +2701,16 @@ function renderTaskCard(t){
   return h + '</article>';
 }
 
+// month = the weekly layout, one week row under the other (scroll down)
 function renderMonth(){
   var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset, 1);
-  var start = new Date(md.getTime()); start.setDate(start.getDate() - md.getDay());
-  var h = '<div class="month-wrap"><div class="month-weekday-row">' + WEEKDAYS_AR.map(function(w){ return '<div class="month-weekday">'+w+'</div>'; }).join('') + '</div><div class="month-grid">';
-  for (var i=0;i<42;i++){
-    var d = new Date(start.getTime()); d.setDate(start.getDate()+i);
-    var off = daysBetween(BASE_SUNDAY, d);
-    var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off && S.activeTypes.indexOf(t.type)!==-1; });
-    var over = !isCC() && dayLoad(off).some(function(x){ return x.load > x.cap; });
-    h += '<div class="month-cell'+(d.getMonth()===md.getMonth()?'':' dim')+(off===todayOffset()?' is-today':'')+'"'+A('jumpToWeek', off)+'>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;"><div class="month-cell-date">'+d.getDate()+'</div>'+
-      (over ? '<span title="تجاوز الطاقة الاستيعابية" class="cap-over">'+ic('alert',13)+'</span>' : '')+'</div><div class="month-dots">';
-    tasks.slice(0,4).forEach(function(t){
-      var c = TASK_TYPES[t.type].color;
-      h += '<span class="month-dot" style="'+(t.status==='draft' ? 'border:1.5px solid '+c+';background:transparent;' : 'background:'+c+';')+'" title="'+esc(TASK_TYPES[t.type].short+' – '+locLabelFor(t))+'"></span>';
-    });
-    if (tasks.length>4) h += '<span class="month-more">+'+(tasks.length-4)+'</span>';
-    h += '</div></div>';
+  var last = new Date(md.getFullYear(), md.getMonth()+1, 0);
+  var startOff = daysBetween(BASE_SUNDAY, md) - md.getDay(), endOff = daysBetween(BASE_SUNDAY, last);
+  var h = '<div class="month-weeks">';
+  for (var off = startOff, w = 1; off <= endOff; off += 7, w++){
+    h += '<div class="week-row-head">الأسبوع '+w+' · '+shortDate(off)+' – '+shortDate(off+6)+'</div>' + renderWeekRow(off, md.getMonth());
   }
-  return h + '</div></div>';
+  return h + '</div>';
 }
 
 // =====================================================================
@@ -3844,15 +3851,16 @@ function renderConfirm(){
 }
 
 function renderCapacity(){
-  var off = S.capacityDay, admin = isAdmin(), cap = Math.max(0, parseInt(S.capDraft,10)||0);
+  var off = S.capacityDay, admin = isAdmin(), cap = S.capUnlimited ? Infinity : Math.max(0, parseInt(S.capDraft,10)||0);
   var loads = dayLoad(off, S.tasks, cap);
   var tasks = S.tasks.filter(function(t){ return t.dateOffset===off; });
   var custom = S.dayCapacity[off]!=null;
   var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
-    '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
+    '<div class="drawer-sub">'+(isUnlimited(off) ? 'اليوم ده بدون حد' : custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
   h += '<div class="field"><label class="field-label">الطاقة الاستيعابية في اليوم ده (عدد الحضور)</label>' + (admin
-    ? '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حضور/يوم</span></div>'
-    : '<div class="readonly-box">'+cap+' حضور/يوم</div>') + '</div>';
+    ? (S.capUnlimited ? '' : '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>حضور/يوم</span></div>')+
+      '<label class="switch-row" style="margin-top:8px;"><input type="checkbox"'+(S.capUnlimited?' checked':'')+A('toggleCapUnlimited')+'/> بدون حد – أقدر أضيف أي عدد في اليوم ده</label>'
+    : '<div class="readonly-box">'+(isFinite(cap) ? cap+' حضور/يوم' : 'بدون حد')+'</div>') + '</div>';
   h += '<div class="cap-box">'+capTable(loads)+'</div>';
   h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
   if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
