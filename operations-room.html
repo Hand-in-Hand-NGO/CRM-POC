@@ -95,7 +95,9 @@
     .palette-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px;}
     .palette-title{font-size:12.5px;font-weight:700;color:var(--text-muted);}
     .palette-hint{font-size:11.5px;color:var(--text-faint);}
-    .palette-chips{display:flex;gap:10px;flex-wrap:wrap;}
+    .palette-chips{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .palette-spacer{flex:1;}
+    .confirm-stats{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;background:var(--success-tint);border-radius:10px;padding:8px 12px;margin:-6px 0 14px;}
     .palette-chip{
       display:flex;align-items:center;gap:8px;padding:6px 14px 6px 10px;border-radius:999px;border:1.5px dashed var(--edge);
       background:#fff;cursor:grab;user-select:none;
@@ -2524,13 +2526,12 @@ function renderSubbar(){
         ? (a.getDate()+' – '+b.getDate()+' '+MONTHS_AR[a.getMonth()]+' '+a.getFullYear())
         : (a.getDate()+' '+MONTHS_AR[a.getMonth()]+' – '+b.getDate()+' '+MONTHS_AR[b.getMonth()]+' '+b.getFullYear());
     }
-    h += '<div class="view-nav"><button class="today-btn" style="border:none;background:transparent;"'+A('onToday')+'>اليوم</button>'+
+    h += '<div class="view-nav">'+
       '<button class="view-btn'+(S.viewMode==='week'?' active':'')+'"'+A('setViewWeek')+'>أسبوعي</button>'+
       '<button class="view-btn'+(S.viewMode==='month'?' active':'')+'"'+A('setViewMonth')+'>شهري</button></div>';
     h += '<div class="week-nav"><button class="nav-arrow" title="السابق"'+A('prevPeriod')+'>'+pathIc('M9 6l6 6-6 6',15,null,2)+'</button>'+
       '<div class="week-label">'+periodLabel+'</div>'+
       '<button class="nav-arrow" title="التالي"'+A('nextPeriod')+'>'+pathIc('M15 6l-6 6 6 6',15,null,2)+'</button></div>';
-    h += renderPlanActions();
   }
   h += '</div>';
   h += '</div>';
@@ -2600,7 +2601,7 @@ function renderPlanActions(){
 
 function renderPalette(){
   var admin = isAdmin();
-  var h = '<div class="palette-row"><div class="palette-head"><div class="section-cap">'+pathIc('M12 5v14M5 12h14',13,null,2.2)+' مهمة حجز جديدة – اسحب النوع على اليوم في التقويم</div>'+
+  var h = '<div class="palette-row"><div class="palette-head"><div class="section-cap">'+pathIc('M12 5v14M5 12h14',13,null,2.2)+' مهمة حجز جديدة</div>'+
     '</div><div class="palette-chips">';
   Object.keys(TASK_TYPES).forEach(function(k){
     var m = TASK_TYPES[k];
@@ -2610,7 +2611,7 @@ function renderPalette(){
       '</div>'+
       (admin ? '' : '<span class="lock-badge" title="الإضافة والسحب متاحين للأوبريشن بس">'+ic('lock',14,'#98a0ac')+'</span>')+'</div>';
   });
-  return h + '</div></div>';
+  return h + '<span class="palette-spacer"></span>' + renderPlanActions() + '</div></div>';
 }
 
 function renderWeek(){
@@ -2621,10 +2622,7 @@ function renderWeek(){
     var tasks = visibleTasks().filter(function(t){ return t.dateOffset===off; });
     h += '<section class="day-col'+(off===todayOffset()?' is-today':'')+'" data-drop-day="'+off+'"><div class="day-header"><div class="day-header-left"><span class="day-name">'+WEEKDAYS_AR[d.getDay()]+'</span><span class="day-num">'+d.getDate()+'</span></div>'+
       '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
-      (isAdmin() && off >= todayOffset() ? '<span class="day-add-wrap"><button class="day-add" title="إضافة حجز لهذا اليوم"'+A('openCreateDay', off)+'>+</button>'+
-        (S.dayMenu===off ? '<span class="day-menu">'+Object.keys(TASK_TYPES).map(function(k){
-          var tm = TASK_TYPES[k]; return '<button style="--edge:'+tm.color+';"'+A('pickDayType', off, k)+'>'+pathIc(tm.iconPath,13,tm.color)+tm.label+'</button>';
-        }).join('')+'</span>' : '')+'</span>' : '')+'</span></div>';
+      '</span></div>';
     if (showCap) h += renderCapMini(off);
     h += '<div class="day-body">';
     if (!tasks.length){
@@ -2677,10 +2675,6 @@ function renderTaskCard(t){
     '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+';"></div></div>';
   if (t.dateOffset > todayOffset()){
     if ((t.standby||[]).length) h += '<div class="candidates-line">احتياطي '+t.standby.length+'</div>';
-    if (!isCC() && t.dateOffset - todayOffset() === 1){
-      var cs = confirmStats(t);
-      if (cs.confirmed + cs.cancelled + cs.pending) h += '<div class="candidates-line">التأكيد: <span class="cap-ok">أكد '+cs.confirmed+'</span> · <span class="cap-over">اعتذر '+cs.cancelled+'</span> · لسه '+cs.pending+'</div>';
-    }
   }
   if (t.owner && !isCC()) h += '<div class="my-line">'+ic('user',11)+' مع '+esc(agentName(t.owner))+'</div>';
   if (isCC()){
@@ -3095,6 +3089,11 @@ function renderCreate(){
     var nOpen = t.candidateIds.filter(function(cid){ return isOpenStatus(caseStatus(t,cid).key); }).length;
     h += '<div class="field"><label class="field-label">الحالات</label><button class="btn btn-outline-dashed btn-block"'+A('openTaskCases', t.id)+'>'+ic('users',13)+' الحالات'+
       ' <span class="field-hint" style="margin:0;">('+t.candidateIds.length+' · مفتوحة '+nOpen+')</span></button></div>';
+    var cst = confirmStats(t);
+    if (cst.confirmed + cst.cancelled + cst.pending){
+      h += '<div class="confirm-stats">'+ic('check',13,'#15803d',2.2)+'<b>تأكيد الحضور:</b><span class="cap-ok">أكد '+cst.confirmed+'</span><span class="cap-over">اعتذر '+cst.cancelled+'</span><span>لسه '+cst.pending+'</span></div>';
+      moreSum.push('أكد ' + cst.confirmed + ' من ' + (cst.confirmed + cst.cancelled + cst.pending));
+    }
     if (t.candidateIds.length) moreSum.push(t.candidateIds.length + ' حالة');
   } else if (d.candidateIds.length) moreSum.push(d.candidateIds.length + ' حالة');
   var ownerRow = '';
