@@ -1865,7 +1865,7 @@ var ACT = {
     S.overlay = 'confirm';
     // pick which drafts to publish (all ticked by default)
     S.confirm = {
-      title:'نشر خطة الأسبوع', tone:'primary',
+      title:'نشر المسودات', tone:'primary',
       message:'اختار المسودات اللي هتتنشر للكول سنتر – حالاتها هتتوزع على الموظفين.',
       items: drafts.map(function(t){ return {id:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset)}; }),
       pick: drafts.map(function(t){ return t.id; }),
@@ -1873,7 +1873,7 @@ var ACT = {
       onConfirm:function(){
         var chosen = drafts.filter(function(t){ return S.confirm.pick.indexOf(t.id)!==-1; });
         if (!chosen.length) return;
-        chosen.forEach(function(t){ publishOne(t); audit('نشر', t, 'نشر خطة الأسبوع'); });
+        chosen.forEach(function(t){ publishOne(t); audit('نشر', t, 'نشر المسودات'); });
         S.overlay = null; S.confirm = null; toast('اتنشر ' + chosen.length + ' مهمة وبقت ظاهرة للكول سنتر'); render();
       }
     };
@@ -2670,7 +2670,7 @@ function renderPlanActions(){
   var hc = heldCases().length;
   if (hc) h += '<button class="btn btn-held btn-sm"'+A('openHolds')+'>'+ic('lock',13,'#475569')+' حالات موقوفة ('+hc+')</button>';
   var wr = weekRange(S.weekOffset), drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=wr[0] && t.dateOffset<=wr[1]; }).length;
-  if (drafts && S.viewMode==='week') h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر خطة الأسبوع ('+drafts+')</button>';
+  if (drafts && S.viewMode==='week') h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر المسودات ('+drafts+')</button>';
   return h + '</div>';
 }
 
