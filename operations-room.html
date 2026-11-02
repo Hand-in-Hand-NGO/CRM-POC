@@ -101,6 +101,12 @@
     .forever-btn.on{background:var(--brand-meas);border-color:var(--brand-meas);color:#fff;}
     .series-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:8px 12px;}
     .series-row .btn{margin-inline-start:auto;}
+    .pick-all{margin:10px 0 0;font-weight:700;}
+    .pick-list li{cursor:pointer;align-items:center;border-color:var(--border) !important;background:var(--surface) !important;gap:10px;}
+    .pick-list li.on{background:#f3f7ff !important;border-color:#bcd3ff !important;}
+    .pick-list li span{flex:1;}
+    .pick-list li b{color:var(--text) !important;}
+    .pick-list input{pointer-events:none;width:15px;height:15px;}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -1857,14 +1863,18 @@ var ACT = {
     var drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
     if (!drafts.length) return;
     S.overlay = 'confirm';
+    // pick which drafts to publish (all ticked by default)
     S.confirm = {
       title:'نشر خطة الأسبوع', tone:'primary',
-      message:'هيتنشر ' + drafts.length + ' مهمة للكول سنتر وحالاتها هتتوزع على الموظفين.',
-      items: drafts.map(function(t){ return {label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset)}; }),
-      confirmLabel:'نشر الآن',
+      message:'اختار المسودات اللي هتتنشر للكول سنتر – حالاتها هتتوزع على الموظفين.',
+      items: drafts.map(function(t){ return {id:t.id, label:TASK_TYPES[t.type].short + ' – ' + locLabelFor(t), value:dayLabel(t.dateOffset)}; }),
+      pick: drafts.map(function(t){ return t.id; }),
+      confirmLabel:'نشر',
       onConfirm:function(){
-        drafts.forEach(function(t){ publishOne(t); audit('نشر', t, 'نشر خطة الأسبوع'); });
-        S.overlay = null; S.confirm = null; toast('اتنشر ' + drafts.length + ' مهمة وبقت ظاهرة للكول سنتر'); render();
+        var chosen = drafts.filter(function(t){ return S.confirm.pick.indexOf(t.id)!==-1; });
+        if (!chosen.length) return;
+        chosen.forEach(function(t){ publishOne(t); audit('نشر', t, 'نشر خطة الأسبوع'); });
+        S.overlay = null; S.confirm = null; toast('اتنشر ' + chosen.length + ' مهمة وبقت ظاهرة للكول سنتر'); render();
       }
     };
     render();
@@ -2000,6 +2010,8 @@ var ACT = {
   // ---------- panels ----------
   openRisk: function(){ S.overlay = 'risk'; render(); },
   openFunded: function(){ S.overlay = 'funded'; render(); },
+  confirmPick: function(id){ var p = S.confirm.pick, i = p.indexOf(id); if (i===-1) p.push(id); else p.splice(i,1); render(); },
+  confirmPickAll: function(){ var c = S.confirm; c.pick = c.pick.length===c.items.length ? [] : c.items.map(function(it){ return it.id; }); render(); },
   openHolds: function(){ S.overlay = 'holds'; render(); },
   askHold: function(cid){ S.holdDlg = {cid:cid, reason:'', note:''}; render(); },
   setHoldReason: function(r){ S.holdDlg.reason = r; render(); },
@@ -3896,7 +3908,14 @@ function renderConfirm(){
   var icon = c.tone==='warn' || c.tone==='danger' ? ic('alert',16, c.tone==='danger' ? '#c81e3a' : '#b45309') : '';
   var h = '<div class="scrim scrim-top"'+A('cancelConfirm')+'></div><div class="modal modal-sm" style="width:480px;"><div class="modal-head"><div class="confirm-title">'+icon+esc(c.title||'تأكيد الإجراء')+'</div></div>'+
     '<div class="modal-body"><div style="font-size:13px;color:var(--text);line-height:1.8;">'+esc(c.message)+'</div>';
-  if (c.items && c.items.length){
+  if (c.pick){
+    var allOn = c.pick.length===c.items.length;
+    h += '<label class="switch-row pick-all"><input type="checkbox"'+(allOn?' checked':'')+A('confirmPickAll')+'/> الكل ('+c.items.length+')</label>'+
+      '<ul class="warn-list pick-list">'+c.items.map(function(it){
+        var on = c.pick.indexOf(it.id)!==-1;
+        return '<li class="'+(on?'on':'')+'"'+A('confirmPick', it.id)+'><input type="checkbox"'+(on?' checked':'')+' tabindex="-1"/><span>'+esc(it.label)+'</span><b>'+esc(it.value)+'</b></li>';
+      }).join('')+'</ul>';
+  } else if (c.items && c.items.length){
     h += '<ul class="warn-list"'+(c.tone==='primary' ? ' style="--x:0"' : '')+'>'+c.items.map(function(it){
       return '<li'+(c.tone==='primary' ? ' style="border-color:var(--border);background:var(--surface-alt);"' : '')+'><span>'+esc(it.label)+'</span><b'+(c.tone==='primary' ? ' style="color:var(--text)"' : '')+'>'+esc(it.value)+'</b></li>';
     }).join('')+'</ul>';
@@ -3904,7 +3923,7 @@ function renderConfirm(){
   if (c.footnote) h += '<div class="field-hint" style="margin-top:8px;line-height:1.7;">'+esc(c.footnote)+'</div>';
   h += '</div><div class="modal-foot">'+(c.infoOnly
     ? '<button class="btn btn-primary"'+A('cancelConfirm')+'>تمام</button>'
-    : '<button class="'+cls+'"'+A('confirmAction')+'>'+esc(c.confirmLabel)+'</button><button class="btn btn-secondary"'+A('cancelConfirm')+'>إلغاء</button>')+'</div></div>';
+    : '<button class="'+cls+'"'+A('confirmAction')+(c.pick && !c.pick.length ? ' disabled' : '')+'>'+esc(c.confirmLabel)+(c.pick ? ' ('+c.pick.length+')' : '')+'</button><button class="btn btn-secondary"'+A('cancelConfirm')+'>إلغاء</button>')+'</div></div>';
   return h;
 }
 
