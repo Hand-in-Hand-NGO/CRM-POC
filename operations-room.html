@@ -1428,6 +1428,20 @@ function monthRepeatLabel(off, by){
   return by==='weekday' ? (ORDINALS_AR[Math.min(nth,5)-1] + ' ' + WEEKDAYS_AR[dt.getDay()] + ' في الشهر') : ('يوم ' + dt.getDate() + ' من كل شهر');
 }
 function seriesText(d){ return (d.repeat.freq==='month' ? monthRepeatLabel(d.dateOffset, d.repeat.monthBy) : 'كل ' + repeatLabel(d.repeat.days)) + (d.repeat.forever ? ' · ∞' : ''); }
+// turn an existing task into the first task of a series: the following ones copy its settings, without cases
+function repeatFromTask(t, d){
+  var sid = 's' + Date.now(), label = seriesText(d), pub = t.status==='published';
+  var tpl = {type:t.type, loc:t.loc, gov:t.gov, target:t.target, mode:t.mode, attendTarget:t.attendTarget, confirmCall:t.confirmCall, seriesId:sid, seriesLabel:label, owner:null,
+    meetingPoint:t.meetingPoint, mapUrl:t.mapUrl, meetingTime:t.meetingTime, convoyNotes:t.convoyNotes};
+  var offs = repeatOffsets(d).filter(function(o){ return o > t.dateOffset; });
+  t.seriesId = sid; t.seriesLabel = label;
+  offs.forEach(function(off){
+    var n = Object.assign({}, tpl, {id:'t'+Date.now()+'_'+off, dateOffset:off, candidateIds:[], priority:{}, callStatus:{}, assignee:{}, standby:[], status:'draft', publishedAt:null, publishedBy:null});
+    S.tasks.push(n); if (pub) publishOne(n);
+  });
+  if (d.repeat.forever) S.series[sid] = {forever:true, start:t.dateOffset, repeat:JSON.parse(JSON.stringify(d.repeat)), until:offs.length ? offs[offs.length-1] : t.dateOffset, publish:pub, tpl:tpl};
+  return offs.length;
+}
 // keep forever series filled up to what the calendar shows (+ a few weeks)
 function viewEndOffset(){
   if (S.viewMode==='month'){ var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset+1, 0); return daysBetween(BASE_SUNDAY, md) + 7; }
@@ -1825,6 +1839,12 @@ function closeAllOverlays(){
   S.callOpen = null; S.capacityDay = null; S.settingsDraft = null; S.convoyEdit = null;
 }
 function weekRange(wk){ return [wk*7, wk*7+6]; }
+// the days the calendar shows now (a week, or the whole month)
+function viewRange(){
+  if (S.viewMode!=='month') return weekRange(S.weekOffset);
+  var md = new Date(BASE_MONTH.getFullYear(), BASE_MONTH.getMonth()+S.monthOffset, 1), last = new Date(md.getFullYear(), md.getMonth()+1, 0);
+  return [daysBetween(BASE_SUNDAY, md), daysBetween(BASE_SUNDAY, last)];
+}
 
 var ACT = {
   openFunding: function(a, b, c, e){ openFundingPage(e); },
@@ -1859,7 +1879,7 @@ var ACT = {
   // ---------- publish ----------
   // ---------- drafts / publish ----------
   publishWeek: function(){
-    var r = weekRange(S.weekOffset);
+    var r = viewRange();
     var drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=r[0] && t.dateOffset<=r[1]; });
     if (!drafts.length) return;
     S.overlay = 'confirm';
@@ -2217,9 +2237,11 @@ var ACT = {
         if (cv) ch.push('بيانات القافلة');
         t.meetingPoint = (d.meetingPoint||'').trim(); t.mapUrl = (d.mapUrl||'').trim(); t.meetingTime = d.meetingTime||''; t.convoyNotes = (d.convoyNotes||'').trim();
       }
+      var madeN = d.repeat.on && !t.seriesId ? repeatFromTask(t, d) : 0;
+      if (madeN) ch.push('تكرار ' + t.seriesLabel);
       if (ch.length) audit('تعديل المهمة', t, ch.join(' · '));
       S.overlay = null; S.detailTaskId = null; S.createDraft = null; S.confirm = null;
-      toast(ch.length ? 'تم حفظ التعديلات' : 'مفيش تعديلات'); render();
+      toast(madeN ? 'المهمة بقت متكررة ' + t.seriesLabel + (d.repeat.forever ? '' : ' – اتعمل ' + madeN + ' مهمة') : ch.length ? 'تم حفظ التعديلات' : 'مفيش تعديلات'); render();
     };
     var withCap = function(){ guardCapacity(d.dateOffset, after, apply, 'detail'); };
     if (target < booked){
@@ -2669,8 +2691,8 @@ function renderPlanActions(){
   if (risk) h += '<button class="btn btn-risk btn-sm"'+A('openRisk')+'>'+ic('alert',13,'#b45309')+' محتاجة تدخل ('+risk+')</button>';
   var hc = heldCases().length;
   if (hc) h += '<button class="btn btn-held btn-sm"'+A('openHolds')+'>'+ic('lock',13,'#475569')+' حالات موقوفة ('+hc+')</button>';
-  var wr = weekRange(S.weekOffset), drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=wr[0] && t.dateOffset<=wr[1]; }).length;
-  if (drafts && S.viewMode==='week') h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر المسودات ('+drafts+')</button>';
+  var wr = viewRange(), drafts = S.tasks.filter(function(t){ return t.status==='draft' && t.dateOffset>=wr[0] && t.dateOffset<=wr[1]; }).length;
+  if (drafts) h += '<button class="btn btn-primary btn-sm"'+A('publishWeek')+'>'+ic('send',13,'#fff')+' نشر المسودات ('+drafts+')</button>';
   return h + '</div>';
 }
 
@@ -3181,10 +3203,10 @@ function renderCreate(){
     casesHtml += (d.loc==='convoy' && !d.gov ? '<div class="field-hint">اختار المحافظة الأول</div>' : '')+'</div>';
   }
 
-  // ---- repeat (only when creating) + day-before confirmation
+  // ---- repeat (new tasks, and existing tasks that aren't in a series yet) + day-before confirmation
   h += '<div class="'+(ro ? 'ro-form' : '')+'">';
   var rp = d.repeat, offs = repeatOffsets(d);
-  if (!edit){
+  if (!edit || !t.seriesId){
   h += '<div class="field"><label class="field-label">التكرار</label><div class="seg">'+
     '<button class="seg-btn'+(!rp.on?' on':'')+'"'+A('setRepeat','0')+'>مرة واحدة</button>'+
     '<button class="seg-btn'+(rp.on && rp.freq==='week'?' on':'')+'"'+A('setRepeat','week')+'>تتكرر أسبوعيًا</button>'+
@@ -3197,7 +3219,7 @@ function renderCreate(){
       '<button class="wd-chip'+(rp.monthBy==='weekday'?' on':'')+'"'+A('setRepeatMonthBy','weekday')+'>'+esc(monthRepeatLabel(d.dateOffset,'weekday'))+'</button></div>'+
       '<div class="repeat-row"><span>لمدة</span>'+(rp.forever ? '' : '<input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.months)+'" data-k="rep-months" data-input="setRepeatMonths"/><span>شهور</span>')+foreverBtn+
       '<span class="field-hint" style="margin:0;">'+(rp.forever ? foreverHint : 'هيتعمل <b>'+offs.length+'</b> مهمة: '+offs.map(shortDate).join('، '))+'</span></div>'+
-      (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
+      (!edit && d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
   }
   if (rp.on && rp.freq==='week'){
     h += '<div class="wd-row">'+[0,1,2,3,4,5,6].map(function(wd){
@@ -3205,13 +3227,15 @@ function renderCreate(){
     }).join('')+'</div>'+
     '<div class="repeat-row"><span>لمدة</span>'+(rp.forever ? '' : '<input class="num-input" style="width:70px;" type="text" inputmode="numeric" value="'+esc(rp.weeks)+'" data-k="rep-weeks" data-input="setRepeatWeeks"/><span>أسابيع</span>')+foreverBtn+
     '<span class="field-hint" style="margin:0;">'+(rp.forever ? foreverHint : 'هيتعمل <b>'+offs.length+'</b> مهمة'+(offs.length ? ' · من '+shortDate(offs[0])+' لـ '+shortDate(offs[offs.length-1]) : ''))+'</span></div>'+
-    (d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
+    (!edit && d.candidateIds.length ? '<div class="field-hint">الحالات هتتضاف لأول مهمة بس</div>' : '');
   }
+  if (edit && rp.on) h += '<div class="field-hint">المهام اللي بعد '+dayLabel(d.dateOffset)+' هتتعمل بنفس الإعدادات ومن غير حالات'+(t.status==='published' ? ' وهتتنشر' : ' كمسودات')+'</div>';
   h += '</div>';
-  } else if (t.seriesId && S.series[t.seriesId] && S.series[t.seriesId].forever){
+  } else {
+    var srs = S.series[t.seriesId], forever = srs && srs.forever;
     h += '<div class="field"><label class="field-label">التكرار</label><div class="series-row">'+ic('history',13)+'<span>بتتكرر '+esc(taskSeriesText(t))+'</span>'+
-      (isAdmin() ? '<button class="btn btn-secondary btn-sm"'+A('stopSeries', t.id)+'>إيقاف التكرار بعد المهمة دي</button>' : '')+'</div></div>';
-    moreSum.push('متكررة ∞');
+      (isAdmin() && forever ? '<button class="btn btn-secondary btn-sm"'+A('stopSeries', t.id)+'>إيقاف التكرار بعد المهمة دي</button>' : '')+'</div></div>';
+    moreSum.push(forever ? 'متكررة ∞' : 'متكررة');
   }
   h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
   h += '</div>';
