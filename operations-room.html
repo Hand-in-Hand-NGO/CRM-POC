@@ -168,6 +168,34 @@
     .pf-reason{font-size:12.5px;color:#555;padding-top:7px;}
     .pf-hint{font-size:11.5px;color:#888;padding-top:8px;display:block;}
     /*__PFCSS_END__*/
+    .sv-intro{display:flex;gap:8px;align-items:center;background:#e6f1fb;color:#0b5f96;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:12px;}
+    .sv-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+    .sv-row.later{opacity:.6;}
+    .sv-row .q-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;}
+    .sv-acts{display:flex;gap:6px;}
+    .sv-case{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;font-size:12.5px;}
+    .sv-sec{border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:10px;}
+    .sv-sec-t{font-weight:800;font-size:13.5px;color:#0b6db0;margin-bottom:8px;}
+    .sv-q{margin-bottom:10px;}
+    .sv-q-t{font-size:13px;font-weight:700;color:#333;margin-bottom:6px;}
+    .sv-rates{display:flex;gap:6px;flex-wrap:wrap;}
+    .sv-rates button{display:inline-flex;align-items:center;gap:5px;border:1px solid #d2d6de;background:#fff;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;}
+    .sv-rates button b{font-size:13px;}
+    .sv-rates button.on.r5,.sv-rates button.on.r4{background:#15803d;border-color:#15803d;color:#fff;}
+    .sv-rates button.on.r3{background:#b45309;border-color:#b45309;color:#fff;}
+    .sv-rates button.on.r2,.sv-rates button.on.r1{background:#c81e3a;border-color:#c81e3a;color:#fff;}
+    .sv-choices{display:flex;gap:6px;flex-wrap:wrap;}
+    .sv-choices button{border:1px solid #d2d6de;background:#fff;border-radius:20px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;}
+    .sv-choices button.on{background:#334155;border-color:#334155;color:#fff;}
+    .sv-note{margin-top:4px;font-size:12px;}
+    .sv-alerts{margin:6px 0 0;padding-right:18px;font-size:12.5px;color:#7f1d1d;}
+    .sv-avg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .sv-avg-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;font-size:12.5px;font-weight:700;}
+    .sv-avg-card b{font-size:18px;}
+    .sv-avg-card .cap-track{grid-column:1/-1;}
+    .sv-avg-card em{grid-column:1/-1;font-style:normal;font-size:11px;color:var(--text-faint);font-weight:400;}
+    .kpi.kpi-alert b{color:var(--danger);}
+    .sv-kpi b{display:block;font-size:22px;font-weight:800;line-height:1.2;} .sv-kpi span{display:block;font-size:12px;color:var(--text-muted);}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -1289,7 +1317,7 @@ function defaultSettings(){
   return {
     typeCap:{measurement:20, newDelivery:20, maintEval:20, maintDelivery:20}, emergencyMax:5,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
-    riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2,
+    riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2, surveyDelay:1, surveyTries:3,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
     msgBookTpl:'أهلًا {الاسم}، تم تأكيد حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\n{ملاحظات}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
     msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
@@ -1320,7 +1348,7 @@ var S = {
   audit:[], confirmations:{}, auditQ:'', messages:[],
   routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
-  series:{}, emergencies:[], emg:null, emgDay:null,
+  series:{}, emergencies:[], emg:null, emgDay:null, surveys:{}, surveyOpen:null, surveyDraft:null, surveyDone:null,
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1757,6 +1785,7 @@ var CALL_CATS = [
   {k:'maintEval', label:'حجز تقييم الصيانة', dir:'out'},
   {k:'confirm', label:'تأكيد الحجز', dir:'out'},
   {k:'committee', label:'تبليغ اللجنة', dir:'out'},
+  {k:'survey', label:'متابعة جودة الخدمة (Survey)', dir:'out'},
 ];
 var OUTBOUND_CATS = CALL_CATS.filter(function(c){ return c.dir==='out'; }).map(function(c){ return c.k; });
 function catLabel(k){ for (var i=0;i<CALL_CATS.length;i++){ if (CALL_CATS[i].k===k) return CALL_CATS[i].label; } return k; }
@@ -1869,6 +1898,14 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.attendance[nextCallKey('t8','C-1041')] = {status:'attended', timeIn:'09:45'};
   S.attendance[nextCallKey('t8','C-1042')] = {status:'noShow'};
   S.attendance[nextCallKey('t1','C-1001')] = {status:'attended', timeIn:'09:10'};
+  // past visits for the service-quality survey
+  S.tasks.push(task('t10','measurement',-2,'org',null,6,['C-1020','C-1033','C-1018'],'published'));
+  S.tasks.push(task('t11','maintDelivery',-1,'org',null,4,['C-1024'],'published'));
+  ['C-1020','C-1033','C-1018'].forEach(function(c){ S.attendance[nextCallKey('t10', c)] = {status:'attended', timeIn:'09:30'}; });
+  S.attendance[nextCallKey('t11','C-1024')] = {status:'attended', timeIn:'11:00'};
+  S.surveys[nextCallKey('t6','C-1038')] = {status:'done', at:now() - 3*86400000, by:'a2', alert:true,
+    answers:{rec_treat:5, rec_wait:'ربع لنص ساعة', eng_explain:4, eng_care:5, pt_teach:4, pt_follow:4, psych_met:'لا', svc_clean:5, svc_time:3, svc_cc:4, limb_comfort:2, limb_use:3, limb_problem:'نعم', overall:4, recommend:'غالبًا'},
+    notes:{limb:'السوكت بيعور شوية عند الركبة'}};
 
   S.routing = defaultRouting();
   // committee decisions waiting to be told to the case (تبليغ اللجنة)
@@ -2508,7 +2545,7 @@ var ACT = {
     S.settingsDraft = {
       'cap_measurement':String(baseCap('measurement')), 'cap_newDelivery':String(baseCap('newDelivery')), 'cap_maintEval':String(baseCap('maintEval')), 'cap_maintDelivery':String(baseCap('maintDelivery')), 'emergencyMax':String(s.emergencyMax),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
-      'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag),
+      'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag), 'surveyDelay':String(s.surveyDelay), 'surveyTries':String(s.surveyTries),
       'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl, 'msgInfoTpl':s.msgInfoTpl,
     };
     S.overlay = 'settings'; render();
@@ -2521,7 +2558,7 @@ var ACT = {
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
     Object.keys(TASK_TYPES).forEach(function(k){ s.typeCap[k] = int('cap_' + k, 0); }); s.emergencyMax = int('emergencyMax',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
-    s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1);
+    s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1); s.surveyDelay = int('surveyDelay',0); s.surveyTries = int('surveyTries',1);
     s.msgOn = !!d.msgOn; s.msgChannel = d.msgChannel; s.reminderOn = !!d.reminderOn; s.reminderTime = d.reminderTime || '10:00';
     s.orgMapUrl = (d.orgMapUrl||'').trim(); s.msgBookTpl = d.msgBookTpl; s.msgRemindTpl = d.msgRemindTpl; s.msgInfoTpl = d.msgInfoTpl;
     S.overlay = null; S.settingsDraft = null; toast('تم حفظ الإعدادات'); render();
@@ -2908,10 +2945,11 @@ function queueItems(agent){
 function queueOrder(a, b){ return (b.prio - a.prio) || (a.t.dateOffset - b.t.dateOffset) || (b.p.score - a.p.score); }
 function renderQueue(){
   if (isCC()) return renderAgentFocus();
-  var tabs = '<div class="sup-tabs">'+[['lists','قوائم الاتصال'],['assign','إسناد المكالمات'],['routing','توزيع أنواع المكالمات']].map(function(x){
+  var tabs = '<div class="sup-tabs">'+[['lists','قوائم الاتصال'],['assign','إسناد المكالمات'],['routing','توزيع أنواع المكالمات'],['survey','متابعة جودة الخدمة']].map(function(x){
     return '<button class="'+(S.supTab===x[0]?'on':'')+'"'+A('setSupTab', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
   if (S.supTab==='assign') return '<div class="sup-wrap">'+tabs+renderAssign()+'</div>';
   if (S.supTab==='routing') return '<div class="sup-wrap">'+tabs+renderRouting()+'</div>';
+  if (S.supTab==='survey') return '<div class="sup-wrap">'+tabs+renderSurveyReport()+'</div>';
   return '<div class="sup-wrap">'+tabs+renderLists()+'</div>';
 }
 function renderLists(){
@@ -2990,6 +3028,7 @@ function renderAgentFocus(){
   if (tabs.length > 1) h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return '<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
   if (S.agentTab==='committee') return h + renderCommittee() + '</div>';
+  if (S.agentTab==='survey') return h + renderSurveyTab() + '</div>';
   if (S.agentTab==='inbound') return h + renderInbound() + (S.inbound.pick ? renderInboundCase() : '') + '</div>';
   if (canDo(S.agentId, 'emergency')) h += '<div class="emg-bar"><button class="btn btn-emg"'+A('openEmg')+'>'+ic('alert',14,'#fff',2)+' حجز طوارئ</button>'+
     (emgFor(todayOffset()).length ? '<button class="link-btn"'+A('openEmgDay', todayOffset())+'>طوارئ النهارده ('+emgFor(todayOffset()).length+')</button>' : '')+'</div>';
@@ -4097,6 +4136,7 @@ function agentTabs(){
   if (canDo(me, 'inbound')) tabs.push(['inbound','مكالمة واردة']);
   if (canDo(me, 'newCase')) tabs.push(['newCase','إضافة حالة جديدة']);
   if (canDo(me, 'committee') || committeeFor(me).length) tabs.push(['committee','تبليغ اللجنة', committeeFor(me).filter(function(k){ return k.status!=='notified'; }).length]);
+  if (canDo(me, 'survey') || surveyItems(me).length) tabs.push(['survey','متابعة جودة الخدمة (Survey)', surveyItems(me).filter(function(x){ return !x.later; }).length]);
   return tabs;
 }
 
@@ -4170,6 +4210,8 @@ function renderSettings(){
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">تنبيه المهام المتأخرة</div><div class="set-grid">'+
     setNum('riskDays','تنبيه "محتاجة تدخل" قبل الموعد بـ','يوم')+setNum('riskPct','لو المحجوز أقل من','%')+'</div></div>';
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">متابعة جودة الخدمة (Survey)</div><div class="set-grid">'+
+    setNum('surveyDelay','المكالمة بعد الزيارة بـ','يوم')+setNum('surveyTries','لو مردتش تتقفل بعد','محاولات')+'</div></div>';
   var sd = S.settingsDraft, sample = S.tasks.filter(function(t){ return t.loc==='convoy'; })[0] || S.tasks[0], scid = sample && sample.candidateIds[0];
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">رسائل الحالات (SMS / واتساب)</div>'+
     '<label class="switch-row"><input type="checkbox"'+(sd.msgOn?' checked':'')+A('toggleSetting','msgOn')+'/> ابعت رسالة للحالة أوتوماتيك بعد "تم الحجز"</label>'+
@@ -4716,6 +4758,159 @@ function renderEmg(){
   var ok = e.kind && (e.kind!=='أخرى' || e.details.trim());
   return h + '</div><div class="modal-foot"><button class="btn btn-danger"'+A('emgBook')+(ok ? '' : ' disabled')+'>'+ic('check',13,'#fff',2.4)+' حجز طوارئ</button><button class="btn btn-secondary"'+A('closeEmg')+'>إلغاء</button></div></div>';
 }
+// =====================================================================
+// متابعة جودة الخدمة (Survey): after a measurement / delivery visit the case attended, the call center
+// asks about every department (1–5) + a few questions. Low marks or a limb problem raise an alert.
+// =====================================================================
+var SURVEY_TYPES = ['measurement','newDelivery','maintDelivery'];
+var SV_RATES = [[5,'ممتاز'],[4,'جيد جدًا'],[3,'جيد'],[2,'مقبول'],[1,'ضعيف']];
+var SURVEY_Q = [
+  {k:'reception', t:'الاستقبال (الريسبشن)', qs:[
+    {k:'rec_treat', t:'استقبال الريسبشن ومعاملتهم ليك كانت عاملة إزاي؟', type:'rate'},
+    {k:'rec_wait', t:'انتظرت قد إيه لحد ما دخلت؟', type:'choice', opts:['أقل من ربع ساعة','ربع لنص ساعة','نص ساعة لساعة','أكتر من ساعة']}]},
+  {k:'engineer', t:'المهندس / الفني', qs:[
+    {k:'eng_explain', t:'المهندس شرحلك اللي هيعمله بشكل واضح؟', type:'rate'},
+    {k:'eng_care', t:'رأيك في تعامل المهندس واهتمامه بيك؟', type:'rate'}]},
+  {k:'physio', t:'دكتور العلاج الطبيعي', qs:[
+    {k:'pt_teach', t:'دكتور العلاج الطبيعي فهّمك إزاي تستخدم الطرف وتتمرن عليه؟', type:'rate'},
+    {k:'pt_follow', t:'رأيك في التمارين والمتابعة؟', type:'rate'}]},
+  {k:'psych', t:'الدعم النفسي', qs:[
+    {k:'psych_met', t:'قابلت الأخصائي النفسي؟', type:'choice', opts:['نعم','لا']},
+    {k:'psych_rate', t:'الجلسة فادتك قد إيه؟', type:'rate', when:function(a){ return a.psych_met==='نعم'; }}]},
+  {k:'service', t:'الخدمة في المؤسسة', qs:[
+    {k:'svc_clean', t:'نظافة المكان وراحته', type:'rate'},
+    {k:'svc_time', t:'المواعيد كانت مظبوطة؟ (اتلزمنا بميعادك ولا اتأخرنا)', type:'rate'},
+    {k:'svc_cc', t:'الكول سنتر كان واضح في الحجز والتأكيد؟', type:'rate'}]},
+  {k:'limb', t:'الطرف', delivery:true, qs:[
+    {k:'limb_comfort', t:'الطرف مريح ومظبوط عليك؟', type:'rate'},
+    {k:'limb_use', t:'بتقدر تمشي / تستخدمه في حياتك اليومية؟', type:'rate'},
+    {k:'limb_problem', t:'فيه أي ألم أو مشكلة في الطرف دلوقتي؟', type:'choice', opts:['لا','نعم']}]},
+  {k:'general', t:'أسئلة عامة', qs:[
+    {k:'overall', t:'تقييمك العام لتجربتك مع هاند إن هاند', type:'rate'},
+    {k:'recommend', t:'ترشّح المؤسسة لحد يعرفك محتاج طرف؟', type:'choice', opts:['أكيد','غالبًا','مش متأكد','لا']},
+    {k:'suggest', t:'فيه أي حاجة عايز تقولها أو اقتراح؟', type:'text', optional:true}]},
+];
+function svSections(t){ return SURVEY_Q.filter(function(sec){ return !sec.delivery || t.type!=='measurement'; }); }
+function svQuestions(t, a){ var out = []; svSections(t).forEach(function(sec){ sec.qs.forEach(function(q){ if (!q.when || q.when(a)) out.push(q); }); }); return out; }
+function surveyOwner(t, cid){
+  var list = agentsFor('survey'), pref = t.assignee && t.assignee[cid];
+  if (pref && list.indexOf(pref)!==-1) return pref;
+  var k = nextCallKey(t.id, cid), h = 0; for (var i=0;i<k.length;i++) h = (h*31 + k.charCodeAt(i)) % 997;
+  return list[h % list.length];
+}
+// visits the case attended, due after the delay, not surveyed yet
+function surveyItems(agent){
+  var tOff = todayOffset(), out = [];
+  Object.keys(S.attendance).forEach(function(k){
+    if (S.attendance[k].status!=='attended') return;
+    var p = k.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid);
+    if (!t || !c || SURVEY_TYPES.indexOf(t.type)===-1 || t.dateOffset + S.settings.surveyDelay > tOff) return;
+    var sv = S.surveys[k]; if (sv && (sv.status==='done' || sv.status==='closed')) return;
+    var owner = surveyOwner(t, cid); if (agent && owner!==agent) return;
+    out.push({key:k, t:t, cid:cid, owner:owner, sv:sv||null, later: !!(sv && sv.nextAt && sv.nextAt > now())});
+  });
+  return out.sort(function(a,b){ return (a.later - b.later) || (a.t.dateOffset - b.t.dateOffset); });
+}
+function svAlertText(t, sv){
+  var a = sv.answers, low = svQuestions(t, a).filter(function(q){ return q.type==='rate' && a[q.k] && a[q.k] <= 2; }).map(function(q){ return q.t + ' (' + a[q.k] + ')'; });
+  if (a.limb_problem==='نعم') low.unshift('فيه ألم أو مشكلة في الطرف' + (sv.notes && sv.notes.limb ? ': ' + sv.notes.limb : ''));
+  return low;
+}
+function renderSurveyTab(){
+  if (S.surveyDone) return renderSurveyDone();
+  if (S.surveyOpen) return renderSurveyForm();
+  var list = surveyItems(S.agentId);
+  var h = '<div class="sv-intro">'+ic('phone',14,'#0093e9')+' متابعة جودة الخدمة: كلّم الحالات اللي حضرت مقاسات أو استلام واسألها عن رأيها في كل إدارة.</div>';
+  if (!list.length) return h + '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">مفيش مكالمات متابعة دلوقتي</div></div>';
+  list.forEach(function(x){
+    var c = caseById(x.cid), m = TASK_TYPES[x.t.type];
+    h += '<div class="sv-row'+(x.later?' later':'')+'"><div><div class="q-name">'+esc(c.name)+profBtn(x.cid)+'</div>'+
+      '<div class="q-line">'+phoneChip(c)+'<span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span class="field-hint" style="margin:0;">زيارة '+dayLabel(x.t.dateOffset)+(x.sv && x.sv.tries ? ' · محاولات '+x.sv.tries+' من '+S.settings.surveyTries : '')+(x.later ? ' · معاد الاتصال '+fmtWhen(x.sv.nextAt) : '')+'</span></div></div>'+
+      '<div class="sv-acts"><button class="btn btn-primary btn-sm"'+A('svStart', x.key)+'>'+ic('phone',12,'#fff')+' ابدأ الاستبيان</button><button class="btn btn-secondary btn-sm"'+A('svNoAnswer', x.key)+'>لم يرد</button></div></div>';
+  });
+  return h;
+}
+function svRateBtns(q, a){
+  return '<div class="sv-rates">'+SV_RATES.map(function(r){ return '<button class="r'+r[0]+(a[q.k]===r[0]?' on':'')+'"'+A('svAns', q.k, r[0])+'><b>'+r[0]+'</b>'+r[1]+'</button>'; }).join('')+'</div>';
+}
+function renderSurveyForm(){
+  var k = S.surveyOpen, p = k.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid), d = S.surveyDraft, a = d.answers, m = TASK_TYPES[t.type];
+  var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' متابعة جودة الخدمة (Survey) – '+esc(c.name)+profBtn(cid)+'</div>'+
+    '<button class="cms-close"'+A('svClose')+'>'+ic('x',15,'#535252',2.4)+'</button></div><div class="nc-body">';
+  h += '<div class="sv-case">'+phoneChip(c)+'<span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.label+'</span><span>زيارة '+dayLabel(t.dateOffset)+'</span></div>';
+  svSections(t).forEach(function(sec){
+    h += '<div class="sv-sec"><div class="sv-sec-t">'+sec.t+'</div>';
+    sec.qs.forEach(function(q){
+      if (q.when && !q.when(a)) return;
+      h += '<div class="sv-q"><div class="sv-q-t">'+q.t+(q.optional ? ' <span class="field-hint" style="display:inline;margin:0;">(اختياري)</span>' : '')+'</div>';
+      if (q.type==='rate') h += svRateBtns(q, a);
+      else if (q.type==='choice') h += '<div class="sv-choices">'+q.opts.map(function(o){ return '<button class="'+(a[q.k]===o?'on':'')+'"'+A('svAns', q.k, o)+'>'+o+'</button>'; }).join('')+'</div>';
+      else h += '<textarea class="note-input" rows="2" data-k="sv-'+q.k+'" data-input="svText" data-a="'+q.k+'">'+esc(a[q.k]||'')+'</textarea>';
+      h += '</div>';
+    });
+    if (sec.k!=='general') h += '<input class="text-input sv-note" placeholder="ملاحظات'+(sec.k==='limb' && a.limb_problem==='نعم' ? ' – اكتب المشكلة' : ' (اختياري)')+'" value="'+esc(d.notes[sec.k]||'')+'" data-k="svn-'+sec.k+'" data-input="svNote" data-a="'+sec.k+'"/>';
+    h += '</div>';
+  });
+  var miss = svQuestions(t, a).filter(function(q){ return !q.optional && (a[q.k]==null || a[q.k]===''); }).length;
+  h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('svSave')+'>'+ic('check',13,'#fff',2.6)+' حفظ الاستبيان</button>'+
+    '<button class="cms-btn cms-cancel"'+A('svNoAnswer', k)+'>لم يرد</button>'+(miss ? '<span class="field-hint" style="align-self:center;margin:0 8px;">فاضل '+miss+' سؤال</span>' : '')+'</div>';
+  return h + '</div></div>';
+}
+function renderSurveyDone(){
+  var k = S.surveyDone, p = k.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid), sv = S.surveys[k], al = svAlertText(t, sv);
+  var h = '<div class="focus-card"><div class="bar" style="background:'+(al.length ? '#c81e3a' : '#15803d')+';"></div><div class="focus-name">'+esc(c.name)+'</div>'+
+    '<div style="margin:8px 0 12px;">'+(al.length ? '<b style="color:var(--danger);">'+ic('alert',14,'#c81e3a',2)+' الاستبيان اتسجل ووصل تنبيه للمشرف:</b><ul class="sv-alerts">'+al.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul>' : '<b style="color:#15803d;">'+ic('check',14,'#15803d',2.4)+' الاستبيان اتسجل – شكرًا للحالة</b>')+'</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+(sv.answers.limb_problem==='نعم' ? '<button class="btn btn-emg"'+A('svMaint', cid)+'>'+ic('alert',13,'#fff',2)+' حجز صيانة طوارئ</button>' : '')+
+    '<button class="btn btn-primary"'+A('svNext')+'>المكالمة اللي بعدها</button></div></div>';
+  return h;
+}
+function renderSurveyReport(){
+  var done = [], closed = 0;
+  Object.keys(S.surveys).forEach(function(k){ var sv = S.surveys[k], t = findTask(k.split('|')[0]); if (!t) return; if (sv.status==='done') done.push({k:k, t:t, sv:sv}); else if (sv.status==='closed') closed++; });
+  var pending = surveyItems('').length, alerts = done.filter(function(x){ return svAlertText(x.t, x.sv).length; });
+  var h = '<div class="q-title" style="margin-bottom:4px;">متابعة جودة الخدمة (Survey)</div><div class="q-sub" style="margin-bottom:12px;">تقييم الحالات لكل إدارة بعد زيارات المقاسات والاستلام</div>';
+  h += '<div class="kpi-row">'+[[done.length,'استبيان اتعمل'],[pending,'مستني مكالمة'],[closed,'اتقفل – لم يرد'],[alerts.length,'تنبيهات']].map(function(x, i){ return '<div class="kpi sv-kpi'+(i===3 && x[0] ? ' kpi-alert' : '')+'"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'; }).join('')+'</div>';
+  h += '<div class="sv-avg">'+SURVEY_Q.filter(function(sec){ return sec.qs.some(function(q){ return q.type==='rate'; }); }).map(function(sec){
+    var vals = [];
+    done.forEach(function(x){ sec.qs.forEach(function(q){ var v = x.sv.answers[q.k]; if (q.type==='rate' && v) vals.push(v); }); });
+    var avg = vals.length ? vals.reduce(function(a,b){ return a+b; }, 0) / vals.length : 0;
+    return '<div class="sv-avg-card"><span>'+sec.t+'</span><b class="'+(!vals.length ? '' : avg >= 4 ? 'cap-ok' : avg >= 3 ? 'cap-warn' : 'cap-over')+'">'+(vals.length ? avg.toFixed(1) : '–')+'</b><div class="cap-track"><div class="cap-fill" style="width:'+(avg/5*100)+'%;background:#0093e9;"></div></div><em>'+vals.length+' تقييم</em></div>';
+  }).join('')+'</div>';
+  h += '<div class="section-title" style="margin:14px 0 8px;">التنبيهات</div>';
+  if (!alerts.length) h += '<div class="field-hint">مفيش تنبيهات</div>';
+  else h += '<table class="cases-table"><thead><tr><th>الحالة</th><th>الزيارة</th><th>التنبيه</th><th>الموظف</th><th>التاريخ</th></tr></thead><tbody>'+alerts.map(function(x){
+    var cid = x.k.split('|')[1], c = caseById(cid), m = TASK_TYPES[x.t.type];
+    return '<tr><td style="font-weight:700;">'+esc(c.name)+profBtn(cid)+'</td><td><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span></td><td>'+svAlertText(x.t, x.sv).map(esc).join('<br>')+'</td><td>'+esc(agentName(x.sv.by))+'</td><td>'+fmtWhen(x.sv.at)+'</td></tr>';
+  }).join('')+'</tbody></table>';
+  return h;
+}
+Object.assign(ACT, {
+  svStart: function(k){ S.surveyOpen = k; S.surveyDraft = {answers:{}, notes:{}}; render(); },
+  svClose: function(){ S.surveyOpen = null; S.surveyDraft = null; render(); },
+  svAns: function(qk, v){ var n = parseInt(v,10); S.surveyDraft.answers[qk] = String(n)===v ? n : v; render(); },
+  svText: function(v, qk){ S.surveyDraft.answers[qk] = v; },
+  svNote: function(v, sec){ S.surveyDraft.notes[sec] = v; },
+  svSave: function(){
+    var k = S.surveyOpen, t = findTask(k.split('|')[0]), d = S.surveyDraft;
+    var miss = svQuestions(t, d.answers).filter(function(q){ return !q.optional && (d.answers[q.k]==null || d.answers[q.k]===''); });
+    if (miss.length){ toast('فاضل ' + miss.length + ' سؤال: ' + miss[0].t); return render(); }
+    var prev = S.surveys[k] || {};
+    var sv = {status:'done', answers:d.answers, notes:d.notes, at:now(), by:S.agentId, tries:(prev.tries||0)};
+    sv.alert = svAlertText(t, sv).length > 0;
+    S.surveys[k] = sv;
+    S.audit.unshift({at:now(), who:actorName(), action:'متابعة جودة الخدمة', tid:t.id, label:caseById(k.split('|')[1]).name, detail:'التقييم العام ' + d.answers.overall + (sv.alert ? ' · تنبيه' : '')});
+    S.surveyOpen = null; S.surveyDraft = null; S.surveyDone = k; render();
+  },
+  svNoAnswer: function(k){
+    var sv = S.surveys[k] || {status:'open', tries:0};
+    sv.tries = (sv.tries||0) + 1;
+    if (sv.tries >= S.settings.surveyTries){ sv.status = 'closed'; toast('اتقفلت – لم يرد ' + sv.tries + ' مرات'); }
+    else { sv.status = 'open'; sv.nextAt = now() + S.settings.retryMinutes*60000; toast('لم يرد – هترجع في قايمتك ' + fmtWhen(sv.nextAt)); }
+    S.surveys[k] = sv; S.surveyOpen = null; S.surveyDraft = null; render();
+  },
+  svNext: function(){ S.surveyDone = null; render(); },
+  svMaint: function(cid){ S.surveyDone = null; ACT.openEmg(cid); S.emg.kind = 'الطرف مش مظبوط ومش قادر يمشي'; render(); },
+});
 function renderEmgDay(){
   var off = S.emgDay; if (off==null) return '';
   var list = (S.emergencies||[]).filter(function(e){ return e.dateOffset===off; });
