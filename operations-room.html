@@ -1354,7 +1354,11 @@ function noShowBadge(cid){ var n = noShowCount(cid); return n >= S.settings.noSh
 
 // ---------- day-before attendance confirmation ----------
 // due on the day before the visit, for tasks where operations turned it on, and always for repeat no-shows
-function confirmNeeded(t, cid){ return !!t.confirmCall || isRepeatNoShow(cid); }
+// confirming attendance is mandatory for every booking; each task sets how many days before the visit it starts
+function confirmNeeded(t, cid){ return true; }
+function confirmDaysOf(t){ return Math.max(1, parseInt(t.confirmDays,10) || 1); }
+function inConfirmWindow(t, tOff){ var left = t.dateOffset - tOff; return left >= 1 && left <= confirmDaysOf(t); }
+function confirmWhen(t){ var left = t.dateOffset - todayOffset(); return left===1 ? 'بكرة' : 'يوم ' + dayLabel(t.dateOffset); }
 // the agent who owns the confirmation call: the assigned agent, else whoever booked the case
 function confirmOwner(t, cid){
   var ok = agentsFor('confirm'), a = t.assignee[cid];
@@ -1364,7 +1368,7 @@ function confirmOwner(t, cid){
 function confirmItems(agent){
   var tOff = todayOffset(), out = [];
   S.tasks.forEach(function(t){
-    if (t.status!=='published' || t.dateOffset - tOff !== 1) return;
+    if (t.status!=='published' || !inConfirmWindow(t, tOff)) return;
     t.candidateIds.forEach(function(cid){
       if ((S.bookings[t.type]||{})[cid]!==t.id || !confirmNeeded(t, cid) || caseHoldLabel(cid)) return;
       if (agent && confirmOwner(t, cid)!==agent) return;
@@ -1431,7 +1435,7 @@ function seriesText(d){ return (d.repeat.freq==='month' ? monthRepeatLabel(d.dat
 // turn an existing task into the first task of a series: the following ones copy its settings, without cases
 function repeatFromTask(t, d){
   var sid = 's' + Date.now(), label = seriesText(d), pub = t.status==='published';
-  var tpl = {type:t.type, loc:t.loc, gov:t.gov, target:t.target, mode:t.mode, attendTarget:t.attendTarget, confirmCall:t.confirmCall, seriesId:sid, seriesLabel:label, owner:null,
+  var tpl = {type:t.type, loc:t.loc, gov:t.gov, target:t.target, mode:t.mode, attendTarget:t.attendTarget, confirmDays:t.confirmDays, seriesId:sid, seriesLabel:label, owner:null,
     meetingPoint:t.meetingPoint, mapUrl:t.mapUrl, meetingTime:t.meetingTime, convoyNotes:t.convoyNotes};
   var offs = repeatOffsets(d).filter(function(o){ return o > t.dateOffset; });
   t.seriesId = sid; t.seriesLabel = label;
@@ -1737,7 +1741,7 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   var T = todayOffset();
   function task(id, type, off, loc, gov, target, cands, status, extra){
     return Object.assign({id:id, type:type, dateOffset:T+off, loc:loc, gov:gov, target:target, candidateIds:cands,
-      callStatus:{}, assignee:{}, priority:{}, standby:[], confirmCall:false, mode:'booking', status:status, publishedAt: status==='published' ? now()-86400000*2 : null,
+      callStatus:{}, assignee:{}, priority:{}, standby:[], confirmDays:1, mode:'booking', status:status, publishedAt: status==='published' ? now()-86400000*2 : null,
       publishedBy: status==='published' ? 'أوبريشن' : null, meetingPoint:'', mapUrl:'', meetingTime:'', convoyNotes:''}, extra||{});
   }
   S.tasks = [
@@ -1767,7 +1771,6 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.attendance[nextCallKey('t8','C-1042')] = {status:'noShow'};
   S.attendance[nextCallKey('t1','C-1001')] = {status:'attended', timeIn:'09:10'};
 
-  findTask('t3').confirmCall = true; findTask('t2').confirmCall = true;
   S.routing = defaultRouting();
   // committee decisions waiting to be told to the case (تبليغ اللجنة)
   S.committee = [
@@ -1947,7 +1950,7 @@ var ACT = {
       var t = {
         id:'t'+Date.now()+'_'+i, type:d.type, dateOffset:off, loc:d.loc, gov:d.loc==='convoy' ? d.gov : null,
         target:tg, mode:d.targetMode, attendTarget: d.targetMode==='attendance' ? draftAttend(d) : null, candidateIds: i===0 ? d.candidateIds.slice() : [], priority: i===0 ? Object.assign({}, d.priority||{}) : {}, callStatus:{}, assignee:{},
-        standby:[], confirmCall: !!d.confirmCall, seriesId: series ? series.id : null, seriesLabel: series ? series.label : null, owner:null,
+        standby:[], confirmDays: Math.max(1, parseInt(d.confirmDays,10)||1), seriesId: series ? series.id : null, seriesLabel: series ? series.label : null, owner:null,
         status:'draft', publishedAt:null, publishedBy:null,
         meetingPoint: d.loc==='convoy' ? (d.meetingPoint||'').trim() : '', mapUrl: d.loc==='convoy' ? (d.mapUrl||'').trim() : '',
         meetingTime: d.loc==='convoy' ? (d.meetingTime||'') : '', convoyNotes: d.loc==='convoy' ? (d.convoyNotes||'').trim() : '',
@@ -1961,7 +1964,7 @@ var ACT = {
       if (series && d.repeat.forever){
         var f = made[0];
         S.series[series.id] = {forever:true, start:d.dateOffset, repeat:JSON.parse(JSON.stringify(d.repeat)), until:made[made.length-1].dateOffset, publish: publish==='1',
-          tpl:{type:f.type, loc:f.loc, gov:f.gov, target:f.target, mode:f.mode, attendTarget:f.attendTarget, confirmCall:f.confirmCall, seriesId:series.id, seriesLabel:series.label, owner:null,
+          tpl:{type:f.type, loc:f.loc, gov:f.gov, target:f.target, mode:f.mode, attendTarget:f.attendTarget, confirmDays:f.confirmDays, seriesId:series.id, seriesLabel:series.label, owner:null,
                meetingPoint:f.meetingPoint, mapUrl:f.mapUrl, meetingTime:f.meetingTime, convoyNotes:f.convoyNotes}};
       }
       made.forEach(function(t){
@@ -2003,7 +2006,7 @@ var ACT = {
     toast('التكرار وقف – دي آخر مهمة في السلسلة'); render();
   },
   toggleCreateMore: function(){ S.createMore = !S.createMore; render(); },
-  toggleCreateConfirm: function(){ S.createDraft.confirmCall = !S.createDraft.confirmCall; render(); },
+  setConfirmDays: function(v){ S.createDraft.confirmDays = v; render(); },
   // ---------- day-before confirmation ----------
   confirmResult: function(key, result){
     var p = key.split('|'), t = findTask(p[0]), cid = p[1], c = caseById(cid); if (!t || !c) return;
@@ -2198,9 +2201,10 @@ var ACT = {
       if (t.dateOffset!==d.dateOffset) ch.push('اليوم: ' + dayLabel(t.dateOffset) + ' ← ' + dayLabel(d.dateOffset));
       if (t.target!==target) ch.push('الحجز: ' + t.target + ' ← ' + target);
       if (t.loc!==d.loc || (t.gov||'')!==(d.loc==='convoy' ? d.gov : '')) ch.push('المكان: ' + locLabelFor(t) + ' ← ' + (d.loc==='convoy' ? 'قافلة – ' + d.gov : 'داخل المؤسسة'));
-      if (!!t.confirmCall!==!!d.confirmCall) ch.push(d.confirmCall ? 'تفعيل تأكيد الحضور' : 'إلغاء تأكيد الحضور');
+      var cd = Math.max(1, parseInt(d.confirmDays,10)||1);
+      if (confirmDaysOf(t)!==cd) ch.push('التأكيد قبل الموعد: ' + confirmDaysOf(t) + ' ← ' + cd + ' يوم');
       t.dateOffset = d.dateOffset; t.target = target; t.mode = d.targetMode; t.attendTarget = att;
-      t.loc = d.loc; t.gov = d.loc==='convoy' ? d.gov : null; t.confirmCall = !!d.confirmCall;
+      t.loc = d.loc; t.gov = d.loc==='convoy' ? d.gov : null; t.confirmDays = cd;
       if (d.loc==='convoy'){
         var cv = [d.meetingPoint||'', d.mapUrl||'', d.meetingTime||'', d.convoyNotes||''].join('|')!==[t.meetingPoint||'', t.mapUrl||'', t.meetingTime||'', t.convoyNotes||''].join('|');
         if (cv) ch.push('بيانات القافلة');
@@ -2446,7 +2450,7 @@ function legacyCopy(text){
 }
 function openCreate(type, off){
   S.overlay = 'create'; S.dayMenu = null;
-  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'attendance', attend:String(defaultAttend(type, off)), confirmCall:true, repeat:{on:false, freq:'week', days:[weekdayOf(off)], weeks:'4', monthBy:'date', months:'3'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
+  S.createDraft = {type:type, dateOffset:off, loc:'org', gov:'', target:'10', targetMode:'attendance', attend:String(defaultAttend(type, off)), confirmDays:'1', repeat:{on:false, freq:'week', days:[weekdayOf(off)], weeks:'4', monthBy:'date', months:'3'}, candidateIds:[], priority:{}, meetingPoint:'', mapUrl:'', meetingTime:'09:00', convoyNotes:''};
   S.govSearch = ''; S.govDropdownOpen = false;
   render();
 }
@@ -2838,7 +2842,7 @@ function renderLists(){
   var confList = confirmItems(agent);
   if (S.justConfirmed) h += renderConfirmedCard(S.justConfirmed);
   if (confList.length){
-    h += '<div class="q-section"><div class="q-section-head">تأكيد حضور بكرة <span class="cnt">'+confList.length+'</span></div>'+
+    h += '<div class="q-section"><div class="q-section-head">تأكيد الحضور <span class="cnt">'+confList.length+'</span></div>'+
       confList.map(function(x){ return renderConfirmRow(x); }).join('')+'</div>';
   }
   h += qSection('due', 'اتصل الآن', '', groups.due, 'لا توجد حالات مستحقة');
@@ -3207,10 +3211,11 @@ function renderCreate(){
       (isAdmin() && forever ? '<button class="btn btn-secondary btn-sm"'+A('stopSeries', t.id)+'>إيقاف التكرار بعد المهمة دي</button>' : '')+'</div></div>';
     moreSum.push(forever ? 'متكررة ∞' : 'متكررة');
   }
-  h += '<label class="switch-row" style="margin-bottom:14px;"><input type="checkbox"'+(d.confirmCall?' checked':'')+A('toggleCreateConfirm')+'/> الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بيوم</label>';
+  h += '<div class="field"><label class="field-label">تأكيد الحضور</label><div class="repeat-row" style="margin:0;"><span>الكول سنتر يأكد الحضور مع المحجوزين قبل الموعد بـ</span>'+
+    '<input class="num-input" style="width:64px;" type="text" inputmode="numeric" value="'+esc(d.confirmDays)+'" data-k="conf-days" data-input="setConfirmDays"/><span>يوم</span></div></div>';
   h += '</div>';
   if (rp.on) moreSum.push('متكررة');
-  if (d.confirmCall) moreSum.push('تأكيد الحضور');
+  moreSum.push('التأكيد قبل ' + (parseInt(d.confirmDays,10)||1) + ' يوم');
   var moreBody = h;
   h = hMain + casesHtml + ownerRow + '<button class="more-btn'+(S.createMore?' on':'')+'"'+A('toggleCreateMore')+'>'+
     pathIc(S.createMore ? 'M5 12h14' : 'M12 5v14M5 12h14',14,null,2.4)+'المزيد'+
@@ -3228,7 +3233,7 @@ function renderCreate(){
 function draftFromTask(t){
   var att = t.mode==='attendance' && t.attendTarget;
   return {editId:t.id, type:t.type, dateOffset:t.dateOffset, loc:t.loc, gov:t.gov||'', target:String(t.target), targetMode: att ? 'attendance' : 'booking',
-    attend:String(att ? t.attendTarget : expectedAttend(t.type, t.target)), confirmCall:!!t.confirmCall,
+    attend:String(att ? t.attendTarget : expectedAttend(t.type, t.target)), confirmDays:String(confirmDaysOf(t)),
     repeat:{on:false, freq:'week', days:[], weeks:'4', monthBy:'date', months:'3'}, candidateIds:t.candidateIds.slice(), priority:Object.assign({}, t.priority||{}),
     meetingPoint:t.meetingPoint||'', mapUrl:t.mapUrl||'', meetingTime:t.meetingTime||'', convoyNotes:t.convoyNotes||''};
 }
@@ -3395,7 +3400,7 @@ function renderConfirmCard(x, total){
   var t = x.t, cid = x.cid, c = caseById(cid), m = TASK_TYPES[t.type], key = nextCallKey(t.id, cid);
   var bt = S.bookTimes[key] || (t.loc==='convoy' ? t.meetingTime : '');
   var h = '<div class="focus-card confirm-card"><div class="bar" style="background:#15803d;"></div>';
-  h += '<div class="focus-top"><span class="confirm-chip">'+ic('check',13,'#15803d',2.2)+' تأكيد حضور بكرة</span>'+
+  h += '<div class="focus-top"><span class="confirm-chip">'+ic('check',13,'#15803d',2.2)+' تأكيد حضور '+confirmWhen(x.t)+'</span>'+
     '<span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+m.short+'</span>'+
     (isRepeatNoShow(cid) ? '<span class="ns-badge">غياب متكرر – تأكيد إجباري</span>' : '')+
     (x.cf && x.cf.status==='noAnswer' ? '<span class="status-tag" style="background:#fceced;color:#c81e3a;">لم يرد · محاولة '+x.cf.tries+'</span>' : '')+'</div>';
