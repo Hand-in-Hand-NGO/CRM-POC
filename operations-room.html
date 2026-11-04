@@ -1200,7 +1200,7 @@ function defaultSettings(){
     riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
     msgBookTpl:'أهلًا {الاسم}، تم تأكيد حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\n{ملاحظات}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
-    msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} بكرة {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
+    msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
     msgInfoTpl:'أهلًا {الاسم}، دي بيانات موعد {النوع}:\nالميعاد: {الميعاد}\nالمكان: {المكان}\nاللوكيشن: {الخريطة}\n{ملاحظات}\n– مؤسسة هاند إن هاند',
   };
 }
@@ -3604,7 +3604,7 @@ function sendDueReminders(){
   if (n.getHours()*60 + n.getMinutes() < (+p[0])*60 + (+p[1]||0)) return 0;
   var tOff = todayOffset(), sent = 0;
   S.tasks.forEach(function(t){
-    if (t.status!=='published' || t.dateOffset - tOff !== 1) return;
+    if (t.status!=='published' || !inConfirmWindow(t, tOff)) return;   // same number of days as the confirmation call
     t.candidateIds.forEach(function(cid){
       if ((S.bookings[t.type]||{})[cid]!==t.id || lastMsg(t, cid, 'reminder')) return;
       sendMsg('reminder', t, cid); sent++;
@@ -3915,10 +3915,10 @@ function renderSettings(){
   var sd = S.settingsDraft, sample = S.tasks.filter(function(t){ return t.loc==='convoy'; })[0] || S.tasks[0], scid = sample && sample.candidateIds[0];
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">رسائل الحالات (SMS / واتساب)</div>'+
     '<label class="switch-row"><input type="checkbox"'+(sd.msgOn?' checked':'')+A('toggleSetting','msgOn')+'/> ابعت رسالة للحالة أوتوماتيك بعد "تم الحجز"</label>'+
-    '<label class="switch-row"><input type="checkbox"'+(sd.reminderOn?' checked':'')+A('toggleSetting','reminderOn')+'/> ابعت تذكير قبل الميعاد بيوم</label>'+
+    '<label class="switch-row"><input type="checkbox"'+(sd.reminderOn?' checked':'')+A('toggleSetting','reminderOn')+'/> ابعت تذكير قبل الميعاد – بنفس عدد أيام تأكيد الحضور في المهمة</label>'+
     '<div class="set-grid" style="margin-top:8px;">'+
       '<div><label>القناة</label><select class="filter-select" style="width:100%;" data-change="setInput" data-a="msgChannel">'+Object.keys(CHANNELS).map(function(k){ return '<option value="'+k+'"'+(sd.msgChannel===k?' selected':'')+'>'+CHANNELS[k]+'</option>'; }).join('')+'</select></div>'+
-      '<div><label>ميعاد إرسال التذكير (اليوم اللي قبله)</label><input class="text-input" type="time" value="'+esc(sd.reminderTime)+'" data-k="set-remtime" data-change="setInput" data-a="reminderTime"/></div>'+
+      '<div><label>ساعة إرسال التذكير</label><input class="text-input" type="time" value="'+esc(sd.reminderTime)+'" data-k="set-remtime" data-change="setInput" data-a="reminderTime"/></div>'+
       '<div><label>لينك لوكيشن المؤسسة</label><input class="text-input" dir="ltr" placeholder="https://maps.google.com/..." value="'+esc(sd.orgMapUrl)+'" data-k="set-orgmap" data-input="setInput" data-a="orgMapUrl"/></div></div>'+
     '<div class="tpl-grid">'+
       '<div><label>رسالة الحجز</label><textarea class="text-input tpl-input" rows="4" data-k="set-tplb" data-input="setInput" data-a="msgBookTpl">'+esc(sd.msgBookTpl)+'</textarea>'+
