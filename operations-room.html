@@ -107,6 +107,16 @@
     .pick-list li span{flex:1;}
     .pick-list li b{color:var(--text) !important;}
     .pick-list input{pointer-events:none;width:15px;height:15px;}
+    .btn-emg{background:var(--danger) !important;color:#fff !important;border-color:var(--danger) !important;}
+    .emg-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .emg-bar .btn-emg{display:inline-flex;align-items:center;gap:6px;}
+    .cms-btn.btn-emg{margin-inline-start:8px;display:inline-flex;align-items:center;gap:5px;}
+    .emg-line{display:flex;align-items:center;gap:5px;width:100%;margin:-4px 0 10px;border:1px solid #f3b9c3;background:#fff7f8;color:var(--danger);border-radius:8px;padding:4px 8px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;}
+    .emg-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 12px;margin-bottom:6px;font:inherit;cursor:pointer;text-align:right;}
+    .emg-pick:hover{border-color:#f3b9c3;background:#fff7f8;}
+    .emg-pick span,.emg-who span{font-size:11.5px;color:var(--text-muted);}
+    .emg-who{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7f8;border:1px solid #f3b9c3;border-radius:10px;padding:9px 12px;margin-bottom:14px;}
+    .emg-who .link-btn{margin-inline-start:auto;}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -1195,7 +1205,7 @@ function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
 
 function defaultSettings(){
   return {
-    dailyCapacity:20,
+    dailyCapacity:20, emergencyMax:5,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
@@ -1228,7 +1238,7 @@ var S = {
   audit:[], confirmations:{}, auditQ:'', messages:[],
   routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
-  series:{},
+  series:{}, emergencies:[], emg:null, emgDay:null,
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
 
@@ -1488,7 +1498,7 @@ function capTxt(cap){ return isFinite(cap) ? String(cap) : 'بدون حد'; }
 function taskAttendLoad(t){ return t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, bookingGoal(t)); }
 function dayLoad(off, tasks, capOverride){
   var load = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; })
-    .reduce(function(n,t){ return n + taskAttendLoad(t); }, 0);
+    .reduce(function(n,t){ return n + taskAttendLoad(t); }, 0) + emgFor(off).length;   // emergency bookings come on top of the tasks
   var cap = capOverride!=null ? capOverride : capFor(off);
   return [{key:'attendance', label:'الحضور', sub:'مجموع الحضور المطلوب لكل مهام اليوم', load:load, cap:cap, unit:'حالة'}];
 }
@@ -1653,6 +1663,7 @@ function agentLoads(){
 var CALL_CATS = [
   {k:'inbound', label:'المكالمات الواردة كلها', dir:'in'},
   {k:'newCase', label:'إضافة حالات جديدة', dir:'in'},
+  {k:'emergency', label:'حجز الطوارئ', dir:'in'},
   {k:'measurement', label:'حجز المقاسات', dir:'out'},
   {k:'delivery', label:'حجز الاستلامات (طرف جديد + صيانة)', dir:'out'},
   {k:'maintEval', label:'حجز تقييم الصيانة', dir:'out'},
@@ -2404,7 +2415,7 @@ var ACT = {
   openSettings: function(){
     var s = S.settings;
     S.settingsDraft = {
-      'dailyCapacity':String(s.dailyCapacity),
+      'dailyCapacity':String(s.dailyCapacity), 'emergencyMax':String(s.emergencyMax),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag),
       'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl, 'msgInfoTpl':s.msgInfoTpl,
@@ -2417,7 +2428,7 @@ var ACT = {
   saveSettings: function(){
     var d = S.settingsDraft, s = S.settings;
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
-    s.dailyCapacity = int('dailyCapacity',0);
+    s.dailyCapacity = int('dailyCapacity',0); s.emergencyMax = int('emergencyMax',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1);
     s.msgOn = !!d.msgOn; s.msgChannel = d.msgChannel; s.reminderOn = !!d.reminderOn; s.reminderTime = d.reminderTime || '10:00';
@@ -2541,6 +2552,7 @@ function renderApp(){
   h += renderOverlays();
   h += renderCallModal();
   h += renderPoolModal();
+  h += renderEmgDay() + renderEmg();
   h += renderDash();
   if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
   h += '</div>';
@@ -2700,6 +2712,7 @@ function renderWeekRow(startOff, month){
       '<span style="display:flex;gap:6px;align-items:center;">'+(isToday ? '<span class="today-badge">اليوم</span>' : '')+
       '</span></div>';
     if (showCap) h += renderCapMini(off);
+    h += renderEmgLine(off);
     h += '<div class="day-body">';
     if (!tasks.length){
       h += '<div class="empty-day">'+ic('calendar',26,'#c7cbd3',1.6)+'<span>لا توجد مهام مخططة لهذا اليوم</span></div>';
@@ -2890,6 +2903,8 @@ function renderAgentFocus(){
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
   if (S.agentTab==='committee') return h + renderCommittee() + '</div>';
   if (S.agentTab==='inbound') return h + renderInbound() + (S.inbound.pick ? renderInboundCase() : '') + '</div>';
+  if (canDo(S.agentId, 'emergency')) h += '<div class="emg-bar"><button class="btn btn-emg"'+A('openEmg')+'>'+ic('alert',14,'#fff',2)+' حجز طوارئ</button>'+
+    (emgFor(todayOffset()).length ? '<button class="link-btn"'+A('openEmgDay', todayOffset())+'>طوارئ النهارده ('+emgFor(todayOffset()).length+')</button>' : '')+'</div>';
   if (S.justConfirmed) return h + renderConfirmedCard(S.justConfirmed) + '</div>';
   if (confNow.length) return h + renderConfirmCard(confNow[0], conf.length) + '</div>';
   if (!seq.length){
@@ -3718,6 +3733,7 @@ function renderRouting(){
   }
   h += row('inbound', '<b>المكالمات الواردة كلها</b>', 'r-main');
   h += row('newCase', 'إضافة حالات جديدة');
+  h += row('emergency', 'حجز الطوارئ');
   h += row('__out', '<b>المكالمات الصادرة كلها</b>', 'r-main');
   OUTBOUND_CATS.forEach(function(k){ h += row(k, '<span class="r-sub">'+catLabel(k)+'</span>'); });
   return h + '</tbody></table></div>';
@@ -3907,7 +3923,7 @@ function renderSettings(){
   if (!isAdmin()) return '';
   var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">معدلات الطاقة</div><div class="set-grid">'+
-    setNum('dailyCapacity','الطاقة الاستيعابية (عدد الحضور)','حضور/يوم')+'</div></div>';
+    setNum('dailyCapacity','الطاقة الاستيعابية (عدد الحضور)','حضور/يوم')+setNum('emergencyMax','أقصى حجز طوارئ في اليوم (تحذير بس)','حالة/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid four">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">تنبيه المهام المتأخرة</div><div class="set-grid">'+
@@ -4397,9 +4413,115 @@ function renderInboundCase(){
       (d.requests.length ? d.requests.slice().reverse().map(function(x){ return '<tr><td dir="ltr" style="text-align:right;">'+x.date+'</td><td>'+esc(x.callType)+'</td><td>'+esc(x.place)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.notes)+'</td><td>'+esc(x.by)+'</td></tr>'; }).join('')
         : '<tr><td colspan="6" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>';
   }
-  h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('inboundAdd')+(open?' disabled style="opacity:.5;cursor:not-allowed;"':'')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button></div>';
+  h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('inboundAdd')+(open?' disabled style="opacity:.5;cursor:not-allowed;"':'')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button>'+
+    (canDo(S.agentId, 'emergency') ? '<button class="cms-btn btn-emg"'+A('openEmg', d.id)+'>'+ic('alert',13,'#fff',2)+' حجز طوارئ</button>' : '')+'</div>';
   return h + '</div></div></div>';
 }
+// =====================================================================
+// Emergency bookings: the call center books them on top of the operations tasks
+// (mostly maintenance). They count in the day's capacity but are never blocked;
+// past the daily emergency limit the agent only gets a warning. No confirmation call.
+// =====================================================================
+var EMG_KINDS = ['كسر أو عطل في الطرف','جرح أو ألم من السوكت','الطرف مش مظبوط ومش قادر يمشي','مشكلة في المفصل أو القدم','أخرى'];
+var EMG_VISITS = [['maintDelivery','صيانة'],['maintEval','تقييم صيانة'],['measurement','تقييم طبي']];
+function emgFor(off){ return (S.emergencies||[]).filter(function(e){ return e.dateOffset===off && e.status==='booked'; }); }
+function emgPerson(id){
+  var d = DELIVERED_MAP[id]; if (d) return {id:d.id, name:d.name, phone:d.phone, code:d.code, gov:d.gov, level:d.level};
+  var c = caseById(id); return c ? {id:c.id, name:c.name, phone:c.phone, code:c.stage==='measurement' ? '' : c.code, gov:c.gov, level:c.level} : null;
+}
+function emgSearch(q){
+  q = (q||'').trim(); if (q.length < 2) return [];
+  var seen = {}, out = [];
+  DELIVERED.concat(CASES).forEach(function(x){
+    if (seen[x.id] || out.length >= 8) return;
+    if (x.name.indexOf(q)!==-1 || x.phone.indexOf(q)!==-1 || (x.code||'').toUpperCase().indexOf(q.toUpperCase())!==-1){ seen[x.id] = 1; out.push(emgPerson(x.id)); }
+  });
+  return out;
+}
+function emgText(e){
+  var p = emgPerson(e.cid), v = EMG_VISITS.filter(function(x){ return x[0]===e.visit; })[0];
+  return fillTpl(S.settings.msgBookTpl, {'الاسم':p.name.split(' ')[0], 'النوع':v ? v[1] : '', 'الميعاد':'يوم ' + dayLabel(e.dateOffset) + (e.time ? ' الساعة ' + fmtClock(e.time) : ''),
+    'المكان':'مقر مؤسسة هاند إن هاند', 'الخريطة':safeUrl(S.settings.orgMapUrl) || 'هيتبعت لحضرتك قبل الميعاد', 'ملاحظات':''});
+}
+function renderEmgLine(off){
+  var n = emgFor(off).length; if (!n) return '';
+  return '<button class="emg-line"'+A('openEmgDay', off)+'>'+ic('alert',11,'#c81e3a',2.2)+' طوارئ '+n+'</button>';
+}
+function renderEmg(){
+  var e = S.emg; if (!e) return '';
+  var p = e.cid ? emgPerson(e.cid) : null, n = emgFor(e.dateOffset).length, over = S.settings.emergencyMax > 0 && n >= S.settings.emergencyMax;
+  var h = '<div class="scrim scrim-top"'+A('closeEmg')+'></div><div class="modal modal-sm" style="width:560px;"><div class="modal-head"><div><div class="drawer-title" style="color:var(--danger);">'+ic('alert',16,'#c81e3a',2)+' حجز طوارئ</div>'+
+    '<div class="drawer-sub">زيادة عن مهام الأوبريشن · بيتحسب في طاقة اليوم</div></div><button class="icon-btn"'+A('closeEmg')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
+  if (!p){
+    var res = emgSearch(e.q);
+    h += '<div class="field"><label class="field-label">الحالة</label><input class="case-search" style="width:100%;" placeholder="الاسم أو الكود أو التليفون" value="'+esc(e.q)+'" data-k="emg-q" data-input="emgQ"/></div>';
+    h += res.map(function(x){ return '<button class="emg-pick"'+A('emgPick', x.id)+'><b>'+esc(x.name)+'</b><span>'+(x.code ? '<span dir="ltr">'+x.code+'</span> · ' : '')+esc(x.gov)+' · <span dir="ltr">'+fmtPhone(x.phone)+'</span></span></button>'; }).join('');
+    if (e.q.trim().length >= 2 && !res.length) h += '<div class="table-empty">مفيش حالة بالبيانات دي</div>';
+    return h + '</div></div>';
+  }
+  h += '<div class="emg-who"><b>'+esc(p.name)+'</b><span>'+(p.code ? '<span dir="ltr">'+p.code+'</span> · ' : '')+esc(p.gov)+' · '+esc(p.level)+' · <span dir="ltr">'+fmtPhone(p.phone)+'</span></span>'+
+    (e.fixed ? '' : '<button class="link-btn"'+A('emgUnpick')+'>تغيير</button>')+'</div>';
+  h += '<div class="field"><label class="field-label">نوع الطوارئ</label><div class="reason-pills">'+EMG_KINDS.map(function(k){ return '<button class="'+(e.kind===k?'on':'')+'"'+A('emgSet', 'kind', k)+'>'+k+'</button>'; }).join('')+'</div>'+
+    '<textarea class="note-input" rows="2" style="margin-top:8px;" placeholder="تفاصيل الطوارئ'+(e.kind==='أخرى' ? ' (مطلوب)' : '')+'" data-k="emg-det" data-input="emgDetails">'+esc(e.details)+'</textarea></div>';
+  h += '<div class="field"><label class="field-label">نوع الزيارة</label><div class="seg">'+EMG_VISITS.map(function(v){ return '<button class="seg-btn'+(e.visit===v[0]?' on':'')+'"'+A('emgSet', 'visit', v[0])+'>'+v[1]+'</button>'; }).join('')+'</div></div>';
+  h += '<div class="field"><label class="field-label">الميعاد</label><div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+    '<input class="text-input" type="date" style="width:170px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(e.dateOffset)+'" data-k="emg-date" data-change="emgDate"/>'+
+    '<input class="text-input" type="time" style="width:130px;" value="'+esc(e.time)+'" data-k="emg-time" data-change="emgTime"/><span class="field-hint" style="align-self:center;margin:0;">داخل المؤسسة</span></div>'+
+    '<div class="field-hint">طوارئ '+dayLabel(e.dateOffset)+': '+n+(S.settings.emergencyMax ? ' من '+S.settings.emergencyMax : '')+' · الطاقة '+dayLoad(e.dateOffset)[0].load+' من '+capTxt(capFor(e.dateOffset))+'</div>'+
+    (over ? '<div class="rule-hint warn">اليوم ده وصل للحد الأقصى للطوارئ ('+S.settings.emergencyMax+') – تقدر تكمل الحجز عادي</div>' : '')+'</div>';
+  h += '<div class="field"><label class="field-label">ملاحظات</label><textarea class="note-input" rows="2" data-k="emg-note" data-input="emgNote">'+esc(e.note)+'</textarea></div>';
+  var ok = e.kind && (e.kind!=='أخرى' || e.details.trim());
+  return h + '</div><div class="modal-foot"><button class="btn btn-danger"'+A('emgBook')+(ok ? '' : ' disabled')+'>'+ic('check',13,'#fff',2.4)+' حجز طوارئ</button><button class="btn btn-secondary"'+A('closeEmg')+'>إلغاء</button></div></div>';
+}
+function renderEmgDay(){
+  var off = S.emgDay; if (off==null) return '';
+  var list = (S.emergencies||[]).filter(function(e){ return e.dateOffset===off; });
+  var canEdit = isCC() || isSupervisor();
+  var h = '<div class="scrim"'+A('closeEmgDay')+'></div><div class="modal" style="width:820px;max-width:95vw;">'+
+    panelHead(ic('alert',16,'#c81e3a',2)+' حجز الطوارئ – '+dayLabel(off), emgFor(off).length+' حالة'+(S.settings.emergencyMax ? ' · الحد '+S.settings.emergencyMax : '')+' · زيادة عن مهام الأوبريشن')+'<div class="modal-body">';
+  if (!list.length) return h + '<div class="table-empty">مفيش حجز طوارئ في اليوم ده</div></div></div>';
+  h += '<table class="cases-table"><thead><tr><th>الحالة</th><th>الطوارئ</th><th>الزيارة</th><th>الساعة</th><th>حجزها</th><th></th></tr></thead><tbody>';
+  list.forEach(function(e){
+    var p = emgPerson(e.cid), v = EMG_VISITS.filter(function(x){ return x[0]===e.visit; })[0], off2 = e.status!=='booked';
+    h += '<tr'+(off2 ? ' style="opacity:.5;"' : '')+'><td style="font-weight:700;">'+esc(p.name)+'<div class="field-hint" style="margin:0;" dir="ltr">'+fmtPhone(p.phone)+'</div></td>'+
+      '<td>'+esc(e.kind)+(e.details ? '<div class="field-hint" style="margin:0;">'+esc(e.details)+'</div>' : '')+(e.note ? '<div class="field-hint" style="margin:0;">ملاحظة: '+esc(e.note)+'</div>' : '')+'</td>'+
+      '<td>'+(v ? v[1] : '')+'</td><td>'+(e.time ? fmtClock(e.time) : '—')+'</td><td>'+esc(e.byName)+'<div class="field-hint" style="margin:0;">'+fmtWhen(e.at)+'</div></td>'+
+      '<td>'+(off2 ? '<span class="cap-over">اتلغى</span>' : canEdit ? '<button class="ghost-btn"'+A('emgCancel', e.id)+'>'+ic('x',12)+' إلغاء</button>' : '')+'</td></tr>';
+  });
+  return h + '</tbody></table></div></div>';
+}
+Object.assign(ACT, {
+  openEmg: function(cid){ S.emg = {q:'', cid:cid||null, fixed:!!cid, kind:'', details:'', visit:'maintDelivery', dateOffset:todayOffset(), time:'', note:''}; render(); },
+  closeEmg: function(){ S.emg = null; render(); },
+  emgQ: function(v){ S.emg.q = v; render(); },
+  emgPick: function(id){ S.emg.cid = id; render(); },
+  emgUnpick: function(){ S.emg.cid = null; render(); },
+  emgSet: function(k, v){ S.emg[k] = v; render(); },
+  emgDetails: function(v){ S.emg.details = v; },
+  emgNote: function(v){ S.emg.note = v; },
+  emgDate: function(v){ var d = new Date(v + 'T00:00:00'); if (!isNaN(d)) S.emg.dateOffset = Math.max(todayOffset(), daysBetween(BASE_SUNDAY, d)); render(); },
+  emgTime: function(v){ S.emg.time = v; render(); },
+  emgBook: function(){
+    var e = S.emg; if (!e || !e.cid || !e.kind || (e.kind==='أخرى' && !e.details.trim())) return;
+    var p = emgPerson(e.cid);
+    var rec = {id:'E'+Date.now(), cid:e.cid, kind:e.kind, details:e.details.trim(), visit:e.visit, dateOffset:e.dateOffset, time:e.time, note:e.note.trim(),
+      by:S.agentId, byName:actorName(), at:now(), status:'booked'};
+    if (S.settings.msgOn) rec.msg = {channel:S.settings.msgChannel, text:emgText(rec), at:now()};
+    S.emergencies.push(rec);
+    S.audit.unshift({at:now(), who:actorName(), action:'حجز طوارئ', tid:null, label:p.name, detail:e.kind + ' · ' + dayLabel(e.dateOffset)});
+    S.emg = null;
+    toast('اتحجز طوارئ لـ ' + p.name + ' ' + dayLabel(rec.dateOffset) + (rec.msg ? ' · اتبعتت رسالة ' + CHANNELS[rec.msg.channel] : ''));
+    render();
+  },
+  openEmgDay: function(off){ S.emgDay = parseInt(off,10); render(); },
+  closeEmgDay: function(){ S.emgDay = null; render(); },
+  emgCancel: function(id){
+    var e = (S.emergencies||[]).filter(function(x){ return x.id===id; })[0]; if (!e) return;
+    e.status = 'cancelled';
+    S.audit.unshift({at:now(), who:actorName(), action:'إلغاء حجز طوارئ', tid:null, label:emgPerson(e.cid).name, detail:e.kind});
+    toast('اتلغى حجز الطوارئ'); render();
+  },
+});
 Object.assign(ACT, {
   inboundSearch: function(v){ S.inbound.q = v; S.inbound.pick = null; render(); },
   inboundPick: function(id){ S.inbound.pick = id; S.inbound.form = emptyInboundForm(); render(); },
