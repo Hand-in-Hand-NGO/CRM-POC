@@ -338,6 +338,7 @@ label { font-weight: bold; }
     .store-tabs button .n { background: rgba(0,0,0,.07); border-radius: 10px; padding: 0 7px; font-size: 11px; }
     .store-tabs button.on.t-all { background: var(--hih-toggle-all); border-color: var(--hih-toggle-all); color: #fff; }
     .store-tabs button.on.t-new { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
+    .store-tabs button.on.t-post { background: #64748b; border-color: #64748b; color: #fff; }
     .store-tabs button.on.t-maint { background: var(--hih-danger); border-color: var(--hih-danger); color: #fff; }
     .store-tabs button.on .n { background: rgba(255,255,255,.25); }
     .filters { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; margin-top: 12px; }
@@ -730,6 +731,29 @@ CASES.forEach(function(c){ if (c.person && CASE_MAP[c.person]) c.phone = CASE_MA
 // other requests (other codes / limbs) of the same person
 function otherLimbs(c){ return CASES.filter(function(x){ return x.person===c.person && x.id!==c.id; }); }
 function caseById(id){ return CASE_MAP[id] || null; }
+// "مؤجل لمرحلة أخرى": requests whose amputation level we don't work on yet. They wait outside the pools;
+// once the funding page funds one and sends it to booking it joins the medical evaluation pool like any case.
+var POSTPONED_LEVELS = ['فوق الكوع','مفصل الحوض (الإلية)','مفصل الكتف'];
+var POSTPONED = [
+  ['P-3001','رمضان عبد الحكيم سالم','المنيا',47,'فوق الكوع',210], ['P-3002','نادية فؤاد حسن','القاهرة',36,'مفصل الحوض (الإلية)',180],
+  ['P-3003','يوسف إبراهيم منصور','سوهاج',19,'فوق الكوع',160], ['P-3004','هبة محمود شاكر','الجيزة',29,'مفصل الكتف',140],
+  ['P-3005','عادل مصطفى رزق','أسيوط',58,'فوق الكوع',300], ['P-3006','مريم سعيد عبد الله','بني سويف',11,'مفصل الحوض (الإلية)',95],
+  ['P-3007','خالد عبد الرحيم بدوي','قنا',41,'فوق الكوع',120], ['P-3008','سماح جمال الدين','الإسكندرية',33,'مفصل الكتف',75],
+].map(function(r){
+  var c = mk(r[0], r[1], r[2], 'بدون', r[4], r[3], 0, '', 'measurement', r[5]);
+  c.stage = 'postponed'; c.postponedStage = true; c.code = ''; c.person = c.id;
+  return c;
+});
+function postponedById(id){ for (var i=0;i<POSTPONED.length;i++){ if (POSTPONED[i].id===id) return POSTPONED[i]; } return null; }
+// released = {caseId: {company, at}} from the funding page -> the case enters the medical evaluation pool
+function releasePostponed(released){
+  Object.keys(released||{}).forEach(function(id){
+    var c = postponedById(id); if (!c || (CASE_MAP[id] && CASE_MAP[id].stage==='measurement')) return;
+    c.stage = 'measurement'; c.order = TASK_TYPES.measurement.order; c.funding = released[id].company;
+    if (CASES.indexOf(c)===-1) CASES.push(c);
+    CASE_MAP[id] = c;
+  });
+}
 function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
 
 
@@ -754,14 +778,21 @@ function loadStores(){
   F.store = readStore(FUND_KEY, null) || {};
   F.store.companies = F.store.companies || []; F.store.alloc = F.store.alloc || {};
   F.store.holds = F.store.holds || {}; F.store.log = F.store.log || []; F.store.notes = F.store.notes || {};
+  F.store.released = F.store.released || {};
+  releasePostponed(F.store.released);                 // sent to booking -> now in the medical evaluation pool
+  waitingPostponed().forEach(function(c){ CASE_MAP[c.id] = c; });   // profile / notes find them too
 }
+// "مؤجل لمرحلة أخرى" cases still waiting (not sent to booking yet)
+function waitingPostponed(){ return POSTPONED.filter(function(c){ return c.stage==='postponed'; }); }
 function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
 function logIt(action, ids, detail){ F.store.log.push({at:Date.now(), by:CSR_USER, action:action, ids:ids, detail:detail||''}); }
 
 // the two pools the funding page works on
 var STORES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد'};
-function storeLbl(k){ return '<span class="store-lbl" style="color:'+TASK_TYPES[k].color+';"><i style="background:'+TASK_TYPES[k].color+';"></i>'+STORES[k]+'</span>'; }
+function storeLbl(k){
+  if (k==='postponed') return '<span class="store-lbl" style="color:#64748b;"><i style="background:#64748b;"></i>مؤجل لمرحلة أخرى</span>';
+  return '<span class="store-lbl" style="color:'+TASK_TYPES[k].color+';"><i style="background:'+TASK_TYPES[k].color+';"></i>'+STORES[k]+'</span>'; }
 function inStores(c){ return !!STORES[c.stage]; }
 function hasCode(c){ return c.stage!=='measurement'; }   // medical evaluation cases have no limb code yet
 function allocOf(c){ return F.store.alloc[c.id] || null; }
@@ -792,11 +823,11 @@ function matchState(c, st){
 }
 function baseFiltered(skipStage, skipState){
   var f = F.filters, q = f.q.trim().toUpperCase();
-  return CASES.filter(function(c){
-    if (!inStores(c)) return false;
+  var src = !skipStage && f.stage==='postponed' ? waitingPostponed() : CASES.filter(inStores);
+  return src.filter(function(c){
     if (q && c.name.indexOf(f.q.trim())===-1 && !(hasCode(c) && c.code.toUpperCase().indexOf(q)!==-1)) return false;
     if (f.level && c.level!==f.level) return false;
-    if (!skipStage && f.stage && c.stage!==f.stage) return false;
+    if (!skipStage && f.stage && f.stage!=='postponed' && c.stage!==f.stage) return false;
     if (!skipState && !matchState(c, f.state)) return false;
     return true;
   });
@@ -852,12 +883,13 @@ function renderKpis(){
 
 function renderFilters(){
   var f = F.filters, base = baseFiltered(true);
-  var stages = [['','الكل','t-all'],['measurement',STORES.measurement,'t-new'],['newDelivery',STORES.newDelivery,'t-new']];
+  var stages = [['','الكل','t-all'],['measurement',STORES.measurement,'t-new'],['newDelivery',STORES.newDelivery,'t-new'],['postponed','مؤجل لمرحلة أخرى','t-post']];
+  var postN = waitingPostponed().filter(function(c){ return (!f.q.trim() || c.name.indexOf(f.q.trim())!==-1) && (!f.level || c.level===f.level); }).length;
   var states = [['','الكل'],['funded','ممولة'],['unfunded','غير ممولة'],['held','موقوفة']];
-  var levels = LEVEL_OPTIONS.filter(function(l){ return CASES.some(function(c){ return inStores(c) && c.level===l; }); });
+  var levels = LEVEL_OPTIONS.concat(POSTPONED_LEVELS.filter(function(l){ return LEVEL_OPTIONS.indexOf(l)===-1; })).filter(function(l){ return CASES.concat(waitingPostponed()).some(function(c){ return (inStores(c) || c.stage==='postponed') && c.level===l; }); });
   return '<div class="card" style="margin-bottom:14px;"><div class="card-body">'+
     '<div class="store-tabs">'+stages.map(function(s){
-      return '<button class="'+s[2]+(f.stage===s[0]?' on':'')+'"'+A('setStage', s[0])+'><i class="fa fa-'+(s[0]?'cube':'th-large')+'"></i>'+s[1]+'<span class="n">'+base.filter(function(c){ return !s[0] || c.stage===s[0]; }).length+'</span></button>';
+      return '<button class="'+s[2]+(f.stage===s[0]?' on':'')+'"'+A('setStage', s[0])+'><i class="fa fa-'+(s[0]?'cube':'th-large')+'"></i>'+s[1]+'<span class="n">'+(s[0]==='postponed' ? postN : base.filter(function(c){ return !s[0] || c.stage===s[0]; }).length)+'</span></button>';
     }).join('')+'</div>'+
     '<div class="filters">'+
     '<div class="fg"><label>بحث</label><div class="search-box"><i class="fa fa-search"></i><input class="form-control" placeholder="الاسم أو الكود" value="'+esc(f.q)+'" data-k="q" data-input="setFilter" data-a="q"/></div></div>'+
@@ -872,7 +904,8 @@ function renderFilters(){
 function renderTable(){
   var list = filtered(), sel = F.sel;
   var allOn = list.length && list.every(function(c){ return sel.indexOf(c.id)!==-1; });
-  var h = '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> حالة</span><span class="sp"></span>'+
+  var h = (F.filters.stage==='postponed' ? '<div class="note note-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i><div>حالات مستوى بترها مش بنشتغل عليه دلوقتي ('+POSTPONED_LEVELS.join('، ')+'). لما تحدد ممول وتدوس <b>تمويل وإرسال للحجز</b> الحالة بتروح حصالة التقييم الطبي والقياسات والأوبريشن يحجزها عادي.</div></div>' : '')+
+    '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> حالة</span><span class="sp"></span>'+
     '<button class="btn btn-success btn-sm btn-r"'+A('exportCsv')+'><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button></div>';
   function th(label, a, d){
     var on = F.sort===a || F.sort===d, nx = F.sort===d ? a : d;
@@ -905,14 +938,15 @@ function renderTable(){
 
 function renderSelBar(){
   var sel = F.sel; if (!sel.length) return '';
-  var st = {}; sel.forEach(function(id){ var c = caseById(id); st[c.stage] = (st[c.stage]||0) + 1; });
+  var st = {}, post = F.filters.stage==='postponed'; sel.forEach(function(id){ var c = caseById(id); st[c.stage] = (st[c.stage]||0) + 1; });
   return '<div class="sel-bar"><span class="n"><i class="fa fa-check-square"></i> '+sel.length+' حالة محددة</span>'+
-    '<span class="brk">'+Object.keys(st).map(function(k){ return STORES[k]+' '+st[k]; }).join(' · ')+'</span>'+
+    '<span class="brk">'+Object.keys(st).map(function(k){ return (STORES[k] || 'مؤجل لمرحلة أخرى')+' '+st[k]; }).join(' · ')+'</span>'+
     '<button class="lnk"'+A('clearSel')+'>إلغاء التحديد</button><span class="sp"></span>'+
     '<button class="btn btn-default"'+A('openNote')+'><i class="fa fa-comment-o"></i> ملاحظة</button>'+
-    '<button class="btn btn-warning"'+A('openHold')+'><i class="fa fa-pause-circle"></i> إيقاف</button>'+
+    (post ? '' : '<button class="btn btn-warning"'+A('openHold')+'><i class="fa fa-pause-circle"></i> إيقاف</button>')+
     '<select data-change="setCompany"><option value="">— الممول —</option>'+companies().map(function(c){ return '<option'+(F.company===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'<option value="__new">+ ممول جديد…</option></select>'+
-    '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>';
+    (post ? '<button class="btn btn-primary"'+A('sendPostponed')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-paper-plane"></i> تمويل وإرسال للحجز</button></div>'
+      : '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>');
 }
 
 function renderCompanies(){
@@ -1003,7 +1037,7 @@ var ACT = {
     loadStores(); if (companies().indexOf(n)===-1){ F.store.companies.push(n); saveStore(); }
     F.company = n; F.newCompany = ''; F.modal = null; toast('تمت إضافة ' + n); render();
   },
-  setStage: function(v){ F.filters.stage = v; render(); },
+  setStage: function(v){ if ((v==='postponed') !== (F.filters.stage==='postponed')) F.sel = []; F.filters.stage = v; render(); },
   setState: function(v){ F.filters.state = v; render(); },
   setFilter: function(v, key){ F.filters[key] = v; render(); },
   setSort: function(v){ F.sort = v; render(); },
@@ -1028,6 +1062,16 @@ var ACT = {
   selectOthers: function(cid){
     otherLimbs(caseById(cid)).forEach(function(o){ if (inStores(o) && F.sel.indexOf(o.id)===-1) F.sel.push(o.id); });
     F.modal = null; render();
+  },
+  // a postponed case gets a funder and goes to the medical evaluation pool (operations books it like any case)
+  sendPostponed: function(){
+    if (!F.sel.length || !F.company) return;
+    loadStores(); var at = Date.now(), ids = F.sel.filter(function(id){ var c = caseById(id); return c && c.stage==='postponed'; });
+    ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER}; F.store.released[id] = {company:F.company, at:at, by:CSR_USER}; });
+    logIt('تمويل وإرسال للحجز: ' + F.company, ids, 'من مؤجل لمرحلة أخرى');
+    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    releasePostponed(F.store.released);
+    F.sel = []; toast(ids.length + ' حالة اتمولت من ' + F.company + ' واتبعتت لحصالة التقييم الطبي والقياسات'); render();
   },
   assignFunder: function(){
     if (!F.sel.length || !F.company) return;
