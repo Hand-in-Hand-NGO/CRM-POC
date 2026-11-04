@@ -3936,8 +3936,8 @@ function setNum(path, label, suffix){
 function renderSettings(){
   if (!isAdmin()) return '';
   var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
-  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">الطاقة الاستيعابية لكل نوع</div><div class="set-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">'+
-    Object.keys(TASK_TYPES).map(function(k){ return setNum('cap_' + k, 'الطاقة الاستيعابية – ' + TASK_TYPES[k].label, 'حضور/يوم'); }).join('')+'</div>'+
+  h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">الطاقة الاستيعابية</div><div class="set-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">'+
+    Object.keys(TASK_TYPES).map(function(k){ return setNum('cap_' + k, TASK_TYPES[k].label, 'حضور/يوم'); }).join('')+'</div>'+
     '<div class="set-grid" style="margin-top:10px;">'+setNum('emergencyMax','أقصى حجز طوارئ في اليوم (تحذير بس)','حالة/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid four">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
