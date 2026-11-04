@@ -531,6 +531,9 @@ label { font-weight: bold; }
     .pf-yn button{border:0;background:#fff;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
     .pf-yn button.on{background:#ddd;font-weight:700;} .pf-yn button.on.off{background:#f96a74;color:#fff;}
     .pf-changes{background:#f96a74 !important;width:100%;justify-content:center;}
+    .pf-status.post{color:#b45309;font-weight:700;} .pf-status.ok{color:#15803d;font-weight:700;}
+    .pf-reason{font-size:12.5px;color:#555;padding-top:7px;}
+    .pf-hint{font-size:11.5px;color:#888;padding-top:8px;display:block;}
     /*__PFCSS_END__*/
   </style>
 </head>
@@ -1147,7 +1150,8 @@ var ACT = {
 // Case profile – the same block as the operations room (copied by the build)
 // =====================================================================
 /*__PF_START__*/
-var UNSUPPORTED_LEVELS = ['مفصل الحوض','مفصل الكتف','أصابع اليد'];
+// levels we don't work on now -> "مؤجل لمرحلة أخرى" (the postponed list's levels + a few more)
+var UNSUPPORTED_LEVELS = POSTPONED_LEVELS.concat(['مفصل الحوض','أصابع اليد']).filter(function(l, i, a){ return a.indexOf(l)===i; });
 var NC_OPTS = {
   reqStatus:['مقبول','مؤجل','مرفوض','تحت البحث'], postponeReason:['مؤجل لمرحلة اخرى','مؤجل لإتمام 6 شهور','مؤجل بسبب العمر','مؤجل بسبب الوزن','أخرى'],
   callType:['وارد','صادر'], nationality:['مصري','سوداني','سوري','أخرى'], insured:['نعم','لا'], marital:['أعزب','متزوج','مطلق','أرمل'], gender:['ذكر','أنثى'],
@@ -1189,18 +1193,22 @@ function ncResult(nc){
   var out = [], today = (function(){ var n = typeof nowDate==='function' ? nowDate() : new Date(); n = new Date(n.getTime()); n.setHours(0,0,0,0); return n; })();
   if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ده ('+nc.level+') مش بنشتغل فيه حاليًا'});
   var ls = parseDay(nc.lastSurgery);
-  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6))});
+  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6)), until:fmtDay(addMonths(ls, 6))});
   var dob = parseDay(nc.dob);
-  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60))});
+  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60)), until:fmtDay(addMonths(dob, 60))});
   var w = parseInt(nc.weight,10);
   if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكتر من 120)'});
   if (out.length) return {ok:false, list:out};
   if (!nc.level || !ls || !dob || !nc.weight) return {ok:null, list:[]};
   return {ok:true, list:[{k:'ok', t:'مقبول الشروط', d:''}]};
 }
+// rows to show for this record ("عدد الأجهزة" only when يوجد أجهزة = نعم)
+function ncRows(nc){
+  return NC_ROWS.map(function(r){ return r[0] && r[0][0]==='devices' && nc.devices==='نعم' ? [r[0], ['devicesCount','عدد الأجهزة',1,'num']] : r; });
+}
 function ncMissing(nc){
   var miss = [];
-  NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f && f[2] && !String(nc[f[0]]||'').trim()) miss.push(f); }); });
+  ncRows(nc).forEach(function(r){ r.forEach(function(f){ if (f && f[2] && !String(nc[f[0]]||'').trim()) miss.push(f); }); });
   return miss;
 }
 function ncField(f, nc, act, pre){
@@ -1254,15 +1262,25 @@ function profileOf(id){
     chronic: d ? d.chronic : 'لا يوجد', weight: String(d ? d.weight : 40 + seed%50), level:b.level, side: d ? d.side : pick(NC_OPTS.side, 6),
     ampDate: d ? d.ampDate : (y - Math.min(age-1, 3)) + '-08-09', cause: d ? d.cause : pick(NC_OPTS.cause, 7), causeDetails: d ? d.causeDetails : pick(NC_OPTS.cause, 7),
     lastSurgery: d ? d.lastSurgery : (y - 1) + '-08-09', devices:'لا', sponsor:'', notes:'', notes2:'', qualityNotes:'',
-    reqStatus: 'مقبول', postponeReason:'', postponeUntil:'', committee: c ? 'مقبول' : '-', researcher: pick(RESEARCHERS, 8), assignDate:'', researchDate:'',
+    reqStatus: 'مقبول', postponeReason:'', postponeUntil:'', committee: c && c.stage!=='postponed' ? 'مقبول' : '-', researcher: pick(RESEARCHERS, 8), assignDate:'', researchDate:'',
     responsible:'لا', nextStep:'research', active:true, fundedNoResearch:false, attachments:[], changes:[],
   };
+  var st0 = pfStatus(id, p); p.reqStatus = st0.status; p.postponeReason = st0.reasons.join(' + '); p.postponeUntil = st0.until || '';
   PROFILES.store[id] = p; return p;
+}
+// request status comes from the data: the eligibility result decides مقبول / مؤجل and why.
+// Cases already past measurement (delivery / maintenance) were accepted before and stay مقبول.
+function pfStatus(id, d){
+  var bb = PF_HOOKS.base(id), c = bb.c, past = !!bb.d || (c && c.stage!=='measurement' && c.stage!=='postponed');
+  if (past) return {status:'مقبول', reasons:[], locked:true};
+  var res = ncResult({level:d.level, lastSurgery:d.lastSurgery, dob:d.dob, weight:d.weight});
+  if (res.ok===false) return {status:'مؤجل', reasons:res.list.map(function(x){ return x.t; }), until:res.list.map(function(x){ return x.until; }).filter(Boolean).sort().pop() || '', locked:false};
+  return {status:'مقبول', reasons:[], locked:false};
 }
 function profBtn(id){ return ' <button class="prof-btn" title="بروفيل الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' بروفيل الحالة</button>'; }
 var PROFILE_LABELS = {};
 NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f) PROFILE_LABELS[f[0]] = f[1]; }); });
-Object.assign(PROFILE_LABELS, {reqStatus:'حالة الطلب', postponeReason:'سبب التأجيل', postponeUntil:'مؤجل لتاريخ', responsible:'هل يوجد مسئول عن الحالة', nextStep:'الخطوة التالية', active:'نشط', fundedNoResearch:'ممول بدون بحث'});
+Object.assign(PROFILE_LABELS, {devicesCount:'عدد الأجهزة', reqStatus:'حالة الطلب', postponeReason:'سبب التأجيل', postponeUntil:'مؤجل لتاريخ', responsible:'هل يوجد مسئول عن الحالة', nextStep:'الخطوة التالية', active:'نشط', fundedNoResearch:'ممول بدون بحث'});
 function renderProfile(){
   var pf = PROFILES.open; if (!pf) return '';
   var d = pf.draft, res = ncResult({level:d.level, lastSurgery:d.lastSurgery, dob:d.dob, weight:d.weight}), v = PF_HOOKS.visits(pf.id);
@@ -1278,11 +1296,15 @@ function renderProfile(){
     (d.attachments.length ? d.attachments.map(function(a, i){ return '<tr><td>'+esc(a.name)+'</td><td>'+esc(a.type)+'</td><td>'+esc(a.by)+'</td><td>'+esc(a.at)+'</td><td><button class="cms-del"'+A('profDetach', i)+'>'+pfIc('x',12,null,2.4)+'</button></td></tr>'; }).join('')
       : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table></div></div>';
   h += '<div class="pf-form"><div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div><div class="cms-row">'+ro('كود', d.code)+'<div></div><div></div></div>';
-  NC_ROWS.forEach(function(r){ h += '<div class="cms-row">'+f(r[0])+f(r[1])+'</div>'; });
-  if (res.ok!==null) h += '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.d ? ' – ' + esc(x.d) : ''); }).join('<br>')+'</div>';
-  h += band('b-purple', '<div class="cms-row">'+f(['reqStatus','حالة الطلب',0,'select'])+'<div></div><div></div></div>'+
-    (d.reqStatus==='مؤجل' ? '<div class="cms-row">'+f(['postponeReason','سبب التأجيل',0,'select'])+f(['postponeUntil','مؤجل لتاريخ',0,'date'])+'</div>' : '')+
-    '<div class="pf-kvs">'+kv('نتيجة اللجنة', d.committee)+kv('مؤجل لتاريخ', d.reqStatus==='مؤجل' ? d.postponeUntil : '-')+'</div>');
+  ncRows(d).forEach(function(r){ h += '<div class="cms-row">'+f(r[0])+f(r[1])+'</div>'; });
+  if (res.ok!==null) h += '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.until ? ' حتى ' + x.until : x.k==='ok' ? '' : ' حتى تاريخ'); }).join('<br>')+'</div>';
+  var st = pfStatus(pf.id, d);
+  if (st.status==='مؤجل' && st.until && !d.postponeUntil) d.postponeUntil = st.until;   // known date (6 months / age)
+  h += band('b-purple', '<div class="cms-row"><label class="cms-label">حالة الطلب</label><div class="cms-field"><div class="cms-ro pf-status '+(st.status==='مؤجل'?'post':'ok')+'">'+st.status+'</div></div>'+
+      (st.locked ? '<div></div><div class="cms-field"><span class="pf-hint">الحالة اتقبلت قبل كده وعدّت مرحلة المقاس</span></div>' : '<div></div><div></div>')+'</div>'+
+    (st.status==='مؤجل' ? '<div class="cms-row"><label class="cms-label">سبب التأجيل</label><div class="cms-field"><div class="pf-reason">'+st.reasons.join('<br>')+'</div></div>'+
+      f(['postponeUntil','مؤجل لتاريخ',0,'date'])+'</div>' : '')+
+    '<div class="pf-kvs">'+kv('نتيجة اللجنة', d.committee)+kv('مؤجل لتاريخ', st.status==='مؤجل' ? (d.postponeUntil || '-') : '-')+'</div>');
   h += band('b-orange', '<div class="pf-kvs">'+kv('اسم الباحث', d.researcher)+kv('تاريخ الإسناد', d.assignDate)+kv('تاريخ البحث', d.researchDate)+'<div></div>'+
     kv('تاريخ حضور المقاسات', v.meas.day)+kv('هل حضر', v.meas.att)+kv('تاريخ حجز الاستلام', v.deliv.day)+kv('هل حضر', v.deliv.att)+'</div>');
   h += band('b-blue', '<div class="pf-kvs">'+kv('التقييم الهندسي (Anatomical)', '-')+kv('سبب التأجيل', '-')+'</div>');
@@ -1320,6 +1342,9 @@ var PF_ACTIONS = {
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
     var miss = ncMissing(d);
     if (miss.length){ d.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
+    var st = pfStatus(pf.id, d);
+    d.reqStatus = st.status; d.postponeReason = st.reasons.join(' + ');
+    if (st.status!=='مؤجل') d.postponeUntil = ''; else if (st.until && !d.postponeUntil) d.postponeUntil = st.until;
     var at = pfStamp(), by = PF_HOOKS.who(), ch = [];
     Object.keys(PROFILE_LABELS).forEach(function(k){
       var a = old[k], b = d[k];
