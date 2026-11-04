@@ -3912,7 +3912,7 @@ function renderCapacity(){
   h += '<div class="field"><label class="field-label">الطاقة الاستيعابية في اليوم ده لكل نوع (عدد الحضور)</label><div class="cap-type-grid">'+
     Object.keys(TASK_TYPES).map(function(k){
       var m = TASK_TYPES[k], x = loads.filter(function(r){ return r.key===k; })[0], lv = levelClass(x);
-      return '<div class="cap-type" style="--edge:'+m.color+';"><div class="cap-type-head"><span style="color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+' '+m.label+'</span><b class="cap-'+lv+'">'+x.load+' من '+capTxt(x.cap)+'</b></div>'+
+      return '<div class="cap-type" style="--edge:'+m.color+';"><div class="cap-type-head"><span style="color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+' '+m.label+'</span><b class="cap-'+lv+'">'+(isFinite(x.cap) ? x.load+' من '+x.cap : x.load+' · بدون حد')+'</b></div>'+
         (admin
           ? (S.capUnlimited[k] ? '' : '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft[k])+'" data-k="cap-'+k+'" data-input="capInput" data-a="'+k+'"/><span>حضور</span></div>')+
             '<label class="switch-row" style="margin:6px 0 0;"><input type="checkbox"'+(S.capUnlimited[k]?' checked':'')+A('toggleCapUnlimited', k)+'/> بدون حد</label>'
