@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>متابعة الإجراءات</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-rtl/3.4.0/css/bootstrap-rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --live-font: 'Droid Arabic Kufi', 'Noto Kufi Arabic', Tahoma, Arial, sans-serif;
+            --vs-bg: #f5f6f8;
+            --vs-border: #e2e5ea;
+            --vs-surface-2: #eef0f3;
+            --vs-text: #1a1d23;
+            --vs-text-dim: #62697a;
+            --vs-text-faint: #97a0ad;
+            --vs-accent: #2f6fed;
+        }
+
+        body, h1, h2, h3, h4, h5, h6, .tooltip, .popover, .select2-container, .select2-dropdown, input, select, textarea, button {
+            font-family: var(--live-font);
+        }
+
+        body { background: #fff; color: #333; margin: 0; }
+
+        /* ===== shell (same as the visits page) ===== */
+        .main-header {
+            position: fixed; top: 0; right: 0; left: 0; height: 50px; z-index: 1030;
+            background: linear-gradient(90deg, #d3f1f8 0%, #ebf6ed 17%, #fff9e4 34%, #f9e7de 47%, #f8f2e4 57%, #d9eaf4 64%, #e9efec 74%, #baeae6 100%);
+            box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+        }
+        .main-header a { color: #535252; margin: 0 10px; text-decoration: none; }
+        .main-header .user-chip i { font-size: 22px; vertical-align: middle; }
+        .main-sidebar { position: fixed; top: 50px; right: 0; bottom: 0; width: 50px; background: #222d32; z-index: 1020; padding-top: 6px; text-align: center; }
+        .main-sidebar a { display: block; color: #b8c7ce; padding: 10px 0; }
+        .main-sidebar a.active, .main-sidebar a:hover { color: #fff; background: #1e282c; }
+        .content-wrapper { margin-top: 50px; margin-right: 50px; padding: 15px; background: #fff; }
+
+        .panel-primary { border-style: inherit; }
+        .panel-primary > .panel-heading {
+            color: #535252 !important; border: 0 !important;
+            background: linear-gradient(90deg, #d3f1f8 0%, #ebf6ed 17%, #fff9e4 34%, #f9e7de 47%, #f8f2e4 57%, #d9eaf4 64%, #e9efec 74%, #baeae6 100%);
+        }
+        .panel { box-shadow: 0 0.46875rem 2.1875rem rgba(90, 97, 105, 0.1), 0 0.9375rem 1.40625rem rgba(90, 97, 105, 0.1), 0 0.25rem 0.53125rem rgba(90, 97, 105, 0.12), 0 0.125rem 0.1875rem rgba(90, 97, 105, 0.1) !important; }
+        .panel-title { font-weight: bold; }
+
+        .form-control { border-radius: 0; box-shadow: none; border-color: #d2d6de; }
+        .form-control:focus { border-color: #67b9ec !important; box-shadow: none; }
+        label.control-label { font-weight: bold; }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { background: #67b9ec; }
+
+        .btn-primary { background: #0093e9; border-color: #0093e9; }
+        .btn-success { background: #31c860; border-color: #2db457; }
+        .btn-success:hover, .btn-success:focus { background: #2db457; }
+        .btn-danger { background: #f96a74; border-color: #f96a74; }
+        .btn-default { background: #f4f4f4; border-color: #ddd; color: #444; }
+        .btn-default.btn-all.active { background: #b7b7b7; color: #fff; }
+        .btn-default.btn-on.active { background: #5bb75b; color: #fff; }
+        .btn-default.btn-off.active { background: #da4f49; color: #fff; }
+        .btn-round { border-radius: 10px !important; }
+
+        /* ===== filters: stacked, each only as wide as it needs ===== */
+        .filters { max-width: 760px; }
+        .filter-item { margin-bottom: 12px; }
+        .filter-inline { display: flex; align-items: center; gap: 4px; }
+        .filter-inline .form-control { flex: 1 1 auto; }
+        .filter-inline .date-field { width: 160px; flex: none; }
+        .box-content { padding: 8px 10px; background: #f6f6f6; border-radius: 10px; border: 1px solid #d7dbe0; }
+        .w-user { width: 360px; }
+        .w-text { width: 420px; }
+        .w-toggle { width: 420px; }
+        .box-footer { border-top: 1px solid #eee; padding-top: 12px; margin-top: 6px; text-align: left; }
+
+        /* ===== summary (dashboard style) ===== */
+        .group-label { font-size: 11px; font-weight: 700; color: var(--vs-text-faint); margin: 18px 0 8px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .kpi { background: var(--vs-bg); border: 1px solid var(--vs-border); border-radius: 10px; padding: 12px; }
+        .kpi .num { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--vs-text); font-variant-numeric: tabular-nums; }
+        .kpi .lbl { font-size: 11.5px; color: var(--vs-text-dim); margin-top: 4px; }
+        .kpi.done .num { color: #15803d; }
+        .kpi.pend .num { color: #d9343f; }
+        .kpi.late .num { color: #c27c0e; }
+
+        .users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 8px; }
+        .user-card { background: #fff; border: 1px solid var(--vs-border); border-radius: 10px; padding: 9px 11px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+        .user-card:hover { border-color: #67b9ec; }
+        .user-card.selected { border-color: #0093e9; box-shadow: 0 0 0 2px #e6f1fb; }
+        .user-card .uc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+        .user-card .uc-name { font-weight: 700; font-size: 13px; color: var(--vs-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-card .uc-role { font-size: 10.5px; color: var(--vs-text-faint); white-space: nowrap; }
+        .user-card .uc-nums { display: flex; gap: 10px; font-size: 11.5px; margin-top: 4px; }
+        .user-card .uc-nums .d { color: #15803d; }
+        .user-card .uc-nums .p { color: #d9343f; font-weight: 700; }
+        .bar { height: 6px; background: var(--vs-surface-2); border-radius: 6px; overflow: hidden; margin-top: 6px; }
+        .bar i { display: block; height: 100%; background: #31c860; border-radius: 6px; }
+        .bar.warn i { background: #ff6a00; }
+        .bar.bad i { background: #f96a74; }
+
+        /* ===== checklist table ===== */
+        .table-toolbar { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; }
+        .table-toolbar .toolbar-start { display: flex; align-items: center; gap: 12px; }
+        .table-toolbar select { width: 70px; display: inline-block; }
+        .page-info { color: #555; }
+        .legend { font-size: 11.5px; color: #666; }
+        .legend span { margin-left: 12px; white-space: nowrap; }
+        .table-scroll { overflow-x: auto; }
+        .ck-table { margin-bottom: 0; }
+        .ck-table th, .ck-table td { text-align: center; vertical-align: middle !important; }
+        .ck-table thead th { white-space: nowrap; font-size: 12px; }
+        .ck-table thead tr.groups th { font-size: 13px; color: #fff; }
+        .ck-table thead tr.groups th.g-visit-a { background: #0093e9; }
+        .ck-table thead tr.groups th.g-manu { background: #ff6a00; }
+        .ck-table thead tr.groups th.g-visit-b { background: #2db457; }
+        .ck-table thead tr.groups th.g-base { background: #e9eef3; color: #333; }
+        .ck-table thead tr.acts th small { display: block; font-weight: normal; color: #999; font-size: 10px; }
+        .ck-table tbody tr.row-new > td { background: #d9edf7; }
+        .ck-table tbody tr.row-new:hover > td { background: #becfd8; }
+        .ck-table tbody tr.row-maint > td { background: #f2dede; }
+        .ck-table tbody tr.row-maint:hover > td { background: #dbc6c6; }
+        .ck-table td.case-cell { text-align: right; white-space: nowrap; }
+        .ck-table td.case-cell b { display: block; }
+        .ck-table td.case-cell small { color: gray; }
+        .ck-table td.order-cell { white-space: nowrap; }
+        .ck-table td.order-cell small { display: block; color: gray; }
+
+        .ck { display: inline-flex; flex-direction: column; align-items: center; min-width: 92px; padding: 3px 4px; border-radius: 8px; line-height: 1.35; font-size: 11px; }
+        .ck .fa { font-size: 16px; }
+        .ck small { font-size: 10.5px; white-space: nowrap; }
+        .ck-done { background: #effaf3; color: #1f9d48; border: 1px solid #bfe8cd; }
+        .ck-pend { background: #fdeef0; color: #d9343f; border: 1px solid #f5b5bb; }
+        .ck-pend .late { font-weight: 700; }
+        .ck-na { color: #c0c5cc; }
+        .ck.dim { opacity: .28; }
+        .ck-blink { animation: ck-blink 1.2s ease-in-out infinite; }
+        @keyframes ck-blink { 50% { opacity: .3; } }
+        .prog-cell { min-width: 110px; }
+        .prog-cell b { font-variant-numeric: tabular-nums; }
+
+        .pager-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .pagination { margin: 0; }
+        .toast-msg { position: fixed; bottom: 20px; left: 20px; background: #333; color: #fff; padding: 8px 16px; border-radius: 6px; display: none; z-index: 2000; }
+
+        @media print {
+            .main-header, .main-sidebar, #filtersPanel, .table-toolbar, .pager-bar { display: none !important; }
+            .content-wrapper { margin: 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="main-header">
+        <div>
+            <a href="#"><i class="fa fa-home"></i></a>
+            <a href="#"><i class="fa fa-bars"></i></a>
+        </div>
+        <div>
+            <a href="#"><i class="fa fa-calendar"></i></a>
+            <a href="#"><i class="fa fa-sun-o" style="color:#f0ad4e"></i></a>
+            <a href="#">EN</a>
+            <a href="#" class="user-chip"><i class="fa fa-user-circle"></i> يوسف محمد</a>
+        </div>
+    </header>
+
+    <aside class="main-sidebar">
+        <a href="#" title="الرئيسية"><i class="fa fa-home"></i></a>
+        <a href="#" title="لوحة التحكم"><i class="fa fa-dashboard"></i></a>
+        <a href="#" title="قسم الطلبات"><i class="fa fa-folder-open"></i></a>
+        <a href="#" title="قسم الإستقبال"><i class="fa fa-file"></i></a>
+        <a href="visits-mock-charts.html" title="القسم الهندسى — الزيارات"><i class="fa fa-briefcase"></i></a>
+        <a href="#" title="التصنيع"><i class="fa fa-wrench"></i></a>
+        <a href="#" title="متابعة الإجراءات" class="active"><i class="fa fa-check-square-o"></i></a>
+        <a href="#" title="إعدادات نظام الحالات"><i class="fa fa-cog"></i></a>
+        <a href="#" title="السجلات"><i class="fa fa-history"></i></a>
+    </aside>
+
+    <div class="content-wrapper">
+        <!-- ===================== Filters ===================== -->
+        <div class="panel panel-primary" id="filtersPanel">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fa fa-check-square-o"></i> متابعة إجراءات المستخدمين — الزيارات والتصنيع</h3>
+            </div>
+            <div class="panel-body">
+                <form id="filters-form" class="filters" autocomplete="off" onsubmit="return false;">
+                    <div class="filter-item">
+                        <label class="control-label">المستخدم</label>
+                        <div class="filter-inline w-user">
+                            <select id="fUser" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div class="filter-item w-toggle">
+                        <div class="box-content">
+                            <label class="control-label">الصفحة</label>
+                            <div class="btn-group btn-group-justified" id="fPage" data-toggle="buttons">
+                                <label class="btn btn-default btn-all active"><input type="radio" name="fPage" value="all" checked> الكل</label>
+                                <label class="btn btn-default btn-on"><input type="radio" name="fPage" value="visits"> الزيارات</label>
+                                <label class="btn btn-default btn-off"><input type="radio" name="fPage" value="manu"> التصنيع</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-item w-toggle">
+                        <div class="box-content">
+                            <label class="control-label">حالة الإجراء</label>
+                            <div class="btn-group btn-group-justified" id="fStatus" data-toggle="buttons">
+                                <label class="btn btn-default btn-all active"><input type="radio" name="fStatus" value="all" checked> الكل</label>
+                                <label class="btn btn-default btn-on"><input type="radio" name="fStatus" value="done"> تم</label>
+                                <label class="btn btn-default btn-off"><input type="radio" name="fStatus" value="pend"> لم يتم</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-item">
+                        <label class="control-label">تاريخ الإجراء</label>
+                        <div class="filter-inline">
+                            <input type="date" id="fFrom" class="form-control date-field" title="من">
+                            <input type="date" id="fTo" class="form-control date-field" title="إلى">
+                            <button type="button" class="btn btn-danger btn-round" id="dClear"><i class="fa fa-times"></i> مسح</button>
+                            <button type="button" class="btn btn-primary btn-round" id="dToday"><i class="fa fa-calendar-o"></i> اليوم</button>
+                            <button type="button" class="btn btn-success btn-round" id="dWeek"><i class="fa fa-calendar-o"></i> هذا الاسبوع</button>
+                        </div>
+                    </div>
+                    <div class="filter-item">
+                        <label class="control-label">اسم الحالة / كود الطلب</label>
+                        <div class="filter-inline w-text">
+                            <input type="text" id="fCase" class="form-control" placeholder="ابحث بالاسم أو الكود">
+                            <button type="button" class="btn btn-danger btn-round" id="caseClear"><i class="fa fa-times"></i> مسح</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="box-footer">
+                    <button type="button" class="btn btn-success btn-round" id="searchBtn"><span class="glyphicon glyphicon-search"></span> بحث</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== Summary ===================== -->
+        <p class="group-label">ملخص الإجراءات</p>
+        <div class="kpi-grid" id="kpis"></div>
+
+        <p class="group-label">المستخدمين — اضغط على مستخدم لعرض إجراءاته</p>
+        <div class="users-grid" id="usersGrid"></div>
+
+        <!-- ===================== Checklist ===================== -->
+        <div class="table-toolbar">
+            <div class="toolbar-start">
+                <label>عرض
+                    <select id="pageSize" class="form-control input-sm">
+                        <option>20</option><option>50</option><option>100</option>
+                    </select>
+                </label>
+                <span class="page-info" id="pageInfoTop"></span>
+                <span class="legend">
+                    <span><i class="fa fa-check-circle" style="color:#1f9d48"></i> تم</span>
+                    <span><i class="fa fa-times-circle" style="color:#d9343f"></i> لم يتم</span>
+                    <span style="color:#c0c5cc">— لم يحن بعد</span>
+                </span>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default btn-sm" id="printBtn"><i class="fa fa-print"></i> طباعة</button>
+                <button type="button" class="btn btn-default btn-sm" id="excelBtn"><i class="fa fa-file-excel-o"></i> اكسيل</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="table table-bordered ck-table">
+                <thead id="ckHead"></thead>
+                <tbody id="ckBody"></tbody>
+            </table>
+        </div>
+        <div class="pager-bar">
+            <span class="page-info" id="pageInfo"></span>
+            <ul class="pagination" id="pagination"></ul>
+        </div>
+    </div>
+
+    <div class="toast-msg" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script>
+        // =====================================================================
+        // MOCK DATA — every order walks through the same checklist of actions;
+        // each action belongs to a role and is assigned to one user of that role.
+        // =====================================================================
+        var TODAY = moment().startOf('day');
+        var seed = 20261104;
+        function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+        function pick(a) { return a[Math.floor(rnd() * a.length)]; }
+
+        var ROLES = { reception: 'استقبال', engineer: 'مهندس / علاج طبيعي', technician: 'فني أطراف', assembly: 'فني تجميع' };
+        var USERS = {
+            reception: ['يوسف محمد', 'منة أحمد', 'هبة سمير'],
+            engineer: ['همام', 'سامح', 'كيرلس', 'سلمى', 'اسلام رجب', 'هنا جوهر'],
+            technician: ['محمد أشرف', 'عمرو', 'عبدالله'],
+            assembly: ['يسري عبد العزيز', 'شعبان', 'جمعة']
+        };
+
+        // the checklist, in the order it happens; page: visits = صفحة الزيارات, manu = صفحة التصنيع
+        var ACTIONS = [
+            { key: 'att1', group: 'visit-a', page: 'visits', role: 'reception', name: 'تسجيل الحضور', hint: 'الاستقبال' },
+            { key: 'assess', group: 'visit-a', page: 'visits', role: 'engineer', name: 'التقييم الهندسي', hint: 'إضافة تقييم' },
+            { key: 'design', group: 'visit-a', page: 'visits', role: 'engineer', name: 'المكونات والاكسسوارات', hint: 'التصميم' },
+            { key: 'report', group: 'visit-a', page: 'visits', role: 'engineer', name: 'تقرير القياسات', hint: 'رفع الملف' },
+            { key: 'photo', group: 'visit-a', page: 'visits', role: 'reception', name: 'إقرار التصوير', hint: 'مرفقات الحالة' },
+            { key: 'mrecv', group: 'manu', page: 'manu', role: 'technician', name: 'استلام الطلب', hint: 'التصنيع' },
+            { key: 'mmake', group: 'manu', page: 'manu', role: 'technician', name: 'التصنيع', hint: 'السوكيت والتركيب' },
+            { key: 'massm', group: 'manu', page: 'manu', role: 'assembly', name: 'التجميع', hint: 'مكونات التنفيذ' },
+            { key: 'mqc', group: 'manu', page: 'manu', role: 'engineer', name: 'مراجعة الجودة', hint: 'قبل التسليم' },
+            { key: 'mready', group: 'manu', page: 'manu', role: 'assembly', name: 'جاهز للتسليم', hint: 'استلام من التجميع' },
+            { key: 'att2', group: 'visit-b', page: 'visits', role: 'reception', name: 'تسجيل الحضور', hint: 'الاستقبال' },
+            { key: 'deliver', group: 'visit-b', page: 'visits', role: 'engineer', name: 'التسليم', hint: 'تم التسليم' },
+            { key: 'exec', group: 'visit-b', page: 'visits', role: 'engineer', name: 'المكونات والاكسسوارات', hint: 'التنفيذ' },
+            { key: 'receipt', group: 'visit-b', page: 'visits', role: 'reception', name: 'إقرار الاستلام', hint: 'مرفقات الحالة' }
+        ];
+        var GROUPS = [
+            { key: 'visit-a', title: 'الزيارات — التقييم والقياس' },
+            { key: 'manu', title: 'التصنيع' },
+            { key: 'visit-b', title: 'الزيارات — التسليم' }
+        ];
+
+        var FIRST = ['محمد', 'أحمد', 'محمود', 'مصطفى', 'خالد', 'عمر', 'حسن', 'إبراهيم', 'فاطمة', 'منى', 'سارة', 'ياسمين', 'هدى', 'علي', 'يوسف'];
+        var LAST = ['جمال', 'سعيد', 'فتحي', 'صالح', 'حسين', 'عبدالرحمن', 'الشافعي', 'سليمان', 'النجار', 'شلبي', 'عبدالعزيز', 'حسانين'];
+        var ORDERS = [];
+        for (var i = 0; i < 72; i++) {
+            var type = rnd() < 0.72 ? 'new' : 'maint';
+            var reached = 1 + Math.floor(rnd() * ACTIONS.length);           // how far along the checklist the order is
+            var start = TODAY.clone().subtract(reached * 3 + Math.floor(rnd() * 12), 'days');
+            var team = {};
+            Object.keys(USERS).forEach(function (r) { team[r] = pick(USERS[r]); });
+            var o = {
+                id: 2000 + i, type: type,
+                name: pick(FIRST) + ' ' + pick(FIRST) + ' ' + pick(LAST),
+                code: 'AK' + (40000 + Math.floor(rnd() * 9999)),
+                submitDate: start.clone().subtract(5, 'days').format('YYYY-MM-DD'),
+                team: team, steps: {}
+            };
+            ACTIONS.forEach(function (a, k) {
+                var due = start.clone().add(k * 3, 'days');
+                if (k >= reached) { o.steps[a.key] = { state: 'na' }; return; }
+                var current = k === reached - 1;
+                var done = current ? rnd() < 0.4 : rnd() < 0.86;
+                var owner = team[a.role];
+                if (done) {
+                    var by = rnd() < 0.1 ? pick(USERS[a.role]) : owner;   // sometimes a colleague does it
+                    var at = moment.min(due.clone().add(Math.floor(rnd() * 3), 'days'), TODAY.clone());
+                    o.steps[a.key] = { state: 'done', owner: owner, by: by, date: at.format('YYYY-MM-DD'), time: (9 + Math.floor(rnd() * 7)) + ':' + String(Math.floor(rnd() * 60)).padStart(2, '0') };
+                } else {
+                    var d = moment.min(due, TODAY.clone());
+                    o.steps[a.key] = { state: 'pend', owner: owner, date: d.format('YYYY-MM-DD'), late: TODAY.diff(d, 'days') };
+                }
+            });
+            ORDERS.push(o);
+        }
+
+        // =====================================================================
+        // FILTERING
+        // =====================================================================
+        var state = { page: 1, size: 20 };
+        function filters() {
+            return {
+                user: $('#fUser').val() || '',
+                page: $('#fPage input:checked').val() || 'all',
+                status: $('#fStatus input:checked').val() || 'all',
+                from: $('#fFrom').val(), to: $('#fTo').val(),
+                q: $.trim($('#fCase').val()).toLowerCase()
+            };
+        }
+        function visibleActions(f) { return ACTIONS.filter(function (a) { return f.page === 'all' || a.page === f.page; }); }
+        // a step "counts" for the current filters: right page, right user (owner or who did it), date in range
+        function stepCounts(step, f) {
+            if (step.state === 'na') return false;
+            if (f.user && step.owner !== f.user && step.by !== f.user) return false;
+            if (f.from && step.date < f.from) return false;
+            if (f.to && step.date > f.to) return false;
+            return true;
+        }
+        function filteredRows(f) {
+            var acts = visibleActions(f);
+            return ORDERS.filter(function (o) {
+                if (f.q && o.name.toLowerCase().indexOf(f.q) === -1 && o.code.toLowerCase().indexOf(f.q) === -1) return false;
+                var counted = acts.map(function (a) { return o.steps[a.key]; }).filter(function (s) { return stepCounts(s, f); });
+                if (!counted.length) return false;
+                if (f.status === 'done') return counted.some(function (s) { return s.state === 'done'; });
+                if (f.status === 'pend') return counted.some(function (s) { return s.state === 'pend'; });
+                return true;
+            });
+        }
+
+        // =====================================================================
+        // RENDER
+        // =====================================================================
+        function esc(t) { return $('<div>').text(t == null ? '' : t).html(); }
+        function pctClass(p) { return p >= 80 ? '' : p >= 50 ? 'warn' : 'bad'; }
+
+        function renderSummary(f) {
+            // KPIs follow every filter; user cards ignore the user filter so you can compare people
+            var acts = visibleActions(f), done = 0, pend = 0, late = 0, perUser = {};
+            Object.keys(USERS).forEach(function (r) { USERS[r].forEach(function (u) { perUser[u] = { name: u, role: r, done: 0, pend: 0, late: 0 }; }); });
+            var noUser = $.extend({}, f, { user: '' });
+            ORDERS.forEach(function (o) {
+                if (f.q && o.name.toLowerCase().indexOf(f.q) === -1 && o.code.toLowerCase().indexOf(f.q) === -1) return;
+                acts.forEach(function (a) {
+                    var s = o.steps[a.key];
+                    if (stepCounts(s, noUser)) {
+                        var who = s.state === 'done' ? s.by : s.owner;
+                        if (perUser[who]) { if (s.state === 'done') perUser[who].done++; else { perUser[who].pend++; if (s.late > 7) perUser[who].late++; } }
+                    }
+                    if (!stepCounts(s, f)) return;
+                    if (s.state === 'done') done++; else { pend++; if (s.late > 7) late++; }
+                });
+            });
+            var total = done + pend, pct = total ? Math.round(done / total * 100) : 0;
+            $('#kpis').html(
+                '<div class="kpi"><div class="num">' + total + '</div><div class="lbl">إجمالي الإجراءات المطلوبة</div></div>' +
+                '<div class="kpi done"><div class="num">' + done + '</div><div class="lbl">تم</div></div>' +
+                '<div class="kpi pend"><div class="num">' + pend + '</div><div class="lbl">لم يتم</div></div>' +
+                '<div class="kpi late"><div class="num">' + late + '</div><div class="lbl">متأخر أكثر من 7 أيام</div></div>' +
+                '<div class="kpi"><div class="num">' + pct + '%</div><div class="lbl">نسبة الإنجاز</div><div class="bar ' + pctClass(pct) + '"><i style="width:' + pct + '%"></i></div></div>');
+            var list = Object.keys(perUser).map(function (k) { return perUser[k]; })
+                .filter(function (u) { return u.done + u.pend > 0; })
+                .sort(function (a, b) { return b.pend - a.pend || b.done - a.done; });
+            $('#usersGrid').html(list.map(function (u) {
+                var t = u.done + u.pend, p = t ? Math.round(u.done / t * 100) : 0;
+                return '<div class="user-card' + (f.user === u.name ? ' selected' : '') + '" data-user="' + esc(u.name) + '">' +
+                    '<div class="uc-head"><span class="uc-name">' + esc(u.name) + '</span><span class="uc-role">' + ROLES[u.role] + '</span></div>' +
+                    '<div class="uc-nums"><span class="d"><i class="fa fa-check"></i> تم ' + u.done + '</span><span class="p"><i class="fa fa-times"></i> لم يتم ' + u.pend + '</span>' +
+                    (u.late ? '<span style="color:#c27c0e">متأخر ' + u.late + '</span>' : '') + '<span style="margin-right:auto">' + p + '%</span></div>' +
+                    '<div class="bar ' + pctClass(p) + '"><i style="width:' + p + '%"></i></div></div>';
+            }).join('') || '<div class="text-muted">لا يوجد</div>');
+        }
+
+        function cell(step, a, f) {
+            if (step.state === 'na') return '<span class="ck ck-na">—</span>';
+            var dim = stepCounts(step, f) ? '' : ' dim';
+            if (step.state === 'done') {
+                var tip = 'تم بواسطة ' + step.by + (step.by !== step.owner ? ' (المسؤول: ' + step.owner + ')' : '') + ' — ' + step.date + ' ' + step.time;
+                return '<span class="ck ck-done' + dim + '" title="' + esc(tip) + '"><i class="fa fa-check-circle"></i><small>' + esc(step.by) + '</small><small>' + step.date + '</small></span>';
+            }
+            var late = step.late > 0 ? 'متأخر ' + step.late + ' يوم' : 'مطلوب اليوم';
+            return '<span class="ck ck-pend' + dim + '" title="' + esc('لم يتم — المسؤول: ' + step.owner + ' — مطلوب من ' + step.date) + '">' +
+                '<i class="fa fa-times-circle' + (step.late > 7 && !dim ? ' ck-blink' : '') + '"></i><small>' + esc(step.owner) + '</small><small class="late">' + late + '</small></span>';
+        }
+
+        function renderTable() {
+            var f = filters(), acts = visibleActions(f), rows = filteredRows(f);
+            var groupsHtml = '<tr class="groups"><th class="g-base" rowspan="2">الطلب</th><th class="g-base" rowspan="2">بيانات الحالة</th>';
+            GROUPS.forEach(function (g) {
+                var n = acts.filter(function (a) { return a.group === g.key; }).length;
+                if (n) groupsHtml += '<th class="g-' + g.key + '" colspan="' + n + '">' + g.title + '</th>';
+            });
+            groupsHtml += '<th class="g-base" rowspan="2">الإنجاز</th></tr><tr class="acts">' +
+                acts.map(function (a) { return '<th>' + a.name + '<small>' + a.hint + ' · ' + ROLES[a.role] + '</small></th>'; }).join('') + '</tr>';
+            $('#ckHead').html(groupsHtml);
+
+            var size = state.size, pages = Math.max(1, Math.ceil(rows.length / size));
+            if (state.page > pages) state.page = pages;
+            var startIdx = (state.page - 1) * size, slice = rows.slice(startIdx, startIdx + size);
+            $('#ckBody').html(slice.map(function (o) {
+                var counted = acts.map(function (a) { return o.steps[a.key]; }).filter(function (s) { return stepCounts(s, f); });
+                var d = counted.filter(function (s) { return s.state === 'done'; }).length, t = counted.length, p = t ? Math.round(d / t * 100) : 0;
+                return '<tr class="' + (o.type === 'new' ? 'row-new' : 'row-maint') + '">' +
+                    '<td class="order-cell">' + (o.type === 'new' ? 'طلب جديد' : 'طلب صيانة') + '<small>' + o.submitDate + '</small></td>' +
+                    '<td class="case-cell"><b>' + esc(o.name) + '</b><small>' + o.code + '</small></td>' +
+                    acts.map(function (a) { return '<td>' + cell(o.steps[a.key], a, f) + '</td>'; }).join('') +
+                    '<td class="prog-cell"><b>' + d + '/' + t + '</b><div class="bar ' + pctClass(p) + '"><i style="width:' + p + '%"></i></div></td></tr>';
+            }).join('') || '<tr><td colspan="' + (acts.length + 3) + '">لم يتم العثور علي أي نتائج</td></tr>');
+
+            var info = rows.length ? 'عرض ' + (startIdx + 1) + ' إلي ' + Math.min(startIdx + size, rows.length) + ' من ' + rows.length + ' سجل' : '';
+            $('#pageInfo, #pageInfoTop').text(info);
+            var pg = '<li class="' + (state.page === 1 ? 'disabled' : '') + '"><a href="#" data-page="1">الأول</a></li>' +
+                '<li class="' + (state.page === 1 ? 'disabled' : '') + '"><a href="#" data-page="' + (state.page - 1) + '">السابق</a></li>';
+            for (var k = Math.max(1, state.page - 2); k <= Math.min(pages, state.page + 2); k++) pg += '<li class="' + (k === state.page ? 'active' : '') + '"><a href="#" data-page="' + k + '">' + k + '</a></li>';
+            pg += '<li class="' + (state.page === pages ? 'disabled' : '') + '"><a href="#" data-page="' + (state.page + 1) + '">التالي</a></li>' +
+                '<li class="' + (state.page === pages ? 'disabled' : '') + '"><a href="#" data-page="' + pages + '">الأخير</a></li>';
+            $('#pagination').html(pg);
+            renderSummary(f);
+        }
+
+        function toast(m) { $('#toast').text(m).stop(true, true).fadeIn(150).delay(1400).fadeOut(300); }
+
+        // =====================================================================
+        // UI
+        // =====================================================================
+        $(function () {
+            var opts = '<option value="">كل المستخدمين</option>';
+            Object.keys(USERS).forEach(function (r) {
+                opts += '<optgroup label="' + ROLES[r] + '">' + USERS[r].map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('') + '</optgroup>';
+            });
+            $('#fUser').html(opts).select2({ width: '100%', placeholder: 'كل المستخدمين', allowClear: true, dir: 'rtl' });
+            $('#pageSize').on('change', function () { state.size = +$(this).val(); state.page = 1; renderTable(); });
+
+            function search() { state.page = 1; renderTable(); }
+            $('#searchBtn').on('click', search);
+            $('#fUser').on('change', search);
+            $('#fPage, #fStatus').on('change', 'input', search);
+            $('#fCase').on('keydown', function (e) { if (e.which === 13) search(); });
+            $('#caseClear').on('click', function () { $('#fCase').val(''); search(); });
+            $('#dClear').on('click', function () { $('#fFrom, #fTo').val(''); search(); });
+            $('#dToday').on('click', function () { $('#fFrom, #fTo').val(TODAY.format('YYYY-MM-DD')); search(); });
+            $('#dWeek').on('click', function () {
+                var s = TODAY.clone().subtract(TODAY.day(), 'days');   // Sunday
+                $('#fFrom').val(s.format('YYYY-MM-DD')); $('#fTo').val(s.clone().add(6, 'days').format('YYYY-MM-DD')); search();
+            });
+            $(document).on('click', '.user-card', function () {
+                var u = $(this).data('user');
+                $('#fUser').val($('#fUser').val() === u ? '' : u).trigger('change');
+            });
+            $(document).on('click', '#pagination a', function (e) {
+                e.preventDefault();
+                var li = $(this).parent(); if (li.hasClass('disabled') || li.hasClass('active')) return;
+                state.page = +$(this).data('page'); renderTable();
+            });
+            $('#printBtn').on('click', function () { window.print(); });
+            $('#excelBtn').on('click', function () {
+                var f = filters(), acts = visibleActions(f);
+                function q(x) { return '"' + String(x).replace(/"/g, '""') + '"'; }
+                var lines = [[q('الطلب'), q('الاسم'), q('الكود')].concat(acts.map(function (a) { return q(a.name + ' (' + a.hint + ')'); })).join(',')];
+                filteredRows(f).forEach(function (o) {
+                    lines.push([q(o.type === 'new' ? 'طلب جديد' : 'طلب صيانة'), q(o.name), q(o.code)].concat(acts.map(function (a) {
+                        var s = o.steps[a.key];
+                        return q(s.state === 'na' ? '-' : s.state === 'done' ? 'تم — ' + s.by + ' — ' + s.date : 'لم يتم — ' + s.owner + (s.late > 0 ? ' — متأخر ' + s.late + ' يوم' : ''));
+                    })).join(','));
+                });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+                a.download = 'actions-checklist.csv'; a.click();
+                toast('تم التصدير');
+            });
+            renderTable();
+        });
+    </script>
+</body>
+
+</html>
