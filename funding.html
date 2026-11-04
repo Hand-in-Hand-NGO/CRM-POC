@@ -480,6 +480,12 @@ label { font-weight: bold; }
     .dur-row .form-control { height: 32px; font-size: 12.5px; }
     .note-cell { max-width: 220px; white-space: normal; font-size: 11.5px; color: #777; }
     .kpi.static { cursor: default; }
+    .note-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 150px; border: 1px solid #e1e5ea; background: #fffdf3; border-radius: 8px; padding: 3px 8px; font: inherit; font-size: 11.5px; color: #555; cursor: pointer; text-align: right; }
+    .note-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .note-chip b { background: #ff6a00; color: #fff; border-radius: 10px; padding: 0 6px; font-size: 10.5px; }
+    .notes-list { margin-top: 12px; max-height: 260px; overflow: auto; }
+    .note-row { border: 1px solid #eef0f3; background: #fafbfc; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 12.5px; }
+    .note-row span { display: block; color: #999; font-size: 11px; margin-top: 3px; }
 /*__PFCSS_START__*/
     .prof-btn{display:inline-flex;align-items:center;gap:4px;border:1px solid #b9dcf5;background:#e6f1fb;color:#0b6db0;border-radius:15px;padding:1px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;vertical-align:middle;margin-inline-start:6px;line-height:1.7;}
     .prof-btn:hover{background:#0093e9;color:#fff;border-color:#0093e9;}
@@ -747,7 +753,7 @@ var F = {
 function loadStores(){
   F.store = readStore(FUND_KEY, null) || {};
   F.store.companies = F.store.companies || []; F.store.alloc = F.store.alloc || {};
-  F.store.holds = F.store.holds || {}; F.store.log = F.store.log || [];
+  F.store.holds = F.store.holds || {}; F.store.log = F.store.log || []; F.store.notes = F.store.notes || {};
 }
 function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
@@ -760,6 +766,8 @@ function inStores(c){ return !!STORES[c.stage]; }
 function hasCode(c){ return c.stage!=='measurement'; }   // medical evaluation cases have no limb code yet
 function allocOf(c){ return F.store.alloc[c.id] || null; }
 function funderOf(c){ var a = allocOf(c); return a ? a.company : (c.funding!=='بدون' ? c.funding : ''); }
+// notes the CSR writes on one case or on a group of cases at once (newest last)
+function notesOf(c){ return F.store.notes[c.id] || []; }
 function holdOf(c){
   var h = F.store.holds[c.id];
   if (!h) return null;
@@ -872,7 +880,7 @@ function renderTable(){
   }
   h += '<div class="table-scroll"><table class="ftable"><thead><tr>'+
     '<th class="cb"><input type="checkbox" title="تحديد الكل"'+(allOn?' checked':'')+(list.length?'':' disabled')+A('toggleAll')+'/></th>'+
-    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الحصالة</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>التمويل</th><th>الإيقاف</th><th></th>'+
+    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الحصالة</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>التمويل</th><th>الإيقاف</th><th>الملاحظات</th><th></th>'+
     '</tr></thead><tbody>';
   list.forEach(function(c){
     var on = sel.indexOf(c.id)!==-1, others = otherLimbs(c), a = allocOf(c), fu = funderOf(c), hd = holdOf(c);
@@ -885,7 +893,9 @@ function renderTable(){
       '<td><div class="wait '+wc+'"><b>'+c.waitingDays+' يوم</b><div class="bar"><i style="width:'+Math.min(100, Math.round(c.waitingDays/365*100))+'%"></i></div></div></td>'+
       '<td>'+(fu ? '<span class="pill p-funded"><i class="fa fa-check"></i>'+esc(fu)+'</span>'+(a ? '<span class="pill-sub">'+isoFromMs(a.at)+'</span>' : '') : '<span class="pill p-unf">غير ممولة</span>')+'</td>'+
       '<td>'+(hd ? '<span class="pill p-held"><i class="fa fa-pause"></i>'+(hd.until ? 'لحد '+isoFromMs(hd.until) : 'موقوفة')+'</span>'+(hd.note ? '<span class="pill-sub note-cell">'+esc(hd.note)+'</span>' : '') : '<span class="muted">—</span>')+'</td>'+
-      '<td><div class="row-act">'+(hd ? '<button class="icon-btn" title="فك الإيقاف"'+A('releaseOne', c.id)+'><i class="fa fa-play"></i></button>' : '')+
+      '<td>'+(notesOf(c).length ? '<button class="note-chip"'+A('showNotes', c.id)+' title="كل الملاحظات"><span>'+esc(notesOf(c)[notesOf(c).length-1].text)+'</span>'+
+        (notesOf(c).length > 1 ? '<b>'+notesOf(c).length+'</b>' : '')+'</button>' : '<span class="muted">—</span>')+'</td>'+
+      '<td><div class="row-act"><button class="icon-btn" title="إضافة ملاحظة"'+A('openNoteOne', c.id)+'><i class="fa fa-comment-o"></i></button>'+(hd ? '<button class="icon-btn" title="فك الإيقاف"'+A('releaseOne', c.id)+'><i class="fa fa-play"></i></button>' : '')+
         (a ? '<button class="icon-btn danger" title="إلغاء التمويل"'+A('unfund', c.id)+'><i class="fa fa-undo"></i></button>' : '')+'</div></td></tr>';
   });
   h += '</tbody></table>';
@@ -899,6 +909,7 @@ function renderSelBar(){
   return '<div class="sel-bar"><span class="n"><i class="fa fa-check-square"></i> '+sel.length+' حالة محددة</span>'+
     '<span class="brk">'+Object.keys(st).map(function(k){ return STORES[k]+' '+st[k]; }).join(' · ')+'</span>'+
     '<button class="lnk"'+A('clearSel')+'>إلغاء التحديد</button><span class="sp"></span>'+
+    '<button class="btn btn-default"'+A('openNote')+'><i class="fa fa-comment-o"></i> ملاحظة</button>'+
     '<button class="btn btn-warning"'+A('openHold')+'><i class="fa fa-pause-circle"></i> إيقاف</button>'+
     '<select data-change="setCompany"><option value="">— الممول —</option>'+companies().map(function(c){ return '<option'+(F.company===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'<option value="__new">+ ممول جديد…</option></select>'+
     '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>';
@@ -926,6 +937,7 @@ function renderHistory(){
   return h + '</div></div>';
 }
 
+function noteRow(n){ return '<div class="note-row"><div>'+esc(n.text)+'</div><span>'+esc(n.by)+' · '+isoFromMs(n.at)+' '+timeFromMs(n.at)+(n.group > 1 ? ' · مع '+(n.group-1)+' حالة تانية' : '')+'</span></div>'; }
 function modalShell(title, body, foot){
   return '<div class="modal-backdrop fade in"></div><div class="modal show-modal" '+A('closeModalBg')+'><div class="modal-dialog"><div class="modal-content">'+
     '<div class="modal-header"><button class="close"'+A('closeModal')+'>&times;</button><h4 class="modal-title">'+title+'</h4></div>'+
@@ -942,6 +954,19 @@ function renderModal(){
     var foot = (m.fromSelect && free.length ? '<button class="btn btn-primary"'+A('selectOthers', c.id)+'><i class="fa fa-plus"></i> اختار الطرف التاني كمان</button>' : '')+
       '<button class="btn btn-default"'+A('closeModal')+'>'+(m.fromSelect && free.length ? 'ده بس' : 'تمام')+'</button>';
     return modalShell('الحالة ليها طرف تاني', body, foot);
+  }
+  if (m.kind==='note'){
+    var nIds = m.ids, one = nIds.length===1 ? caseById(nIds[0]) : null;
+    return modalShell(one ? 'ملاحظة على ' + esc(one.name) : 'ملاحظة على ' + nIds.length + ' حالة',
+      (one ? '' : '<div class="note note-info"><i class="fa fa-info-circle"></i><div>الملاحظة هتتكتب على كل الحالات المحددة ('+nIds.length+').</div></div>')+
+      '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة">'+esc(m.text)+'</textarea>'+
+      (one && notesOf(one).length ? '<div class="notes-list">'+notesOf(one).slice().reverse().map(noteRow).join('')+'</div>' : ''),
+      '<button class="btn btn-primary"'+A('saveNote')+'><i class="fa fa-check"></i> حفظ الملاحظة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
+  }
+  if (m.kind==='notes'){
+    var nc = caseById(m.cid);
+    return modalShell('ملاحظات ' + esc(nc.name), '<div class="notes-list">'+notesOf(nc).slice().reverse().map(noteRow).join('')+'</div>',
+      '<button class="btn btn-primary"'+A('openNoteOne', nc.id)+'><i class="fa fa-plus"></i> ملاحظة جديدة</button><button class="btn btn-default"'+A('closeModal')+'>إغلاق</button>');
   }
   if (m.kind==='company'){
     return modalShell('إضافة ممول', '<div class="form-group" style="margin:0;"><label>اسم الممول</label><input class="form-control" data-k="newco" value="'+esc(F.newCompany)+'" data-input="setNewCompany" placeholder="اسم الشركة أو الجهة"/></div>',
@@ -1016,6 +1041,20 @@ var ACT = {
     loadStores(); var a = F.store.alloc[cid]; if (!a) return;
     delete F.store.alloc[cid]; logIt('إلغاء تمويل ' + a.company, [cid]); saveStore();
     toast('اتلغى التمويل'); render();
+  },
+  openNote: function(){ if (!F.sel.length) return; F.modal = {kind:'note', ids:F.sel.slice(), text:''}; render(); },
+  openNoteOne: function(cid){ F.modal = {kind:'note', ids:[cid], text:''}; render(); },
+  showNotes: function(cid){ F.modal = {kind:'notes', cid:cid}; render(); },
+  setNoteText: function(v){ F.modal.text = v; },
+  saveNote: function(){
+    var m = F.modal, txt = (m.text||'').trim();
+    if (!txt){ toast('اكتب الملاحظة الأول'); return render(); }
+    loadStores(); var at = Date.now();
+    m.ids.forEach(function(id){ (F.store.notes[id] = F.store.notes[id] || []).push({text:txt, by:CSR_USER, at:at, group:m.ids.length}); });
+    logIt('ملاحظة', m.ids, txt.length > 40 ? txt.slice(0,40) + '…' : txt);
+    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    if (m.ids.length > 1) F.sel = [];
+    F.modal = null; toast('اتكتبت الملاحظة على ' + (m.ids.length > 1 ? m.ids.length + ' حالة' : caseById(m.ids[0]).name)); render();
   },
   openHold: function(){ if (!F.sel.length) return; F.modal = {kind:'hold', mode:'open', days:'7', note:''}; render(); },
   setHoldMode: function(v){ F.modal.mode = v; render(); },
