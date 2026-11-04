@@ -744,6 +744,13 @@ var POSTPONED = [
   c.stage = 'postponed'; c.postponedStage = true; c.code = ''; c.person = c.id;
   return c;
 });
+// requests still waiting for measurement with a postponed level leave the pool for the postponed list
+// (cases already in maintenance keep their limb and stay where they are)
+CASES.filter(function(c){ return c.stage==='measurement' && POSTPONED_LEVELS.indexOf(c.level)!==-1; }).forEach(function(c){
+  CASES.splice(CASES.indexOf(c), 1); delete CASE_MAP[c.id];
+  c.stage = 'postponed'; c.postponedStage = true; c.code = ''; c.funding = 'بدون';
+  POSTPONED.push(c);
+});
 function postponedById(id){ for (var i=0;i<POSTPONED.length;i++){ if (POSTPONED[i].id===id) return POSTPONED[i]; } return null; }
 // released = {caseId: {company, at}} from the funding page -> the case enters the medical evaluation pool
 function releasePostponed(released){
@@ -769,7 +776,7 @@ var BASE_COMPANIES = FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; 
 function readStore(k, def){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
 function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
 
-function emptyFilters(){ return {q:'', level:'', stage:'', state:''}; }
+function emptyFilters(){ return {q:'', level:'', gov:'', age:'', stage:'', state:''}; }
 var F = {
   store: null, company: '', newCompany: '',
   filters: emptyFilters(), sort: 'waitDesc', sel: [], modal: null, toast: null,
@@ -821,13 +828,15 @@ function matchState(c, st){
   if (st==='held') return !!holdOf(c);
   return true;
 }
-function baseFiltered(skipStage, skipState){
+function baseFiltered(skipStage, skipState, from){
   var f = F.filters, q = f.q.trim().toUpperCase();
-  var src = !skipStage && f.stage==='postponed' ? waitingPostponed() : CASES.filter(inStores);
+  var src = from || (!skipStage && f.stage==='postponed' ? waitingPostponed() : CASES.filter(inStores));
   return src.filter(function(c){
     if (q && c.name.indexOf(f.q.trim())===-1 && !(hasCode(c) && c.code.toUpperCase().indexOf(q)!==-1)) return false;
     if (f.level && c.level!==f.level) return false;
-    if (!skipStage && f.stage && f.stage!=='postponed' && c.stage!==f.stage) return false;
+    if (f.gov && c.gov!==f.gov) return false;
+    if (f.age){ var ab = AGE_BUCKETS.filter(function(x){ return x.key===f.age; })[0]; if (ab && ab.test && !ab.test(c.age)) return false; }
+    if (!from && !skipStage && f.stage && f.stage!=='postponed' && c.stage!==f.stage) return false;
     if (!skipState && !matchState(c, f.state)) return false;
     return true;
   });
@@ -884,7 +893,8 @@ function renderKpis(){
 function renderFilters(){
   var f = F.filters, base = baseFiltered(true);
   var stages = [['','الكل','t-all'],['measurement',STORES.measurement,'t-new'],['newDelivery',STORES.newDelivery,'t-new'],['postponed','مؤجل لمرحلة أخرى','t-post']];
-  var postN = waitingPostponed().filter(function(c){ return (!f.q.trim() || c.name.indexOf(f.q.trim())!==-1) && (!f.level || c.level===f.level); }).length;
+  var govs = GOVERNORATES.filter(function(g){ return CASES.concat(waitingPostponed()).some(function(c){ return (inStores(c) || c.stage==='postponed') && c.gov===g; }); });
+  var postN = baseFiltered(false, false, waitingPostponed()).length;
   var states = [['','الكل'],['funded','ممولة'],['unfunded','غير ممولة'],['held','موقوفة']];
   var levels = LEVEL_OPTIONS.concat(POSTPONED_LEVELS.filter(function(l){ return LEVEL_OPTIONS.indexOf(l)===-1; })).filter(function(l){ return CASES.concat(waitingPostponed()).some(function(c){ return (inStores(c) || c.stage==='postponed') && c.level===l; }); });
   return '<div class="card" style="margin-bottom:14px;"><div class="card-body">'+
@@ -894,10 +904,12 @@ function renderFilters(){
     '<div class="filters">'+
     '<div class="fg"><label>بحث</label><div class="search-box"><i class="fa fa-search"></i><input class="form-control" placeholder="الاسم أو الكود" value="'+esc(f.q)+'" data-k="q" data-input="setFilter" data-a="q"/></div></div>'+
     '<div class="fg"><label>مستوى البتر</label><select class="form-control w-sel" data-change="setFilter" data-a="level"><option value="">الكل</option>'+levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="fg"><label>المحافظة</label><select class="form-control w-sel" data-change="setFilter" data-a="gov"><option value="">الكل</option>'+govs.map(function(g){ return '<option'+(f.gov===g?' selected':'')+'>'+esc(g)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="fg"><label>السن</label><select class="form-control w-sel" data-change="setFilter" data-a="age">'+AGE_BUCKETS.map(function(a){ return '<option value="'+a.key+'"'+(f.age===a.key?' selected':'')+'>'+a.label+'</option>'; }).join('')+'</select></div>'+
     '<div class="fg"><label>الحالة</label><div class="state-tabs">'+states.map(function(s){
       return '<button class="'+(f.state===s[0]?'on':'')+'"'+A('setState', s[0])+'>'+s[1]+' <span class="n">'+baseFiltered(false, true).filter(function(c){ return matchState(c, s[0]); }).length+'</span></button>';
     }).join('')+'</div></div>'+
-    ((f.q || f.level || f.state) ? '<div class="fg"><label>&nbsp;</label><button class="btn btn-link btn-sm" style="color:var(--hih-danger);"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح الفلاتر</button></div>' : '')+
+    ((f.q || f.level || f.gov || f.age || f.state) ? '<div class="fg"><label>&nbsp;</label><button class="btn btn-link btn-sm" style="color:var(--hih-danger);"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح الفلاتر</button></div>' : '')+
     '</div></div></div>';
 }
 
