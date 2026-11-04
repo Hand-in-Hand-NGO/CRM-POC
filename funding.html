@@ -480,6 +480,51 @@ label { font-weight: bold; }
     .dur-row .form-control { height: 32px; font-size: 12.5px; }
     .note-cell { max-width: 220px; white-space: normal; font-size: 11.5px; color: #777; }
     .kpi.static { cursor: default; }
+/*__PFCSS_START__*/
+    .prof-btn{display:inline-flex;align-items:center;gap:4px;border:1px solid #b9dcf5;background:#e6f1fb;color:#0b6db0;border-radius:15px;padding:1px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;vertical-align:middle;margin-inline-start:6px;line-height:1.7;}
+    .prof-btn:hover{background:#0093e9;color:#fff;border-color:#0093e9;}
+    .pf-scrim{position:fixed;inset:0;background:rgba(15,18,26,.42);z-index:1060;}
+    .pf-modal{position:fixed;top:50%;right:50%;transform:translate(50%,-50%);width:1180px;max-width:96vw;max-height:94vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 16px 48px rgba(20,24,34,.22);z-index:1061;text-align:right;direction:rtl;}
+    .pf-modal .prof-head{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:linear-gradient(90deg,#d3f1f8 0%,#ebf6ed 17%,#fff9e4 34%,#f9e7de 47%,#f8f2e4 57%,#d9eaf4 64%,#e9efec 74%,#baeae6 100%);color:#535252;font-size:14px;border-radius:14px 14px 0 0;}
+    .pf-modal .prof-body{overflow:auto;padding:14px 18px;flex:1;}
+    .pf-modal .prof-foot{padding:10px 16px;border-top:1px solid #e3e5ea;}
+    .pf-modal .cms-close{border:none;background:transparent;cursor:pointer;padding:2px;opacity:.75;}
+    .pf-modal .cms-row{display:grid;grid-template-columns:170px minmax(0,1fr) 170px minmax(0,1fr);gap:10px 14px;align-items:start;margin-bottom:10px;}
+    .pf-modal .cms-label{font-size:13px;font-weight:700;color:#333;padding-top:7px;margin:0;}
+    .pf-modal .cms-label .req{color:#dd4b39;}
+    .pf-modal .cms-input{width:100%;border:1px solid #d2d6de;border-radius:0;padding:6px 10px;font:inherit;font-size:13px;background:#fff;color:#333;min-height:32px;}
+    .pf-modal .cms-input:focus{outline:none;border-color:#3c8dbc;}
+    .pf-modal .cms-input.nc-miss{border-color:#dd4b39;background:#fff6f5;}
+    .pf-modal .cms-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid transparent;border-radius:3px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;}
+    .pf-modal .cms-add{background:#00a65a;border-color:#008d4c;}
+    .pf-modal .cms-table{width:100%;border-collapse:collapse;font-size:12.5px;border:1px solid #ddd;}
+    .pf-modal .cms-table th{background:#fff;border:1px solid #ddd;padding:8px;text-align:right;font-weight:700;color:#333;}
+    .pf-modal .cms-table td{border:1px solid #ddd;padding:7px 8px;color:#333;vertical-align:top;}
+    .pf-modal .cms-table tbody tr:nth-child(odd){background:#f9f9f9;}
+    .pf-modal .cms-empty{text-align:center;color:#555;}
+    .pf-modal .cms-ro{background:#eee;border:1px solid #d2d6de;padding:5px 10px;font-size:12.5px;min-height:30px;color:#555;}
+    .pf-modal .cms-del{border:0;background:#f96a74;color:#fff;border-radius:4px;width:24px;height:22px;cursor:pointer;}
+    .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+    .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
+    .pf-panel-body{padding:12px;}
+    .pf-upload{display:flex;justify-content:flex-end;margin-bottom:12px;}
+    .pf-upload .cms-btn{cursor:pointer;border-radius:0;margin:0;}
+    .pf-upload input[type=file]{display:none !important;}
+    .pf-up-file{background:#0093e9 !important;} .pf-up-video{background:#31c860 !important;}
+    .pf-form{padding:4px 0;}
+    .pf-result{background:#00c0ef;color:#fff;font-weight:700;font-size:12.5px;padding:12px 14px;margin:6px 0 14px;border-radius:2px;}
+    .pf-result.ok{background:#31c860;}
+    .pf-band{padding:8px 14px;margin-bottom:8px;}
+    .pf-band.b-purple{background:#f6eefb;} .pf-band.b-orange{background:#fdf3ea;} .pf-band.b-blue{background:#eef5fc;} .pf-band.b-green{background:#eefbf0;}
+    .pf-band .cms-row{margin:4px 0;}
+    .pf-kvs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 24px;}
+    .pf-kv{display:grid;grid-template-columns:180px 1fr;gap:10px;font-size:12px;padding:5px 0;}
+    .pf-kv span{font-weight:700;color:#333;} .pf-kv b{font-weight:400;color:#555;}
+    .pf-yn{display:inline-flex;border:1px solid #ccc;}
+    .pf-yn button{border:0;background:#fff;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+    .pf-yn button.on{background:#ddd;font-weight:700;} .pf-yn button.on.off{background:#f96a74;color:#fff;}
+    .pf-changes{background:#f96a74 !important;width:100%;justify-content:center;}
+    /*__PFCSS_END__*/
   </style>
 </head>
 <body>
@@ -778,7 +823,7 @@ function renderApp(){
     '<a class="active" href="#" title="صفحة التمويل"><i class="fa fa-money"></i></a></aside>';
   h += '<div class="content">' + renderKpis() + '<div class="layout"><div class="main">' + renderFilters() + renderTable() + '</div>'+
     '<aside class="side">' + renderCompanies() + renderHistory() + '</aside></div></div>';
-  h += renderSelBar() + renderModal();
+  h += renderSelBar() + renderModal() + renderProfile();
   if (F.toast) h += '<div class="toast-box"><i class="fa fa-check-circle"></i>'+esc(F.toast)+'</div>';
   return h;
 }
@@ -834,7 +879,7 @@ function renderTable(){
     var wc = c.waitingDays >= 180 ? 'w-hi' : c.waitingDays >= 90 ? 'w-md' : 'w-lo';
     h += '<tr class="'+(on?'sel':'')+'">'+
       '<td class="cb"><input type="checkbox"'+(on?' checked':'')+A('toggleSel', c.id)+'/></td>'+
-      '<td><div class="who"><b>'+esc(c.name)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span dir="ltr">'+fmtPhone(c.phone)+'</span>'+
+      '<td><div class="who"><b>'+esc(c.name)+profBtn(c.id)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span dir="ltr">'+fmtPhone(c.phone)+'</span>'+
         (others.length ? '<span class="limb-chip"'+A('showLimbs', c.id)+' title="الحالة ليها طرف تاني"><i class="fa fa-clone"></i> طرف تاني</span>' : '')+'</div></div></td>'+
       '<td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td><td>'+storeLbl(c.stage)+'</td>'+
       '<td><div class="wait '+wc+'"><b>'+c.waitingDays+' يوم</b><div class="bar"><i style="width:'+Math.min(100, Math.round(c.waitingDays/365*100))+'%"></i></div></div></td>'+
@@ -1003,6 +1048,212 @@ var ACT = {
   },
 };
 
+// =====================================================================
+// Case profile – the same block as the operations room (copied by the build)
+// =====================================================================
+/*__PF_START__*/
+var UNSUPPORTED_LEVELS = ['مفصل الحوض','مفصل الكتف','أصابع اليد'];
+var NC_OPTS = {
+  reqStatus:['مقبول','مؤجل','مرفوض','تحت البحث'], postponeReason:['مؤجل لمرحلة اخرى','مؤجل لإتمام 6 شهور','مؤجل بسبب العمر','مؤجل بسبب الوزن','أخرى'],
+  callType:['وارد','صادر'], nationality:['مصري','سوداني','سوري','أخرى'], insured:['نعم','لا'], marital:['أعزب','متزوج','مطلق','أرمل'], gender:['ذكر','أنثى'],
+  education:['بدون','ابتدائي','إعدادي','ثانوي','جامعي','فوق جامعي'], job:['لا يعمل','طالب','عامل','موظف','أعمال حرة','ربة منزل','أخرى'],
+  heard:['فيسبوك','صديق / قريب','مستشفى','تليفزيون','أخرى'], chronic:['لا يوجد','سكر','ضغط','قلب','أخرى'],
+  side:['الأيمن','الأيسر','الاتنين'], cause:['حادث','سكر','ورم','عيب خلقي','أخرى'], devices:['نعم','لا'], sponsor:['بدون','إدخال كفيل جديد'], responsible:['لا','نعم'],
+};
+function emptyNewCase(){
+  return {date:isoDate(todayOffset()), callType:'', nationality:'', insured:'', nid:'', name:'', marital:'', gender:'', dob:'', gov:'', district:'', area:'',
+    address:'', idAddress:'', phone:'', phone1:'', phone2:'', education:'', job:'', heard:'', chronic:'', weight:'', level:'', side:'', ampDate:'', cause:'',
+    causeDetails:'', lastSurgery:'', devices:'', sponsor:'', notes:'', notes2:'', qualityNotes:'', fundedNoResearch:false, responsible:'لا', nextStep:'research', tried:false};
+}
+// [right field, left field] per row – same order as the CMS screen
+var NC_ROWS = [
+  [['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select']],
+  [['nationality','الجنسية',1,'select'], ['insured','مؤمن عليه',1,'select']],
+  [['nid','رقم الهوية',1,'num'], ['name','اسم الحالة',1,'text']],
+  [['marital','الحالة الإجتماعية',1,'select'], ['gender','النوع',1,'select']],
+  [['dob','تاريخ الميلاد',1,'date'], ['gov','المحافظة',1,'gov']],
+  [['district','القسم او المركز',1,'text'], ['area','المنطقة او الشياخة',0,'text']],
+  [['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']],
+  [['phone','الهاتف',1,'num'], ['phone1','رقم هاتف 1',0,'num']],
+  [['phone2','رقم هاتف 2',0,'num'], ['education','المؤهل الدراسى',1,'select']],
+  [['job','الوظيفة',1,'select'], ['heard','كيف عرفتنا',1,'select']],
+  [['chronic','الأمراض المزمنة',1,'select'], ['weight','الوزن',1,'num']],
+  [['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select']],
+  [['ampDate','تاريخ البتر',1,'date'], ['cause','سبب البتر',1,'select']],
+  [['causeDetails','تفاصيل سبب البتر',1,'area'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date']],
+  [['devices','يوجد أجهزة',1,'select'], null],
+  [['sponsor','الكفيل',0,'select'], null],
+  [['notes','الملاحظات',0,'area'], ['notes2','الملاحظات 2',0,'area']],
+  [['qualityNotes','ملاحظات الجودة',0,'area'], null],
+];
+function parseDay(v){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v||''); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; }
+function addMonths(d, n){ var x = new Date(d.getTime()); x.setMonth(x.getMonth()+n); return x; }
+function fmtDay(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+// eligibility shown before "أضف"
+function ncResult(nc){
+  var out = [], today = (function(){ var n = typeof nowDate==='function' ? nowDate() : new Date(); n = new Date(n.getTime()); n.setHours(0,0,0,0); return n; })();
+  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ده ('+nc.level+') مش بنشتغل فيه حاليًا'});
+  var ls = parseDay(nc.lastSurgery);
+  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6))});
+  var dob = parseDay(nc.dob);
+  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60))});
+  var w = parseInt(nc.weight,10);
+  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكتر من 120)'});
+  if (out.length) return {ok:false, list:out};
+  if (!nc.level || !ls || !dob || !nc.weight) return {ok:null, list:[]};
+  return {ok:true, list:[{k:'ok', t:'مقبول الشروط', d:''}]};
+}
+function ncMissing(nc){
+  var miss = [];
+  NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f && f[2] && !String(nc[f[0]]||'').trim()) miss.push(f); }); });
+  return miss;
+}
+function ncField(f, nc, act, pre){
+  if (!f) return '<div></div><div></div>';
+  act = act || 'ncSet'; pre = pre || 'nc-';
+  var k = f[0], v = nc[k], miss = nc.tried && f[2] && !String(v||'').trim(), cls = 'cms-input'+(miss?' nc-miss':'');
+  var lab = '<label class="cms-label">'+f[1]+(f[2] ? ' <span class="req">*</span>' : '')+'</label>', inp;
+  if (f[3]==='select' || f[3]==='gov' || f[3]==='level'){
+    var list = f[3]==='gov' ? GOVERNORATES : f[3]==='level' ? LEVEL_OPTIONS.concat(UNSUPPORTED_LEVELS) : NC_OPTS[k];
+    if (v && list.indexOf(v)===-1) list = [v].concat(list);
+    inp = '<select class="'+cls+'" data-change="'+act+'" data-a="'+k+'"><option value="">'+f[1]+'</option>'+list.map(function(o){ return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>';
+  } else if (f[3]==='date'){
+    inp = '<input class="'+cls+'" type="date" value="'+esc(v)+'" data-k="'+pre+k+'" data-change="'+act+'" data-a="'+k+'"/>';
+  } else if (f[3]==='area'){
+    inp = '<textarea class="'+cls+'" rows="2" placeholder="'+f[1]+'" data-k="'+pre+k+'" data-input="'+act+'" data-a="'+k+'">'+esc(v)+'</textarea>';
+  } else {
+    inp = '<input class="'+cls+'"'+(f[3]==='num' ? ' type="text" inputmode="numeric"' : '')+' placeholder="'+f[1]+'" value="'+esc(v)+'" data-k="'+pre+k+'" data-input="'+act+'" data-a="'+k+'"/>';
+  }
+  return lab + '<div class="cms-field">'+inp+'</div>';
+}
+// =====================================================================
+// Case profile (عرض الطلب) – shared by the operations room and the funding page (copied by the build).
+// Same layout as the CMS screen; edits are saved per case in the browser so both pages see them.
+// Each page sets PF_HOOKS: base(id) -> {d: delivered record|null, c: case|null}, who(), visits(id), afterSave(id, d, changes)
+// =====================================================================
+var RESEARCHERS = ['أحمد نبيل','سارة محمود','محمد عادل'];
+var PROFILE_KEY = 'hih_profiles_v1';
+var PROFILES = {store:{}, open:null};
+function loadProfiles(){ try { PROFILES.store = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}') || {}; } catch(e){ PROFILES.store = {}; } }
+function saveProfiles(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILES.store)); } catch(e){} }
+function pfIso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function pfDaysAgo(n){ var d = new Date(); d.setDate(d.getDate() - n); return pfIso(d); }
+function pfStamp(){ var d = new Date(), h = d.getHours(), m = d.getMinutes(); return pfIso(d) + ' ' + (h%12||12) + ':' + (m<10?'0':'') + m + ' ' + (h<12?'ص':'م'); }
+var PF_ICONS = {user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0', x:'M18 6L6 18M6 6l12 12', upload:'M12 16V4 M7 9l5-5 5 5 M4 20h16',
+  check:'M20 6L9 17l-5-5', history:'M3 12a9 9 0 1 0 3-6.7L3 8 M3 3v5h5 M12 7v5l3 2'};
+function pfIc(n, size, color, sw){ return '<svg width="'+(size||13)+'" height="'+(size||13)+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||2)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+PF_ICONS[n]+'"></path></svg>'; }
+function profileOf(id){
+  if (PROFILES.store[id]) return PROFILES.store[id];
+  var bb = PF_HOOKS.base(id), d = bb.d, c = bb.c, b = d || c; if (!b) return null;
+  var seed = 0; for (var i=0;i<id.length;i++) seed = (seed*31 + id.charCodeAt(i)) % 9973;
+  function pick(a, n){ return a[(seed + (n||0)) % a.length]; }
+  var y = new Date().getFullYear(), age = b.age || 20, waited = (c && c.waitingDays) || 120;
+  var p = {
+    addedBy: pick(RESEARCHERS), addedAt: pfDaysAgo(waited) + ' 12:40:11', code: (c && c.stage==='measurement') ? '' : b.code,
+    date: pfDaysAgo(waited), callType:'صادر', nationality:'مصري', insured:'لا',
+    nid: d ? d.nid : (age>=18?'2':'3') + String(1000000000000 + seed*7919).slice(0,13), name:b.name,
+    marital: d ? d.marital : (age < 18 ? 'أعزب' : pick(NC_OPTS.marital, 1)), gender: d ? d.gender : pick(NC_OPTS.gender, 2),
+    dob: d ? d.birth : (y-age) + '-0' + (1 + seed%9) + '-1' + (seed%9), gov:b.gov, district: d ? d.markaz : 'مركز ' + b.gov, area: d ? d.area : '',
+    address: d ? d.address : 'مركز ' + b.gov + ' – ' + b.gov, idAddress: d ? d.cardAddress : '', phone:b.phone, phone1: d ? d.phone1 : b.phone, phone2: d && d.phone2!=='-' ? d.phone2 : '',
+    education: d ? d.edu : pick(NC_OPTS.education, 3), job: d ? d.job : (age < 18 ? 'طالب' : pick(NC_OPTS.job, 4)), heard: d ? d.howKnown : pick(NC_OPTS.heard, 5),
+    chronic: d ? d.chronic : 'لا يوجد', weight: String(d ? d.weight : 40 + seed%50), level:b.level, side: d ? d.side : pick(NC_OPTS.side, 6),
+    ampDate: d ? d.ampDate : (y - Math.min(age-1, 3)) + '-08-09', cause: d ? d.cause : pick(NC_OPTS.cause, 7), causeDetails: d ? d.causeDetails : pick(NC_OPTS.cause, 7),
+    lastSurgery: d ? d.lastSurgery : (y - 1) + '-08-09', devices:'لا', sponsor:'', notes:'', notes2:'', qualityNotes:'',
+    reqStatus: 'مقبول', postponeReason:'', postponeUntil:'', committee: c ? 'مقبول' : '-', researcher: pick(RESEARCHERS, 8), assignDate:'', researchDate:'',
+    responsible:'لا', nextStep:'research', active:true, fundedNoResearch:false, attachments:[], changes:[],
+  };
+  PROFILES.store[id] = p; return p;
+}
+function profBtn(id){ return ' <button class="prof-btn" title="بروفيل الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' بروفيل الحالة</button>'; }
+var PROFILE_LABELS = {};
+NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f) PROFILE_LABELS[f[0]] = f[1]; }); });
+Object.assign(PROFILE_LABELS, {reqStatus:'حالة الطلب', postponeReason:'سبب التأجيل', postponeUntil:'مؤجل لتاريخ', responsible:'هل يوجد مسئول عن الحالة', nextStep:'الخطوة التالية', active:'نشط', fundedNoResearch:'ممول بدون بحث'});
+function renderProfile(){
+  var pf = PROFILES.open; if (!pf) return '';
+  var d = pf.draft, res = ncResult({level:d.level, lastSurgery:d.lastSurgery, dob:d.dob, weight:d.weight}), v = PF_HOOKS.visits(pf.id);
+  function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
+  function band(cls, inner){ return '<div class="pf-band '+cls+'">'+inner+'</div>'; }
+  function kv(l, val){ return '<div class="pf-kv"><span>'+l+'</span><b>'+esc(val||'-')+'</b></div>'; }
+  function f(def){ return ncField(def, d, 'profSet', 'pf-'); }
+  var h = '<div class="pf-scrim"'+A('closeProfile')+'></div><div class="pf-modal"><div class="prof-head"><span>عرض الطلب</span><button class="cms-close"'+A('closeProfile')+'>'+pfIc('x',15,'#535252',2.4)+'</button></div><div class="prof-body" data-scroll="profile">';
+  h += '<div class="pf-panel"><div class="pf-panel-head">مرفقات الحالة</div><div class="pf-panel-body">'+
+    '<div class="pf-upload"><label class="cms-btn pf-up-file">'+pfIc('upload',12,'#fff',2.2)+' رفع ملف<input type="file" hidden data-change="profAttach" data-a="ملف"/></label>'+
+    '<label class="cms-btn pf-up-video">'+pfIc('upload',12,'#fff',2.2)+' رفع فيديو<input type="file" accept="video/*" hidden data-change="profAttach" data-a="فيديو"/></label></div>'+
+    '<table class="cms-table"><thead><tr><th>المرفق</th><th>نوع المرفق</th><th>تم الإضافة بواسطة</th><th>تاريخ الإضافة</th><th>حذف</th></tr></thead><tbody>'+
+    (d.attachments.length ? d.attachments.map(function(a, i){ return '<tr><td>'+esc(a.name)+'</td><td>'+esc(a.type)+'</td><td>'+esc(a.by)+'</td><td>'+esc(a.at)+'</td><td><button class="cms-del"'+A('profDetach', i)+'>'+pfIc('x',12,null,2.4)+'</button></td></tr>'; }).join('')
+      : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table></div></div>';
+  h += '<div class="pf-form"><div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div><div class="cms-row">'+ro('كود', d.code)+'<div></div><div></div></div>';
+  NC_ROWS.forEach(function(r){ h += '<div class="cms-row">'+f(r[0])+f(r[1])+'</div>'; });
+  if (res.ok!==null) h += '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.d ? ' – ' + esc(x.d) : ''); }).join('<br>')+'</div>';
+  h += band('b-purple', '<div class="cms-row">'+f(['reqStatus','حالة الطلب',0,'select'])+'<div></div><div></div></div>'+
+    (d.reqStatus==='مؤجل' ? '<div class="cms-row">'+f(['postponeReason','سبب التأجيل',0,'select'])+f(['postponeUntil','مؤجل لتاريخ',0,'date'])+'</div>' : '')+
+    '<div class="pf-kvs">'+kv('نتيجة اللجنة', d.committee)+kv('مؤجل لتاريخ', d.reqStatus==='مؤجل' ? d.postponeUntil : '-')+'</div>');
+  h += band('b-orange', '<div class="pf-kvs">'+kv('اسم الباحث', d.researcher)+kv('تاريخ الإسناد', d.assignDate)+kv('تاريخ البحث', d.researchDate)+'<div></div>'+
+    kv('تاريخ حضور المقاسات', v.meas.day)+kv('هل حضر', v.meas.att)+kv('تاريخ حجز الاستلام', v.deliv.day)+kv('هل حضر', v.deliv.att)+'</div>');
+  h += band('b-blue', '<div class="pf-kvs">'+kv('التقييم الهندسي (Anatomical)', '-')+kv('سبب التأجيل', '-')+'</div>');
+  h += band('b-green', '<div class="pf-kvs">'+kv('التقييم الطبي', '-')+kv('سبب التأجيل', '-')+'</div>');
+  h += band('b-orange', '<div class="pf-kvs">'+kv('التقييم الهندسي (Fitting)', '-')+kv('سبب التأجيل', '-')+'</div>');
+  h += '<div class="pf-panel" style="padding:12px 16px;"><div class="cms-row" style="margin:0;">'+f(['responsible','هل يوجد مسئول عن الحالة',0,'select'])+'</div></div>';
+  h += '<div class="cms-row"><label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
+      '<option value="research"'+(d.nextStep==='research'?' selected':'')+'>قسم الأبحاث</option><option value="measurement"'+(d.nextStep==='measurement'?' selected':'')+'>حجز مقاس مباشر</option></select></div>'+
+    '<label class="cms-label">نشط</label><div class="cms-field"><div class="pf-yn"><button class="'+(d.active?'on':'')+'"'+A('profActive','1')+'>'+pfIc('check',12,null,2.4)+' نعم</button><button class="'+(!d.active?'on off':'')+'"'+A('profActive','0')+'>'+pfIc('x',12,null,2.4)+' لا</button></div></div></div>';
+  h += '<div class="cms-row"><label class="cms-label">ممول بدون بحث</label><div class="cms-field"><input type="checkbox"'+(d.fundedNoResearch?' checked':'')+A('profToggleFunded')+'/></div>'+
+    '<div></div><div class="cms-field"><button class="cms-btn pf-changes"'+A('profShowChanges')+'>'+pfIc('history',12,'#fff',2.2)+' التغييرات التي تمت ('+d.changes.length+')</button></div></div>';
+  if (pf.showChanges){
+    h += '<table class="cms-table" style="margin-bottom:12px;"><thead><tr><th>الحقل</th><th>من</th><th>إلى</th><th>بواسطة</th><th>التاريخ</th></tr></thead><tbody>'+
+      (d.changes.length ? d.changes.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.field)+'</td><td>'+esc(x.from)+'</td><td>'+esc(x.to)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.at)+'</td></tr>'; }).join('')
+        : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>';
+  }
+  return h + '</div></div><div class="prof-foot"><button class="cms-btn cms-add"'+A('profSave')+'>'+pfIc('check',12,'#fff',2.6)+' حفظ</button></div></div>';
+}
+var PF_ACTIONS = {
+  openProfile: function(id){
+    loadProfiles(); var p = profileOf(id); if (!p) return;
+    PROFILES.open = {id:id, draft:JSON.parse(JSON.stringify(p)), showChanges:false}; render();
+  },
+  closeProfile: function(){ PROFILES.open = null; render(); },
+  profSet: function(v, k){ PROFILES.open.draft[k] = v; if (['notes','notes2','qualityNotes','address','idAddress','causeDetails'].indexOf(k)===-1) render(); },
+  profActive: function(v){ PROFILES.open.draft.active = v==='1'; render(); },
+  profToggleFunded: function(){ PROFILES.open.draft.fundedNoResearch = !PROFILES.open.draft.fundedNoResearch; render(); },
+  profShowChanges: function(){ PROFILES.open.showChanges = !PROFILES.open.showChanges; render(); },
+  profAttach: function(v, type){
+    var name = String(v||'').split(/[\\/]/).pop(); if (!name) return;
+    PROFILES.open.draft.attachments.push({name:name, type:type, by:PF_HOOKS.who(), at:pfStamp()}); render();
+  },
+  profDetach: function(i){ PROFILES.open.draft.attachments.splice(parseInt(i,10),1); render(); },
+  profSave: function(){
+    var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
+    var miss = ncMissing(d);
+    if (miss.length){ d.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
+    var at = pfStamp(), by = PF_HOOKS.who(), ch = [];
+    Object.keys(PROFILE_LABELS).forEach(function(k){
+      var a = old[k], b = d[k];
+      if (String(a==null?'':a)!==String(b==null?'':b)) ch.push({field:PROFILE_LABELS[k], from: typeof a==='boolean' ? (a?'نعم':'لا') : (a||'-'), to: typeof b==='boolean' ? (b?'نعم':'لا') : (b||'-'), by:by, at:at});
+    });
+    if (old.attachments.length!==d.attachments.length) ch.push({field:'المرفقات', from:String(old.attachments.length), to:String(d.attachments.length), by:by, at:at});
+    d.changes = old.changes.concat(ch); delete d.tried;
+    PROFILES.store[pf.id] = d; saveProfiles();
+    PF_HOOKS.afterSave(pf.id, d, ch);
+    PROFILES.open = null; toast(ch.length ? 'اتحفظ بروفيل ' + d.name + ' (' + ch.length + ' تعديل)' : 'مفيش تعديلات'); render();
+  },
+};
+Object.assign(ACT, PF_ACTIONS);
+// a saved profile changes the name / phone / governorate / level shown everywhere
+function applyProfiles(){
+  Object.keys(PROFILES.store).forEach(function(id){
+    var d = PROFILES.store[id], bb = PF_HOOKS.base(id);
+    [bb.d, bb.c].forEach(function(o){ if (!o) return; o.name = d.name; o.phone = d.phone; o.gov = d.gov; o.level = d.level; });
+  });
+}
+window.addEventListener('storage', function(e){ if (e.key===PROFILE_KEY){ loadProfiles(); applyProfiles(); render(); } });
+/*__PF_END__*/
+var PF_HOOKS = {
+  base: function(id){ return {d:null, c:caseById(id)}; },
+  who: function(){ return CSR_USER; },
+  visits: function(){ return {meas:{day:'-', att:'-'}, deliv:{day:'-', att:'-'}}; },
+  afterSave: function(){ applyProfiles(); },
+};
+
 document.addEventListener('click', function(e){
   var el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
   if (el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='checkbox')) return;
@@ -1020,11 +1271,12 @@ document.addEventListener('change', function(e){
 });
 document.addEventListener('keydown', function(e){
   if (e.key!=='Escape') return;
-  if (F.modal){ F.modal = null; render(); } else if (F.sel.length){ F.sel = []; render(); }
+  if (PROFILES.open){ ACT.closeProfile(); } else if (F.modal){ F.modal = null; render(); } else if (F.sel.length){ F.sel = []; render(); }
 });
 window.addEventListener('storage', function(e){ if (e.key===FUND_KEY){ loadStores(); render(); } });
 
 loadStores();
+loadProfiles(); applyProfiles();
 root = document.getElementById('root');
 render();
 </script>
