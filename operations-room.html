@@ -1365,7 +1365,7 @@ var S = {
   settingsDraft:null, convoyEdit:null,
   toast:null,
   audit:[], confirmations:{}, auditQ:'', messages:[],
-  routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', agent:'', q:''}, assignSel:[], assignTo:'',
+  routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', level:'', age:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
   series:{}, emergencies:[], emg:null, emgDay:null, surveys:{}, surveyOpen:null, surveyDraft:null, surveyDone:null,
 };
@@ -1929,11 +1929,11 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
   S.routing = defaultRouting();
   // committee decisions waiting to be told to the case (تبليغ اللجنة)
   S.committee = [
-    {id:'K1', name:'مروان أحمد سعيد', gov:'القاهرة', phone:'01012345671', decision:'مقبول – طرف تحت الركبة', day:T-1},
-    {id:'K2', name:'ياسمين خالد عمر', gov:'الجيزة', phone:'01112345672', decision:'مقبول – طرف تحت الكوع', day:T-1},
-    {id:'K3', name:'عبد الله محمود حسن', gov:'أسيوط', phone:'01212345673', decision:'مؤجل – استكمال الأوراق', day:T-2},
-    {id:'K4', name:'سلمى إبراهيم فتحي', gov:'المنيا', phone:'01512345674', decision:'مقبول – طرف فوق الركبة', day:T},
-    {id:'K5', name:'حازم يوسف عادل', gov:'سوهاج', phone:'01012345675', decision:'مؤجل – إعادة كشف بعد 3 شهور', day:T},
+    {id:'K1', name:'مروان أحمد سعيد', gov:'القاهرة', phone:'01012345671', decision:'مقبول – طرف تحت الركبة', day:T-1, level:'تحت الركبة', age:34},
+    {id:'K2', name:'ياسمين خالد عمر', gov:'الجيزة', phone:'01112345672', decision:'مقبول – طرف تحت الكوع', day:T-1, level:'تحت الكوع', age:27},
+    {id:'K3', name:'عبد الله محمود حسن', gov:'أسيوط', phone:'01212345673', decision:'مؤجل – استكمال الأوراق', day:T-2, level:'فوق الركبة', age:51},
+    {id:'K4', name:'سلمى إبراهيم فتحي', gov:'المنيا', phone:'01512345674', decision:'مقبول – طرف فوق الركبة', day:T, level:'فوق الركبة', age:16},
+    {id:'K5', name:'حازم يوسف عادل', gov:'سوهاج', phone:'01012345675', decision:'مؤجل – إعادة كشف بعد 3 شهور', day:T, level:'تحت الركبة', age:9},
   ].map(function(k, i){ k.assignee = AGENTS[i % AGENTS.length].id; k.status = null; k.tries = 0; return k; });
   findTask('t1').priority = {'C-1013':true, 'C-1007':true};
   findTask('t2').priority = {'C-1005':true, 'C-1011':true};
@@ -2223,7 +2223,7 @@ var ACT = {
   // supervisor
   setSupTab: function(v){ S.supTab = v; S.assignSel = []; render(); },
   setAssignF: function(v, k){ S.assignF[k] = v; S.assignSel = []; render(); },
-  clearAssignF: function(){ S.assignF = {cat:'', day:'', gov:'', agent:'', q:''}; S.assignSel = []; render(); },
+  clearAssignF: function(){ S.assignF = {cat:'', day:'', gov:'', level:'', age:'', agent:'', q:''}; S.assignSel = []; render(); },
   toggleAssignSel: function(key){ var i = S.assignSel.indexOf(key); if (i===-1) S.assignSel.push(key); else S.assignSel.splice(i,1); render(); },
   setAssignTo: function(v){ S.assignTo = v; render(); },
   assignRow: function(v, key){
@@ -3847,16 +3847,16 @@ function assignRows(){
     t.candidateIds.forEach(function(cid){
       var st = caseStatus(t, cid); if (!isOpenStatus(st.key)) return;
       var c = caseById(cid); if (!c) return;
-      rows.push({key:'b|'+t.id+'|'+cid, cat:catOfType(t.type), type:TASK_TYPES[t.type].short, day:t.dateOffset, place:locLabelFor(t), status:st.label, agent:t.assignee[cid]||'', name:c.name, code:c.code, gov:c.gov, task:t});
+      rows.push({key:'b|'+t.id+'|'+cid, cat:catOfType(t.type), type:TASK_TYPES[t.type].short, day:t.dateOffset, place:locLabelFor(t), status:st.label, agent:t.assignee[cid]||'', name:c.name, code:c.code, gov:c.gov, level:c.level, age:c.age, task:t});
     });
   });
   confirmItems('').forEach(function(x){
     var c = caseById(x.cid);
-    rows.push({key:'c|'+x.t.id+'|'+x.cid, cat:'confirm', type:'تأكيد الحجز', day:x.t.dateOffset, place:locLabelFor(x.t), status: x.cf && x.cf.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:confirmOwner(x.t, x.cid), name:c.name, code:c.code, gov:c.gov, task:x.t});
+    rows.push({key:'c|'+x.t.id+'|'+x.cid, cat:'confirm', type:'تأكيد الحجز', day:x.t.dateOffset, place:locLabelFor(x.t), status: x.cf && x.cf.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:confirmOwner(x.t, x.cid), name:c.name, code:c.code, gov:c.gov, level:c.level, age:c.age, task:x.t});
   });
   S.committee.forEach(function(k){
     if (k.status==='notified') return;
-    rows.push({key:'k|'+k.id, cat:'committee', type:'تبليغ اللجنة', day:k.day, place:k.decision, status: k.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:k.assignee, name:k.name, code:'', gov:k.gov});
+    rows.push({key:'k|'+k.id, cat:'committee', type:'تبليغ اللجنة', day:k.day, place:k.decision, status: k.status==='noAnswer' ? 'لم يرد' : 'لسه', agent:k.assignee, name:k.name, code:'', gov:k.gov, level:k.level||'', age:k.age!=null ? k.age : null});
   });
   return rows;
 }
@@ -3866,6 +3866,8 @@ function filteredAssignRows(){
     if (f.cat && r.cat!==f.cat) return false;
     if (f.day!=='' && f.day!=null && String(r.day)!==String(f.day)) return false;
     if (f.gov && r.gov!==f.gov) return false;
+    if (f.level && r.level!==f.level) return false;
+    if (f.age){ var ab = AGE_BUCKETS.filter(function(x){ return x.key===f.age; })[0]; if (ab && ab.test && (r.age==null || !ab.test(r.age))) return false; }
     if (f.agent==='__none' && r.agent) return false;
     if (f.agent && f.agent!=='__none' && r.agent!==f.agent) return false;
     if (q && r.name.indexOf(q)===-1 && (r.code||'').indexOf(q.toUpperCase())===-1) return false;
@@ -3881,6 +3883,7 @@ function renderAssign(){
   var f = S.assignF, all = assignRows(), rows = filteredAssignRows(), sel = S.assignSel;
   var days = []; all.forEach(function(r){ if (days.indexOf(r.day)===-1) days.push(r.day); }); days.sort(function(a,b){ return a-b; });
   var govs = []; all.forEach(function(r){ if (govs.indexOf(r.gov)===-1) govs.push(r.gov); });
+  var levels = []; all.forEach(function(r){ if (r.level && levels.indexOf(r.level)===-1) levels.push(r.level); });
   var agentOpts = function(cur, none){ return (none ? '<option value="">'+none+'</option>' : '')+AGENTS.map(function(a){ return '<option value="'+a.id+'"'+(cur===a.id?' selected':'')+'>'+esc(a.name)+'</option>'; }).join(''); };
   var h = '<div class="q-title" style="margin-bottom:10px;">إسناد المكالمات</div>';
   h += '<div class="filters-bar">'+
@@ -3891,6 +3894,10 @@ function renderAssign(){
       days.map(function(d){ return '<option value="'+d+'"'+(String(f.day)===String(d)?' selected':'')+'>'+dayLabel(d)+'</option>'; }).join('')+'</select></div>'+
     '<div class="filter-field"><label>المحافظة</label><select class="filter-select" data-change="setAssignF" data-a="gov"><option value="">الكل</option>'+
       govs.map(function(g){ return '<option'+(f.gov===g?' selected':'')+'>'+esc(g)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="filter-field"><label>مستوى البتر</label><select class="filter-select" data-change="setAssignF" data-a="level"><option value="">الكل</option>'+
+      levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="filter-field"><label>السن</label><select class="filter-select" data-change="setAssignF" data-a="age">'+
+      AGE_BUCKETS.map(function(a){ return '<option value="'+a.key+'"'+(f.age===a.key?' selected':'')+'>'+a.label+'</option>'; }).join('')+'</select></div>'+
     '<div class="filter-field"><label>الموظف الحالي</label><select class="filter-select" data-change="setAssignF" data-a="agent"><option value="">الكل</option><option value="__none"'+(f.agent==='__none'?' selected':'')+'>غير مسندة</option>'+agentOpts(f.agent)+'</select></div>'+
     '<button class="clear-btn"'+A('clearAssignF')+'>مسح الفلاتر</button></div>';
   h += '<div class="assign-bar"><span><b>'+rows.length+'</b> مكالمة'+(sel.length ? ' · تم تحديد <b>'+sel.length+'</b>' : '')+'</span>'+
