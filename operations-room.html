@@ -3058,10 +3058,11 @@ function renderAgentFocus(){
   var seq = due.concat(other).concat(hunt);
   var conf = confirmItems(S.agentId), confNow = conf.filter(function(x){ return !x.later; });
   var total = due.length + other.length + later.length + hunt.length + conf.length;
-  var tabs = agentTabs(); if (!tabs.some(function(x){ return x[0]===S.agentTab; })) S.agentTab = 'calls';
+  var tabs = agentTabs(); if (tabs.length && !tabs.some(function(x){ return x[0]===S.agentTab; })) S.agentTab = tabs[0][0];
   var h = '<div class="focus-wrap'+(S.agentTab==='newCase'?' wide':'')+'"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
     '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
-  if (tabs.length > 1) h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return '<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
+  if (!tabs.length) return h + '<div class="focus-card empty"><div class="focus-empty-t">مفيش أنواع مكالمات متحددة ليك – كلّم مشرف الكول سنتر</div></div></div>';
+  h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return '<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
   if (S.agentTab==='committee') return h + renderCommittee() + '</div>';
   if (S.agentTab==='survey') return h + renderSurveyTab() + '</div>';
@@ -4249,12 +4250,19 @@ function renderCommittee(){
     }).join('')+'</tbody></table></div>';
   return h;
 }
+// booking calls + attendance confirmations waiting for the agent (same total as "إجمالي الحالات")
+function bookingCount(me){
+  var items = queueItems(me).filter(function(x){ return x.group==='due' || x.group==='other' || x.group==='later' || (x.group==='full' && (x.t.standby||[]).length < S.settings.standbyMax); });
+  return items.length + confirmItems(me).length;
+}
+// only the tabs of the call types the supervisor gave this agent, each with its count
 function agentTabs(){
-  var me = S.agentId, tabs = [['calls','الحجز']];
-  if (canDo(me, 'inbound')) tabs.push(['inbound','مكالمة واردة']);
-  if (canDo(me, 'newCase')) tabs.push(['newCase','إضافة حالة جديدة']);
-  if (canDo(me, 'committee') || committeeFor(me).length) tabs.push(['committee','تبليغ اللجنة', committeeFor(me).filter(function(k){ return k.status!=='notified'; }).length]);
-  if (canDo(me, 'survey') || surveyItems(me).length) tabs.push(['survey','متابعة جودة الخدمة (Survey)', surveyItems(me).filter(function(x){ return !x.later; }).length]);
+  var me = S.agentId, tabs = [], today = isoDate(todayOffset());
+  if (['measurement','delivery','maintEval','confirm'].some(function(k){ return canDo(me, k); })) tabs.push(['calls','الحجز', bookingCount(me)]);
+  if (canDo(me, 'inbound')) tabs.push(['inbound','مكالمة واردة', DELIVERED.reduce(function(n, d){ return n + d.requests.filter(function(r){ return r.date===today && r.by===agentName(me); }).length; }, 0)]);
+  if (canDo(me, 'newCase')) tabs.push(['newCase','إضافة حالة جديدة', S.newCases.filter(function(x){ return x.by===me; }).length]);
+  if (canDo(me, 'committee')) tabs.push(['committee','تبليغ اللجنة', committeeFor(me).filter(function(k){ return k.status!=='notified'; }).length]);
+  if (canDo(me, 'survey')) tabs.push(['survey','متابعة جودة الخدمة (Survey)', surveyItems(me).filter(function(x){ return !x.later; }).length]);
   return tabs;
 }
 
