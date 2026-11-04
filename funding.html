@@ -338,6 +338,11 @@ label { font-weight: bold; }
     .store-tabs button .n { background: rgba(0,0,0,.07); border-radius: 10px; padding: 0 7px; font-size: 11px; }
     .store-tabs button.on.t-all { background: var(--hih-toggle-all); border-color: var(--hih-toggle-all); color: #fff; }
     .store-tabs button.on.t-new { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
+    .store-tabs button.on.t-sv { background: #0093e9; border-color: #0093e9; color: #fff; }
+    .sv-btn { color: #0093e9; border-color: #b9dcf5; }
+    .sv-head { font-size: 12.5px; color: #555; margin-bottom: 8px; }
+    .ops-opt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; background: #f4f9fd; border: 1px solid #d6e9f7; border-radius: 10px; padding: 8px 10px; font-size: 12.5px; }
+    .ops-opt input[type=date] { height: 30px; font-size: 12.5px; width: 160px; }
     .store-tabs button.on.t-post { background: #64748b; border-color: #64748b; color: #fff; }
     .store-tabs button.on.t-maint { background: var(--hih-danger); border-color: var(--hih-danger); color: #fff; }
     .store-tabs button.on .n { background: rgba(255,255,255,.25); }
@@ -534,6 +539,13 @@ label { font-weight: bold; }
     .pf-status.post{color:#b45309;font-weight:700;} .pf-status.ok{color:#15803d;font-weight:700;}
     .pf-reason{font-size:12.5px;color:#555;padding-top:7px;}
     .pf-hint{font-size:11.5px;color:#888;padding-top:8px;display:block;}
+    .sva-sec{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:8px;text-align:right;}
+    .sva-t{font-weight:800;font-size:13px;color:#0b6db0;margin-bottom:4px;}
+    .sva-q{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed #eef0f3;}
+    .sva-q:last-child{border-bottom:0;}
+    .sva-rate{font-weight:800;white-space:nowrap;} .sva-rate.r5,.sva-rate.r4{color:#15803d;} .sva-rate.r3{color:#b45309;} .sva-rate.r2,.sva-rate.r1{color:#c81e3a;}
+    .sva-txt{font-weight:700;color:#333;} .sva-none{color:#aaa;}
+    .sva-note{font-size:12px;color:#7a5a00;background:#fffbea;border-radius:6px;padding:5px 8px;margin-top:6px;}
     /*__PFCSS_END__*/
   </style>
 </head>
@@ -576,6 +588,7 @@ var ICONS = {
   clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',
   user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0',
   upload:'M12 16V4 M7 9l5-5 5 5 M4 20h16',
+  bell:'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.7 21a2 2 0 0 1-3.4 0',
   users:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M1 21a8 8 0 0 1 16 0 M17 3.5a4 4 0 0 1 0 7.5 M23 21a8 8 0 0 0-5-7.4',
   send:'M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z',
   spark:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
@@ -779,7 +792,7 @@ var BASE_COMPANIES = FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; 
 function readStore(k, def){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
 function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
 
-function emptyFilters(){ return {q:'', level:'', gov:'', age:'', stage:'', state:''}; }
+function emptyFilters(){ return {q:'', level:'', gov:'', age:'', company:'', stage:'', state:''}; }
 var F = {
   store: null, company: '', newCompany: '',
   filters: emptyFilters(), sort: 'waitDesc', sel: [], modal: null, toast: null,
@@ -788,10 +801,18 @@ function loadStores(){
   F.store = readStore(FUND_KEY, null) || {};
   F.store.companies = F.store.companies || []; F.store.alloc = F.store.alloc || {};
   F.store.holds = F.store.holds || {}; F.store.log = F.store.log || []; F.store.notes = F.store.notes || {};
-  F.store.released = F.store.released || {};
+  F.store.released = F.store.released || {}; F.store.opsNotes = F.store.opsNotes || [];
+  F.surveys = readSurveys();
   releasePostponed(F.store.released);                 // sent to booking -> now in the medical evaluation pool
   waitingPostponed().forEach(function(c){ CASE_MAP[c.id] = c; });   // profile / notes find them too
 }
+// finished service-quality surveys (from the operations room) of the cases this page funded
+function fundedSurveys(){
+  return Object.keys(F.surveys||{}).map(function(k){ var r = F.surveys[k]; r.key = k; return r; }).filter(function(r){
+    var c = caseById(r.cid); return r.status==='done' && c && funderOf(c);
+  }).sort(function(a,b){ return (b.at||0) - (a.at||0); });
+}
+function surveysOf(cid){ return fundedSurveys().filter(function(r){ return r.cid===cid; }); }
 // "مؤجل لمرحلة أخرى" cases still waiting (not sent to booking yet)
 function waitingPostponed(){ return POSTPONED.filter(function(c){ return c.stage==='postponed'; }); }
 function saveStore(){ return writeStore(FUND_KEY, F.store); }
@@ -838,6 +859,7 @@ function baseFiltered(skipStage, skipState, from){
     if (q && c.name.indexOf(f.q.trim())===-1 && !(hasCode(c) && c.code.toUpperCase().indexOf(q)!==-1)) return false;
     if (f.level && c.level!==f.level) return false;
     if (f.gov && c.gov!==f.gov) return false;
+    if (f.company && (f.company==='__none' ? funderOf(c) : funderOf(c)!==f.company)) return false;
     if (f.age){ var ab = AGE_BUCKETS.filter(function(x){ return x.key===f.age; })[0]; if (ab && ab.test && !ab.test(c.age)) return false; }
     if (!from && !skipStage && f.stage && f.stage!=='postponed' && c.stage!==f.stage) return false;
     if (!skipState && !matchState(c, f.state)) return false;
@@ -895,28 +917,50 @@ function renderKpis(){
 
 function renderFilters(){
   var f = F.filters, base = baseFiltered(true);
-  var stages = [['','الكل','t-all'],['measurement',STORES.measurement,'t-new'],['newDelivery',STORES.newDelivery,'t-new'],['postponed','مؤجل لمرحلة أخرى','t-post']];
+  var stages = [['','الكل','t-all'],['measurement',STORES.measurement,'t-new'],['newDelivery',STORES.newDelivery,'t-new'],['postponed','مؤجل لمرحلة أخرى','t-post'],['surveys','استبيانات الحالات الممولة','t-sv']];
   var govs = GOVERNORATES.filter(function(g){ return CASES.concat(waitingPostponed()).some(function(c){ return (inStores(c) || c.stage==='postponed') && c.gov===g; }); });
   var postN = baseFiltered(false, false, waitingPostponed()).length;
   var states = [['','الكل'],['funded','ممولة'],['unfunded','غير ممولة'],['held','موقوفة']];
   var levels = LEVEL_OPTIONS.concat(POSTPONED_LEVELS.filter(function(l){ return LEVEL_OPTIONS.indexOf(l)===-1; })).filter(function(l){ return CASES.concat(waitingPostponed()).some(function(c){ return (inStores(c) || c.stage==='postponed') && c.level===l; }); });
   return '<div class="card" style="margin-bottom:14px;"><div class="card-body">'+
     '<div class="store-tabs">'+stages.map(function(s){
-      return '<button class="'+s[2]+(f.stage===s[0]?' on':'')+'"'+A('setStage', s[0])+'><i class="fa fa-'+(s[0]?'cube':'th-large')+'"></i>'+s[1]+'<span class="n">'+(s[0]==='postponed' ? postN : base.filter(function(c){ return !s[0] || c.stage===s[0]; }).length)+'</span></button>';
+      return '<button class="'+s[2]+(f.stage===s[0]?' on':'')+'"'+A('setStage', s[0])+'><i class="fa fa-'+(s[0]==='surveys' ? 'star-half-o' : s[0]?'cube':'th-large')+'"></i>'+s[1]+'<span class="n">'+(s[0]==='surveys' ? fundedSurveys().length : s[0]==='postponed' ? postN : base.filter(function(c){ return !s[0] || c.stage===s[0]; }).length)+'</span></button>';
     }).join('')+'</div>'+
     '<div class="filters">'+
     '<div class="fg"><label>بحث</label><div class="search-box"><i class="fa fa-search"></i><input class="form-control" placeholder="الاسم أو الكود" value="'+esc(f.q)+'" data-k="q" data-input="setFilter" data-a="q"/></div></div>'+
     '<div class="fg"><label>مستوى البتر</label><select class="form-control w-sel" data-change="setFilter" data-a="level"><option value="">الكل</option>'+levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="fg"><label>الشركة الممولة</label><select class="form-control w-sel" data-change="setFilter" data-a="company"><option value="">الكل</option>'+companies().map(function(co){ return '<option'+(f.company===co?' selected':'')+'>'+esc(co)+'</option>'; }).join('')+'<option value="__none"'+(f.company==='__none'?' selected':'')+'>غير ممولة</option></select></div>'+
     '<div class="fg"><label>المحافظة</label><select class="form-control w-sel" data-change="setFilter" data-a="gov"><option value="">الكل</option>'+govs.map(function(g){ return '<option'+(f.gov===g?' selected':'')+'>'+esc(g)+'</option>'; }).join('')+'</select></div>'+
     '<div class="fg"><label>السن</label><select class="form-control w-sel" data-change="setFilter" data-a="age">'+AGE_BUCKETS.map(function(a){ return '<option value="'+a.key+'"'+(f.age===a.key?' selected':'')+'>'+a.label+'</option>'; }).join('')+'</select></div>'+
     '<div class="fg"><label>الحالة</label><div class="state-tabs">'+states.map(function(s){
       return '<button class="'+(f.state===s[0]?'on':'')+'"'+A('setState', s[0])+'>'+s[1]+' <span class="n">'+baseFiltered(false, true).filter(function(c){ return matchState(c, s[0]); }).length+'</span></button>';
     }).join('')+'</div></div>'+
-    ((f.q || f.level || f.gov || f.age || f.state) ? '<div class="fg"><label>&nbsp;</label><button class="btn btn-link btn-sm" style="color:var(--hih-danger);"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح الفلاتر</button></div>' : '')+
+    ((f.q || f.level || f.gov || f.age || f.company || f.state) ? '<div class="fg"><label>&nbsp;</label><button class="btn btn-link btn-sm" style="color:var(--hih-danger);"'+A('clearFilters')+'><i class="fa fa-times"></i> مسح الفلاتر</button></div>' : '')+
     '</div></div></div>';
 }
 
+function renderSurveys(){
+  var f = F.filters, q = f.q.trim();
+  var list = fundedSurveys().filter(function(r){ var c = caseById(r.cid); return (!q || c.name.indexOf(q)!==-1) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.company || funderOf(c)===f.company); });
+  var h = '<div class="note note-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i><div>استبيانات «متابعة جودة الخدمة» اللي الكول سنتر عملها مع الحالات الممولة بعد زيارات المقاسات والاستلام.</div></div>';
+  h += '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> استبيان</span></div><div class="table-scroll"><table class="ftable"><thead><tr>'+
+    '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>اتعمل</th><th></th></tr></thead><tbody>';
+  list.forEach(function(r){
+    var c = caseById(r.cid), ov = r.answers.overall, rr = SV_RATES.filter(function(x){ return x[0]===ov; })[0];
+    h += '<tr><td><div class="who"><b>'+esc(c.name)+profBtn(c.id)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span>'+esc(c.gov)+'</span></div></div></td>'+
+      '<td><span class="pill p-funded"><i class="fa fa-check"></i>'+esc(funderOf(c))+'</span></td>'+
+      '<td>'+TASK_TYPES[r.type].label+'<span class="pill-sub">'+esc(r.day)+'</span></td>'+
+      '<td>'+(ov ? '<span class="sva-rate r'+ov+'">'+ov+' – '+rr[1]+'</span>' : '—')+'</td><td>'+esc(r.answers.recommend||'—')+'</td>'+
+      '<td>'+(r.alerts && r.alerts.length ? '<span class="pill p-held"><i class="fa fa-exclamation-triangle"></i>'+r.alerts.length+'</span>' : '<span class="muted">—</span>')+'</td>'+
+      '<td>'+esc(r.by||'')+'<span class="pill-sub">'+(r.at ? isoFromMs(r.at) : '')+'</span></td>'+
+      '<td><button class="btn btn-default btn-sm btn-r"'+A('showSurvey', r.key)+'><i class="fa fa-eye"></i> عرض الإجابات</button></td></tr>';
+  });
+  h += '</tbody></table>';
+  if (!list.length) h += '<div class="empty"><i class="fa fa-star-o"></i>لسه مفيش استبيانات للحالات الممولة</div>';
+  return h + '</div></div>';
+}
 function renderTable(){
+  if (F.filters.stage==='surveys') return renderSurveys();
   var list = filtered(), sel = F.sel;
   var allOn = list.length && list.every(function(c){ return sel.indexOf(c.id)!==-1; });
   var h = (F.filters.stage==='postponed' ? '<div class="note note-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i><div>حالات مستوى بترها مش بنشتغل عليه دلوقتي ('+POSTPONED_LEVELS.join('، ')+'). لما تحدد ممول وتدوس <b>تمويل وإرسال للحجز</b> الحالة بتروح حصالة التقييم الطبي والقياسات والأوبريشن يحجزها عادي.</div></div>' : '')+
@@ -943,7 +987,8 @@ function renderTable(){
       '<td>'+(hd ? '<span class="pill p-held"><i class="fa fa-pause"></i>'+(hd.until ? 'لحد '+isoFromMs(hd.until) : 'موقوفة')+'</span>'+(hd.note ? '<span class="pill-sub note-cell">'+esc(hd.note)+'</span>' : '') : '<span class="muted">—</span>')+'</td>'+
       '<td>'+(notesOf(c).length ? '<button class="note-chip"'+A('showNotes', c.id)+' title="كل الملاحظات"><span>'+esc(notesOf(c)[notesOf(c).length-1].text)+'</span>'+
         (notesOf(c).length > 1 ? '<b>'+notesOf(c).length+'</b>' : '')+'</button>' : '<span class="muted">—</span>')+'</td>'+
-      '<td><div class="row-act"><button class="icon-btn" title="إضافة ملاحظة"'+A('openNoteOne', c.id)+'><i class="fa fa-comment-o"></i></button>'+(hd ? '<button class="icon-btn" title="فك الإيقاف"'+A('releaseOne', c.id)+'><i class="fa fa-play"></i></button>' : '')+
+      '<td><div class="row-act">'+(surveysOf(c.id).length ? '<button class="icon-btn sv-btn" title="الاستبيانات ('+surveysOf(c.id).length+')"'+A('showCaseSurveys', c.id)+'><i class="fa fa-star-half-o"></i></button>' : '')+
+        '<button class="icon-btn" title="إضافة ملاحظة"'+A('openNoteOne', c.id)+'><i class="fa fa-comment-o"></i></button>'+(hd ? '<button class="icon-btn" title="فك الإيقاف"'+A('releaseOne', c.id)+'><i class="fa fa-play"></i></button>' : '')+
         (a ? '<button class="icon-btn danger" title="إلغاء التمويل"'+A('unfund', c.id)+'><i class="fa fa-undo"></i></button>' : '')+'</div></td></tr>';
   });
   h += '</tbody></table>';
@@ -986,7 +1031,7 @@ function renderHistory(){
   return h + '</div></div>';
 }
 
-function noteRow(n){ return '<div class="note-row"><div>'+esc(n.text)+'</div><span>'+esc(n.by)+' · '+isoFromMs(n.at)+' '+timeFromMs(n.at)+(n.group > 1 ? ' · مع '+(n.group-1)+' حالة تانية' : '')+'</span></div>'; }
+function noteRow(n){ return '<div class="note-row"><div>'+esc(n.text)+'</div><span>'+esc(n.by)+' · '+isoFromMs(n.at)+' '+timeFromMs(n.at)+(n.group > 1 ? ' · مع '+(n.group-1)+' حالة تانية' : '')+(n.toOps ? ' · اتبعتت للأوبريشن'+(n.day ? ' – يتحجز يوم '+n.day : '') : '')+'</span></div>'; }
 function modalShell(title, body, foot){
   return '<div class="modal-backdrop fade in"></div><div class="modal show-modal" '+A('closeModalBg')+'><div class="modal-dialog"><div class="modal-content">'+
     '<div class="modal-header"><button class="close"'+A('closeModal')+'>&times;</button><h4 class="modal-title">'+title+'</h4></div>'+
@@ -1008,9 +1053,18 @@ function renderModal(){
     var nIds = m.ids, one = nIds.length===1 ? caseById(nIds[0]) : null;
     return modalShell(one ? 'ملاحظة على ' + esc(one.name) : 'ملاحظة على ' + nIds.length + ' حالة',
       (one ? '' : '<div class="note note-info"><i class="fa fa-info-circle"></i><div>الملاحظة هتتكتب على كل الحالات المحددة ('+nIds.length+').</div></div>')+
-      '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة">'+esc(m.text)+'</textarea>'+
+      '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة – مثال: الحالات دي ممولة ومحتاجة تتحجز يوم ...">'+esc(m.text)+'</textarea>'+
+      '<div class="ops-opt"><label style="margin:0;display:inline-flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox"'+(m.toOps?' checked':'')+A('toggleNoteOps')+'/> ابعتها للأوبريشن (توصلهم إشعار)</label>'+
+        (m.toOps ? '<span>يتحجزلها يوم (اختياري)</span><input class="form-control" type="date" value="'+esc(m.day||'')+'" data-k="note-day" data-change="setNoteDay"/>' : '')+'</div>'+
       (one && notesOf(one).length ? '<div class="notes-list">'+notesOf(one).slice().reverse().map(noteRow).join('')+'</div>' : ''),
       '<button class="btn btn-primary"'+A('saveNote')+'><i class="fa fa-check"></i> حفظ الملاحظة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
+  }
+  if (m.kind==='survey'){
+    var recs = m.keys.map(function(k){ var r = F.surveys[k]; r.key = k; return r; }), sc = caseById(recs[0].cid);
+    return modalShell('استبيان متابعة جودة الخدمة – ' + esc(sc.name), recs.map(function(r){
+      return '<div class="sv-head"><b>'+TASK_TYPES[r.type].label+'</b> · زيارة '+esc(r.day)+' · اتعمل '+(r.at ? isoFromMs(r.at) : '')+' بواسطة '+esc(r.by||'')+' · الممول: '+esc(funderOf(sc))+'</div>'+
+        (r.alerts && r.alerts.length ? '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>'+r.alerts.map(esc).join('<br>')+'</div></div>' : '')+svAnswersHtml(r);
+    }).join('<hr>'), '<button class="btn btn-default"'+A('closeModal')+'>إغلاق</button>');
   }
   if (m.kind==='notes'){
     var nc = caseById(m.cid);
@@ -1052,7 +1106,7 @@ var ACT = {
     loadStores(); if (companies().indexOf(n)===-1){ F.store.companies.push(n); saveStore(); }
     F.company = n; F.newCompany = ''; F.modal = null; toast('تمت إضافة ' + n); render();
   },
-  setStage: function(v){ if ((v==='postponed') !== (F.filters.stage==='postponed')) F.sel = []; F.filters.stage = v; render(); },
+  setStage: function(v){ if ((v==='postponed') !== (F.filters.stage==='postponed') || v==='surveys') F.sel = []; F.filters.stage = v; render(); },
   setState: function(v){ F.filters.state = v; render(); },
   setFilter: function(v, key){ F.filters[key] = v; render(); },
   setSort: function(v){ F.sort = v; render(); },
@@ -1101,19 +1155,24 @@ var ACT = {
     delete F.store.alloc[cid]; logIt('إلغاء تمويل ' + a.company, [cid]); saveStore();
     toast('اتلغى التمويل'); render();
   },
-  openNote: function(){ if (!F.sel.length) return; F.modal = {kind:'note', ids:F.sel.slice(), text:''}; render(); },
-  openNoteOne: function(cid){ F.modal = {kind:'note', ids:[cid], text:''}; render(); },
+  showSurvey: function(k){ F.modal = {kind:'survey', keys:[k]}; render(); },
+  showCaseSurveys: function(cid){ F.modal = {kind:'survey', keys:surveysOf(cid).map(function(r){ return r.key; })}; render(); },
+  openNote: function(){ if (!F.sel.length) return; F.modal = {kind:'note', ids:F.sel.slice(), text:'', toOps:true, day:''}; render(); },
+  openNoteOne: function(cid){ F.modal = {kind:'note', ids:[cid], text:'', toOps:true, day:''}; render(); },
+  toggleNoteOps: function(){ F.modal.toOps = !F.modal.toOps; render(); },
+  setNoteDay: function(v){ F.modal.day = v; render(); },
   showNotes: function(cid){ F.modal = {kind:'notes', cid:cid}; render(); },
   setNoteText: function(v){ F.modal.text = v; },
   saveNote: function(){
     var m = F.modal, txt = (m.text||'').trim();
     if (!txt){ toast('اكتب الملاحظة الأول'); return render(); }
     loadStores(); var at = Date.now();
-    m.ids.forEach(function(id){ (F.store.notes[id] = F.store.notes[id] || []).push({text:txt, by:CSR_USER, at:at, group:m.ids.length}); });
+    m.ids.forEach(function(id){ (F.store.notes[id] = F.store.notes[id] || []).push({text:txt, by:CSR_USER, at:at, group:m.ids.length, toOps:!!m.toOps, day:m.toOps ? m.day||'' : ''}); });
+    if (m.toOps) F.store.opsNotes.push({id:'N'+at, ids:m.ids.slice(), text:txt, day:m.day||'', by:CSR_USER, at:at});   // shows up in the operations room
     logIt('ملاحظة', m.ids, txt.length > 40 ? txt.slice(0,40) + '…' : txt);
     if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
     if (m.ids.length > 1) F.sel = [];
-    F.modal = null; toast('اتكتبت الملاحظة على ' + (m.ids.length > 1 ? m.ids.length + ' حالة' : caseById(m.ids[0]).name)); render();
+    F.modal = null; toast('اتكتبت الملاحظة على ' + (m.ids.length > 1 ? m.ids.length + ' حالة' : caseById(m.ids[0]).name) + (m.toOps ? ' واتبعتت للأوبريشن' : '')); render();
   },
   openHold: function(){ if (!F.sel.length) return; F.modal = {kind:'hold', mode:'open', days:'7', note:''}; render(); },
   setHoldMode: function(v){ F.modal.mode = v; render(); },
@@ -1366,6 +1425,51 @@ function applyProfiles(){
   });
 }
 window.addEventListener('storage', function(e){ if (e.key===PROFILE_KEY){ loadProfiles(); applyProfiles(); render(); } });
+// ---- متابعة جودة الخدمة (Survey): questions + answers view, shared so the funding page can read finished surveys
+var SURVEY_TYPES = ['measurement','newDelivery','maintDelivery'];
+var SV_RATES = [[5,'ممتاز'],[4,'جيد جدًا'],[3,'جيد'],[2,'مقبول'],[1,'ضعيف']];
+var SURVEY_Q = [
+  {k:'reception', t:'الاستقبال (الريسبشن)', qs:[
+    {k:'rec_treat', t:'استقبال الريسبشن ومعاملتهم ليك كانت عاملة إزاي؟', type:'rate'},
+    {k:'rec_wait', t:'انتظرت قد إيه لحد ما دخلت؟', type:'choice', opts:['أقل من ربع ساعة','ربع لنص ساعة','نص ساعة لساعة','أكتر من ساعة']}]},
+  {k:'engineer', t:'المهندس / الفني', qs:[
+    {k:'eng_explain', t:'المهندس شرحلك اللي هيعمله بشكل واضح؟', type:'rate'},
+    {k:'eng_care', t:'رأيك في تعامل المهندس واهتمامه بيك؟', type:'rate'}]},
+  {k:'physio', t:'دكتور العلاج الطبيعي', qs:[
+    {k:'pt_teach', t:'دكتور العلاج الطبيعي فهّمك إزاي تستخدم الطرف وتتمرن عليه؟', type:'rate'},
+    {k:'pt_follow', t:'رأيك في التمارين والمتابعة؟', type:'rate'}]},
+  {k:'psych', t:'الدعم النفسي', qs:[
+    {k:'psych_met', t:'قابلت الأخصائي النفسي؟', type:'choice', opts:['نعم','لا']},
+    {k:'psych_rate', t:'الجلسة فادتك قد إيه؟', type:'rate', when:function(a){ return a.psych_met==='نعم'; }}]},
+  {k:'service', t:'الخدمة في المؤسسة', qs:[
+    {k:'svc_clean', t:'نظافة المكان وراحته', type:'rate'},
+    {k:'svc_time', t:'المواعيد كانت مظبوطة؟ (اتلزمنا بميعادك ولا اتأخرنا)', type:'rate'},
+    {k:'svc_cc', t:'الكول سنتر كان واضح في الحجز والتأكيد؟', type:'rate'}]},
+  {k:'limb', t:'الطرف', delivery:true, qs:[
+    {k:'limb_comfort', t:'الطرف مريح ومظبوط عليك؟', type:'rate'},
+    {k:'limb_use', t:'بتقدر تمشي / تستخدمه في حياتك اليومية؟', type:'rate'},
+    {k:'limb_problem', t:'فيه أي ألم أو مشكلة في الطرف دلوقتي؟', type:'choice', opts:['لا','نعم']}]},
+  {k:'general', t:'أسئلة عامة', qs:[
+    {k:'overall', t:'تقييمك العام لتجربتك مع هاند إن هاند', type:'rate'},
+    {k:'recommend', t:'ترشّح المؤسسة لحد يعرفك محتاج طرف؟', type:'choice', opts:['أكيد','غالبًا','مش متأكد','لا']},
+    {k:'suggest', t:'فيه أي حاجة عايز تقولها أو اقتراح؟', type:'text', optional:true}]},
+];
+function svSectionsFor(type){ return SURVEY_Q.filter(function(sec){ return !sec.delivery || type!=='measurement'; }); }
+var SURVEY_KEY = 'hih_surveys_v1';
+function readSurveys(){ try { return JSON.parse(localStorage.getItem(SURVEY_KEY) || '{}') || {}; } catch(e){ return {}; } }
+// rec = {type, day, by, at, answers, notes}
+function svAnswersHtml(rec){
+  var a = rec.answers || {}, notes = rec.notes || {};
+  return svSectionsFor(rec.type).map(function(sec){
+    var rows = sec.qs.filter(function(q){ return !q.when || q.when(a); }).map(function(q){
+      var v = a[q.k], val;
+      if (q.type==='rate' && v){ var r = SV_RATES.filter(function(x){ return x[0]===v; })[0]; val = '<span class="sva-rate r'+v+'">'+v+' – '+(r ? r[1] : '')+'</span>'; }
+      else val = v ? '<span class="sva-txt">'+esc(String(v))+'</span>' : '<span class="sva-none">—</span>';
+      return '<div class="sva-q"><span>'+q.t+'</span>'+val+'</div>';
+    }).join('');
+    return '<div class="sva-sec"><div class="sva-t">'+sec.t+'</div>'+rows+(notes[sec.k] ? '<div class="sva-note">ملاحظات: '+esc(notes[sec.k])+'</div>' : '')+'</div>';
+  }).join('');
+}
 /*__PF_END__*/
 var PF_HOOKS = {
   base: function(id){ return {d:null, c:caseById(id)}; },
@@ -1393,7 +1497,7 @@ document.addEventListener('keydown', function(e){
   if (e.key!=='Escape') return;
   if (PROFILES.open){ ACT.closeProfile(); } else if (F.modal){ F.modal = null; render(); } else if (F.sel.length){ F.sel = []; render(); }
 });
-window.addEventListener('storage', function(e){ if (e.key===FUND_KEY){ loadStores(); render(); } });
+window.addEventListener('storage', function(e){ if (e.key===FUND_KEY || e.key===SURVEY_KEY){ loadStores(); render(); } });
 
 loadStores();
 loadProfiles(); applyProfiles();
