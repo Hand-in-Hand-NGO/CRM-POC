@@ -4438,7 +4438,7 @@ function renderInboundCase(){
 // past the daily emergency limit the agent only gets a warning. No confirmation call.
 // =====================================================================
 var EMG_KINDS = ['كسر أو عطل في الطرف','جرح أو ألم من السوكت','الطرف مش مظبوط ومش قادر يمشي','مشكلة في المفصل أو القدم','أخرى'];
-var EMG_VISITS = [['maintDelivery','صيانة'],['maintEval','تقييم صيانة'],['measurement','تقييم طبي']];
+var EMG_VISITS = [['maintDelivery','صيانة'],['maintEval','تقييم صيانة']];
 function emgFor(off){ return (S.emergencies||[]).filter(function(e){ return e.dateOffset===off && e.status==='booked'; }); }
 function emgPerson(id){
   var d = DELIVERED_MAP[id]; if (d) return {id:d.id, name:d.name, phone:d.phone, code:d.code, gov:d.gov, level:d.level};
