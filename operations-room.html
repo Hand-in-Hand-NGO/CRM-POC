@@ -704,7 +704,7 @@
     .ag-bar i{display:block;height:100%;background:var(--brand-meas);border-radius:4px;}
     .ag-rate{font-size:11px;font-weight:800;color:var(--success);background:var(--success-tint);border-radius:20px;padding:2px 8px;flex-shrink:0;}
     .ag-rate.none{color:var(--text-faint);background:var(--neutral-tint);}
-    .ag-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+    .ag-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
     .ag-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 2px;text-align:center;}
     .ag-stat b{display:block;font-size:15px;font-weight:800;color:var(--text);line-height:1.3;}
     .ag-stat span{display:block;font-size:10.5px;color:var(--text-muted);}
@@ -3033,7 +3033,6 @@ function renderLists(){
     var maxLoad = Math.max.apply(null, AGENTS.map(function(a){ return loads[a.id] || 0; }).concat([1]));
     h += '<div class="side-card"><div class="side-title">'+ic('users',14)+'توزيع الحالات على الموظفين</div>';
     AGENTS.forEach(function(a){
-      var due = queueItems(a.id).filter(function(x){ return x.group==='due'; }).length;
       var calls = S.callLog.filter(function(l){ return l.agentId===a.id && isSameDate(new Date(l.at), today); });
       var bk = calls.filter(function(l){ return l.outcome==='booked' || l.outcome==='bookedAlt'; }).length;
       var open = loads[a.id] || 0, rate = calls.length ? Math.round(bk / calls.length * 100) : null;
@@ -3042,7 +3041,7 @@ function renderLists(){
         '<div class="ag-head"><span class="ag-av">'+esc(a.name.trim().charAt(0))+'</span>'+
           '<div class="ag-id"><b>'+esc(a.name)+'</b><div class="ag-bar"><i style="width:'+Math.round(open/maxLoad*100)+'%"></i></div></div>'+
           '<span class="ag-rate'+(!rate?' none':'')+'" title="نسبة الحجز من مكالمات النهارده">'+(rate===null?'—':'حجز '+rate+'%')+'</span></div>'+
-        '<div class="ag-stats">'+stat(open,'مفتوحة')+stat(due,'مستحقة',due?'warn':'')+stat(calls.length,'مكالمات')+stat(bk,'حجز',bk?'ok':'')+'</div>'+
+        '<div class="ag-stats">'+stat(open,'المكالمات المستحقة',open?'warn':'')+stat(calls.length,'المكالمات التي تمت')+stat(bk,'حجز',bk?'ok':'')+'</div>'+
       '</div>';
     });
     h += '</div>';
