@@ -340,6 +340,8 @@ label { font-weight: bold; }
     .store-tabs button.on.t-new { background: var(--hih-primary); border-color: var(--hih-primary); color: #fff; }
     .store-tabs button.on.t-sv { background: #0093e9; border-color: #0093e9; color: #fff; }
     .sv-btn { color: #0093e9; border-color: #b9dcf5; }
+    .hdr-forms{margin-right:auto;} .hdr-forms + .hdr-user{margin-right:0;} .hdr-forms.on{background:#e6f1fb;border-color:#0093e9;color:#0b6db0;}
+    .forms-card .list-head .count i{color:#0093e9;margin-inline-end:4px;}
     .sv-head { font-size: 12.5px; color: #555; margin-bottom: 8px; }
     .ops-opt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; background: #f4f9fd; border: 1px solid #d6e9f7; border-radius: 10px; padding: 8px 10px; font-size: 12.5px; }
     .ops-opt input[type=date] { height: 30px; font-size: 12.5px; width: 160px; }
@@ -546,6 +548,81 @@ label { font-weight: bold; }
     .sva-rate{font-weight:800;white-space:nowrap;} .sva-rate.r5,.sva-rate.r4{color:#15803d;} .sva-rate.r3{color:#b45309;} .sva-rate.r2,.sva-rate.r1{color:#c81e3a;}
     .sva-txt{font-weight:700;color:#333;} .sva-none{color:#aaa;}
     .sva-note{font-size:12px;color:#7a5a00;background:#fffbea;border-radius:6px;padding:5px 8px;margin-top:6px;}
+    .sv-sec{border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:10px;}
+    .sv-sec-t{font-weight:800;font-size:13.5px;color:#0b6db0;margin-bottom:8px;}
+    .sv-q{margin-bottom:10px;}
+    .sv-q-t{font-size:13px;font-weight:700;color:#333;margin-bottom:6px;}
+    .sv-rates{display:flex;gap:6px;flex-wrap:wrap;}
+    .sv-rates button{display:inline-flex;align-items:center;gap:5px;border:1px solid #d2d6de;background:#fff;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer;}
+    .sv-rates button b{font-size:13px;}
+    .sv-rates button.on.r5,.sv-rates button.on.r4{background:#15803d;border-color:#15803d;color:#fff;}
+    .sv-rates button.on.r3{background:#b45309;border-color:#b45309;color:#fff;}
+    .sv-rates button.on.r2,.sv-rates button.on.r1{background:#c81e3a;border-color:#c81e3a;color:#fff;}
+    .sv-choices{display:flex;gap:6px;flex-wrap:wrap;}
+    .sv-choices button{border:1px solid #d2d6de;background:#fff;border-radius:20px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;}
+    .sv-choices button.on{background:#334155;border-color:#334155;color:#fff;}
+    .sv-note{margin-top:4px;font-size:12px;}
+    .sva-none{color:#9ca3af;}
+    .svx-in{width:100%;border:1px solid #d2d6de;border-radius:7px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff;color:#333;box-sizing:border-box;}
+    .svx-in:focus{outline:0;border-color:#0093e9;box-shadow:0 0 0 3px rgba(0,147,233,.12);}
+    textarea.svx-in{resize:vertical;}
+    .svx-req{color:#c81e3a;font-weight:800;}
+    .sv-q.svx-miss{background:#fff1f2;border-radius:8px;padding:6px 8px;box-shadow:inset 3px 0 0 #c81e3a;}
+    .sv-choices.multi button{display:inline-flex;align-items:center;gap:6px;border-radius:8px;}
+    .svx-box{width:11px;height:11px;border:1.5px solid currentColor;border-radius:3px;display:inline-block;}
+    .sv-choices.multi button.on .svx-box{background:#fff;box-shadow:inset 0 0 0 2px #334155;}
+    .svx-st{display:inline-block;border-radius:12px;padding:1px 9px;font-size:11px;font-weight:800;white-space:nowrap;}
+    .svx-st0{background:#f1f5f9;color:#64748b;} .svx-st1{background:#fff4e5;color:#b45309;} .svx-st2{background:#e7f6ec;color:#15803d;}
+    .svx-fhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 6px;font-size:13px;}
+    .svx-co{background:#e6f1fb;color:#0b6db0;border-radius:12px;padding:1px 9px;font-size:11px;font-weight:700;}
+    .svx-ver{color:#64748b;font-size:11px;}
+    .svx-badge{display:inline-block;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:800;margin-inline-start:6px;}
+    .svx-badge.pub{background:#e7f6ec;color:#15803d;} .svx-badge.draft{background:#fff4e5;color:#b45309;} .svx-badge.unsaved{background:#fde8ec;color:#c81e3a;}
+    .svf{max-width:860px;margin:0 auto;text-align:right;}
+    .svf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid #e5e7eb;border-top:4px solid #0093e9;border-radius:12px;padding:12px 16px;margin-bottom:10px;}
+    .svf-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:15px;}
+    .svf-acts{display:flex;gap:6px;flex-wrap:wrap;}
+    .svf-btn{border:1px solid #d2d6de;background:#fff;color:#333;border-radius:8px;padding:6px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+    .svf-btn:hover{border-color:#0093e9;color:#0b6db0;}
+    .svf-btn.on{background:#e6f1fb;border-color:#0093e9;color:#0b6db0;}
+    .svf-btn.pri{background:#0093e9;border-color:#0093e9;color:#fff;}
+    .svf-btn.sm{padding:3px 10px;font-size:12px;}
+    .svf-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 16px;margin-bottom:10px;}
+    .svf-meta label,.svf-row label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:#64748b;margin:0;}
+    .svf-vers{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+    .svf-vers span{background:#f1f5f9;color:#475569;border-radius:12px;padding:2px 10px;font-size:11px;}
+    .svf-vers span:first-child{background:#e7f6ec;color:#15803d;font-weight:700;}
+    .svf-list{display:flex;flex-direction:column;gap:8px;}
+    .svf-q{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:11px 14px;cursor:pointer;}
+    .svf-q:hover{border-color:#b9dcf5;}
+    .svf-q.on{cursor:default;border-color:#0093e9;box-shadow:inset 4px 0 0 #0093e9;}
+    .svf-n{flex:0 0 24px;height:24px;border-radius:50%;background:#e6f1fb;color:#0b6db0;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;}
+    .svf-qt{flex:1;font-size:13px;font-weight:700;color:#333;}
+    .svf-qt em{display:block;font-style:normal;font-size:11px;color:#0b6db0;font-weight:700;margin-bottom:2px;}
+    .svf-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+    .svf-chips span{background:#f1f5f9;color:#475569;border-radius:10px;padding:0 8px;font-size:10.5px;font-weight:700;line-height:1.8;}
+    .svf-chips span.req{background:#fde8ec;color:#c81e3a;} .svf-chips span.al{background:#fff4e5;color:#b45309;}
+    .svf-ed{flex:1;display:flex;flex-direction:column;gap:9px;}
+    .svf-text{font-size:14px;font-weight:700;padding:8px 10px;}
+    .svf-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+    .svf-row label{flex:1;min-width:150px;}
+    .svf-tog{display:inline-flex;align-items:center;gap:7px;border:0;background:none;font:inherit;font-size:12.5px;font-weight:700;color:#475569;cursor:pointer;padding:6px 0;}
+    .svf-tog i{width:30px;height:16px;border-radius:9px;background:#cbd5e1;position:relative;transition:.15s;}
+    .svf-tog i:after{content:'';position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:.15s;}
+    .svf-tog.on{color:#c81e3a;} .svf-tog.on i{background:#c81e3a;} .svf-tog.on i:after{right:16px;}
+    .svf-opts{display:flex;flex-direction:column;gap:6px;}
+    .svf-opt{display:flex;align-items:center;gap:8px;}
+    .svx-dot{flex:0 0 12px;height:12px;border:1.5px solid #94a3b8;border-radius:50%;} .svx-dot.sq{border-radius:3px;}
+    .svf-hint{font-size:12px;color:#64748b;background:#f8fafc;border-radius:8px;padding:6px 10px;}
+    .svf-foot{display:flex;align-items:center;gap:6px;border-top:1px solid #eef0f3;padding-top:8px;}
+    .svf-foot .sp,.svf-pv-bar .sp{flex:1;}
+    .svf-ic{border:1px solid #d2d6de;background:#fff;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;cursor:pointer;color:#475569;padding:0;}
+    .svf-ic:disabled{opacity:.35;cursor:default;}
+    .svf-link{border:0;background:none;font:inherit;font-size:12.5px;font-weight:700;color:#0b6db0;cursor:pointer;padding:4px 6px;}
+    .svf-link.danger{color:#c81e3a;}
+    .svf-add{width:100%;margin-top:10px;border:1.5px dashed #94c9ee;background:#f5faff;color:#0b6db0;border-radius:12px;padding:10px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+    .svf-pv{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 16px;}
+    .svf-pv-bar{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:#64748b;}
     /*__PFCSS_END__*/
   </style>
 </head>
@@ -806,7 +883,7 @@ function writeStore(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); ret
 function emptyFilters(){ return {q:'', level:'', gov:'', age:'', company:'', stage:'', state:''}; }
 var F = {
   store: null, company: '', newCompany: '',
-  filters: emptyFilters(), sort: 'waitDesc', sel: [], modal: null, toast: null,
+  filters: emptyFilters(), sort: 'waitDesc', sel: [], modal: null, toast: null, view: 'cases',
 };
 function loadStores(){
   F.store = readStore(FUND_KEY, null) || {};
@@ -830,6 +907,10 @@ function saveStore(){ return writeStore(FUND_KEY, F.store); }
 function companies(){ return BASE_COMPANIES.concat(F.store.companies.filter(function(c){ return BASE_COMPANIES.indexOf(c)===-1; })); }
 function logIt(action, ids, detail){ F.store.log.push({at:Date.now(), by:CSR_USER, action:action, ids:ids, detail:detail||''}); }
 
+// the shared survey-form editor: the funding officer manages the funding-company forms
+function svfRole(){ return 'funding'; }
+function svfUser(){ return CSR_USER; }
+function svfCompanies(){ return companies(); }
 // the two pools the funding page works on
 var STORES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد'};
 function storeLbl(k){
@@ -901,11 +982,14 @@ function render(){
 }
 function renderApp(){
   var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b></div></div>'+
+    '<button class="btn btn-default btn-sm hdr-forms'+(F.view==='forms' ? ' on' : '')+'"'+A('setView', F.view==='forms' ? 'cases' : 'forms')+'><i class="fa fa-'+(F.view==='forms' ? 'th-large' : 'list-alt')+'"></i> '+(F.view==='forms' ? 'الحالات' : 'استبيانات شركات التمويل')+'</button>'+
     '<div class="hdr-user"><span class="av"><i class="fa fa-user"></i></span>'+esc(CSR_USER)+'</div></header>';
   h += '<aside class="main-sidebar"><span class="logo">HiH</span>'+
     '<a href="operations-room.html" title="غرفة العمليات"'+A('goOps')+'><i class="fa fa-calendar"></i></a>'+
-    '<a class="active" href="#" title="صفحة التمويل"><i class="fa fa-money"></i></a></aside>';
-  h += '<div class="content">' + renderKpis() + '<div class="layout"><div class="main">' + renderFilters() + renderTable() + '</div>'+
+    '<a'+(F.view==='cases' ? ' class="active"' : '')+' href="#" title="صفحة التمويل"'+A('setView','cases')+'><i class="fa fa-money"></i></a>'+
+    '<a'+(F.view==='forms' ? ' class="active"' : '')+' href="#" title="استبيانات شركات التمويل"'+A('setView','forms')+'><i class="fa fa-list-alt"></i></a></aside>';
+  if (F.view==='forms') h += '<div class="content">' + renderForms() + '</div>';
+  else h += '<div class="content">' + renderKpis() + '<div class="layout"><div class="main">' + renderFilters() + renderTable() + '</div>'+
     '<aside class="side">' + renderCompanies() + renderHistory() + '</aside></div></div>';
   h += renderSelBar() + renderModal() + renderProfile();
   if (F.toast) h += '<div class="toast-box"><i class="fa fa-check-circle"></i>'+esc(F.toast)+'</div>';
@@ -955,12 +1039,13 @@ function renderSurveys(){
   var list = fundedSurveys().filter(function(r){ var c = caseById(r.cid); return (!q || c.name.indexOf(q)!==-1) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.company || funderOf(c)===f.company); });
   var h = '';
   h += '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> استبيان</span></div><div class="table-scroll"><table class="ftable"><thead><tr>'+
-    '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>اتعمل</th><th></th></tr></thead><tbody>';
+    '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>النماذج</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>اتعمل</th><th></th></tr></thead><tbody>';
   list.forEach(function(r){
     var c = caseById(r.cid), ov = r.answers.overall, rr = SV_RATES.filter(function(x){ return x[0]===ov; })[0];
     h += '<tr><td><div class="who"><b>'+esc(c.name)+profBtn(c.id)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span>'+esc(c.gov)+'</span></div></div></td>'+
       '<td><span class="pill p-funded"><i class="fa fa-check"></i>'+esc(funderOf(c))+'</span></td>'+
       '<td>'+TASK_TYPES[r.type].label+'<span class="pill-sub">'+esc(r.day)+'</span></td>'+
+      '<td>'+svRecForms(r).filter(function(x){ return x.status==='done'; }).map(function(x){ return esc(x.name)+' <span class="svx-ver">إصدار '+x.v+'</span>'; }).join('<br>')+'</td>'+
       '<td>'+(ov ? '<span class="sva-rate r'+ov+'">'+ov+' – '+rr[1]+'</span>' : '—')+'</td><td>'+esc(r.answers.recommend||'—')+'</td>'+
       '<td>'+(r.alerts && r.alerts.length ? '<span class="pill p-held"><i class="fa fa-exclamation-triangle"></i>'+r.alerts.length+'</span>' : '<span class="muted">—</span>')+'</td>'+
       '<td>'+esc(r.by||'')+'<span class="pill-sub">'+(r.at ? isoFromMs(r.at) : '')+'</span></td>'+
@@ -1020,6 +1105,26 @@ function renderSelBar(){
       : '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>');
 }
 
+// ---- استبيانات شركات التمويل
+function renderForms(){
+  if (SVE.id && SVE.id!=='base' && svfById(SVE.id)) return svfEditorHtml();
+  var forms = SVF.forms.slice().sort(function(a,b){ return (a.company||'').localeCompare(b.company||'') || (b.savedAt||0) - (a.savedAt||0); });
+  var h = '<div class="card forms-card"><div class="list-head"><span class="count"><i class="fa fa-list-alt"></i> استبيانات شركات التمويل <b>'+forms.length+'</b></span><span class="sp"></span>'+
+    '<button class="btn btn-primary btn-sm btn-r"'+A('svfNew')+'><i class="fa fa-plus"></i> نموذج جديد</button></div>';
+  if (!forms.length) return h + '<div class="empty"><i class="fa fa-list-alt"></i>لسه مفيش نماذج</div></div>';
+  h += '<div class="table-scroll"><table class="ftable"><thead><tr><th>النموذج</th><th>شركة التمويل</th><th>الحالة</th><th>الأسئلة</th><th>الحالات الممولة</th><th>اتجاوب</th><th>آخر تعديل</th><th></th></tr></thead><tbody>';
+  forms.forEach(function(f){
+    var p = svfPublished(f), co = p ? p.company : f.company, n = co ? CASES.concat(waitingPostponed()).filter(function(c){ return funderOf(c)===co; }).length : 0;
+    var answered = Object.keys(F.surveys||{}).filter(function(k){ var r = F.surveys[k]; return r.forms && r.forms[f.id] && r.forms[f.id].status==='done'; }).length;
+    h += '<tr><td><b>'+esc(f.name || 'نموذج من غير اسم')+'</b></td><td>'+(co ? '<span class="pill p-funded">'+esc(co)+'</span>' : '<span class="muted">—</span>')+'</td>'+
+      '<td>'+(p ? '<span class="svx-badge pub">منشور · إصدار '+p.v+'</span>' : '<span class="svx-badge draft">مسودة</span>')+(p && svfDirty(f) ? '<span class="svx-badge draft">تعديلات مش منشورة</span>' : '')+'</td>'+
+      '<td>'+(p ? p.qs.length : (f.draft||[]).length)+'</td><td>'+n+'</td><td>'+answered+'</td>'+
+      '<td>'+(f.savedAt ? isoFromMs(f.savedAt) : p ? isoFromMs(p.at) : '—')+'</td>'+
+      '<td><div class="row-act"><button class="btn btn-default btn-sm btn-r"'+A('svfEdit', f.id)+'><i class="fa fa-pencil"></i> تعديل</button>'+
+        (p ? '' : '<button class="icon-btn" title="حذف"'+A('svfRemove', f.id)+'><i class="fa fa-trash"></i></button>')+'</div></td></tr>';
+  });
+  return h + '</tbody></table></div></div>';
+}
 function renderCompanies(){
   var rows = companies().map(function(co){ return {co:co, n:CASES.filter(function(c){ return inStores(c) && funderOf(c)===co; }).length}; }).filter(function(r){ return r.n; });
   var h = '<div class="card"><div class="card-head"><i class="fa fa-building"></i>الحالات حسب الممول</div><div class="card-body">';
@@ -1074,7 +1179,7 @@ function renderModal(){
     var recs = m.keys.map(function(k){ var r = F.surveys[k]; r.key = k; return r; }), sc = caseById(recs[0].cid);
     return modalShell('استبيان متابعة جودة الخدمة – ' + esc(sc.name), recs.map(function(r){
       return '<div class="sv-head"><b>'+TASK_TYPES[r.type].label+'</b> · زيارة '+esc(r.day)+' · اتعمل '+(r.at ? isoFromMs(r.at) : '')+' بواسطة '+esc(r.by||'')+' · الممول: '+esc(funderOf(sc))+'</div>'+
-        (r.alerts && r.alerts.length ? '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>'+r.alerts.map(esc).join('<br>')+'</div></div>' : '')+svAnswersHtml(r);
+        (r.alerts && r.alerts.length ? '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>'+r.alerts.map(esc).join('<br>')+'</div></div>' : '')+svRecHtml(r);
     }).join('<hr>'), '<button class="btn btn-default"'+A('closeModal')+'>إغلاق</button>');
   }
   if (m.kind==='notes'){
@@ -1103,6 +1208,15 @@ function renderModal(){
 // Actions
 // =====================================================================
 var ACT = {
+  setView: function(v, a, b, e){ if (e) e.preventDefault(); F.view = v; F.sel = []; if (v!=='forms') SVE.id = null; render(); },
+  svfNew: function(){
+    var id = 'f' + Date.now().toString(36);
+    SVF.forms.push({id:id, name:'', company:F.filters.company && F.filters.company!=='__none' ? F.filters.company : '', draft:[{id:svfNewId(), text:'', type:'yesno', required:true}], versions:[], savedAt:Date.now(), savedBy:CSR_USER});
+    saveSurveyForms(); svfOpen(id); SVE.sel = SVE.work[0].id; render();
+  },
+  svfEdit: function(id){ svfOpen(id); render(); },
+  svfBack: function(){ if (svfWorkDirty() && !confirm('فيه تعديلات مش محفوظة – تخرج من غير حفظ؟')) return; SVE.id = null; render(); },
+  svfRemove: function(id){ var f = svfById(id); if (!f || svfPublished(f)) return; if (!confirm('تحذف النموذج ده؟')) return; SVF.forms = SVF.forms.filter(function(x){ return x.id!==id; }); saveSurveyForms(); render(); },
   // opened from the operations room: go back to that tab instead of loading another file
   goOps: function(v, a, b, e){
     if (window.opener && !window.opener.closed){ if (e) e.preventDefault(); window.opener.focus(); window.close(); }
@@ -1486,19 +1600,262 @@ var SURVEY_Q = [
 function svSectionsFor(type){ return SURVEY_Q.filter(function(sec){ return !sec.delivery || type!=='measurement'; }); }
 var SURVEY_KEY = 'hih_surveys_v1';
 function readSurveys(){ try { return JSON.parse(localStorage.getItem(SURVEY_KEY) || '{}') || {}; } catch(e){ return {}; } }
-// rec = {type, day, by, at, answers, notes}
-function svAnswersHtml(rec){
-  var a = rec.answers || {}, notes = rec.notes || {};
-  return svSectionsFor(rec.type).map(function(sec){
-    var rows = sec.qs.filter(function(q){ return !q.when || q.when(a); }).map(function(q){
-      var v = a[q.k], val;
-      if (q.type==='rate' && v){ var r = SV_RATES.filter(function(x){ return x[0]===v; })[0]; val = '<span class="sva-rate r'+v+'">'+v+' – '+(r ? r[1] : '')+'</span>'; }
-      else val = v ? '<span class="sva-txt">'+esc(String(v))+'</span>' : '<span class="sva-none">—</span>';
-      return '<div class="sva-q"><span>'+q.t+'</span>'+val+'</div>';
-    }).join('');
-    return '<div class="sva-sec"><div class="sva-t">'+sec.t+'</div>'+rows+(notes[sec.k] ? '<div class="sva-note">ملاحظات: '+esc(notes[sec.k])+'</div>' : '')+'</div>';
+// ---- survey forms (like Google Forms): the base form (call-center supervisor) + funding-company forms (funding officer).
+// Each publish adds a version; an answered form keeps a copy of the questions it was answered with.
+var SVF_KEY = 'hih_survey_forms_v1';
+var SVQ_TYPES = {yesno:'نعم / لا', truefalse:'صح / غلط', single:'اختيار واحد', multi:'اختيارات متعددة', short:'نص قصير', long:'نص طويل', rating:'تقييم'};
+function svClone(x){ return JSON.parse(JSON.stringify(x)); }
+function svEsc(v){ return esc(v==null ? '' : String(v)); }
+function svqOpts(q){ return q.type==='yesno' ? ['نعم','لا'] : q.type==='truefalse' ? ['صح','غلط'] : (q.type==='single' || q.type==='multi') ? (q.options||[]) : []; }
+function svLegacyQ(sec, q){
+  var yn = q.opts && q.opts.length===2 && q.opts.indexOf('نعم')!==-1 && q.opts.indexOf('لا')!==-1;
+  var type = q.type==='rate' ? 'rating' : q.type==='text' ? 'long' : yn ? 'yesno' : 'single';
+  var o = {id:q.k, text:q.t, type:type, required:!q.optional, sec:sec.t};
+  if (type==='single') o.options = q.opts.slice();
+  if (sec.delivery) o.visits = 'delivery';
+  if (q.k==='psych_rate') o.cond = {q:'psych_met', v:'نعم'};
+  if (q.k==='limb_problem') o.alertOn = 'نعم';
+  return o;
+}
+// the questions the call center used before the editor existed = version 1 of the base form
+function svLegacyQs(){ var out = []; SURVEY_Q.forEach(function(sec){ sec.qs.forEach(function(q){ out.push(svLegacyQ(sec, q)); }); }); return out; }
+function svLegacyNotes(n){ var out = {}; n = n || {}; SURVEY_Q.forEach(function(sec){ if (n[sec.k]) out[sec.t] = n[sec.k]; }); return out; }
+function svLegacyForm(rec){ return {fid:'base', v:1, name:'الاستبيان الأساسي', company:'', qs:svLegacyQs(), answers:rec.answers||{}, notes:svLegacyNotes(rec.notes), status: rec.status==='done' ? 'done' : 'progress', at:rec.at||null, by:rec.by||''}; }
+var SVF = null;
+function svfSeed(){
+  var qs = svLegacyQs();
+  return {base:{id:'base', name:'الاستبيان الأساسي', company:'', draft:svClone(qs), versions:[{v:1, at:Date.now() - 30*86400000, by:'النظام', name:'الاستبيان الأساسي', company:'', qs:svClone(qs)}]}, forms:[]};
+}
+function loadSurveyForms(){
+  var s = null; try { s = JSON.parse(localStorage.getItem(SVF_KEY) || 'null'); } catch(e){}
+  SVF = s && s.base ? s : svfSeed(); SVF.forms = SVF.forms || [];
+  if (!s) saveSurveyForms();
+  return SVF;
+}
+function saveSurveyForms(){ try { localStorage.setItem(SVF_KEY, JSON.stringify(SVF)); return true; } catch(e){ return false; } }
+function svfById(id){ if (!SVF) loadSurveyForms(); return id==='base' ? SVF.base : SVF.forms.filter(function(f){ return f.id===id; })[0] || null; }
+function svfPublished(f){ return f && f.versions && f.versions.length ? f.versions[f.versions.length-1] : null; }
+function svfDirty(f){ var p = svfPublished(f); return !p || JSON.stringify(p.qs)!==JSON.stringify(f.draft) || p.name!==f.name || (p.company||'')!==(f.company||''); }
+// the funder comes from the funding page's actual allocation of this case id
+var _svAlloc = {raw:null, map:{}};
+function svFunderOf(cid){
+  var raw = null; try { raw = localStorage.getItem('hih_funding_v1'); } catch(e){}
+  if (raw!==_svAlloc.raw){ _svAlloc.raw = raw; try { _svAlloc.map = (JSON.parse(raw || '{}') || {}).alloc || {}; } catch(e){ _svAlloc.map = {}; } }
+  var a = _svAlloc.map[cid]; return a && a.company ? a.company : '';
+}
+// published forms a case needs: the base form + the published forms of the company funding it
+function svFormsFor(cid){
+  if (!SVF) loadSurveyForms();
+  var out = [], co = svFunderOf(cid);
+  if (svfPublished(SVF.base)) out.push(SVF.base);
+  if (co) SVF.forms.forEach(function(f){ var p = svfPublished(f); if (p && p.company===co) out.push(f); });
+  return out;
+}
+function svEmpty(v){ return v==null || v==='' || (Array.isArray(v) && !v.length); }
+function svHas(v, x){ return Array.isArray(v) ? v.indexOf(x)!==-1 : v===x; }
+function svVisibleQs(qs, a, type){
+  var shown = {};
+  return (qs||[]).filter(function(q){
+    if (q.visits==='delivery' && type==='measurement') return false;
+    if (q.cond && (!shown[q.cond.q] || !svHas(a[q.cond.q], q.cond.v))) return false;
+    shown[q.id] = true; return true;
+  });
+}
+function svMissing(r, type){ var a = r.answers || {}; return svVisibleQs(r.qs, a, type).filter(function(q){ return q.required && svEmpty(a[q.id]); }); }
+// alerts of one answered form: marks of 2 or less, or an answer the form marks as an alert
+function svFormAlerts(r, type){
+  var a = r.answers || {}, notes = r.notes || {}, out = [];
+  svVisibleQs(r.qs, a, type).forEach(function(q){
+    var v = a[q.id];
+    if (q.type==='rating' && v && v <= 2) out.push(q.text + ' (' + v + ')');
+    else if (q.alertOn && svHas(v, q.alertOn)) out.unshift(q.text + ' ' + q.alertOn + (q.sec && notes[q.sec] ? ' – ' + notes[q.sec] : ''));
+  });
+  return out;
+}
+function svSetAnswer(r, qid, v){
+  var q = (r.qs||[]).filter(function(x){ return x.id===qid; })[0]; if (!q) return;
+  r.answers = r.answers || {};
+  if (q.type==='rating') r.answers[qid] = parseInt(v, 10);
+  else if (q.type==='multi'){ var arr = (r.answers[qid] || []).slice(), i = arr.indexOf(v); if (i===-1) arr.push(v); else arr.splice(i, 1); r.answers[qid] = arr; }
+  else r.answers[qid] = v;
+}
+function svAnsText(q, v){
+  if (svEmpty(v)) return '<span class="sva-none">—</span>';
+  if (q.type==='rating'){ var r = SV_RATES.filter(function(x){ return x[0]===v; })[0]; return '<span class="sva-rate r'+v+'">'+v+' – '+(r ? r[1] : '')+'</span>'; }
+  return '<span class="sva-txt">'+svEsc(Array.isArray(v) ? v.join('، ') : v)+'</span>';
+}
+// a form to fill (o = {act, txt, note, miss}) – used by the agent and by the editor's preview
+function svFormHtml(r, type, o){
+  var a = r.answers || {}, notes = r.notes || {}, h = '', cur = null, n = 0, miss = o.miss ? svMissing(r, type).map(function(q){ return q.id; }) : [];
+  function closeSec(){ if (cur===null) return; if (cur) h += '<input class="svx-in sv-note" placeholder="ملاحظات" value="'+svEsc(notes[cur])+'" data-k="svn-'+svEsc(cur)+'" data-input="'+o.note+'" data-a="'+svEsc(cur)+'"/>'; h += '</div>'; }
+  svVisibleQs(r.qs, a, type).forEach(function(q){
+    var sec = q.sec || '', v = a[q.id];
+    if (sec!==cur){ closeSec(); cur = sec; h += '<div class="sv-sec">'+(sec ? '<div class="sv-sec-t">'+svEsc(sec)+'</div>' : ''); }
+    h += '<div class="sv-q'+(miss.indexOf(q.id)!==-1 ? ' svx-miss' : '')+'"><div class="sv-q-t">'+(++n)+'. '+svEsc(q.text)+(q.required ? ' <span class="svx-req">*</span>' : '')+'</div>';
+    if (q.type==='rating') h += '<div class="sv-rates">'+SV_RATES.map(function(x){ return '<button class="r'+x[0]+(v===x[0]?' on':'')+'"'+A(o.act, q.id, x[0])+'><b>'+x[0]+'</b>'+x[1]+'</button>'; }).join('')+'</div>';
+    else if (q.type==='short') h += '<input class="svx-in" value="'+svEsc(v)+'" data-k="svx-'+q.id+'" data-input="'+o.txt+'" data-a="'+q.id+'"/>';
+    else if (q.type==='long') h += '<textarea class="svx-in" rows="2" data-k="svx-'+q.id+'" data-input="'+o.txt+'" data-a="'+q.id+'">'+svEsc(v)+'</textarea>';
+    else h += '<div class="sv-choices'+(q.type==='multi' ? ' multi' : '')+'">'+svqOpts(q).map(function(x){ return '<button class="'+(svHas(v, x)?'on':'')+'"'+A(o.act, q.id, x)+'>'+(q.type==='multi' ? '<i class="svx-box"></i>' : '')+svEsc(x)+'</button>'; }).join('')+'</div>';
+    h += '</div>';
+  });
+  closeSec();
+  return h || '<div class="sva-none" style="padding:10px;">مفيش أسئلة</div>';
+}
+// answers of one form, shown with the questions it was answered with
+function svAnswersHtml(r, type){
+  var a = r.answers || {}, notes = r.notes || {}, groups = [], cur = null;
+  svVisibleQs(r.qs, a, type).forEach(function(q){ var s = q.sec || ''; if (!cur || cur.t!==s){ cur = {t:s, qs:[]}; groups.push(cur); } cur.qs.push(q); });
+  return groups.map(function(g){
+    return '<div class="sva-sec">'+(g.t ? '<div class="sva-t">'+svEsc(g.t)+'</div>' : '')+g.qs.map(function(q){ return '<div class="sva-q"><span>'+svEsc(q.text)+'</span>'+svAnsText(q, a[q.id])+'</div>'; }).join('')+
+      (g.t && notes[g.t] ? '<div class="sva-note">ملاحظات: '+svEsc(notes[g.t])+'</div>' : '')+'</div>';
   }).join('');
 }
+// every form of a published survey record (old records = the original questions)
+function svRecForms(rec){ if (rec.forms) return Object.keys(rec.forms).map(function(k){ return rec.forms[k]; }); return rec.answers ? [svLegacyForm(rec)] : []; }
+var SV_ST = {'new':['لم يبدأ','svx-st0'], progress:['جارٍ','svx-st1'], done:['مكتمل','svx-st2']};
+function svStChip(st){ var s = SV_ST[st||'new'] || SV_ST['new']; return '<span class="svx-st '+s[1]+'">'+s[0]+'</span>'; }
+function svRecHtml(rec){
+  return svRecForms(rec).filter(function(f){ return f.status!=='new'; }).map(function(f){
+    return '<div class="svx-fhead"><b>'+svEsc(f.name)+'</b>'+(f.company ? '<span class="svx-co">'+svEsc(f.company)+'</span>' : '')+'<span class="svx-ver">إصدار '+f.v+'</span>'+svStChip(f.status)+'</div>'+svAnswersHtml(f, rec.type);
+  }).join('');
+}
+// ---- the form editor (both pages; each page defines svfRole(), svfUser(), svfCompanies())
+var SVE = {id:null, work:null, name:'', company:'', sel:null, preview:null};
+function svfCan(id){ return id==='base' ? svfRole()==='supervisor' : svfRole()==='funding'; }
+function svfOpen(id){
+  var f = svfById(id); if (!f) return;
+  SVE = {id:id, work:svClone(f.draft||[]), name:f.name||'', company:f.company||'', sel:null, preview:null};
+}
+function svfWorkDirty(){ var f = svfById(SVE.id); return !!f && (JSON.stringify(f.draft||[])!==JSON.stringify(SVE.work) || (f.name||'')!==SVE.name || (f.company||'')!==SVE.company); }
+function svfQ(id){ return SVE.work.filter(function(q){ return q.id===id; })[0]; }
+function svfNewId(){ return 'q' + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
+function svfEditorHtml(){
+  var f = svfById(SVE.id); if (!f) return '';
+  var p = svfPublished(f), isBase = f.id==='base', can = svfCan(f.id), wd = svfWorkDirty();
+  var st = (p ? '<span class="svx-badge pub">منشور · إصدار '+p.v+'</span>' : '<span class="svx-badge draft">مسودة</span>')+
+    (p && svfDirty(f) ? '<span class="svx-badge draft">فيه مسودة مش منشورة</span>' : '')+(wd ? '<span class="svx-badge unsaved">تعديلات مش محفوظة</span>' : '');
+  var h = '<div class="svf"><div class="svf-head"><div class="svf-title">'+(isBase ? '' : '<button class="svf-ic"'+A('svfBack')+' title="رجوع">&#8594;</button>')+
+    '<b>'+(isBase ? 'إدارة الاستبيان الأساسي' : svEsc(SVE.name || 'نموذج جديد'))+'</b>'+st+'</div>';
+  if (can) h += '<div class="svf-acts"><button class="svf-btn'+(SVE.preview ? ' on' : '')+'"'+A('svfPreview')+'>'+(SVE.preview ? 'رجوع للتعديل' : 'معاينة')+'</button>'+
+    '<button class="svf-btn"'+A('svfSave')+'>حفظ مسودة</button><button class="svf-btn pri"'+A('svfPublish')+'>نشر</button></div>';
+  h += '</div>';
+  if (!isBase) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
+    '<label>شركة التمويل<select class="svx-in" data-change="svfCompany"'+(can?'':' disabled')+'><option value="">— اختار الشركة —</option>'+svfCompanies().map(function(c){ return '<option'+(SVE.company===c?' selected':'')+'>'+svEsc(c)+'</option>'; }).join('')+'</select></label></div>';
+  if (p) h += '<div class="svf-vers">'+f.versions.slice().reverse().map(function(v){ return '<span>إصدار '+v.v+' · '+svEsc(v.by)+' · '+new Date(v.at).toLocaleDateString('ar-EG')+' · '+v.qs.length+' سؤال'+(v.company && !isBase ? ' · '+svEsc(v.company) : '')+'</span>'; }).join('')+'</div>';
+  if (SVE.preview){
+    var pv = SVE.preview;
+    h += '<div class="svf-pv"><div class="svf-pv-bar"><span>زيارة:</span>'+[['newDelivery','تسليم'],['measurement','قياس']].map(function(x){ return '<button class="svf-btn sm'+(pv.type===x[0]?' on':'')+'"'+A('svfPvType', x[0])+'>'+x[1]+'</button>'; }).join('')+
+      '<span class="sp"></span><button class="svf-btn sm"'+A('svfPvCheck')+'>تحقق من الإلزامي</button></div>'+
+      svFormHtml({qs:SVE.work, answers:pv.answers, notes:pv.notes}, pv.type, {act:'svfPvA', txt:'svfPvT', note:'svfPvN', miss:pv.miss})+'</div></div>';
+    return h;
+  }
+  h += '<div class="svf-list">';
+  SVE.work.forEach(function(q, i){
+    if (SVE.sel!==q.id || !can){
+      h += '<div class="svf-q"'+(can ? A('svfSel', q.id) : '')+'><span class="svf-n">'+(i+1)+'</span><div class="svf-qt">'+(q.sec ? '<em>'+svEsc(q.sec)+'</em>' : '')+svEsc(q.text || 'سؤال من غير عنوان')+
+        '<div class="svf-chips"><span>'+SVQ_TYPES[q.type]+'</span><span class="'+(q.required ? 'req' : '')+'">'+(q.required ? 'إلزامي' : 'اختياري')+'</span>'+
+        ((q.type==='single' || q.type==='multi') ? '<span>'+(q.options||[]).length+' اختيار</span>' : '')+(q.visits==='delivery' ? '<span>التسليم بس</span>' : '')+(q.cond ? '<span>مشروط</span>' : '')+(q.alertOn ? '<span class="al">تنبيه: '+svEsc(q.alertOn)+'</span>' : '')+'</div></div></div>';
+      return;
+    }
+    var prev = SVE.work.slice(0, i).filter(function(x){ return svqOpts(x).length; });
+    h += '<div class="svf-q on"><span class="svf-n">'+(i+1)+'</span><div class="svf-ed">'+
+      '<input class="svx-in svf-text" placeholder="نص السؤال" value="'+svEsc(q.text)+'" data-k="svf-t-'+q.id+'" data-input="svfSet" data-a="'+q.id+'|text"/>'+
+      '<div class="svf-row"><label>النوع<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|type">'+Object.keys(SVQ_TYPES).map(function(t){ return '<option value="'+t+'"'+(q.type===t?' selected':'')+'>'+SVQ_TYPES[t]+'</option>'; }).join('')+'</select></label>'+
+        '<label>القسم<input class="svx-in" value="'+svEsc(q.sec)+'" data-k="svf-s-'+q.id+'" data-input="svfSet" data-a="'+q.id+'|sec"/></label>'+
+        '<button class="svf-tog'+(q.required ? ' on' : '')+'"'+A('svfReq', q.id)+'><i></i>إلزامي</button></div>';
+    if (q.type==='single' || q.type==='multi'){
+      h += '<div class="svf-opts">'+(q.options||[]).map(function(o, j){
+        return '<div class="svf-opt"><i class="svx-dot'+(q.type==='multi' ? ' sq' : '')+'"></i><input class="svx-in" value="'+svEsc(o)+'" placeholder="اختيار '+(j+1)+'" data-k="svf-o-'+q.id+'-'+j+'" data-input="svfOpt" data-a="'+q.id+'|'+j+'"/><button class="svf-ic"'+A('svfOptDel', q.id, j)+' title="حذف">&times;</button></div>';
+      }).join('')+'<button class="svf-link"'+A('svfOptAdd', q.id)+'>+ إضافة اختيار</button></div>';
+    } else if (q.type==='rating') h += '<div class="svf-hint">'+SV_RATES.map(function(x){ return x[0]+' '+x[1]; }).join(' · ')+'</div>';
+    else if (svqOpts(q).length) h += '<div class="svf-hint">'+svqOpts(q).join(' · ')+'</div>';
+    h += '<div class="svf-row">';
+    if (isBase) h += '<label>يظهر في<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|visits"><option value="">كل الزيارات</option><option value="delivery"'+(q.visits==='delivery'?' selected':'')+'>زيارات التسليم بس</option></select></label>';
+    h += '<label>يظهر بس لو<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|cond"><option value="">دايمًا</option>'+prev.map(function(x){ return svqOpts(x).map(function(o){ var val = x.id+'::'+o; return '<option value="'+svEsc(val)+'"'+(q.cond && q.cond.q===x.id && q.cond.v===o ? ' selected' : '')+'>'+svEsc((x.text||'').slice(0,40))+' = '+svEsc(o)+'</option>'; }).join(''); }).join('')+'</select></label>';
+    if (svqOpts(q).length) h += '<label>تنبيه للمشرف لو الإجابة<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|alertOn"><option value="">—</option>'+svqOpts(q).map(function(o){ return '<option'+(q.alertOn===o?' selected':'')+'>'+svEsc(o)+'</option>'; }).join('')+'</select></label>';
+    h += '</div><div class="svf-foot"><button class="svf-ic"'+A('svfMove', q.id, -1)+(i ? '' : ' disabled')+' title="لفوق">&#8593;</button><button class="svf-ic"'+A('svfMove', q.id, 1)+(i < SVE.work.length-1 ? '' : ' disabled')+' title="لتحت">&#8595;</button>'+
+      '<button class="svf-link"'+A('svfDup', q.id)+'>تكرار</button><button class="svf-link danger"'+A('svfDel', q.id)+'>حذف</button><span class="sp"></span><button class="svf-link"'+A('svfSel', '')+'>تم</button></div></div></div>';
+  });
+  h += '</div>';
+  if (can) h += '<button class="svf-add"'+A('svfAdd')+'>+ إضافة سؤال</button>';
+  return h + '</div>';
+}
+// cleans the working draft; returns an error text or ''
+function svfCheck(qs, forPublish){
+  if (forPublish && !qs.length) return 'النموذج مفيهوش أسئلة';
+  var ids = {};
+  for (var i=0;i<qs.length;i++){
+    var q = qs[i];
+    q.text = (q.text||'').trim(); q.sec = (q.sec||'').trim();
+    if (!q.text) return 'سؤال رقم ' + (i+1) + ' من غير نص';
+    if (q.type==='single' || q.type==='multi'){
+      q.options = (q.options||[]).map(function(o){ return (o||'').trim(); }).filter(Boolean);
+      if (q.options.length < 2) return 'سؤال رقم ' + (i+1) + ' محتاج اختيارين على الأقل';
+    } else delete q.options;
+    if (q.alertOn && svqOpts(q).indexOf(q.alertOn)===-1) delete q.alertOn;
+    if (q.cond){ var t = qs.filter(function(x){ return x.id===q.cond.q; })[0]; if (!t || !ids[t.id] || svqOpts(t).indexOf(q.cond.v)===-1) delete q.cond; }
+    if (!q.sec) delete q.sec;
+    ids[q.id] = true;
+  }
+  return '';
+}
+function svfGuard(){ if (!SVE.id || !svfCan(SVE.id)){ toast('مش مسموح لك تعدّل النموذج ده'); return false; } return true; }
+var SVF_ACTIONS = {
+  svfSel: function(id){ SVE.sel = id || null; render(); },
+  svfSet: function(v, ab){
+    if (!svfGuard()) return;
+    var p = (ab||'').split('|'), q = svfQ(p[0]); if (!q) return;
+    var k = p[1];
+    if (k==='text' || k==='sec'){ q[k] = v; return; }
+    if (k==='type'){ q.type = v; if ((v==='single' || v==='multi') && !(q.options && q.options.length)) q.options = ['',''];
+      if (q.alertOn && svqOpts(q).indexOf(q.alertOn)===-1) delete q.alertOn; }
+    else if (k==='visits'){ if (v) q.visits = v; else delete q.visits; }
+    else if (k==='cond'){ if (v){ var i = v.indexOf('::'); q.cond = {q:v.slice(0, i), v:v.slice(i+2)}; } else delete q.cond; }
+    else if (k==='alertOn'){ if (v) q.alertOn = v; else delete q.alertOn; }
+    render();
+  },
+  svfReq: function(id){ if (!svfGuard()) return; var q = svfQ(id); if (q){ q.required = !q.required; render(); } },
+  svfOpt: function(v, ab){ if (!svfGuard()) return; var p = (ab||'').split('|'), q = svfQ(p[0]); if (q && q.options) q.options[+p[1]] = v; },
+  svfOptAdd: function(id){ if (!svfGuard()) return; var q = svfQ(id); if (!q) return; (q.options = q.options || []).push(''); render(); },
+  svfOptDel: function(id, j){ if (!svfGuard()) return; var q = svfQ(id); if (!q || !q.options) return; var o = q.options.splice(+j, 1)[0]; if (q.alertOn===o) delete q.alertOn; render(); },
+  svfAdd: function(){ if (!svfGuard()) return; var last = SVE.work[SVE.work.length-1], q = {id:svfNewId(), text:'', type:'yesno', required:true}; if (last && last.sec) q.sec = last.sec; SVE.work.push(q); SVE.sel = q.id; render(); },
+  svfDup: function(id){ if (!svfGuard()) return; var i = SVE.work.indexOf(svfQ(id)); if (i===-1) return; var q = svClone(SVE.work[i]); q.id = svfNewId(); delete q.alertOn; SVE.work.splice(i+1, 0, q); SVE.sel = q.id; render(); },
+  svfDel: function(id){ if (!svfGuard()) return; SVE.work = SVE.work.filter(function(q){ return q.id!==id; }); SVE.work.forEach(function(q){ if (q.cond && q.cond.q===id) delete q.cond; }); SVE.sel = null; render(); },
+  svfMove: function(id, d){ if (!svfGuard()) return; var i = SVE.work.indexOf(svfQ(id)), j = i + parseInt(d,10); if (i===-1 || j<0 || j>=SVE.work.length) return; var t = SVE.work[i]; SVE.work[i] = SVE.work[j]; SVE.work[j] = t; render(); },
+  svfName: function(v){ if (svfGuard()) SVE.name = v; },
+  svfCompany: function(v){ if (!svfGuard()) return; SVE.company = v; render(); },
+  svfPreview: function(){ SVE.preview = SVE.preview ? null : {answers:{}, notes:{}, type:'newDelivery', miss:false}; render(); },
+  svfPvType: function(t){ if (SVE.preview){ SVE.preview.type = t; render(); } },
+  svfPvA: function(qid, v){ var pv = SVE.preview; if (!pv) return; var r = {qs:SVE.work, answers:pv.answers}; svSetAnswer(r, qid, v); render(); },
+  svfPvT: function(v, qid){ if (SVE.preview) SVE.preview.answers[qid] = v; },
+  svfPvN: function(v, sec){ if (SVE.preview) SVE.preview.notes[sec] = v; },
+  svfPvCheck: function(){ var pv = SVE.preview; if (!pv) return; pv.miss = true; var m = svMissing({qs:SVE.work, answers:pv.answers}, pv.type); toast(m.length ? 'فاضل ' + m.length + ' سؤال إلزامي' : 'كل الأسئلة الإلزامية متجاوبة'); render(); },
+  svfSave: function(silent){
+    if (!svfGuard()) return false;
+    var err = svfCheck(SVE.work, false); if (err){ toast(err); render(); return false; }
+    loadSurveyForms(); var f = svfById(SVE.id); if (!f) return false;
+    f.draft = svClone(SVE.work); f.name = SVE.id==='base' ? f.name : SVE.name.trim(); f.company = SVE.id==='base' ? '' : SVE.company;
+    f.savedAt = Date.now(); f.savedBy = svfUser(); SVE.name = f.name;
+    saveSurveyForms(); if (silent!==true){ toast('اتحفظت المسودة'); render(); }
+    return true;
+  },
+  svfPublish: function(){
+    if (!svfGuard()) return;
+    if (SVE.id!=='base' && !SVE.name.trim()){ toast('اكتب اسم النموذج'); return render(); }
+    if (SVE.id!=='base' && !SVE.company){ toast('اختار شركة التمويل'); return render(); }
+    var err = svfCheck(SVE.work, true); if (err){ toast(err); return render(); }
+    if (!ACT.svfSave(true)) return;
+    var f = svfById(SVE.id), p = svfPublished(f);
+    if (p && !svfDirty(f)){ toast('مفيش تعديلات من آخر نشر'); return render(); }
+    f.versions = f.versions || [];
+    f.versions.push({v:f.versions.length + 1, at:Date.now(), by:svfUser(), name:f.name, company:f.company||'', qs:svClone(f.draft)});
+    saveSurveyForms(); SVE.preview = null; SVE.sel = null;
+    toast('اتنشر الإصدار ' + f.versions.length + ' – بيتطبق على الاستبيانات الجديدة'); render();
+  },
+};
+Object.assign(ACT, SVF_ACTIONS);
+window.addEventListener('storage', function(e){ if (e.key===SVF_KEY){ loadSurveyForms(); render(); } });
+loadSurveyForms();
 /*__PF_END__*/
 var PF_HOOKS = {
   base: function(id){ return {d:null, c:caseById(id)}; },
