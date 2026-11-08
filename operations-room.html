@@ -217,6 +217,10 @@
     .cf-opt{display:flex;flex-direction:column;align-items:flex-start;gap:8px;font-size:12.5px;}
     .confirm-days{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
     .cf-opt .switch-row{white-space:nowrap;}
+    .cap-break{margin-top:8px;font-size:12px;}
+    .cap-break div{display:grid;grid-template-columns:110px 1fr auto;gap:8px;padding:4px 0;border-top:1px dashed var(--border);}
+    .cap-break b{font-weight:800;}
+    .set-sub{font-size:12px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -1337,7 +1341,7 @@ function fmtPhone(p){ return p.slice(0,3)+' '+p.slice(3,7)+' '+p.slice(7); }
 
 function defaultSettings(){
   return {
-    typeCap:{measurement:20, newDelivery:20, maintEval:20, maintDelivery:20}, emergencyMax:5,
+    dayHours:8, typeMinutes:{measurement:30, newDelivery:45, maintEval:20, maintDelivery:30}, emergencyMax:5,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
     riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2, surveyDelay:1, surveyTries:3,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
@@ -1621,24 +1625,28 @@ function alternativeTasksFor(t, cid){
 // =====================================================================
 // Capacity
 // =====================================================================
-// capacity is set per task type (settings), and can be changed for one day; -1 = no limit that day
+// capacity is in working hours: the day has N hours (settings, changeable for one day; -1 = no limit that day)
+// and every case of a type takes that type's minutes (attendees × minutes)
 var UNLIMITED = -1;
-function baseCap(type){ return S.settings.typeCap[type]!=null ? S.settings.typeCap[type] : 20; }
-function rawCap(off, type){ var o = S.dayCapacity[off]; return o && o[type]!=null ? o[type] : baseCap(type); }
-function capFor(off, type){ var c = rawCap(off, type); return c===UNLIMITED ? Infinity : c; }
-function isUnlimited(off, type){ return rawCap(off, type)===UNLIMITED; }
-function capTxt(cap){ return isFinite(cap) ? String(cap) : 'بدون حد'; }
+function typeMin(type){ var m = S.settings.typeMinutes[type]; return m > 0 ? m : 30; }
+function baseCapMin(){ return Math.round((S.settings.dayHours || 8) * 60); }
+function rawCap(off){ var o = S.dayCapacity[off]; return o!=null ? o : baseCapMin(); }
+function capFor(off){ var c = rawCap(off); return c===UNLIMITED ? Infinity : c; }      // minutes
+function isUnlimited(off){ return rawCap(off)===UNLIMITED; }
+function fmtHrs(min){ var h = min/60; return (Math.round(h*10)/10).toString(); }
+function capTxt(cap){ return isFinite(cap) ? fmtHrs(cap) + ' ساعة' : 'بدون حد'; }
 // capacity = how many cases the place can receive in a day, so it is used by attendance, not by bookings
 function taskAttendLoad(t){ return t.mode==='attendance' && t.attendTarget ? t.attendTarget : expectedAttend(t.type, bookingGoal(t)); }
-// one row per task type: attendance of that type's tasks + its emergency bookings, against that type's capacity
-function dayLoad(off, tasks, capOverride, onlyType){
-  var dayTasks = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; }), emg = emgFor(off);
-  return Object.keys(TASK_TYPES).filter(function(k){ return !onlyType || k===onlyType; }).map(function(k){
-    var load = dayTasks.filter(function(t){ return t.type===k; }).reduce(function(n,t){ return n + taskAttendLoad(t); }, 0) +
-      emg.filter(function(e){ return e.visit===k; }).length;
-    var cap = capOverride && capOverride[k]!=null ? capOverride[k] : capFor(off, k);
-    return {key:k, label:TASK_TYPES[k].short, sub:'', load:load, cap:cap, unit:'حالة'};
+// one row: minutes used by the day's tasks (attendees × minutes of their type) + emergency bookings, against the day's hours.
+// byType keeps the cases / minutes of each type for the breakdown.
+function dayLoad(off, tasks, capOverride){
+  var dayTasks = (tasks || S.tasks).filter(function(t){ return t.dateOffset===off; }), emg = emgFor(off), byType = {}, load = 0;
+  Object.keys(TASK_TYPES).forEach(function(k){
+    var cases = dayTasks.filter(function(t){ return t.type===k; }).reduce(function(n,t){ return n + taskAttendLoad(t); }, 0) + emg.filter(function(e){ return e.visit===k; }).length;
+    byType[k] = {cases:cases, minutes:cases * typeMin(k)}; load += cases * typeMin(k);
   });
+  var cap = capOverride!=null ? capOverride : capFor(off);
+  return [{key:'hours', label:'ساعات العمل', sub:'', load:load, cap:cap, unit:'دقيقة', byType:byType}];
 }
 function loadLevel(x){
   if (x.load===0) return 'ok';
@@ -1667,7 +1675,7 @@ function guardCapacity(off, tasksAfter, onOk, returnTo){
   S.confirm = {
     title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn',
     message:'الحفظ ده هيخلي يوم ' + dayLabel(off) + ' يتخطى الطاقة الاستيعابية:',
-    items: ov.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+    items: ov.map(function(x){ return {label:x.label, value:'المطلوب ' + capTxt(x.load) + ' / المتاح ' + capTxt(x.cap)}; }),
     confirmLabel:'حفظ رغم التجاوز', onConfirm:onOk, returnTo:returnTo,
   };
   render();
@@ -1721,10 +1729,11 @@ function recommendedFor(type, target){
 // 'attendance' = from the attendees entered (t.attendTarget) and the historical attendance rate, 'booking' = entered by hand
 function bookingGoal(t){ return t.target || 0; }
 function expectedAttend(type, bookings){ return Math.round((bookings||0) * rateFor(type).att); }
+// how many more cases of this type fit in the day's remaining minutes
 function freeCapacity(off, exceptId, type){
-  var load = dayLoad(off, S.tasks.filter(function(t){ return t.id!==exceptId; }), null, type)[0].load;
-  if (isUnlimited(off, type)) return Math.max(0, baseCap(type) - load) || baseCap(type);   // a sensible default to start from
-  return Math.max(0, capFor(off, type) - load);
+  var load = dayLoad(off, S.tasks.filter(function(t){ return t.id!==exceptId; }))[0].load;
+  var left = isUnlimited(off) ? baseCapMin() : capFor(off) - load;
+  return Math.max(0, Math.floor(left / typeMin(type))) || (isUnlimited(off) ? Math.floor(baseCapMin() / typeMin(type)) : 0);
 }
 // attendance mode: the user enters how many should attend; bookings = attendees / historical attendance rate
 function draftAttend(d){ return parseInt(d.attend,10)||0; }
@@ -2139,7 +2148,7 @@ var ACT = {
     if (!overDays.length){ apply(); return; }
     S.overlay = 'confirm';
     S.confirm = {title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn', message:'الأيام دي هتتخطى الطاقة الاستيعابية:',
-      items: overDays.map(function(off){ var x = dayLoad(off, after, null, d.type)[0]; return {label:dayLabel(off) + ' – ' + x.label, value:'الحضور ' + x.load + ' / الطاقة ' + capTxt(x.cap)}; }),
+      items: overDays.map(function(off){ var x = dayLoad(off, after)[0]; return {label:dayLabel(off), value:'المطلوب ' + capTxt(x.load) + ' / المتاح ' + capTxt(x.cap)}; }),
       confirmLabel:'حفظ رغم التجاوز', onConfirm:apply, returnTo:'create'};
     render();
   },
@@ -2553,29 +2562,27 @@ var ACT = {
   // ---------- day capacity ----------
   openCapacity: function(off){
     off = parseInt(off,10);
-    S.capacityDay = off; S.capDraft = {}; S.capUnlimited = {};
-    Object.keys(TASK_TYPES).forEach(function(k){ S.capUnlimited[k] = isUnlimited(off, k); S.capDraft[k] = String(S.capUnlimited[k] ? baseCap(k) : capFor(off, k)); });
+    S.capacityDay = off; S.capUnlimited = isUnlimited(off); S.capDraft = fmtHrs(S.capUnlimited ? baseCapMin() : capFor(off));
     S.overlay = 'capacity'; render();
   },
   closeCapacity: function(){ S.overlay = null; S.capacityDay = null; render(); },
-  capInput: function(v, k){ S.capDraft[k] = v; render(); },
-  toggleCapUnlimited: function(k){ S.capUnlimited[k] = !S.capUnlimited[k]; render(); },
+  capInput: function(v){ S.capDraft = v; render(); },
+  toggleCapUnlimited: function(){ S.capUnlimited = !S.capUnlimited; render(); },
   capReset: function(){
-    Object.keys(TASK_TYPES).forEach(function(k){ S.capDraft[k] = String(baseCap(k)); S.capUnlimited[k] = false; });
+    S.capDraft = fmtHrs(baseCapMin()); S.capUnlimited = false;
     render();
   },
   saveCapacity: function(){
-    var off = S.capacityDay, caps = draftCaps();
-    var over = dayLoad(off, S.tasks, caps).filter(function(x){ return x.load > x.cap; });
+    var off = S.capacityDay, cap = draftCap();
+    var over = dayLoad(off, S.tasks, cap).filter(function(x){ return x.load > x.cap; });
     var apply = function(){
-      var ch = Object.keys(TASK_TYPES).filter(function(k){ return capFor(off, k)!==caps[k]; }).map(function(k){ return TASK_TYPES[k].short + ' ' + capTxt(capFor(off, k)) + ' ← ' + capTxt(caps[k]); });
-      if (ch.length) S.audit.unshift({at:now(), who:actorName(), action:'تعديل طاقة يوم', tid:null, label:dayLabel(off), detail:ch.join(' · ')});
-      var o = {}; Object.keys(caps).forEach(function(k){ o[k] = isFinite(caps[k]) ? caps[k] : UNLIMITED; }); S.dayCapacity[off] = o; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
+      if (capFor(off)!==cap) S.audit.unshift({at:now(), who:actorName(), action:'تعديل طاقة يوم', tid:null, label:dayLabel(off), detail:capTxt(capFor(off)) + ' ← ' + capTxt(cap)});
+      S.dayCapacity[off] = isFinite(cap) ? cap : UNLIMITED; S.overlay = null; S.capacityDay = null; S.confirm = null; toast('تم حفظ طاقة يوم ' + dayLabel(off)); render(); };
     if (!over.length){ apply(); return; }
     S.overlay = 'confirm';
     S.confirm = {title:'تحذير: الطاقة أقل من المخطط', tone:'warn',
       message:'المهام المخططة في ' + dayLabel(off) + ' هتتخطى الطاقة الجديدة:',
-      items: over.map(function(x){ return {label:x.label, value:'المطلوب ' + x.load + ' / المتاح ' + x.cap}; }),
+      items: over.map(function(x){ return {label:x.label, value:'المطلوب ' + capTxt(x.load) + ' / المتاح ' + capTxt(x.cap)}; }),
       confirmLabel:'حفظ رغم التجاوز', returnTo:'capacity', onConfirm:apply};
     render();
   },
@@ -2584,7 +2591,7 @@ var ACT = {
   openSettings: function(){
     var s = S.settings;
     S.settingsDraft = {
-      'cap_measurement':String(baseCap('measurement')), 'cap_newDelivery':String(baseCap('newDelivery')), 'cap_maintEval':String(baseCap('maintEval')), 'cap_maintDelivery':String(baseCap('maintDelivery')), 'emergencyMax':String(s.emergencyMax),
+      'dayHours':String(s.dayHours), 'min_measurement':String(typeMin('measurement')), 'min_newDelivery':String(typeMin('newDelivery')), 'min_maintEval':String(typeMin('maintEval')), 'min_maintDelivery':String(typeMin('maintDelivery')), 'emergencyMax':String(s.emergencyMax),
       'retryMinutes':String(s.retryMinutes), 'maxPerDay':String(s.maxPerDay), 'hardToReachAfter':String(s.hardToReachAfter),
       'riskDays':String(s.riskDays), 'riskPct':String(s.riskPct), 'standbyMax':String(s.standbyMax), 'noShowFlag':String(s.noShowFlag), 'surveyDelay':String(s.surveyDelay), 'surveyTries':String(s.surveyTries),
       'msgOn':s.msgOn, 'msgChannel':s.msgChannel, 'reminderOn':s.reminderOn, 'reminderTime':s.reminderTime, 'orgMapUrl':s.orgMapUrl, 'msgBookTpl':s.msgBookTpl, 'msgRemindTpl':s.msgRemindTpl, 'msgInfoTpl':s.msgInfoTpl,
@@ -2597,7 +2604,8 @@ var ACT = {
   saveSettings: function(){
     var d = S.settingsDraft, s = S.settings;
     function int(k, min){ return Math.max(min, parseInt(d[k],10)||min); }
-    Object.keys(TASK_TYPES).forEach(function(k){ s.typeCap[k] = int('cap_' + k, 0); }); s.emergencyMax = int('emergencyMax',0);
+    var hrs = parseFloat(String(d.dayHours).replace(',', '.')); s.dayHours = hrs > 0 ? hrs : 8;
+    Object.keys(TASK_TYPES).forEach(function(k){ s.typeMinutes[k] = int('min_' + k, 1); }); s.emergencyMax = int('emergencyMax',0);
     s.retryMinutes = int('retryMinutes',5); s.maxPerDay = int('maxPerDay',1); s.hardToReachAfter = int('hardToReachAfter',1);
     s.riskDays = int('riskDays',0); s.riskPct = Math.min(100, int('riskPct',1)); s.standbyMax = int('standbyMax',0); s.noShowFlag = int('noShowFlag',1); s.surveyDelay = int('surveyDelay',0); s.surveyTries = int('surveyTries',1);
     s.msgOn = !!d.msgOn; s.msgChannel = d.msgChannel; s.reminderOn = !!d.reminderOn; s.reminderTime = d.reminderTime || '10:00';
@@ -2678,7 +2686,7 @@ function capTable(loads){
     var lv = levelClass(x); var pct = x.cap>0 ? Math.min(100, Math.round(x.load/x.cap*100)) : (x.load>0 ? 100 : 0);
     return '<tr><td style="width:100%;">'+(loads.length > 1 ? '<div style="font-weight:700;margin-bottom:4px;">'+esc(x.label)+'</div>' : '')+
       '<div class="cap-track"><div class="cap-fill bg-'+lv+'" style="width:'+pct+'%;"></div></div></td>'+
-      '<td class="num cap-'+lv+'">'+(isFinite(x.cap) ? x.load+' من '+x.cap : x.load+' · بدون حد')+'</td></tr>';
+      '<td class="num cap-'+lv+'">'+(isFinite(x.cap) ? fmtHrs(x.load)+' من '+fmtHrs(x.cap)+' ساعة' : fmtHrs(x.load)+' ساعة · بدون حد')+'</td></tr>';
   }).join('') + '</table>';
 }
 
@@ -2898,7 +2906,7 @@ function renderCapMini(off){
   var pct = dayPct(off);
   var lv = 'ok';
   loads.forEach(function(x){ var l = loadLevel(x); if (l==='over') lv = 'over'; else if (l==='warn' && lv!=='over') lv = 'warn'; });
-  var title = loads.map(function(x){ return x.label + ': ' + x.load + ' من ' + capTxt(x.cap); }).join('\n');
+  var x0 = loads[0], title = fmtHrs(x0.load) + ' من ' + capTxt(x0.cap) + '\n' + Object.keys(TASK_TYPES).filter(function(k){ return x0.byType[k].cases; }).map(function(k){ return TASK_TYPES[k].short + ': ' + x0.byType[k].cases + ' حالة = ' + fmtHrs(x0.byType[k].minutes) + ' ساعة'; }).join('\n');
   var label = 'الطاقة';
   return '<div class="cap-mini" title="'+esc(title)+'"'+A('openCapacity', off)+'>'+
     '<div class="cap-mini-top"><span>'+ic('gauge',11)+' '+label+'</span><b class="cap-'+lv+'">'+Math.round(Math.min(pct,9.99)*100)+'%</b></div>'+
@@ -3315,7 +3323,7 @@ function renderCreate(){
   }
   // ---- one box: the count, the day's capacity after it, and the historical rate
   var fake = {id:'__new', type:d.type, dateOffset:d.dateOffset, loc:d.loc, gov:d.gov || '—', target:target, mode:d.targetMode, attendTarget: attMode ? draftAttend(d) : null};
-  var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]), null, d.type);
+  var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]));
   var anyOver = loads.some(function(x){ return x.load > x.cap; });
   h += '<div class="count-box'+(anyOver?' over':'')+'"><label class="field-label">'+(attMode ? 'عدد الحالات المطلوب حضورها' : 'عدد الحجوزات')+'</label><div class="target-mode-row">'+
     (attMode
@@ -4300,23 +4308,25 @@ function renderConfirm(){
   return h;
 }
 
-function draftCaps(){ var o = {}; Object.keys(TASK_TYPES).forEach(function(k){ o[k] = S.capUnlimited[k] ? Infinity : Math.max(0, parseInt(S.capDraft[k],10)||0); }); return o; }
+function draftCap(){ var h = parseFloat(String(S.capDraft).replace(',', '.')); return S.capUnlimited ? Infinity : Math.max(0, Math.round((isNaN(h) ? 0 : h) * 60)); }
+function capBreakdown(x){
+  return '<div class="cap-break">'+Object.keys(TASK_TYPES).filter(function(k){ return x.byType[k].cases; }).map(function(k){
+    var m = TASK_TYPES[k], b = x.byType[k];
+    return '<div><span style="color:'+m.color+';">'+m.short+'</span><span>'+b.cases+' حالة × '+typeMin(k)+' دقيقة</span><b>'+fmtHrs(b.minutes)+' ساعة</b></div>';
+  }).join('')+'</div>';
+}
 function renderCapacity(){
-  var off = S.capacityDay, admin = isAdmin(), caps = draftCaps();
-  var loads = dayLoad(off, S.tasks, caps);
+  var off = S.capacityDay, admin = isAdmin(), cap = draftCap();
+  var x = dayLoad(off, S.tasks, cap)[0];
   var tasks = S.tasks.filter(function(t){ return t.dateOffset===off; });
   var custom = S.dayCapacity[off]!=null;
   var h = '<div class="scrim"'+A('closeCapacity')+'></div><div class="modal" style="width:560px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">الطاقة الاستيعابية – '+dayLabel(off)+'</div>'+
-    '<div class="drawer-sub">'+(custom ? 'طاقة مخصصة لليوم ده' : 'الطاقة الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
-  h += '<div class="field"><label class="field-label">الطاقة الاستيعابية في اليوم ده لكل نوع (عدد الحضور)</label><div class="cap-type-grid">'+
-    Object.keys(TASK_TYPES).map(function(k){
-      var m = TASK_TYPES[k], x = loads.filter(function(r){ return r.key===k; })[0], lv = levelClass(x);
-      return '<div class="cap-type" style="--edge:'+m.color+';"><div class="cap-type-head"><span style="color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+' '+m.label+'</span><b class="cap-'+lv+'">'+(isFinite(x.cap) ? x.load+' من '+x.cap : x.load+' · بدون حد')+'</b></div>'+
-        (admin
-          ? (S.capUnlimited[k] ? '' : '<div class="input-suffix"><input class="num-input" type="text" inputmode="numeric" value="'+esc(S.capDraft[k])+'" data-k="cap-'+k+'" data-input="capInput" data-a="'+k+'"/><span>حضور</span></div>')+
-            '<label class="switch-row" style="margin:6px 0 0;"><input type="checkbox"'+(S.capUnlimited[k]?' checked':'')+A('toggleCapUnlimited', k)+'/> بدون حد</label>'
-          : '')+'</div>';
-    }).join('')+'</div></div>';
+    '<div class="drawer-sub">'+(isUnlimited(off) ? 'اليوم ده بدون حد' : custom ? 'ساعات مخصصة لليوم ده' : 'الساعات الافتراضية من الإعدادات')+'</div></div><button class="icon-btn"'+A('closeCapacity')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">';
+  h += '<div class="field"><label class="field-label">ساعات العمل في اليوم ده</label>' + (admin
+    ? (S.capUnlimited ? '' : '<div class="input-suffix"><input class="num-input" type="text" inputmode="decimal" value="'+esc(S.capDraft)+'" data-k="cap-day" data-input="capInput"/><span>ساعة</span></div>')+
+      '<label class="switch-row" style="margin-top:8px;"><input type="checkbox"'+(S.capUnlimited?' checked':'')+A('toggleCapUnlimited')+'/> بدون حد – أقدر أضيف أي عدد في اليوم ده</label>'
+    : '<div class="readonly-box">'+capTxt(cap)+'</div>') + '</div>';
+  h += '<div class="cap-box">'+capTable([x])+capBreakdown(x)+'</div>';
   h += '<div class="section-title" style="margin-bottom:8px;">المهام المخططة في اليوم ('+tasks.length+')</div>';
   if (!tasks.length) h += '<div class="field-hint">لا توجد مهام.</div>';
   tasks.forEach(function(t){
@@ -4336,7 +4346,8 @@ function renderSettings(){
   if (!isAdmin()) return '';
   var h = '<div class="scrim"'+A('closeSettings')+'></div><div class="modal" style="width:760px;max-width:94vw;"><div class="modal-head"><div><div class="drawer-title">إعدادات غرفة العمليات</div></div><button class="icon-btn"'+A('closeSettings')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body" data-scroll="settings">';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">الطاقة الاستيعابية</div><div class="set-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">'+
-    Object.keys(TASK_TYPES).map(function(k){ return setNum('cap_' + k, TASK_TYPES[k].label, 'حضور/يوم'); }).join('')+'</div>'+
+    setNum('dayHours','إجمالي ساعات العمل في اليوم','ساعة')+'</div><div class="set-sub">وقت الحالة الواحدة لكل نوع</div><div class="set-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">'+
+    Object.keys(TASK_TYPES).map(function(k){ return setNum('min_' + k, TASK_TYPES[k].label, 'دقيقة/حالة'); }).join('')+'</div>'+
     '<div class="set-grid" style="margin-top:10px;">'+setNum('emergencyMax','أقصى حجز طوارئ في اليوم (تحذير بس)','حالة/يوم')+'</div></div>';
   h += '<div class="set-section"><div class="set-title" style="margin-bottom:10px;">قواعد إعادة الاتصال</div><div class="set-grid four">'+
     setNum('retryMinutes','إعادة الاتصال بعد','دقيقة')+setNum('maxPerDay','أقصى محاولات في اليوم','محاولة')+setNum('hardToReachAfter','"صعب الوصول" بعد','محاولة فاشلة')+setNum('noShowFlag','"غياب متكرر" بعد','مرات غياب')+'</div></div>';
@@ -4884,7 +4895,7 @@ function renderEmg(){
   h += '<div class="field"><label class="field-label">الميعاد</label><div style="display:flex;gap:8px;flex-wrap:wrap;">'+
     '<input class="text-input" type="date" style="width:170px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(e.dateOffset)+'" data-k="emg-date" data-change="emgDate"/>'+
     '<input class="text-input" type="time" style="width:130px;" value="'+esc(e.time)+'" data-k="emg-time" data-change="emgTime"/><span class="field-hint" style="align-self:center;margin:0;">داخل المؤسسة</span></div>'+
-    '<div class="field-hint">طوارئ '+dayLabel(e.dateOffset)+': '+n+(S.settings.emergencyMax ? ' من '+S.settings.emergencyMax : '')+' · طاقة '+TASK_TYPES[e.visit].short+' '+dayLoad(e.dateOffset, null, null, e.visit)[0].load+' من '+capTxt(capFor(e.dateOffset, e.visit))+'</div>'+
+    '<div class="field-hint">طوارئ '+dayLabel(e.dateOffset)+': '+n+(S.settings.emergencyMax ? ' من '+S.settings.emergencyMax : '')+' · الطاقة '+fmtHrs(dayLoad(e.dateOffset)[0].load)+' من '+capTxt(capFor(e.dateOffset))+' (الحالة '+typeMin(e.visit)+' دقيقة)'+'</div>'+
     (over ? '<div class="rule-hint warn">اليوم ده وصل للحد الأقصى للطوارئ ('+S.settings.emergencyMax+') – تقدر تكمل الحجز عادي</div>' : '')+'</div>';
   h += '<div class="field"><label class="field-label">ملاحظات</label><textarea class="note-input" rows="2" data-k="emg-note" data-input="emgNote">'+esc(e.note)+'</textarea></div>';
   var ok = e.kind && (e.kind!=='أخرى' || e.details.trim());
