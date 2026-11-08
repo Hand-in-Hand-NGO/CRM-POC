@@ -1403,7 +1403,7 @@ var S = {
   agentTab:'calls', nc:null, newCases:[], committee:[],
   series:{}, emergencies:[], emg:null, emgDay:null, surveys:{}, surveyOpen:null, surveyDraft:null, surveyDone:null,
 };
-function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:''}; }
+function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:'', code:''}; }
 
 function now(){ return Date.now() + S.simOffset; }
 function nowDate(){ return new Date(now()); }
@@ -2254,7 +2254,7 @@ var ACT = {
   // ---------- add cases ----------
   openAddCasesDraft: function(){
     S.addCasesMode = {kind:'create'}; S.addCasesSelected = S.createDraft.candidateIds.slice(); S.addCasesPrio = Object.keys(S.createDraft.priority||{});
-    S.addCasesFilters = emptyFilters(); S.addCasesSort = 'waitDesc';
+    S.addCasesFilters = emptyFilters(); S.addCasesSort = ''; S.addCasesPP = false;
     if (S.createDraft.loc==='convoy' && S.createDraft.gov) S.addCasesFilters.gov = S.createDraft.gov;
     S.overlay = 'addCases'; render();
   },
@@ -2339,11 +2339,12 @@ var ACT = {
   openAddCasesTask: function(tid){
     var t = findTask(tid); S.casesTab = 'add';
     S.addCasesMode = {kind:'existing', taskId:tid}; S.addCasesSelected = t ? t.candidateIds.slice() : []; S.addCasesPrio = t ? Object.keys(t.priority||{}) : [];
-    S.addCasesFilters = emptyFilters(); S.addCasesSort = 'waitDesc';
+    S.addCasesFilters = emptyFilters(); S.addCasesSort = ''; S.addCasesPP = false;
     if (t && t.loc==='convoy' && t.gov) S.addCasesFilters.gov = t.gov;
     S.overlay = 'addCases'; render();
   },
-  addCasesSortBy: function(v){ S.addCasesSort = v || 'waitDesc'; render(); },
+  addCasesSortBy: function(v){ S.addCasesSort = v || ''; render(); },
+  setAddCasesPP: function(v){ S.addCasesPP = v==='1'; render(); },
   closeAddCases: function(){
     var m = S.addCasesMode;
     S.overlay = (m && m.kind==='existing') ? 'detail' : (S.createDraft ? 'create' : null);
@@ -2355,7 +2356,7 @@ var ACT = {
     render();
   },
   setFilter: function(v, key){ S.addCasesFilters[key] = v; render(); },
-  clearFilters: function(){ S.addCasesFilters = emptyFilters(); render(); },
+  clearFilters: function(){ var g = S.addCasesFilters.gov, ctx = addCasesCtx(); S.addCasesFilters = emptyFilters(); if (ctx.loc==='convoy') S.addCasesFilters.gov = g; render(); },
   togglePrio: function(cid){
     var i = S.addCasesPrio.indexOf(cid);
     if (i===-1){ S.addCasesPrio.push(cid); if (S.addCasesSelected.indexOf(cid)===-1) S.addCasesSelected.push(cid); }
@@ -2371,6 +2372,8 @@ var ACT = {
   confirmAddCases: function(){
     var m = S.addCasesMode; var sel = S.addCasesSelected.slice(); if (!m) return;
     if (!sel.length) sel = currentAddCasesIds();   // nothing picked = every case shown by the filters
+    var rel = {}; sel.forEach(function(id){ var pc = postponedById(id); if (pc && pc.stage==='postponed') rel[id] = {company:pc.funding || 'بدون'}; });
+    releasePostponed(rel);   // a postponed request picked as an exception becomes a normal medical evaluation case
     var prio = {}; S.addCasesPrio.forEach(function(cid){ if (sel.indexOf(cid)!==-1) prio[cid] = true; });
     if (m.kind==='create'){
       S.createDraft.candidateIds = sel; S.createDraft.priority = prio; S.overlay = 'create';
@@ -3518,32 +3521,31 @@ function addCasesCtx(){
   var t = findTask(m.taskId);
   return {id:t.id, type:t.type, loc:t.loc, gov:t.gov, dateOffset:t.dateOffset, target:t.target};
 }
+// the "الحالات" window of a task = that type's pool: its bookable cases (priority order) + the ones already picked,
+// with the pool's filters (search, code, funder, amputation level, sort)
 function filteredCases(){
-  var f = S.addCasesFilters, ctx = addCasesCtx(), sel = S.addCasesSelected, pctx = poolCtx(ctx);
-  var ab = AGE_BUCKETS.filter(function(b){ return b.key===f.age; })[0];
-  var tb = ATTEMPTS_BUCKETS.filter(function(b){ return b.key===f.attempts; })[0];
-  var list = CASES.filter(function(c){
-    // only the cases of this type's pool (bookable and reachable), plus the ones already picked
-    if (sel.indexOf(c.id)===-1 && !priorityOf(pctx, c).eligible) return false;
+  var f = S.addCasesFilters, ctx = addCasesCtx(), sel = S.addCasesSelected, pctx = poolCtx(ctx), q = (f.q||'').trim(), cq = (f.code||'').trim().toUpperCase();
+  var scored = CASES.map(function(c){ return priorityOf(pctx, c); }).filter(function(p){ return p.eligible || sel.indexOf(p.c.id)!==-1; });
+  var list = scored.filter(function(p){
+    var c = p.c;
+    if (c.stage!==ctx.type && sel.indexOf(c.id)===-1) return false;
     if (f.gov && c.gov!==f.gov) return false;
-    if (f.funding && c.funding!==f.funding) return false;
+    if (f.funding && (f.funding==='بدون' ? c.funding!=='بدون' : c.funding!==f.funding)) return false;
     if (f.level && c.level!==f.level) return false;
-    if (f.pref && (c.pref || 'غير محدد')!==f.pref) return false;
-    if (ab && ab.test && !ab.test(c.age)) return false;
-    if (tb && tb.test && !tb.test(attemptsTotal(c.id))) return false;
-    var q = (f.q||'').trim();
-    if (q && c.name.indexOf(q)===-1 && c.code.toUpperCase().indexOf(q.toUpperCase())===-1 && c.phone.indexOf(q)===-1) return false;
+    if (ctx.type!=='measurement' && cq && c.code.toUpperCase().indexOf(cq)===-1) return false;
+    if (q && c.name.indexOf(q)===-1 && c.gov.indexOf(q)===-1 && c.phone.indexOf(q)===-1 && (ctx.type==='measurement' || c.code.toUpperCase().indexOf(q.toUpperCase())===-1)) return false;
     return true;
   });
-  var srt = S.addCasesSort || 'waitDesc';
-  return list.sort(function(a,b){
-    if (srt==='waitAsc') return a.waitingDays - b.waitingDays;
-    if (srt==='ageAsc') return a.age - b.age || b.waitingDays - a.waitingDays;
-    if (srt==='ageDesc') return b.age - a.age || b.waitingDays - a.waitingDays;
-    return b.waitingDays - a.waitingDays;
+  var srt = S.addCasesSort || '';
+  list.sort(function(a,b){
+    if (srt==='gov') return a.c.gov.localeCompare(b.c.gov, 'ar') || a.c.age - b.c.age;
+    if (srt==='ageAsc') return a.c.age - b.c.age;
+    if (srt==='ageDesc') return b.c.age - a.c.age;
+    if (srt==='waitDesc') return b.c.waitingDays - a.c.waitingDays;
+    return b.score - a.score;   // priority, like the pool
   });
+  return list.map(function(p){ return p.c; });
 }
-// pool of a booking type: every governorate, availability checked for the task's date
 function poolCtx(ctx){ return {id:ctx.id, type:ctx.type, loc:'org', gov:null, dateOffset:ctx.dateOffset}; }
 function selectableCase(ctx, c){ return priorityOf(poolCtx(ctx), c).eligible || S.addCasesSelected.indexOf(c.id)!==-1; }
 function currentAddCasesIds(){
@@ -3586,36 +3588,43 @@ function renderAddCases(){
       (isAdmin() ? '<button class="btn btn-outline-dashed"'+A('setCasesTab','add')+'>+ إضافة من الحصّالة</button>' : '')+'</div></div>';
   }
   var ids = currentAddCasesIds();
-  var f = S.addCasesFilters, srt = S.addCasesSort || 'waitDesc';
-  function opts(list, cur){ return '<option value="">الكل</option>' + list.map(function(v){ return '<option'+(cur===v?' selected':'')+'>'+v+'</option>'; }).join(''); }
-  function bopts(list, cur){ return list.map(function(b){ return '<option value="'+b.key+'"'+(cur===b.key?' selected':'')+'>'+b.label+'</option>'; }).join(''); }
-  var SORTS = [['waitDesc','مدة الانتظار: الأطول أولًا'],['waitAsc','مدة الانتظار: الأقصر أولًا'],['ageAsc','السن: الأصغر أولًا'],['ageDesc','السن: الأكبر أولًا']];
-  h += '<div class="filters-bar">'+
-    '<div class="filter-field"><label>بحث</label><input class="filter-search" placeholder="الاسم أو الكود أو الهاتف..." value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/></div>'+
-    '<div class="filter-field"><label>المحافظة</label><select class="filter-select" data-change="setFilter" data-a="gov">'+opts(GOVERNORATES,f.gov)+'</select></div>'+
-    '<div class="filter-field"><label>التمويل</label><select class="filter-select" data-change="setFilter" data-a="funding">'+opts(FUNDING_OPTIONS,f.funding)+'</select></div>'+
-    '<div class="filter-field"><label>مستوى البتر</label><select class="filter-select" data-change="setFilter" data-a="level">'+opts(LEVEL_OPTIONS,f.level)+'</select></div>'+
-    '<div class="filter-field"><label>السن</label><select class="filter-select" data-change="setFilter" data-a="age">'+bopts(AGE_BUCKETS,f.age)+'</select></div>'+
-    '<div class="filter-field"><label>محاولات التواصل</label><select class="filter-select" data-change="setFilter" data-a="attempts">'+bopts(ATTEMPTS_BUCKETS,f.attempts)+'</select></div>'+
-    '<div class="filter-field"><label>مكان الزيارة المفضل</label><select class="filter-select" data-change="setFilter" data-a="pref">'+bopts(PREF_BUCKETS,f.pref)+'</select></div>'+
-    '<div class="filter-field"><label>ترتيب حسب</label><select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
-    '<button class="clear-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>';
+  var f = S.addCasesFilters, srt = S.addCasesSort || '', hasCode = ctx.type!=='measurement', pp = postponedFor(ctx.type);
+  var SORTS = [['','الأولوية (افتراضي)'],['waitDesc','مدة الانتظار: الأطول أولًا'],['gov','المحافظة'],['ageAsc','السن: الأصغر الأول'],['ageDesc','السن: الأكبر الأول']];
   var list = filteredCases();
-  var reco = ctx.target;
-  h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+reco : '')+'</div></div>';
-  function th(label, a, d){ var on = srt===a || srt===d, nx = srt===d ? a : d; return '<th class="sort-th'+(on?' on':'')+'"'+A('addCasesSortBy', nx)+'>'+label+' '+(on ? (srt===d ? '▼' : '▲') : '⇅')+'</th>'; }
-  h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:380px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
-    '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>كود الحالة</th><th>اسم الحالة</th><th>المحافظة</th><th>التمويل</th><th>مستوى البتر</th>'+
-    th('السن','ageAsc','ageDesc')+th('مدة الانتظار من اللجنة','waitAsc','waitDesc')+'<th>محاولات التواصل</th><th>مكان الزيارة المفضل</th><th></th></tr></thead><tbody>';
-  list.forEach(function(c){
-    var p = priorityOf(poolCtx(ctx), c), can = selectableCase(ctx, c), on = sel.indexOf(c.id)!==-1;
-    h += '<tr'+(can ? '' : ' style="opacity:.55;"')+'><td><input type="checkbox"'+(on?' checked':'')+(can ? A('toggleCaseSel', c.id) : ' disabled')+'/></td>'+
-      '<td style="text-align:center;">'+(can ? prioStar(S.addCasesPrio.indexOf(c.id)!==-1, 'togglePrio', c.id) : '')+'</td>'+
-      '<td dir="ltr" style="text-align:right;">'+c.code+'</td><td style="font-weight:700;">'+esc(c.name)+'</td><td>'+c.gov+'</td><td>'+c.funding+'</td><td>'+c.level+'</td><td>'+c.age+'</td>'+
-      '<td>'+c.waitingDays+' يوم</td><td>'+attemptsTotal(c.id)+'</td><td>'+(c.pref||'غير محدد')+'</td>'+
-      '<td>'+(p.eligible ? (hasNoShow(c.id) ? '<span class="reason child">لم يحضر موعد سابق</span>' : '') : '<span class="reason neg">'+esc(p.why)+'</span>')+'</td></tr>';
-  });
-  h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
+  h += '<div class="pool-tabs" style="padding:0;margin-bottom:12px;"><button class="'+(!S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','0')+'>المتاحة للحجز <span class="count">'+list.length+'</span></button>'+
+    '<button class="'+(S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','1')+'>المؤجلات <span class="count">'+pp.length+'</span></button></div>';
+  if (S.addCasesPP){
+    h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="pptbl"><table class="cases-table"><thead><tr><th style="width:34px;"></th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+
+      '<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>سبب التأجيل</th><th>لحد</th></tr></thead><tbody>';
+    pp.forEach(function(x, i){
+      var c = x.c, on = sel.indexOf(c.id)!==-1;
+      h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+A('toggleCaseSel', c.id)+' title="استثناء – ضمها للمهمة"/></td><td class="rank-num">'+(i+1)+'</td>'+
+        (hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+'<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
+        '<td>'+(c.funding && c.funding!=='بدون' ? esc(c.funding) : '<span class="field-hint" style="margin:0;">غير ممولة</span>')+'</td>'+
+        '<td>'+x.reasons.map(function(r){ return '<span class="pp-reason">'+esc(r)+'</span>'; }).join('')+'</td><td>'+(x.until!=null ? shortDate(x.until) : '—')+'</td></tr>';
+    });
+    h += '</tbody></table>'+(pp.length ? '' : '<div class="table-empty">مفيش حالات مؤجلة</div>')+'</div>';
+  } else {
+    var levels = LEVEL_OPTIONS.filter(function(l){ return CASES.some(function(c){ return c.stage===ctx.type && c.level===l; }); });
+    h += '<div class="pool-filters"><input class="case-search" style="flex:1;min-width:160px;" placeholder="بحث بالاسم أو المحافظة" value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/>'+
+      (hasCode ? '<input class="case-search" style="width:130px;" dir="ltr" placeholder="الكود" value="'+esc(f.code||'')+'" data-k="fcode" data-input="setFilter" data-a="code"/>' : '')+
+      '<select class="filter-select" data-change="setFilter" data-a="funding"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; }).map(function(x){ return '<option value="'+esc(x)+'"'+(f.funding===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+
+        '<option value="بدون"'+(f.funding==='بدون'?' selected':'')+'>غير ممولة</option></select>'+
+      '<select class="filter-select" data-change="setFilter" data-a="level"><option value="">مستوى البتر: الكل</option>'+levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select>'+
+      '<select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select>'+
+      (f.q || f.code || f.funding || f.level ? '<button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button>' : '')+'</div>';
+    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
+    h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
+      '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
+    list.forEach(function(c, i){
+      var can = selectableCase(ctx, c), on = sel.indexOf(c.id)!==-1;
+      h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+(can ? A('toggleCaseSel', c.id) : ' disabled')+'/></td>'+
+        '<td style="text-align:center;">'+(can ? prioStar(S.addCasesPrio.indexOf(c.id)!==-1, 'togglePrio', c.id) : '')+'</td><td class="rank-num">'+(i+1)+'</td>'+
+        (hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+c.code+'</td>' : '')+'<td style="font-weight:700;">'+esc(c.name)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
+        '<td>'+(c.funding==='بدون' ? '<span class="field-hint" style="margin:0;">غير ممولة</span>' : esc(c.funding))+'</td><td class="fn-cell">'+fundNotesCell(c.id)+'</td></tr>';
+    });
+    h += '</tbody></table>'+(list.length ? '' : '<div class="table-empty">لا توجد حالات مطابقة للفلاتر الحالية</div>')+'</div>';
+  }
   h += '</div><div class="modal-foot"><button class="btn btn-primary"'+A('confirmAddCases')+(sel.length || ids.length ? '' : ' disabled')+'>'+(sel.length ? 'حفظ الحالات المحددة ('+sel.length+')' : 'إضافة كل الحالات ('+ids.length+')')+'</button><span class="field-hint" style="align-self:center;">★ '+S.addCasesPrio.filter(function(x){ return sel.indexOf(x)!==-1; }).length+'</span><button class="btn btn-secondary"'+A(task ? 'cancelAddTab' : 'closeAddCases')+'>'+(task ? 'رجوع لحالات المهمة' : 'إلغاء')+'</button></div></div>';
   return h;
 }
