@@ -705,7 +705,7 @@ var CASES = [
   mk('C-1016','أمير حازم صبري','القاهرة','تمويل مؤسسة','بتر أعلى الركبة',33,4,'','measurement',180),
   mk('C-1017','هبة الله كريم','الجيزة','تمويل مؤسسة','بتر أعلى المرفق',17,0,'داخل المؤسسة','measurement',70),
   mk('C-1018','طارق سامي لطفي','المنيا','ممول خاص','بتر الساعد',49,1,'','newDelivery',18),
-  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0-2, contact:'org', reason:'لحين التئام الجرح'}}),
+  mk('C-1019','نهى إبراهيم عادل','الفيوم','تمويل مؤسسة','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0-2, contact:'org', reason:'لحين التئام الجرح', kind:'wound', stage:'measurement'}}),
   mk('C-1020','بلال ياسر منير','أسوان','تمويل مؤسسة','بتر أعلى الركبة',21,2,'قافلة','newDelivery',40,0,{ready:false}),
   mk('C-1021','ياسمين علاء الدين','سوهاج','مشروع اليونيسف','بتر أصابع القدم',13,0,'داخل المؤسسة','maintDelivery',20,14),
   mk('C-1022','عبد الرحمن فتحي','القاهرة','تمويل مؤسسة','بتر الساعد',44,0,'','newDelivery',12),
@@ -726,7 +726,7 @@ var CASES = [
   mk('C-1037','حمدي سالم بدوي','أسوان','تمويل مؤسسة','بتر أعلى الركبة',58,3,'','measurement',30),
   mk('C-1038','ملك أحمد زكي','القاهرة','مشروع اليونيسف','بتر أسفل الركبة',11,0,'','newDelivery',15),
   mk('C-1039','أنس محمود عطية','المنيا','تمويل مؤسسة','بتر أعلى المرفق',27,0,'','maintDelivery',22,5),
-  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0+12, contact:'org', reason:'انتظار عملية جراحية'}}),
+  mk('C-1040','هدير ناصر عوض','الفيوم','تمويل ذاتي','بتر أسفل الركبة',29,0,'','measurement',85,0,{postponed:{until:T0+12, contact:'org', reason:'لحين فك الرباط', kind:'binding', stage:'measurement'}}),
   mk('C-1041','سامي فؤاد عبد الحميد','القاهرة','تمويل مؤسسة','بتر أسفل الركبة',45,0,'','maintEval',20,4),
   mk('C-1042','نادية حسن البنا','الجيزة','ممول خاص','بتر أعلى الركبة',52,0,'','maintEval',30,10,{noShow:T0-10}),
   mk('C-1043','كريم عادل سالم','القاهرة','تمويل مؤسسة','بتر الساعد',29,0,'داخل المؤسسة','maintEval',15),
@@ -741,6 +741,17 @@ var CASES = [
   mk('C-1053','أحمد جمال توفيق','المنيا','تمويل مؤسسة','بتر أسفل الركبة',55,0,'','measurement',28,0,{person:'C-1006'}),
   mk('C-1054','وليد عبد الناصر','قنا','تمويل مؤسسة','بتر أعلى الركبة',38,0,'','maintEval',25,5,{person:'C-1014'}),
 ];
+// postponements recorded in a later stage (the case comes back to that stage's pool) + profile samples
+// for the medical evaluation checks (weight over 120 / under 5 years / under 6 months since surgery)
+(function(){
+  function set(id, f){ var c = CASES.filter(function(x){ return x.id===id; })[0]; if (c) Object.assign(c, f); }
+  set('C-1028', {postponed:{until:T0+10, contact:'org', reason:'جلسات علاج طبيعي قبل الاستلام', kind:'physio', stage:'newDelivery'}});
+  set('C-1045', {postponed:{until:T0+7, contact:'org', reason:'جرح في مكان البتر', kind:'wound', stage:'maintEval'}});
+  set('C-1035', {postponed:{until:T0+14, contact:'org', reason:'لحين فك الرباط', kind:'binding', stage:'maintDelivery'}});
+  set('C-1030', {pf:{weight:'128'}});
+  set('C-1025', {age:4});
+  set('C-1034', {pf:{lastSurgery:(function(){ var d = new Date(); d.setMonth(d.getMonth()-3); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); })()}});
+})();
 var CASE_MAP = {};
 CASES.forEach(function(c){ CASE_MAP[c.id] = c; });
 CASES.forEach(function(c){ if (c.person && CASE_MAP[c.person]) c.phone = CASE_MAP[c.person].phone; else c.person = c.id; });
@@ -1324,6 +1335,7 @@ function profileOf(id){
     reqStatus: 'مقبول', postponeReason:'', postponeUntil:'', committee: c && c.stage!=='postponed' ? 'مقبول' : '-', researcher: pick(RESEARCHERS, 8), assignDate:'', researchDate:'',
     responsible:'لا', nextStep:'research', active:true, fundedNoResearch:false, attachments:[], changes:[],
   };
+  if (c && c.pf) Object.assign(p, c.pf);
   var st0 = pfStatus(id, p); p.reqStatus = st0.status; p.postponeReason = st0.reasons.join(' + '); p.postponeUntil = st0.until || '';
   PROFILES.store[id] = p; return p;
 }
