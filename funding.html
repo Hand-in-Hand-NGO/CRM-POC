@@ -889,7 +889,7 @@ function render(){
   if (k){ var el = root.querySelector('[data-k="'+k+'"]'); if (el){ el.focus(); try { if (ss!=null) el.setSelectionRange(ss, se); } catch(e){} } }
 }
 function renderApp(){
-  var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b><small>تعيين الممول للحالات أو إيقافها</small></div></div>'+
+  var h = '<header class="main-header"><div class="page-title"><span class="ttl-ic"><i class="fa fa-money"></i></span><div><b>صفحة التمويل</b></div></div>'+
     '<div class="hdr-user"><span class="av"><i class="fa fa-user"></i></span>'+esc(CSR_USER)+'</div></header>';
   h += '<aside class="main-sidebar"><span class="logo">HiH</span>'+
     '<a href="operations-room.html" title="غرفة العمليات"'+A('goOps')+'><i class="fa fa-calendar"></i></a>'+
@@ -942,7 +942,7 @@ function renderFilters(){
 function renderSurveys(){
   var f = F.filters, q = f.q.trim();
   var list = fundedSurveys().filter(function(r){ var c = caseById(r.cid); return (!q || c.name.indexOf(q)!==-1) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.company || funderOf(c)===f.company); });
-  var h = '<div class="note note-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i><div>استبيانات «متابعة جودة الخدمة» اللي الكول سنتر عملها مع الحالات الممولة بعد زيارات المقاسات والاستلام.</div></div>';
+  var h = '';
   h += '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> استبيان</span></div><div class="table-scroll"><table class="ftable"><thead><tr>'+
     '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>اتعمل</th><th></th></tr></thead><tbody>';
   list.forEach(function(r){
@@ -963,7 +963,7 @@ function renderTable(){
   if (F.filters.stage==='surveys') return renderSurveys();
   var list = filtered(), sel = F.sel;
   var allOn = list.length && list.every(function(c){ return sel.indexOf(c.id)!==-1; });
-  var h = (F.filters.stage==='postponed' ? '<div class="note note-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i><div>حالات مستوى بترها مش بنشتغل عليه دلوقتي ('+POSTPONED_LEVELS.join('، ')+'). لما تحدد ممول وتدوس <b>تمويل وإرسال للحجز</b> الحالة بتروح حصالة التقييم الطبي والقياسات والأوبريشن يحجزها عادي.</div></div>' : '')+
+  var h = 
     '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> حالة</span><span class="sp"></span>'+
     '<button class="btn btn-success btn-sm btn-r"'+A('exportCsv')+'><i class="fa fa-file-excel-o"></i> تصدير إلى Excel</button></div>';
   function th(label, a, d){
@@ -1052,9 +1052,9 @@ function renderModal(){
   if (m.kind==='note'){
     var nIds = m.ids, one = nIds.length===1 ? caseById(nIds[0]) : null;
     return modalShell(one ? 'ملاحظة على ' + esc(one.name) : 'ملاحظة على ' + nIds.length + ' حالة',
-      (one ? '' : '<div class="note note-info"><i class="fa fa-info-circle"></i><div>الملاحظة هتتكتب على كل الحالات المحددة ('+nIds.length+').</div></div>')+
-      '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة – مثال: الحالات دي ممولة ومحتاجة تتحجز يوم ...">'+esc(m.text)+'</textarea>'+
-      '<div class="ops-opt"><label style="margin:0;display:inline-flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox"'+(m.toOps?' checked':'')+A('toggleNoteOps')+'/> ابعتها للأوبريشن (توصلهم إشعار)</label>'+
+
+      '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة">'+esc(m.text)+'</textarea>'+
+      '<div class="ops-opt"><label style="margin:0;display:inline-flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox"'+(m.toOps?' checked':'')+A('toggleNoteOps')+'/> ابعتها للأوبريشن</label>'+
         (m.toOps ? '<span>يتحجزلها يوم (اختياري)</span><input class="form-control" type="date" value="'+esc(m.day||'')+'" data-k="note-day" data-change="setNoteDay"/>' : '')+'</div>'+
       (one && notesOf(one).length ? '<div class="notes-list">'+notesOf(one).slice().reverse().map(noteRow).join('')+'</div>' : ''),
       '<button class="btn btn-primary"'+A('saveNote')+'><i class="fa fa-check"></i> حفظ الملاحظة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
@@ -1076,9 +1076,9 @@ function renderModal(){
       '<button class="btn btn-primary"'+A('addCompany')+(F.newCompany.trim() ? '' : ' disabled')+'><i class="fa fa-plus"></i> إضافة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
   }
   if (m.kind==='hold'){
-    var b = '<div class="note note-info"><i class="fa fa-info-circle"></i><div>هتتوقف <b>'+F.sel.length+'</b> حالة: الأوبريشن مش هيقدر يحطها في مهمة، والكول سنتر مش هيتصل بيها.</div></div>'+
-      '<div class="hold-opts"><button class="'+(m.mode==='open'?'on':'')+'"'+A('setHoldMode','open')+'><b><i class="fa fa-pause"></i> إيقاف</b><span>لحد ما تفك الإيقاف بنفسك</span></button>'+
-        '<button class="'+(m.mode==='days'?'on':'')+'"'+A('setHoldMode','days')+'><b><i class="fa fa-clock-o"></i> إيقاف لمدة</b><span>بيتفك لوحده بعد المدة</span></button></div>'+
+    var b = 
+      '<div class="hold-opts"><button class="'+(m.mode==='open'?'on':'')+'"'+A('setHoldMode','open')+'><b><i class="fa fa-pause"></i> إيقاف</b></button>'+
+        '<button class="'+(m.mode==='days'?'on':'')+'"'+A('setHoldMode','days')+'><b><i class="fa fa-clock-o"></i> إيقاف لمدة</b></button></div>'+
       (m.mode==='days' ? '<div class="dur-row"><span>لمدة</span><input class="form-control" type="text" inputmode="numeric" data-k="hold-days" value="'+esc(m.days)+'" data-input="setHoldDays"/><span>يوم</span>'+
         (parseInt(m.days,10)>0 ? '<span class="muted">· لحد '+isoFromMs(Date.now() + parseInt(m.days,10)*86400000)+'</span>' : '')+'</div>' : '')+
       '<div class="form-group" style="margin:0;"><label>ملاحظات</label><textarea class="form-control" rows="3" data-k="hold-note" data-input="setHoldNote" placeholder="سبب الإيقاف أو أي تفاصيل">'+esc(m.note)+'</textarea></div>';
@@ -1360,7 +1360,7 @@ function renderProfile(){
   var st = pfStatus(pf.id, d);
   if (st.status==='مؤجل' && st.until && !d.postponeUntil) d.postponeUntil = st.until;   // known date (6 months / age)
   h += band('b-purple', '<div class="cms-row"><label class="cms-label">حالة الطلب</label><div class="cms-field"><div class="cms-ro pf-status '+(st.status==='مؤجل'?'post':'ok')+'">'+st.status+'</div></div>'+
-      (st.locked ? '<div></div><div class="cms-field"><span class="pf-hint">الحالة اتقبلت قبل كده وعدّت مرحلة المقاس</span></div>' : '<div></div><div></div>')+'</div>'+
+      '<div></div><div></div></div>'+
     (st.status==='مؤجل' ? '<div class="cms-row"><label class="cms-label">سبب التأجيل</label><div class="cms-field"><div class="pf-reason">'+st.reasons.join('<br>')+'</div></div>'+
       f(['postponeUntil','مؤجل لتاريخ',0,'date'])+'</div>' : '')+
     '<div class="pf-kvs">'+kv('نتيجة اللجنة', d.committee)+kv('مؤجل لتاريخ', st.status==='مؤجل' ? (d.postponeUntil || '-') : '-')+'</div>');
