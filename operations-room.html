@@ -225,6 +225,8 @@
     .phone-chip.extra{background:#fff8e6;border-color:#f3d79b;}
     .ph-n{font-size:10.5px;font-weight:800;color:#b45309;background:#fdf1e0;border-radius:8px;padding:0 6px;margin-inline-end:4px;}
     .k-ph2{margin-top:4px;}
+    .k-day{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
+    .k-tries{text-align:center;font-weight:800;}
     .pool-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
     .week-row-head{padding:14px 22px 0;font-size:12.5px;font-weight:800;color:var(--text-muted);}
     .month-weeks .calendar-grid{border-bottom:1px solid var(--border);padding-bottom:18px;}
@@ -2297,7 +2299,7 @@ var ACT = {
   committeeResult: function(id, result){
     var k = S.committee.filter(function(x){ return x.id===id; })[0]; if (!k) return;
     k.tries++; k.status = result; k.at = now();
-    toast(result==='notified' ? 'اتبلّغ ' + k.name + ' بقرار اللجنة' : k.name + ' لم يرد – هتفضل في القائمة'); render();
+    toast(result==='notified' ? 'اتبلّغ ' + k.name + ' بقرار اللجنة' : 'تعذر الوصول لـ ' + k.name + ' – هتفضل في القائمة'); render();
   },
   doneConfirmed: function(){ S.justConfirmed = null; render(); },
   sendInfo: function(key, channel){
@@ -4281,12 +4283,12 @@ function renderCommittee(){
   var list = committeeFor(S.agentId), open = list.filter(function(k){ return k.status!=='notified'; });
   var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' تبليغ قرار اللجنة ('+open.length+')</div></div>';
   if (!list.length) return h + '<div class="table-empty">مفيش مكالمات تبليغ مسندة ليك</div></div>';
-  h += '<table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>قرار اللجنة</th><th>تاريخ اللجنة</th><th>الوضع</th><th></th></tr></thead><tbody>'+
+  h += '<table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>قرار اللجنة</th><th>عدد محاولات الاتصال</th><th></th></tr></thead><tbody>'+
     list.map(function(k){
       var done = k.status==='notified';
-      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td class="k-phone">'+[k.phone].concat(k.phone2 ? [k.phone2] : []).map(function(ph, i){ return '<div'+(i?' class="k-ph2"':'')+'>'+(i ? '<span class="ph-n">رقم '+(i+1)+'</span>' : '')+'<span dir="ltr">'+fmtPhone(ph)+'</span><button class="k-copy'+(S.copiedPhone===ph?' done':'')+'"'+A('copyPhone', ph)+'>'+(S.copiedPhone===ph ? ic('check',12,null,2.4)+'تم' : ic('copy',12)+'نسخ')+'</button></div>'; }).join('')+'</td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'</td><td>'+dayLabel(k.day)+'</td>'+
-        '<td>'+(done ? '<span class="cap-ok">اتبلّغ</span>' : k.status==='noAnswer' ? '<span class="cap-over">لم يرد ('+k.tries+')</span>' : 'لسه')+'</td>'+
-        '<td class="k-acts">'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeResult', k.id, 'notified')+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>لم يرد</button>')+'</td></tr>';
+      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td class="k-phone">'+[k.phone].concat(k.phone2 ? [k.phone2] : []).map(function(ph, i){ return '<div'+(i?' class="k-ph2"':'')+'>'+(i ? '<span class="ph-n">رقم '+(i+1)+'</span>' : '')+'<span dir="ltr">'+fmtPhone(ph)+'</span><button class="k-copy'+(S.copiedPhone===ph?' done':'')+'"'+A('copyPhone', ph)+'>'+(S.copiedPhone===ph ? ic('check',12,null,2.4)+'تم' : ic('copy',12)+'نسخ')+'</button></div>'; }).join('')+'</td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'<div class="k-day">'+dayLabel(k.day)+'</div></td>'+
+        '<td class="k-tries">'+(k.tries||0)+'</td>'+
+        '<td class="k-acts">'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeResult', k.id, 'notified')+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>تعذر الوصول</button>')+'</td></tr>';
     }).join('')+'</tbody></table></div>';
   return h;
 }
