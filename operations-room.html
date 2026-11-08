@@ -2771,8 +2771,7 @@ function renderTopbar(){
 }
 
 function renderSubbar(){
-  var dueCount = queueItems(isCC() ? S.agentId : '').filter(function(x){ return isCC() ? ['due','other','later'].indexOf(x.group)!==-1 : x.group==='due'; }).length +
-    confirmItems(isCC() ? S.agentId : '').length;
+  var dueCount = isCC() ? agentTotal(S.agentId) : queueItems('').filter(function(x){ return x.group==='due'; }).length + confirmItems('').length;
   var h = '<div class="subbar"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
   if (!isAdmin()) h += '<div class="main-tabs">'+
     '<button class="main-tab'+(S.mainView==='calendar'?' active':'')+'"'+A('setMainView','calendar')+'>'+ic('calendar',14)+'التقويم</button>'+
@@ -3084,7 +3083,7 @@ function renderAgentFocus(){
   var total = due.length + other.length + later.length + hunt.length + conf.length;
   var tabs = agentTabs(); if (tabs.length && !tabs.some(function(x){ return x[0]===S.agentTab; })) S.agentTab = tabs[0][0];
   var h = '<div class="focus-wrap'+(S.agentTab==='newCase'?' wide':'')+'"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
-    '<div class="focus-total"><b>'+total+'</b><span>إجمالي الحالات</span></div></div>';
+    '<div class="focus-total"><b>'+agentTotal(S.agentId)+'</b><span>إجمالي المكالمات</span></div></div>';
   if (!tabs.length) return h + '<div class="focus-card empty"><div class="focus-empty-t">مفيش أنواع مكالمات متحددة ليك – كلّم مشرف الكول سنتر</div></div></div>';
   h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return (x[3] ? '<span class="tab-div"></span>' : '')+'<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
@@ -4292,7 +4291,9 @@ function renderCommittee(){
     }).join('')+'</tbody></table></div>';
   return h;
 }
-// booking calls + attendance confirmations waiting for the agent (same total as "إجمالي الحالات")
+// all the calls waiting for the agent = the sum of the counts on their tabs
+function agentTotal(me){ var save = S.agentId; S.agentId = me; var n = agentTabs().reduce(function(sum, t){ return sum + (t[2]||0); }, 0); S.agentId = save; return n; }
+// booking calls + attendance confirmations waiting for the agent
 function bookingCount(me){
   var items = queueItems(me).filter(function(x){ return x.group==='due' || x.group==='other' || x.group==='later' || (x.group==='full' && (x.t.standby||[]).length < S.settings.standbyMax); });
   return items.length + confirmItems(me).length;
