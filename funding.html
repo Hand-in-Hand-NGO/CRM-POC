@@ -342,6 +342,8 @@ label { font-weight: bold; }
     .sv-btn { color: #0093e9; border-color: #b9dcf5; }
     .hdr-forms{margin-right:auto;} .hdr-forms + .hdr-user{margin-right:0;} .hdr-forms.on{background:#e6f1fb;border-color:#0093e9;color:#0b6db0;}
     .forms-card .list-head .count i{color:#0093e9;margin-inline-end:4px;}
+    .rs-dialog{width:900px;max-width:96vw;} .rs-frame{width:100%;height:72vh;border:1px solid #e1e5ea;border-radius:8px;background:#eef0f3;display:block;}
+    .rs-act{justify-content:center;}
     .sv-head { font-size: 12.5px; color: #555; margin-bottom: 8px; }
     .ops-opt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; background: #f4f9fd; border: 1px solid #d6e9f7; border-radius: 10px; padding: 8px 10px; font-size: 12.5px; }
     .ops-opt input[type=date] { height: 30px; font-size: 12.5px; width: 160px; }
@@ -911,6 +913,101 @@ function logIt(action, ids, detail){ F.store.log.push({at:Date.now(), by:CSR_USE
 function svfRole(){ return 'funding'; }
 function svfUser(){ return CSR_USER; }
 function svfCompanies(){ return companies(); }
+// ---- البحث الاجتماعي: the case's social research form (view / download / print)
+function rsSeed(id){ var s = 0; for (var i=0;i<id.length;i++) s = (s*31 + id.charCodeAt(i)) % 9973; return s; }
+function researchOf(c){
+  var p = profileOf(c.id) || {}, s = rsSeed(c.id);
+  function pick(a, n){ return a[(s + (n||0)*7) % a.length]; }
+  var male = p.gender!=='أنثى', last = (p.name||c.name).split(' ').slice(1).join(' ');
+  var adult = c.age >= 18, fam = [];
+  if (adult && p.marital==='متزوج'){
+    fam.push({name:pick(['منى','هالة','سعاد','رشا','أمل'],1)+' '+pick(['محمود','علي','حسن','إبراهيم'],2), rel: male ? 'زوجة' : 'زوج', age:c.age - 3 - s%5, marital:'متزوج', edu:pick(['دبلوم','إعدادي','بدون','ثانوي'],3), job: male ? 'ربة منزل' : pick(['عامل','سائق','مزارع'],4)});
+    for (var i=0;i<1+s%3;i++) fam.push({name:pick(['يوسف','مريم','عمر','جنى','آدم','ملك'],5+i)+' '+(p.name||c.name).split(' ')[0], rel: i%2 ? 'ابنة' : 'ابن', age:Math.max(1, c.age - 24 - i*3), marital:'أعزب', edu:pick(['ابتدائي','إعدادي','ثانوي'],6+i), job:'طالب'});
+  } else {
+    fam.push({name:pick(['محمد','أحمد','محمود','سيد'],1)+' '+last, rel:'الأب', age:c.age + 27 + s%8, marital:'متزوج', edu:pick(['بدون','ابتدائي','دبلوم'],2), job:pick(['عامل','مزارع','سائق','على المعاش'],3)});
+    fam.push({name:pick(['فاطمة','نادية','عزة','سامية'],4)+' '+pick(['حسن','علي','عبد الله'],5), rel:'الأم', age:c.age + 23 + s%6, marital:'متزوج', edu:pick(['بدون','إعدادي'],6), job:'ربة منزل'});
+    if (s%2) fam.push({name:pick(['كريم','هدى','نور','زياد'],7)+' '+last, rel: s%4 ? 'أخ' : 'أخت', age:Math.max(2, c.age - 3), marital:'أعزب', edu:'طالب', job:'طالب'});
+  }
+  var inc = [['مرتب', 1500 + (s%6)*300, pick(['مرتب الأب','عمل يومي','معاش'],8)], ['مساعدات', 500 + (s%4)*250, pick(['جمعية خيرية','أهل الخير','تكافل وكرامة'],9)]];
+  if (s%3===0) inc.push(['مساعدات', 1000, 'من الأقارب']);
+  var exp = [['مصاريف معيشة وطعام', 2000 + (s%5)*250, ''], ['كهرباء ومياه وغاز', 200 + (s%4)*50, ''], ['مصاريف علاج', 400 + (s%6)*150, ''], ['انتقالات', 300 + (s%3)*100, ''], ['إيجار مسكن', s%2 ? 700 : 0, s%2 ? '' : 'ملك']];
+  var tin = inc.reduce(function(a, x){ return a + x[1]; }, 0), tex = exp.reduce(function(a, x){ return a + x[1]; }, 0);
+  var rd = p.date || isoFromMs(Date.now()), ad = p.assignDate || rd;
+  return {p:p, fam:fam, inc:inc, exp:exp, tin:tin, tex:tex,
+    contact:{name:pick(['إسلام','محمود','هاني','وليد'],10)+' '+pick(['سيد','إمام','فتحي'],11), rel:pick(['الابن الأكبر','الأخ','ابن العم','الجار'],12), phone:p.phone1 || p.phone, addr:'نفس العنوان'},
+    illness: s%3 ? [{name:p.name||c.name, kind:pick(['سكر','ضغط','سكر + قلب','حساسية صدر'],13), cost:200 + (s%5)*100, note:''}] : [],
+    econ: tex > tin ? 'سيئ' : tin - tex < 1000 ? 'متوسط' : 'جيد',
+    home:{desc:pick(['شقة في مساكن إيجار جديد','بيت ريفي دور واحد','شقة إيجار قديم','حجرة في بيت العيلة'],14), walls:pick(['حيطان محارة','طوب أحمر بدون محارة','حيطان دهان قديم'],15), roof:pick(['مسلح','خشب','صاج'],16),
+      floor:pick(['بلاط','سيراميك','أسمنت'],17), rooms:1 + s%3, land: s%4===0 ? 'قيراط' : 'لا يوجد', cattle: s%3===0 ? 'جاموسة' : 'لا يوجد', note:''},
+    devices:[['تلاجة', 1, pick(['متوسطة','قديمة'],18)], ['غسالة', 1, pick(['عادي','قديمة'],19)], ['تليفزيون', 1, 'متوسط']],
+    furniture:[['سرير', 1 + s%2, 'متوسط'], ['دولاب', 1, pick(['قديم','متوسط'],20)], ['كنبة', 1, 'قديمة']],
+    bio:{pain: s%4===0, wound: s%5===0, insured: p.insured==='نعم', insurer: p.insured==='نعم' ? 'تأمين صحي حكومي' : '', hasLimb: p.devices==='نعم', limbs: p.devices==='نعم' ? 1 : 0, agree:true},
+    needs: pick(['طرف صناعي '+(p.level||c.level), 'طرف صناعي + مساعدة شهرية', 'طرف صناعي وعلاج طبيعي'], 21),
+    opinion: 'الحالة '+(male ? 'يعاني' : 'تعاني')+' من بتر '+(p.level||c.level)+' '+(p.side ? '('+p.side+') ' : '')+'نتيجة '+(p.causeDetails && p.causeDetails!=='أخرى' ? p.causeDetails : p.cause && p.cause!=='أخرى' ? p.cause : 'سبب مرضي')+'، '+(male ? 'ويعيش' : 'وتعيش')+' مع أسرة مكونة من '+(fam.length+1)+' أفراد في '+pick(['شقة في مساكن إيجار جديد','بيت ريفي بسيط','شقة إيجار قديم','حجرة في بيت العيلة'],14)+'. '+
+      'دخل الأسرة '+tin+' جنيه شهريًا والمصروفات '+tex+' جنيه، والوضع الاقتصادي '+(tex > tin ? 'سيئ ولا يسمح بتحمل تكلفة الطرف' : 'محدود')+'. '+
+      'البتر '+(male ? 'أثّر على قدرته' : 'أثّر على قدرتها')+' على الحركة والعمل، و'+(male ? 'يحتاج' : 'تحتاج')+' إلى طرف صناعي '+(male ? 'يساعده' : 'يساعدها')+' على ممارسة '+(male ? 'حياته' : 'حياتها')+' بشكل طبيعي. يوصى بقبول الحالة.',
+    researchDate:rd, assignDate:ad, researcher:p.researcher || RESEARCHERS[s % RESEARCHERS.length]};
+}
+function researchDoc(c){
+  var r = researchOf(c), p = r.p;
+  function e(v){ return esc(v==null || v==='' ? '—' : String(v)); }
+  function f(label, val){ return '<div class="f"><span>'+label+'</span><b>'+e(val)+'</b></div>'; }
+  function tbl(cls, heads, rows, foot){ return '<table class="'+cls+'"><thead><tr>'+heads.map(function(h){ return '<th>'+h+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    (rows.length ? rows.map(function(row){ return '<tr>'+row.map(function(x){ return '<td>'+e(x)+'</td>'; }).join('')+'</tr>'; }).join('') : '<tr><td colspan="'+heads.length+'" class="nil">لا يوجد</td></tr>')+'</tbody>'+(foot ? '<tfoot><tr>'+foot.map(function(x){ return '<td>'+e(x)+'</td>'; }).join('')+'</tr></tfoot>' : '')+'</table>'; }
+  function radio(opts, val){ return '<div class="rad">'+opts.map(function(o){ return '<span class="'+(o===val?'on':'')+'"><i></i>'+o+'</span>'; }).join('')+'</div>'; }
+  function yn(v){ return radio(['نعم','لا'], v ? 'نعم' : 'لا'); }
+  var cause = /حادث/.test(p.cause||'') ? 'حادث' : /عيب|خلقي|طبيعي/.test(p.cause||'') ? 'طبيعي' : 'مرضي';
+  var side = /يمين|أيمن/.test(p.side||'') ? 'أيمن' : /شلل/.test(p.side||'') ? 'شلل أطفال' : 'أيسر';
+  var css = '@page{size:A4;margin:12mm;}*{box-sizing:border-box;}body{margin:0;background:#eef0f3;font-family:"Noto Kufi Arabic","Droid Arabic Kufi",Tahoma,sans-serif;color:#333;font-size:11px;direction:rtl;}'+
+    '.page{width:210mm;min-height:297mm;margin:12px auto;background:#fff;padding:12mm;box-shadow:0 2px 10px rgba(0,0,0,.12);page-break-after:always;}.page:last-child{page-break-after:auto;}'+
+    '.ttl{display:table;margin:4px auto 14px;background:#7fd0f5;color:#0b3a57;font-weight:800;font-size:15px;padding:8px 26px;border-radius:10px;}'+
+    '.sub{font-size:14px;font-weight:700;margin:16px 0 6px;color:#333;}'+
+    '.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px 14px;margin-bottom:6px;}.f{display:flex;gap:6px;align-items:baseline;border-bottom:1px dashed #ccc;padding-bottom:3px;}.f span{font-weight:700;white-space:nowrap;}.f b{font-weight:400;color:#555;}.f.w2{grid-column:span 2;}.f.w4{grid-column:span 4;}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:8px;}th,td{border:1px solid #bbb;padding:5px 7px;text-align:center;}th{background:#ffd75e;font-weight:800;}tfoot td{background:#ffd75e;font-weight:800;}td.nil{color:#999;}'+
+    'table.dark th{background:#3a3a3a;color:#fff;}table.kv th{width:22%;text-align:right;}table.kv td{text-align:right;}'+
+    '.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}.line{border-bottom:1px dashed #999;padding:6px 0;margin:8px 0;}'+
+    '.rad{display:flex;gap:16px;justify-content:space-around;}.rad span{display:inline-flex;align-items:center;gap:5px;color:#777;}.rad i{width:11px;height:11px;border:1.5px solid #999;border-radius:50%;display:inline-block;}.rad span.on{color:#222;font-weight:700;}.rad span.on i{border-color:#15a15a;background:radial-gradient(#15a15a 45%,#fff 50%);}'+
+    '.op{line-height:2;text-align:justify;border-bottom:1px dashed #999;padding-bottom:8px;}.sig{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;margin-top:18px;gap:8px;}.sig span{display:block;font-weight:800;margin-bottom:6px;}'+
+    '@media print{body{background:#fff;}.page{margin:0;box-shadow:none;width:auto;min-height:0;padding:0;}}';
+  var h = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>البحث الاجتماعي – '+esc(p.name||c.name)+'</title>'+
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700;800&display=swap"><style>'+css+'</style></head><body>';
+  // page 1
+  h += '<div class="page"><div class="ttl">استمارة بيان حالة</div><div class="grid">'+
+    f('الاسم', p.name||c.name)+f('رقم الهوية', p.nid)+f('الهاتف', p.phone||c.phone)+f('الكود', c.code || '—')+
+    f('تاريخ الميلاد', p.dob)+f('السن', c.age)+f('الوظيفة الحالية', p.job)+f('الوظيفة السابقة', p.job==='لا يعمل' ? 'عامل' : 'بدون')+
+    f('الجنسية', p.nationality||'مصري')+f('مستوى البتر', p.level||c.level)+f('الحالة الاجتماعية', p.marital)+f('مؤمن عليه', p.insured==='نعم' ? 'مؤمن عليه' : 'غير مؤمن')+
+    f('المؤهل الدراسي', p.education)+f('المحافظة', p.gov||c.gov)+'<div class="f w2"><span>المنطقة أو القرية</span><b>'+e(p.area || p.district)+'</b></div>'+
+    '<div class="f w4"><span>العنوان</span><b>'+e(p.address)+'</b></div></div>';
+  h += '<div class="sub">بيانات جهة اتصال بديلة</div><table class="kv"><tr><th>الاسم</th><td>'+e(r.contact.name)+'</td><th>صلة القرابة</th><td>'+e(r.contact.rel)+'</td><th>الهاتف</th><td dir="ltr">'+e(r.contact.phone)+'</td></tr>'+
+    '<tr><th>العنوان</th><td colspan="5">'+e(r.contact.addr)+'</td></tr></table>';
+  h += '<div class="ttl">بيانات الأسرة</div>'+tbl('', ['الاسم','صلة القرابة','السن','الحالة الاجتماعية','المؤهل الدراسي','الوظيفة'], r.fam.map(function(x){ return [x.name, x.rel, x.age, x.marital, x.edu, x.job]; }));
+  h += '<div class="ttl">بيانات الدخل والمصروفات</div><div class="two">'+
+    tbl('', ['مصدر الدخل','القيمة','الملاحظات'], r.inc, ['إجمالي الدخل', r.tin, ''])+
+    tbl('', ['بند الصرف','القيمة','الملاحظات'], r.exp, ['إجمالي المصروفات', r.tex, ''])+'</div></div>';
+  // page 2
+  h += '<div class="page"><div class="ttl">بيانات الحالة المرضية</div>'+tbl('', ['الاسم','نوع المرض','تكلفة العلاج','الملاحظات'], r.illness.map(function(x){ return [x.name, x.kind, x.cost, x.note]; }))+
+    '<div class="line"><b>الوضع الاقتصادي للأسرة:</b> '+e(r.econ)+'</div>';
+  h += '<div class="ttl">وصف المنزل</div><table class="kv"><tr><th>وصف المنزل</th><td colspan="3">'+e(r.home.desc)+'</td></tr>'+
+    '<tr><th>وصف الحوائط</th><td>'+e(r.home.walls)+'</td><th>نوع السقف</th><td>'+e(r.home.roof)+'</td></tr>'+
+    '<tr><th>وصف الأرضية</th><td>'+e(r.home.floor)+'</td><th>عدد الغرف</th><td>'+e(r.home.rooms)+'</td></tr>'+
+    '<tr><th>امتلاك أراضي</th><td>'+e(r.home.land)+'</td><th>المواشي</th><td>'+e(r.home.cattle)+'</td></tr></table>';
+  h += '<div class="two">'+tbl('dark', ['أنواع الأجهزة','العدد','الحالة'], r.devices)+tbl('dark', ['أنواع الأثاث','العدد','الحالة'], r.furniture)+'</div></div>';
+  // page 3
+  h += '<div class="page"><div class="ttl">معلومات بيولوجية</div><table class="kv">'+
+    '<tr><th>سبب البتر</th><td colspan="3">'+radio(['طبيعي','حادث','مرضي'], cause)+'</td></tr>'+
+    '<tr><th>وصف سبب البتر</th><td colspan="3">'+e(p.causeDetails || p.cause)+'</td></tr>'+
+    '<tr><th>الطرف المبتور</th><td colspan="3">'+radio(['أيسر','أيمن','شلل أطفال'], side)+'</td></tr>'+
+    '<tr><th>يوجد ألم</th><td>'+yn(r.bio.pain)+'</td><th>يوجد جرح</th><td>'+yn(r.bio.wound)+'</td></tr>'+
+    '<tr><th>تاريخ البتر</th><td>'+e(p.ampDate)+'</td><th>تاريخ آخر جراحة في مكان البتر</th><td>'+e(p.lastSurgery)+'</td></tr>'+
+    '<tr><th>يوجد تأمين صحي</th><td>'+yn(r.bio.insured)+'</td><th>جهة التأمين</th><td>'+e(r.bio.insurer)+'</td></tr>'+
+    '<tr><th>لديه طرف</th><td>'+yn(r.bio.hasLimb)+'</td><th>عدد الأطراف المستخدمة</th><td>'+r.bio.limbs+'</td></tr>'+
+    '<tr><th>الموافقة على تسليم الطرف</th><td>'+yn(r.bio.agree)+'</td><th>الوزن</th><td>'+e(p.weight)+'</td></tr></table>'+
+    '<div class="line"><b>احتياجات الأسرة:</b> '+e(r.needs)+'</div>'+
+    '<div class="sub">رأي الباحث</div><div class="op">'+e(r.opinion)+'</div>'+
+    '<div class="sig"><div><span>تاريخ البحث</span>'+e(r.researchDate)+'</div><div><span>تاريخ الإسناد</span>'+e(r.assignDate)+'</div><div><span>اسم الباحث</span>'+e(r.researcher)+'</div><div><span>مدير إدارة الحالات</span>&nbsp;</div></div></div>';
+  return h + '</body></html>';
+}
+function rsFileName(c){ return 'social-research-' + (c.code || c.id) + '.html'; }
 // the two pools the funding page works on
 var STORES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد'};
 function storeLbl(k){
@@ -1068,7 +1165,7 @@ function renderTable(){
   }
   h += '<div class="table-scroll"><table class="ftable"><thead><tr>'+
     '<th class="cb"><input type="checkbox" title="تحديد الكل"'+(allOn?' checked':'')+(list.length?'':' disabled')+A('toggleAll')+'/></th>'+
-    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الحصالة</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>التمويل</th><th>الإيقاف</th><th>الملاحظات</th><th></th>'+
+    '<th>الحالة</th><th>المحافظة</th>'+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الحصالة</th>'+th('مدة الانتظار','waitAsc','waitDesc')+'<th>التمويل</th><th>الإيقاف</th><th>الملاحظات</th><th>البحث الاجتماعي</th><th></th>'+
     '</tr></thead><tbody>';
   list.forEach(function(c){
     var on = sel.indexOf(c.id)!==-1, others = otherLimbs(c), a = allocOf(c), fu = funderOf(c), hd = holdOf(c);
@@ -1083,6 +1180,9 @@ function renderTable(){
       '<td>'+(hd ? '<span class="pill p-held"><i class="fa fa-pause"></i>'+(hd.until ? 'لحد '+isoFromMs(hd.until) : 'موقوفة')+'</span>'+(hd.note ? '<span class="pill-sub note-cell">'+esc(hd.note)+'</span>' : '') : '<span class="muted">—</span>')+'</td>'+
       '<td>'+(notesOf(c).length ? '<button class="note-chip"'+A('showNotes', c.id)+' title="كل الملاحظات"><span>'+esc(notesOf(c)[notesOf(c).length-1].text)+'</span>'+
         (notesOf(c).length > 1 ? '<b>'+notesOf(c).length+'</b>' : '')+'</button>' : '<span class="muted">—</span>')+'</td>'+
+      '<td><div class="row-act rs-act"><button class="icon-btn" title="عرض البحث الاجتماعي"'+A('rsView', c.id)+'><i class="fa fa-eye"></i></button>'+
+        '<button class="icon-btn" title="تنزيل"'+A('rsDownload', c.id)+'><i class="fa fa-download"></i></button>'+
+        '<button class="icon-btn" title="طباعة"'+A('rsPrint', c.id)+'><i class="fa fa-print"></i></button></div></td>'+
       '<td><div class="row-act">'+(surveysOf(c.id).length ? '<button class="icon-btn sv-btn" title="الاستبيانات ('+surveysOf(c.id).length+')"'+A('showCaseSurveys', c.id)+'><i class="fa fa-star-half-o"></i></button>' : '')+
         '<button class="icon-btn" title="إضافة ملاحظة"'+A('openNoteOne', c.id)+'><i class="fa fa-comment-o"></i></button>'+(hd ? '<button class="icon-btn" title="فك الإيقاف"'+A('releaseOne', c.id)+'><i class="fa fa-play"></i></button>' : '')+
         (a ? '<button class="icon-btn danger" title="إلغاء التمويل"'+A('unfund', c.id)+'><i class="fa fa-undo"></i></button>' : '')+'</div></td></tr>';
@@ -1175,6 +1275,11 @@ function renderModal(){
       (one && notesOf(one).length ? '<div class="notes-list">'+notesOf(one).slice().reverse().map(noteRow).join('')+'</div>' : ''),
       '<button class="btn btn-primary"'+A('saveNote')+'><i class="fa fa-check"></i> حفظ الملاحظة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
   }
+  if (m.kind==='research'){
+    var rc = caseById(m.id);
+    return modalShell('البحث الاجتماعي – ' + esc(rc.name), '<iframe class="rs-frame" title="البحث الاجتماعي" srcdoc="'+esc(researchDoc(rc))+'"></iframe>',
+      '<button class="btn btn-primary"'+A('rsDownload', rc.id)+'><i class="fa fa-download"></i> تنزيل</button><button class="btn btn-default"'+A('rsPrint', rc.id)+'><i class="fa fa-print"></i> طباعة</button><button class="btn btn-default"'+A('closeModal')+'>إغلاق</button>').replace('<div class="modal-dialog">', '<div class="modal-dialog rs-dialog">');
+  }
   if (m.kind==='survey'){
     var recs = m.keys.map(function(k){ var r = F.surveys[k]; r.key = k; return r; }), sc = caseById(recs[0].cid);
     return modalShell('استبيان متابعة جودة الخدمة – ' + esc(sc.name), recs.map(function(r){
@@ -1208,6 +1313,20 @@ function renderModal(){
 // Actions
 // =====================================================================
 var ACT = {
+  rsView: function(id){ F.modal = {kind:'research', id:id}; render(); },
+  rsDownload: function(id){
+    var c = caseById(id); if (!c) return;
+    var url = URL.createObjectURL(new Blob([researchDoc(c)], {type:'text/html;charset=utf-8'})), a = document.createElement('a');
+    a.href = url; a.download = rsFileName(c); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  },
+  rsPrint: function(id){
+    var c = caseById(id); if (!c) return;
+    var fr = document.createElement('iframe'); fr.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;';
+    document.body.appendChild(fr);
+    var d = fr.contentWindow.document; d.open(); d.write(researchDoc(c)); d.close();
+    setTimeout(function(){ try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch(e){} setTimeout(function(){ fr.remove(); }, 60000); }, 400);
+  },
   setView: function(v, a, b, e){ if (e) e.preventDefault(); F.view = v; F.sel = []; if (v!=='forms') SVE.id = null; render(); },
   svfNew: function(){
     var id = 'f' + Date.now().toString(36);
