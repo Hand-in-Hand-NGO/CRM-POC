@@ -591,6 +591,7 @@ label { font-weight: bold; }
     .svf-btn.sm{padding:3px 10px;font-size:12px;}
     .svf-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 16px;margin-bottom:10px;}
     .svf-meta label,.svf-row label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:#64748b;margin:0;}
+    .svf-sts{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:#64748b;} .svf-sts > div{display:flex;gap:14px;flex-wrap:wrap;}
     .svf-vers{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
     .svf-vers span{background:#f1f5f9;color:#475569;border-radius:12px;padding:2px 10px;font-size:11px;}
     .svf-vers span:first-child{background:#e7f6ec;color:#15803d;font-weight:700;}
@@ -1742,6 +1743,32 @@ function svLegacyQs(){ var out = []; SURVEY_Q.forEach(function(sec){ sec.qs.forE
 function svLegacyNotes(n){ var out = {}; n = n || {}; SURVEY_Q.forEach(function(sec){ if (n[sec.k]) out[sec.t] = n[sec.k]; }); return out; }
 function svLegacyForm(rec){ return {fid:'base', v:1, name:'الاستبيان الأساسي', company:'', qs:svLegacyQs(), answers:rec.answers||{}, notes:svLegacyNotes(rec.notes), status: rec.status==='done' ? 'done' : 'progress', at:rec.at||null, by:rec.by||''}; }
 var SVF = null;
+// follow-up call statuses (same as the CMS); forms = the statuses that open a follow-up form
+var FOLLOW_STATUSES = [
+  {k:'follow_up', label:'متابعة', forms:true},
+  {k:'no_maintenance_required', label:'لا يستخدم صيانة', forms:true, maint:true},
+  {k:'no_refund_is_used', label:'لا يستخدم استرداد', stop:true},
+  {k:'deceased', label:'متوفي', stop:true},
+  {k:'field_follow_up', label:'متابعة ميدانية'},
+  {k:'gone', label:'تم التهليك', stop:true}];
+function followStatus(k){ return FOLLOW_STATUSES.filter(function(x){ return x.k===k; })[0] || null; }
+function svfFollowSeed(){
+  var at = Date.now() - 60*86400000;
+  function f(id, name, statuses, qs){ return {id:id, kind:'follow', name:name, statuses:statuses, draft:svClone(qs), versions:[{v:1, at:at, by:'النظام', name:name, statuses:statuses, qs:svClone(qs)}]}; }
+  return [
+    f('fu1', 'متابعة استخدام الطرف', ['follow_up'], [
+      {id:'foundation_eval', text:'تقييمك للمؤسسة', type:'rating', required:true, sec:'التقييم'},
+      {id:'device_eval', text:'تقييمك للطرف (الجهاز)', type:'rating', required:true, sec:'التقييم'},
+      {id:'use_device', text:'بتستخدم الطرف إزاي؟', type:'single', required:true, options:['منتظم','غير منتظم','غير مستخدم'], sec:'الاستخدام'},
+      {id:'use_hours', text:'بتلبسه كام ساعة في اليوم تقريبًا؟', type:'single', required:false, options:['أقل من 3 ساعات','3 – 6 ساعات','أكتر من 6 ساعات'], sec:'الاستخدام'},
+      {id:'pain', text:'فيه ألم أو جرح من الطرف؟', type:'yesno', required:true, alertOn:'نعم', sec:'الحالة'},
+      {id:'psych_eval', text:'تقييمك للخدمة النفسية', type:'rating', required:false, sec:'الحالة'},
+      {id:'fu_notes', text:'أي حاجة تانية عايز تقولها؟', type:'long', required:false, sec:'الحالة'}]),
+    f('fu2', 'متابعة – لا يستخدم الطرف', ['no_maintenance_required'], [
+      {id:'why_not', text:'ليه مش بيستخدم الطرف؟', type:'multi', required:true, options:['الطرف واسع / ضيق','كسر أو عطل','ألم أو جرح','مش مرتاح فيه','أخرى']},
+      {id:'since', text:'بقاله قد إيه مش بيستخدمه؟', type:'single', required:true, options:['أقل من شهر','1 – 3 شهور','أكتر من 3 شهور']},
+      {id:'device_eval', text:'تقييمك للطرف (الجهاز)', type:'rating', required:false}])];
+}
 function svfSeed(){
   var qs = svLegacyQs();
   return {base:{id:'base', name:'الاستبيان الأساسي', company:'', draft:svClone(qs), versions:[{v:1, at:Date.now() - 30*86400000, by:'النظام', name:'الاستبيان الأساسي', company:'', qs:svClone(qs)}]}, forms:[]};
@@ -1749,13 +1776,15 @@ function svfSeed(){
 function loadSurveyForms(){
   var s = null; try { s = JSON.parse(localStorage.getItem(SVF_KEY) || 'null'); } catch(e){}
   SVF = s && s.base ? s : svfSeed(); SVF.forms = SVF.forms || [];
-  if (!s) saveSurveyForms();
+  var fresh = !s; if (!SVF.follow){ SVF.follow = svfFollowSeed(); fresh = true; }
+  if (fresh) saveSurveyForms();
   return SVF;
 }
 function saveSurveyForms(){ try { localStorage.setItem(SVF_KEY, JSON.stringify(SVF)); return true; } catch(e){ return false; } }
-function svfById(id){ if (!SVF) loadSurveyForms(); return id==='base' ? SVF.base : SVF.forms.filter(function(f){ return f.id===id; })[0] || null; }
+function svfById(id){ if (!SVF) loadSurveyForms(); return id==='base' ? SVF.base : SVF.forms.concat(SVF.follow||[]).filter(function(f){ return f.id===id; })[0] || null; }
+function svfIsFollow(id){ var f = id!=='base' && svfById(id); return !!(f && f.kind==='follow'); }
 function svfPublished(f){ return f && f.versions && f.versions.length ? f.versions[f.versions.length-1] : null; }
-function svfDirty(f){ var p = svfPublished(f); return !p || JSON.stringify(p.qs)!==JSON.stringify(f.draft) || p.name!==f.name || (p.company||'')!==(f.company||''); }
+function svfDirty(f){ var p = svfPublished(f); return !p || JSON.stringify(p.qs)!==JSON.stringify(f.draft) || p.name!==f.name || (p.company||'')!==(f.company||'') || JSON.stringify(p.statuses||[])!==JSON.stringify(f.statuses||[]); }
 // the funder comes from the funding page's actual allocation of this case id
 var _svAlloc = {raw:null, map:{}};
 function svFunderOf(cid){
@@ -1840,13 +1869,13 @@ function svRecHtml(rec){
   }).join('');
 }
 // ---- the form editor (both pages; each page defines svfRole(), svfUser(), svfCompanies())
-var SVE = {id:null, work:null, name:'', company:'', sel:null, preview:null};
-function svfCan(id){ return id==='base' ? svfRole()==='supervisor' : svfRole()==='funding'; }
+var SVE = {id:null, work:null, name:'', company:'', statuses:[], sel:null, preview:null};
+function svfCan(id){ return id==='base' || svfIsFollow(id) ? svfRole()==='supervisor' : svfRole()==='funding'; }
 function svfOpen(id){
   var f = svfById(id); if (!f) return;
-  SVE = {id:id, work:svClone(f.draft||[]), name:f.name||'', company:f.company||'', sel:null, preview:null};
+  SVE = {id:id, work:svClone(f.draft||[]), name:f.name||'', company:f.company||'', statuses:(f.statuses||[]).slice(), sel:null, preview:null};
 }
-function svfWorkDirty(){ var f = svfById(SVE.id); return !!f && (JSON.stringify(f.draft||[])!==JSON.stringify(SVE.work) || (f.name||'')!==SVE.name || (f.company||'')!==SVE.company); }
+function svfWorkDirty(){ var f = svfById(SVE.id); return !!f && (JSON.stringify(f.draft||[])!==JSON.stringify(SVE.work) || (f.name||'')!==SVE.name || (f.company||'')!==SVE.company || JSON.stringify(f.statuses||[])!==JSON.stringify(SVE.statuses||[])); }
 function svfQ(id){ return SVE.work.filter(function(q){ return q.id===id; })[0]; }
 function svfNewId(){ return 'q' + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
 function svfEditorHtml(){
@@ -1859,9 +1888,12 @@ function svfEditorHtml(){
   if (can) h += '<div class="svf-acts"><button class="svf-btn'+(SVE.preview ? ' on' : '')+'"'+A('svfPreview')+'>'+(SVE.preview ? 'رجوع للتعديل' : 'معاينة')+'</button>'+
     '<button class="svf-btn"'+A('svfSave')+'>حفظ مسودة</button><button class="svf-btn pri"'+A('svfPublish')+'>نشر</button></div>';
   h += '</div>';
-  if (!isBase) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
+  var isFollow = f.kind==='follow';
+  if (isFollow) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
+    '<div class="svf-sts"><span>يظهر مع حالة الطلب</span><div>'+FOLLOW_STATUSES.filter(function(x){ return x.forms; }).map(function(x){ var on = SVE.statuses.indexOf(x.k)!==-1; return '<button class="svf-tog'+(on?' on':'')+'"'+(can ? A('svfStatus', x.k) : '')+'><i></i>'+x.label+'</button>'; }).join('')+'</div></div></div>';
+  else if (!isBase) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
     '<label>شركة التمويل<select class="svx-in" data-change="svfCompany"'+(can?'':' disabled')+'><option value="">— اختار الشركة —</option>'+svfCompanies().map(function(c){ return '<option'+(SVE.company===c?' selected':'')+'>'+svEsc(c)+'</option>'; }).join('')+'</select></label></div>';
-  if (p) h += '<div class="svf-vers">'+f.versions.slice().reverse().map(function(v){ return '<span>إصدار '+v.v+' · '+svEsc(v.by)+' · '+new Date(v.at).toLocaleDateString('ar-EG')+' · '+v.qs.length+' سؤال'+(v.company && !isBase ? ' · '+svEsc(v.company) : '')+'</span>'; }).join('')+'</div>';
+  if (p) h += '<div class="svf-vers">'+f.versions.slice().reverse().map(function(v){ return '<span>إصدار '+v.v+' · '+svEsc(v.by)+' · '+new Date(v.at).toLocaleDateString('ar-EG')+' · '+v.qs.length+' سؤال'+(v.company && !isBase ? ' · '+svEsc(v.company) : '')+(v.statuses ? ' · '+v.statuses.map(function(k){ var x = followStatus(k); return x ? x.label : k; }).join('، ') : '')+'</span>'; }).join('')+'</div>';
   if (SVE.preview){
     var pv = SVE.preview;
     h += '<div class="svf-pv"><div class="svf-pv-bar"><span>زيارة:</span>'+[['newDelivery','تسليم'],['measurement','قياس']].map(function(x){ return '<button class="svf-btn sm'+(pv.type===x[0]?' on':'')+'"'+A('svfPvType', x[0])+'>'+x[1]+'</button>'; }).join('')+
@@ -1944,6 +1976,7 @@ var SVF_ACTIONS = {
   svfMove: function(id, d){ if (!svfGuard()) return; var i = SVE.work.indexOf(svfQ(id)), j = i + parseInt(d,10); if (i===-1 || j<0 || j>=SVE.work.length) return; var t = SVE.work[i]; SVE.work[i] = SVE.work[j]; SVE.work[j] = t; render(); },
   svfName: function(v){ if (svfGuard()) SVE.name = v; },
   svfCompany: function(v){ if (!svfGuard()) return; SVE.company = v; render(); },
+  svfStatus: function(k){ if (!svfGuard()) return; var i = SVE.statuses.indexOf(k); if (i===-1) SVE.statuses.push(k); else SVE.statuses.splice(i, 1); render(); },
   svfPreview: function(){ SVE.preview = SVE.preview ? null : {answers:{}, notes:{}, type:'newDelivery', miss:false}; render(); },
   svfPvType: function(t){ if (SVE.preview){ SVE.preview.type = t; render(); } },
   svfPvA: function(qid, v){ var pv = SVE.preview; if (!pv) return; var r = {qs:SVE.work, answers:pv.answers}; svSetAnswer(r, qid, v); render(); },
@@ -1954,7 +1987,8 @@ var SVF_ACTIONS = {
     if (!svfGuard()) return false;
     var err = svfCheck(SVE.work, false); if (err){ toast(err); render(); return false; }
     loadSurveyForms(); var f = svfById(SVE.id); if (!f) return false;
-    f.draft = svClone(SVE.work); f.name = SVE.id==='base' ? f.name : SVE.name.trim(); f.company = SVE.id==='base' ? '' : SVE.company;
+    f.draft = svClone(SVE.work); f.name = SVE.id==='base' ? f.name : SVE.name.trim(); f.company = SVE.id==='base' || f.kind==='follow' ? '' : SVE.company;
+    if (f.kind==='follow') f.statuses = SVE.statuses.slice();
     f.savedAt = Date.now(); f.savedBy = svfUser(); SVE.name = f.name;
     saveSurveyForms(); if (silent!==true){ toast('اتحفظت المسودة'); render(); }
     return true;
@@ -1962,13 +1996,17 @@ var SVF_ACTIONS = {
   svfPublish: function(){
     if (!svfGuard()) return;
     if (SVE.id!=='base' && !SVE.name.trim()){ toast('اكتب اسم النموذج'); return render(); }
-    if (SVE.id!=='base' && !SVE.company){ toast('اختار شركة التمويل'); return render(); }
+    var isF = svfIsFollow(SVE.id);
+    if (SVE.id!=='base' && !isF && !SVE.company){ toast('اختار شركة التمويل'); return render(); }
+    if (isF && !SVE.statuses.length){ toast('اختار حالة الطلب اللي النموذج يظهر معاها'); return render(); }
     var err = svfCheck(SVE.work, true); if (err){ toast(err); return render(); }
     if (!ACT.svfSave(true)) return;
     var f = svfById(SVE.id), p = svfPublished(f);
     if (p && !svfDirty(f)){ toast('مفيش تعديلات من آخر نشر'); return render(); }
     f.versions = f.versions || [];
-    f.versions.push({v:f.versions.length + 1, at:Date.now(), by:svfUser(), name:f.name, company:f.company||'', qs:svClone(f.draft)});
+    var ver = {v:f.versions.length + 1, at:Date.now(), by:svfUser(), name:f.name, company:f.company||'', qs:svClone(f.draft)};
+    if (f.kind==='follow') ver.statuses = (f.statuses||[]).slice();
+    f.versions.push(ver);
     saveSurveyForms(); SVE.preview = null; SVE.sel = null;
     toast('اتنشر الإصدار ' + f.versions.length + ' – بيتطبق على الاستبيانات الجديدة'); render();
   },
