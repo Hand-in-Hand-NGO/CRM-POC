@@ -731,6 +731,14 @@
     .fu-check{display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin:0;font-size:13px;} .fu-check.dis{opacity:.75;cursor:default;}
     .fu-form{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin:6px 0 12px;background:#fcfdff;}
     .fu-hist{margin-top:14px;font-size:12px;} .fu-hist td{text-align:center;} .fu-ans td{background:#f8fafc;text-align:right !important;}
+    .fu-today{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:13px;}
+    .fu-bar{flex:1;max-width:260px;height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;display:inline-block;} .fu-bar i{display:block;height:100%;background:#15803d;border-radius:6px;}
+    .fu-bar.wide{width:160px;flex:none;}
+    .fu-dist{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:14px;background:var(--surface);}
+    .fu-dist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .fu-all{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--text-muted);margin:0;}
+    .fu-num{width:80px !important;text-align:center;}
+    .fu-wait{margin-top:8px;font-size:12.5px;color:var(--text-muted);} .fu-wait b{color:#b45309;}
     .fu-forms-head{display:flex;align-items:center;justify-content:space-between;}
     .svf-sts .svf-tog.on{color:#0b6db0;} .svf-sts .svf-tog.on i{background:#0093e9;}
     .comm-notes{border:1px solid #f6d58a;background:#fffbea;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#7a4b00;}
@@ -916,7 +924,7 @@
     .pool-name{font-size:13px;font-weight:800;color:var(--text);}
     .pool-sub{font-size:11px;color:var(--text-faint);}
     .pool-ic{width:32px;height:32px;border-radius:9px;background:var(--tint);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
-    .focus-wrap{max-width:760px;margin:22px auto 60px;padding:0 16px;}
+    .focus-wrap{max-width:1080px;margin:22px auto 60px;padding:0 16px;}
     .focus-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
     .focus-total{display:flex;flex-direction:column;align-items:center;background:#101828;color:#fff;border-radius:12px;padding:8px 18px;}
     .focus-total b{font-size:24px;line-height:1.1;}
@@ -978,7 +986,7 @@
     .sup-tabs button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:10px 14px;font-family:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
     .sup-tabs button.on{color:var(--text);border-bottom-color:var(--text);}
     .sup-tabs .count{background:#fde7c4;color:#b45309;border-radius:999px;padding:0 7px;font-size:11px;}
-    .agent-tabs{margin-bottom:14px;flex-wrap:nowrap;overflow-x:auto;} .agent-tabs button{white-space:nowrap;flex:0 0 auto;padding-left:10px;padding-right:10px;}
+    .agent-tabs{margin-bottom:14px;flex-wrap:wrap;} .agent-tabs button{white-space:nowrap;padding-left:12px;padding-right:12px;}
     .assign-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0;font-size:13px;}
     .assign-to{display:inline-flex;align-items:center;gap:8px;}
     .assign-table{border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:520px;background:#fff;}
@@ -1454,7 +1462,7 @@ function defaultSettings(){
   return {
     dayHours:8, typeMinutes:{measurement:30, newDelivery:45, maintEval:20, maintDelivery:30}, emergencyMax:5,
     retryMinutes:120, maxPerDay:3, hardToReachAfter:5,
-    riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2, surveyDelay:1, surveyTries:3, followMonths:3, followTries:3,
+    riskDays:2, riskPct:50, standbyMax:3, noShowFlag:2, surveyDelay:1, surveyTries:3, followMonths:3, followTries:3, followDaily:10,
     msgOn:true, msgChannel:'whatsapp', reminderOn:true, reminderTime:'10:00', orgMapUrl:'',
     msgBookTpl:'أهلًا {الاسم}، تم تأكيد حجز موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\n{ملاحظات}\nلو محتاج تغيّر الميعاد كلمنا. – هاند إن هاند',
     msgRemindTpl:'تذكير: {الاسم}، موعد {النوع} {الميعاد} في {المكان}.\nاللوكيشن: {الخريطة}\nمستنيينك – هاند إن هاند',
@@ -1485,7 +1493,7 @@ var S = {
   audit:[], confirmations:{}, auditQ:'', messages:[],
   routing:null, supTab:'lists', assignF:{cat:'', day:'', gov:'', level:'', age:'', agent:'', q:''}, assignSel:[], assignTo:'',
   agentTab:'calls', nc:null, newCases:[], committee:[],
-  series:{}, emergencies:[], emg:null, emgDay:null, surveys:{}, followUps:{}, followCycle:{}, followAssign:{}, fuOpen:null, fuDraft:null, fuView:null, surveyOpen:null, surveyForm:null, svMiss:false, svView:null, surveyDone:null,
+  series:{}, emergencies:[], emg:null, emgDay:null, surveys:{}, followUps:{}, followCycle:{}, followAssign:{}, followQuota:{}, fuOpen:null, fuDraft:null, fuView:null, surveyOpen:null, surveyForm:null, svMiss:false, svView:null, surveyDone:null,
 };
 function emptyFilters(){ return {gov:'', funding:'', level:'', pref:'', attempts:'', age:'', q:'', code:''}; }
 
@@ -5739,31 +5747,54 @@ function followDueAt(x){
   var last = followLast(x.id), b = new Date(last ? last.at : new Date(x.delivered).getTime());
   b.setMonth(b.getMonth() + (S.settings.followMonths || 3)); return b.getTime();
 }
-function followOwner(id){
-  var list = agentsFor('followup'), pref = S.followAssign[id];
-  if (pref && list.indexOf(pref)!==-1) return pref;
-  var h = 0; for (var i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) % 997;
-  return list[h % list.length];
-}
-function followItems(agent){
-  var out = [];
+// daily distribution set by the supervisor: each agent gets up to their daily number of follow-ups,
+// oldest due first. Cases the agent already called today stay with them (and count in the number);
+// cases the supervisor assigned by hand go to that agent. The rest wait for the next days.
+function followQuotaOf(a){ var q = S.followQuota[a]; return q!=null ? q : S.settings.followDaily; }
+function isTodayMs(ms){ return isSameDate(new Date(ms), nowDate()); }
+function followTouchedToday(id){ var l = followLog(id).filter(function(e){ return isTodayMs(e.at) && e.agentId; }); return l.length ? l[l.length-1].agentId : null; }
+function followPlan(){
+  var agents = agentsFor('followup'), used = {}, owner = {}, due = [];
+  agents.forEach(function(a){ used[a] = 0; });
+  // every case an agent worked today counts in that agent's number (finished or waiting for a retry)
+  Object.keys(S.followUps).forEach(function(id){ var a = followTouchedToday(id); if (a && used[a]!=null){ used[a]++; owner[id] = a; } });
   followCases().forEach(function(x){
     if (followStopped(x.id)) return;
-    var due = followDueAt(x); if (due > now()) return;
-    var owner = followOwner(x.id); if (agent && owner!==agent) return;
-    var cy = S.followCycle[x.id] || {};
-    out.push({id:x.id, p:emgPerson(x.id), delivered:x.delivered, due:due, last:followLast(x.id), tries:cy.tries||0, nextAt:cy.nextAt||0, later: !!(cy.nextAt && cy.nextAt > now()), owner:owner});
+    var d = followDueAt(x); if (d > now()) return;
+    due.push({x:x, due:d});
   });
-  return out.filter(function(x){ return x.p; }).sort(function(a,b){ return (a.later - b.later) || (a.due - b.due); });
+  due.sort(function(a,b){ return a.due - b.due; });
+  due.forEach(function(o){ var id = o.x.id, m = S.followAssign[id]; if (!owner[id] && m && used[m]!=null){ owner[id] = m; used[m]++; } });
+  var i = 0;
+  due.forEach(function(o){
+    var id = o.x.id; if (owner[id]) return;
+    for (var k=0;k<agents.length;k++){
+      var a = agents[(i + k) % agents.length];
+      if (used[a] < followQuotaOf(a)){ owner[id] = a; used[a]++; i = (i + k + 1) % agents.length; return; }
+    }
+  });
+  return {due:due, owner:owner, used:used, agents:agents};
 }
+function followOwner(id){ return followPlan().owner[id] || null; }
+function followItems(agent){
+  var plan = followPlan();
+  return plan.due.map(function(o){
+    var x = o.x, cy = S.followCycle[x.id] || {}, owner = plan.owner[x.id] || null;
+    if (agent && owner!==agent) return null;
+    var p = emgPerson(x.id); if (!p) return null;
+    return {id:x.id, p:p, delivered:x.delivered, due:o.due, last:followLast(x.id), tries:cy.tries||0, nextAt:cy.nextAt||0, later: !!(cy.nextAt && cy.nextAt > now()), owner:owner};
+  }).filter(Boolean).sort(function(a,b){ return (a.later - b.later) || (a.due - b.due); });
+}
+function followDoneToday(agent){ var n = 0; Object.keys(S.followUps).forEach(function(id){ if (followLog(id).some(function(e){ return e.agentId===agent && isTodayMs(e.at) && e.done; })) n++; }); return n; }
 function followFormsFor(status){
   return (SVF.follow||[]).filter(function(f){ var p = svfPublished(f); return p && (p.statuses||[]).indexOf(status)!==-1; });
 }
 function fuStatusLabel(k){ var x = followStatus(k); return x ? x.label : '—'; }
 function renderFollowTab(){
-  var list = followItems(S.agentId);
-  if (!list.length) return '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">مفيش متابعات مستحقة دلوقتي</div></div>';
-  return list.map(function(x){
+  var list = followItems(S.agentId), q = followQuotaOf(S.agentId), done = followDoneToday(S.agentId);
+  var head = '<div class="fu-today"><b>متابعات النهارده</b><span class="fu-bar"><i style="width:'+(q ? Math.min(100, done/q*100) : 0)+'%"></i></span><span>'+done+' من '+q+'</span></div>';
+  if (!list.length) return head + '<div class="focus-card empty"><div class="focus-empty-ic">'+ic('check',30,'#15803d',2)+'</div><div class="focus-empty-t">'+(done ? 'خلصت متابعات النهارده' : 'مفيش متابعات ليك النهارده')+'</div></div>';
+  return head + list.map(function(x){
     var p = x.p, l = x.last;
     return '<div class="sv-row'+(x.later?' later':'')+'"><div><div class="q-name">'+esc(p.name)+' <span class="case-code" dir="ltr">'+esc(p.code||'')+'</span>'+profBtn(p.id)+'</div>'+
       '<div class="q-line">'+phoneChip(p)+'<span class="field-hint" style="margin:0;">'+esc(p.gov)+' · '+esc(p.level)+' · استلم <span dir="ltr">'+esc(x.delivered)+'</span>'+
@@ -5856,6 +5887,16 @@ function renderFollowSup(){
   var stopped = followCases().filter(function(x){ return followStopped(x.id); }).length, field = all.filter(function(x){ return x.e.status==='field_follow_up' && x.e.at > now() - 30*86400000; }).length;
   var h = '<div class="q-title" style="margin-bottom:12px;">المتابعات</div>';
   h += '<div class="kpi-row">'+[[due.length,'مستحقة دلوقتي'],[month,'اتعملت آخر 30 يوم'],[field,'متابعة ميدانية (30 يوم)'],[stopped,'وقفت (متوفي / تهليك / استرداد)']].map(function(x){ return '<div class="kpi sv-kpi"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'; }).join('')+'</div>';
+  var plan = followPlan(), waiting = plan.due.filter(function(o){ return !plan.owner[o.x.id]; }).length;
+  h += '<div class="fu-dist"><div class="fu-dist-head"><div class="section-title" style="margin:0;">توزيع المتابعات اليومي</div>'+
+    '<label class="fu-all">نفس العدد للكل <input class="cms-input fu-num" type="text" inputmode="numeric" placeholder="'+S.settings.followDaily+'" data-k="fu-all" data-change="fuQuotaAll"/></label></div>'+
+    '<table class="cases-table"><thead><tr><th>الموظف</th><th>العدد في اليوم</th><th>اتعمل النهارده</th><th>في قايمته دلوقتي</th><th></th></tr></thead><tbody>'+
+    plan.agents.map(function(a){
+      var q = followQuotaOf(a), done = followDoneToday(a), open = followItems(a).length;
+      return '<tr><td style="font-weight:700;">'+esc(agentName(a))+'</td><td><input class="cms-input fu-num" type="text" inputmode="numeric" value="'+q+'" data-k="fu-q-'+a+'" data-change="fuQuota" data-a="'+a+'"/></td>'+
+        '<td>'+done+'</td><td>'+open+'</td><td><span class="fu-bar wide"><i style="width:'+(q ? Math.min(100, done/q*100) : 0)+'%"></i></span></td></tr>';
+    }).join('')+'</tbody></table>'+
+    '<div class="fu-wait">'+(waiting ? '<b>'+waiting+'</b> متابعة مستحقة مستنية الأيام الجاية (أكتر من أعداد النهارده)' : 'كل المتابعات المستحقة متوزعة النهارده')+'</div></div>';
   h += '<div class="fu-forms-head"><div class="section-title" style="margin:14px 0 8px;">نماذج المتابعة</div><button class="btn btn-primary btn-sm"'+A('fuNewForm')+'>+ نموذج جديد</button></div>';
   h += '<table class="cases-table"><thead><tr><th>النموذج</th><th>يظهر مع</th><th>الحالة</th><th>الأسئلة</th><th>اتجاوب</th><th></th></tr></thead><tbody>'+(SVF.follow||[]).map(function(f){
     var p = svfPublished(f), n = all.filter(function(x){ return x.e.form && x.e.form.fid===f.id; }).length;
@@ -5902,7 +5943,7 @@ Object.assign(ACT, {
       if (miss.length){ d.miss = true; toast('فاضل ' + miss.length + ' سؤال إلزامي: ' + miss[0].text); return render(); }
     }
     var e = {id:'FU'+Date.now(), date:d.date, callType:d.callType, responding:d.callType==='صادر' ? d.responding : '', status:ans ? d.status : '', notes:d.notes.trim(),
-      maint:false, form:ans && st.forms ? d.form : null, at:now(), by:agentName(S.agentId), done:ans};
+      maint:false, form:ans && st.forms ? d.form : null, at:now(), by:agentName(S.agentId), agentId:S.agentId, done:ans};
     var msg;
     if (ans){
       delete S.followCycle[id];
@@ -5924,6 +5965,8 @@ Object.assign(ACT, {
     saveSurveyForms(); svfOpen(id); SVE.sel = SVE.work[0].id; render();
   },
   fuEditForm: function(id){ svfOpen(id); render(); },
+  fuQuota: function(v, a){ if (!isSupervisor()) return; var n = parseInt(v, 10); if (isNaN(n) || n < 0) n = 0; S.followQuota[a] = n; S.audit.unshift({at:now(), who:actorName(), action:'توزيع المتابعات', tid:null, label:agentName(a), detail:n + ' في اليوم'}); setTimeout(render, 0); },
+  fuQuotaAll: function(v){ if (!isSupervisor()) return; var n = parseInt(v, 10); if (isNaN(n) || n < 0) return; agentsFor('followup').forEach(function(a){ S.followQuota[a] = n; }); S.settings.followDaily = n; toast('كل موظف هيعمل ' + n + ' متابعة في اليوم'); setTimeout(render, 0); },
   svfBack: function(){ if (svfWorkDirty() && !confirm('فيه تعديلات مش محفوظة – تخرج من غير حفظ؟')) return; SVE.id = null; render(); },
 });
 
