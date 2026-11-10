@@ -1754,8 +1754,8 @@ function renderProfile(){
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
       kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
-    {k:'med', t:'التقييم الطبي', s:st.status==='مؤجل' ? 'warn' : measDone ? 'done' : 'todo',
-      kv:[['النتيجة', st.status==='مؤجل' ? chip('مؤجل', 'warn') : measDone ? chip('مقبول', 'ok') : '-'], ['سبب التأجيل', st.status==='مؤجل' ? st.reasons.join(' + ') : '-'], ['مؤجل لتاريخ', st.status==='مؤجل' ? (d.postponeUntil || '-') : '-']]},
+    {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
+      kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
       kv:[['تاريخ حجز الاستلام', bb.d ? bb.d.delivered : v.deliv.day], ['هل حضر', bb.d ? 'تم الحضور' : att(v.deliv.att)], ['النتيجة', delivDone ? 'تم التسليم' : '-'], ['سبب التأجيل', ppDeliv ? PP_KINDS[ppDeliv.kind] : '-'], ['مؤجل لتاريخ', ppDeliv ? ppUntil(ppDeliv) : '-']]}];
   // a later step already happened -> the earlier ones were done (even if their date isn't recorded here)
