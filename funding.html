@@ -498,6 +498,8 @@ label { font-weight: bold; }
     .note-row span { display: block; color: #999; font-size: 11px; margin-top: 3px; }
 /*__PFCSS_START__*/
     .prof-btn{display:inline-flex;align-items:center;gap:4px;border:1px solid #b9dcf5;background:#e6f1fb;color:#0b6db0;border-radius:15px;padding:1px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;vertical-align:middle;margin-inline-start:6px;line-height:1.7;}
+    .prof-line{display:block;width:100%;flex-basis:100%;margin-top:4px;line-height:1.2;font-size:0;} .prof-line .prof-btn{margin-inline-start:0;font-size:11px;}
+    .cms-title{flex-wrap:wrap;row-gap:2px;}
     .prof-btn:hover{background:#0093e9;color:#fff;border-color:#0093e9;}
     .pf-scrim{position:fixed;inset:0;background:rgba(15,18,26,.42);z-index:1060;}
     .pf-modal{position:fixed;top:50%;right:50%;transform:translate(50%,-50%);width:1180px;max-width:96vw;max-height:94vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 16px 48px rgba(20,24,34,.22);z-index:1061;text-align:right;direction:rtl;}
@@ -1652,7 +1654,8 @@ function casePhones(id, main){
   list.forEach(function(x){ x = String(x||'').replace(/\D/g,''); if (x.length >= 10 && out.indexOf(x)===-1) out.push(x); });
   return out;
 }
-function profBtn(id){ return ' <button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button>'; }
+// always on its own line under the case name
+function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
 NC_ROWS.forEach(function(r){ r.forEach(function(f){ if (f) PROFILE_LABELS[f[0]] = f[1]; }); });
 Object.assign(PROFILE_LABELS, {devicesCount:'عدد الأجهزة', reqStatus:'حالة الطلب', postponeReason:'سبب التأجيل', postponeUntil:'مؤجل لتاريخ', responsible:'هل يوجد مسئول عن الحالة', nextStep:'الخطوة التالية', active:'نشط', fundedNoResearch:'ممول بدون بحث'});
