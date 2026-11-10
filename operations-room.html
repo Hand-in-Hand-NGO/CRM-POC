@@ -1078,6 +1078,15 @@
     table.routing tr.r-main td{background:var(--surface-alt);}
     .r-sub{padding-right:16px;display:inline-block;color:var(--text-muted);}
     .focus-wrap.wide{max-width:1180px;}
+    .nc-wrap{background:#f5f7fa;border-radius:12px;}
+    .nc-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:15px;color:#0b3a57;}
+    .nc-nav{border:0;background:none;padding:0;margin-inline-start:auto;}
+    .nc-wrap .cf-sec-b .cms-row{grid-template-columns:150px minmax(0,1fr) 150px minmax(0,1fr);}
+    .nc-wrap .cms-input{border-radius:6px;}
+    .nc-wrap .cms-field:has(.cf-add-ph){display:flex;align-items:center;}
+    .nc-age{font-size:12px;font-weight:700;color:#64748b;margin:-4px 0 8px;}
+    .cf-status.nc-pend{background:#f1f5f9;color:#64748b;}
+    .nc-acts{display:flex;gap:8px;margin-top:12px;}
     .nc-card{background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.05);overflow:hidden;}
     .nc-card .cms-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(90deg,#d3f1f8 0%,#ebf6ed 17%,#fff9e4 34%,#f9e7de 47%,#f8f2e4 57%,#d9eaf4 64%,#e9efec 74%,#baeae6 100%);}
     .nc-body{padding:16px 18px;}
@@ -2477,6 +2486,10 @@ var ACT = {
   ncSet: function(v, k){ S.nc[k] = v; if (k==='nextStep' || k==='level') render(); else render(); },
   ncToggle: function(k){ S.nc[k] = !S.nc[k]; render(); },
   ncReset: function(){ S.nc = emptyNewCase(); render(); },
+  ncGo: function(sec){ var el = document.getElementById('nc-' + sec); if (el) el.scrollIntoView({block:'start', behavior:'smooth'}); },
+  ncAddPhone: function(){ S.nc.extraPhones = (S.nc.extraPhones || []).concat(['']); render(); var el = document.querySelector('[data-k="nc-ex-'+(S.nc.extraPhones.length-1)+'"]'); if (el) el.focus(); },
+  ncExtraPhone: function(v, i){ S.nc.extraPhones[+i] = v; },
+  ncDelPhone: function(i){ S.nc.extraPhones.splice(+i, 1); render(); },
   ncAdd: function(){
     var nc = S.nc, miss = ncMissing(nc);
     if (miss.length){ nc.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(f){ return f[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
@@ -2489,6 +2502,10 @@ var ACT = {
       var c = mk(id, nc.name.trim(), nc.gov, 'تمويل مؤسسة', nc.level, age, 0, '', 'measurement', 0, 0);
       c.phone = nc.phone; c.person = id; c.baseFunding = c.funding;
       CASES.push(c); CASE_MAP[id] = c;
+      loadProfiles(); var pf = profileOf(id);
+      if (pf){ Object.keys(nc).forEach(function(k){ if (k!=='tried') pf[k] = nc[k]; });
+        pf.extraPhones = (nc.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); }).filter(function(x){ return x.length >= 10; });
+        pf.addedBy = agentName(S.agentId); pf.addedAt = pfStamp(); pf.code = ''; pf.committee = '-'; pf.researcher = ''; pf.changes = []; pf.attachments = []; saveProfiles(); }
       msg = 'اتضافت ' + c.name + ' ونزلت في حصالة التقييم الطبي والقياسات للحجز';
     } else msg = res.ok ? 'اتضافت ' + nc.name + ' واتحولت لقسم الأبحاث' : 'اتسجلت ' + nc.name + ' – ' + result;
     S.newCases.push({name:nc.name.trim(), phone:nc.phone, result:result, next:next, by:S.agentId, at:now()});
@@ -4910,29 +4927,55 @@ Object.assign(ACT, SVF_ACTIONS);
 window.addEventListener('storage', function(e){ if (e.key===SVF_KEY){ loadSurveyForms(); render(); } });
 loadSurveyForms();
 /*__PF_END__*/
+// same sections as ملف الحالة: personal / contact / amputation / request, with the result on the side
 function renderNewCase(){
   var nc = S.nc || (S.nc = emptyNewCase()), res = ncResult(nc);
   var dup = nc.phone && nc.phone.length >= 10 ? CASES.concat(DELIVERED).filter(function(c){ return c.phone===nc.phone; })[0] : null;
-  var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('user',15,'#535252')+' إضافة حالة جديدة</div></div><div class="nc-body">';
-  ncRows(nc).forEach(function(r){ h += '<div class="cms-row">'+ncField(r[0], nc)+ncField(r[1], nc)+'</div>'; });
-  h += '<div class="cms-row"><label class="cms-label">ممول بدون بحث</label><div class="cms-field"><input type="checkbox"'+(nc.fundedNoResearch?' checked':'')+A('ncToggle','fundedNoResearch')+'/></div></div>';
-  h += '<div class="nc-sep"></div><div class="cms-row">'+ncField(['responsible','هل يوجد مسئول عن الحالة',1,'select'], nc)+'</div>';
-  h += '<div class="nc-sep"></div><div class="cms-row"><label class="cms-label">الخطوة التالية <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="ncSet" data-a="nextStep">'+
-    '<option value="research"'+(nc.nextStep==='research'?' selected':'')+'>قسم الأبحاث</option>'+
-    '<option value="measurement"'+(nc.nextStep==='measurement'?' selected':'')+(res.ok===false?' disabled':'')+'>حجز مقاس مباشر</option></select></div></div>';
-  if (dup) h += '<div class="rule-hint warn">الرقم ده متسجل قبل كده لحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>';
-  // result before "أضف"
-  if (res.ok!==null) h += '<div class="nc-result '+(res.ok?'ok':'bad')+'"><div class="nc-res-title">'+(res.ok ? ic('check',15,'#15803d',2.4) : ic('alert',15,'#b45309'))+' النتيجة: <b>'+res.list[0].t+'</b></div>'+
-    res.list.map(function(x){ return x.d ? '<div class="nc-res-row">• <b>'+x.t+'</b>: '+esc(x.d)+'</div>' : ''; }).join('')+
-    (res.ok ? '<div class="nc-res-row">الخطوة التالية: <b>'+(nc.nextStep==='measurement' ? 'حجز مقاس مباشر – الحالة هتنزل في حصالة التقييم الطبي والقياسات' : 'قسم الأبحاث')+'</b></div>' : '')+'</div>';
-  h += '<div class="cms-actions"><button class="cms-btn cms-add"'+A('ncAdd')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('ncReset')+'>'+ic('x',12,'#fff',3)+' مسح</button></div>';
-  h += '</div></div>';
+  function f(def){ return ncField(def, nc); }
+  function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
+  function sec(id, icon, title, body){ return '<section class="cf-sec" id="nc-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b></div><div class="cf-sec-b">'+body+'</div></section>'; }
+  var age = (function(){ var b = parseDay(nc.dob); if (!b) return ''; var n = nowDate(), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
+  var h = '<div class="nc-wrap"><div class="nc-top">'+ic('user',16,'#0b6db0')+'<b>إضافة حالة جديدة</b><div class="cf-nav nc-nav">'+
+    [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['request','بيانات الطلب']].map(function(x){ return '<button'+A('ncGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div></div>';
+  h += '<div class="cf-grid"><div class="cf-main">';
+  h += sec('personal', 'user', 'البيانات الشخصية',
+    row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
+    row(['marital','الحالة الإجتماعية',1,'select'], ['nationality','الجنسية',1,'select'])+row(['education','المؤهل الدراسى',1,'select'], ['job','الوظيفة',1,'select'])+
+    row(['insured','مؤمن عليه',1,'select'])+(age ? '<div class="nc-age">السن: '+esc(age)+'</div>' : ''));
+  var ex = nc.extraPhones || [], cells = [f(['phone2','رقم هاتف 2',0,'num'])];
+  ex.forEach(function(x, i){ cells.push('<label class="cms-label">رقم هاتف '+(i+3)+'</label><div class="cms-field cf-ph-field"><input class="cms-input" type="text" inputmode="numeric" placeholder="رقم هاتف '+(i+3)+'" value="'+esc(x)+'" data-k="nc-ex-'+i+'" data-input="ncExtraPhone" data-a="'+i+'"/>'+
+    '<button class="cf-del-ph" title="حذف الرقم"'+A('ncDelPhone', i)+'>'+pfIc('x',12,null,2.4)+'</button></div>'); });
+  var phRows = ''; for (var i=0;i<cells.length;i+=2) phRows += '<div class="cms-row">'+cells[i]+(cells[i+1] || '<div></div><div></div>')+'</div>';
+  h += sec('contact', 'phone', 'التواصل والعنوان',
+    '<div class="cms-row">'+f(['phone','الهاتف',1,'num']).replace(/<\/div>$/, '<button class="cf-add-ph" title="إضافة رقم"'+A('ncAddPhone')+'>+</button></div>')+f(['phone1','رقم هاتف 1',0,'num'])+'</div>'+phRows+
+    (dup ? '<div class="rule-hint warn">الرقم ده متسجل قبل كده لحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>' : '')+
+    row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
+    row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
+  var devRow = nc.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
+  h += sec('amp', 'check', 'بيانات البتر والحالة الطبية',
+    row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
+    row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+row(['weight','الوزن',1,'num'], ['chronic','الأمراض المزمنة',1,'select'])+devRow);
+  h += sec('request', 'history', 'بيانات الطلب',
+    row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
+    '<div class="cms-row">'+f(['responsible','هل يوجد مسئول عن الحالة',1,'select'])+'<label class="cms-label">الخطوة التالية <span class="req">*</span></label><div class="cms-field"><select class="cms-input" data-change="ncSet" data-a="nextStep">'+
+      '<option value="research"'+(nc.nextStep==='research'?' selected':'')+'>قسم الأبحاث</option>'+
+      '<option value="measurement"'+(nc.nextStep==='measurement'?' selected':'')+(res.ok===false?' disabled':'')+'>حجز مقاس مباشر</option></select></div></div>'+
+    '<div class="cms-row"><label class="cms-label">ممول بدون بحث</label><div class="cms-field"><label class="cf-check"><input type="checkbox"'+(nc.fundedNoResearch?' checked':'')+A('ncToggle','fundedNoResearch')+'/> ممول بدون بحث</label></div></div>'+
+    row(['notes','الملاحظات',0,'area'], ['notes2','الملاحظات 2',0,'area'])+row(['qualityNotes','ملاحظات الجودة',0,'area']));
+  h += '</div><aside class="cf-side">';
+  // result before "أضف" (same place as the request status in ملف الحالة)
+  h += '<div class="cf-card"><div class="cf-card-h">النتيجة</div>';
+  if (res.ok===null) h += '<div class="cf-status nc-pend">لسه</div>';
+  else h += '<div class="cf-status '+(res.ok ? 'ok' : 'warn')+'">'+(res.ok ? 'مقبول' : 'مؤجل')+'</div>'+
+    res.list.map(function(x){ return '<div class="cf-kv"><span>'+esc(x.t)+'</span>'+(x.d ? '<b>'+esc(x.d)+'</b>' : '')+'</div>'; }).join('')+
+    (res.ok ? '<div class="cf-kv"><span>الخطوة التالية</span><b>'+(nc.nextStep==='measurement' ? 'حجز مقاس مباشر – الحالة هتنزل في حصالة التقييم الطبي والقياسات' : 'قسم الأبحاث')+'</b></div>' : '');
+  h += '<div class="nc-acts"><button class="cms-btn cms-add"'+A('ncAdd')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('ncReset')+'>'+ic('x',12,'#fff',3)+' مسح</button></div></div>';
   var mine = S.newCases.filter(function(x){ return x.by===S.agentId; });
-  if (mine.length){
-    h += '<div class="nc-card" style="margin-top:14px;"><div class="cms-head"><div class="cms-title">اتسجل النهارده ('+mine.length+')</div></div><table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>النتيجة</th><th>الخطوة التالية</th><th>الوقت</th></tr></thead><tbody>'+
-      mine.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.name)+'</td><td dir="ltr" style="text-align:right;">'+esc(x.phone)+phCopy(x.phone)+'</td><td>'+esc(x.result)+'</td><td>'+esc(x.next)+'</td><td>'+fmtTime(x.at)+'</td></tr>'; }).join('')+'</tbody></table></div>';
-  }
-  return h;
+  h += '<div class="cf-card"><div class="cf-card-h">اتسجل النهارده <span class="cf-count">'+mine.length+'</span></div>'+(mine.length ? '<ul class="cf-acts">'+mine.slice().reverse().map(function(x){
+    return '<li><span class="cf-dot" style="background:'+(x.next==='مؤجل' ? '#f59e0b' : '#15803d')+'"></span><div><div class="cf-act-t"><b>'+esc(x.name)+'</b></div><div class="cf-act-s" dir="ltr" style="text-align:right;">'+esc(x.phone)+phCopy(x.phone)+'</div>'+
+      '<div class="cf-act-s">'+esc(x.result)+' · '+esc(x.next)+'</div><div class="cf-act-w">'+fmtTime(x.at)+'</div></div></li>';
+  }).join('')+'</ul>' : '<div class="cf-empty">فارغ</div>')+'</div>';
+  return h + '</aside></div></div>';
 }
 
 // =====================================================================
