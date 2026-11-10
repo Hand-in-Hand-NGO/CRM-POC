@@ -6546,7 +6546,7 @@ var OL_SECS = [
   ['booking', 'calendar', 'الحجوزات والإستقبال', [['attend1','attend2'], ['sub','التواريخ'], ['range','bookingDate'], ['range','visitDate'], ['range','deliveryDate'], ['range','reservationsDate'], ['range','fittingDate']]],
   ['eng', 'gear', 'القسم الهندسى والتصنيع', [['engAnat','engFit'], ['manufacturing'], ['filesReady','onPrinter'], ['sub','التواريخ'], ['range','mdmDate'], ['range','fitAssessDate']]],
 ];
-var OL = {f:{}, af:{}, open:{personal:true, contact:true, amp:true, request:true}, ms:null, msQ:'', tag:'', scrollTo:null};
+var OL = {f:{}, af:{}, open:{}, ms:null, msQ:'', tag:'', scrollTo:null};
 function olKeysOf(sec){ var out = []; sec[3].forEach(function(r){ if (r[0]==='sub') return; if (r[0]==='range'){ out.push(r[1]+'From', r[1]+'To'); return; } r.forEach(function(k){ out.push(k); }); }); return out; }
 function olHas(v){ return Array.isArray(v) ? v.length > 0 : v!=null && String(v).trim()!==''; }
 function olSecCount(sec, f){ var n = 0; sec[3].forEach(function(r){ if (r[0]==='sub') return; if (r[0]==='range'){ if (olHas(f[r[1]+'From']) || olHas(f[r[1]+'To'])) n++; return; } r.forEach(function(k){ if (olHas(f[k])) n++; }); }); return n; }
@@ -6560,7 +6560,8 @@ function olMatch(vals, v){
   var hit = list.some(function(x){ return x==='blank' ? !String(v==null?'':v).trim() : x===v; });
   return ex ? !hit : hit;
 }
-function olSame(a, b){ return JSON.stringify(a)===JSON.stringify(b); }
+function olClean(o){ var r = {}; Object.keys(o).sort().forEach(function(k){ if (olHas(o[k])) r[k] = o[k]; }); return r; }
+function olSame(a, b){ return JSON.stringify(olClean(a))===JSON.stringify(olClean(b)); }
 
 function olMulti(k){
   var d = OL_FIELDS[k], vals = OL.f[k] || [], open = OL.ms===k;
@@ -6661,9 +6662,7 @@ function renderDemoList(){
   var total = 0, dirty = !olSame(OL.f, OL.af);
   OL_SECS.forEach(function(s){ total += olSecCount(s, OL.f); });
   var allOpen = OL_SECS.every(function(s){ return OL.open[s[0]]; });
-  var h = '<div class="ol-wrap"><div class="ol-top">'+ic('list',16,'#0b6db0')+'<b>البحث فى الطلبات</b>'+(total ? '<span class="cf-count">'+total+' فلتر</span>' : '')+
-    '<div class="cf-nav">'+OL_SECS.map(function(s){ var n = olSecCount(s, OL.f); return '<button class="'+(n?'has':'')+'"'+A('olGo', s[0])+'>'+s[2]+(n ? '<i>'+n+'</i>' : '')+'</button>'; }).join('')+'</div>'+
-    '<button class="ol-tgl-all"'+A('olAll', allOpen ? '0' : '1')+'>'+(allOpen ? 'طي الكل' : 'فتح الكل')+'</button></div>';
+  var h = '<div class="ol-wrap">';
   h += OL_SECS.map(olSection).join('');
   var ap = olApplied();
   h += '<div class="ol-bar"><div class="ol-applied">'+(ap.length ? '<b style="color:#0b3a57;">الفلاتر المطبقة:</b>'+ap.map(function(x){ return '<span class="ms-chip"><em>'+esc(x[1])+':</em> '+esc(x[2])+'<b title="إزالة"'+A('olDrop', x[0], x[3]||'')+'>×</b></span>'; }).join('') : 'لا توجد فلاتر مطبقة – كل الطلبات ظاهرة')+
