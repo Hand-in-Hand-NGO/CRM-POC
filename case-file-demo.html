@@ -6478,6 +6478,17 @@ setInterval(function(){
   .ol-sec .cms-field.act .ms-btn, .ol-sec .cms-field.act > .cms-input, .ol-sec .cms-field.act .ol-dp-in, .ol-range.act .cms-input{border-color:#0093e9;background:#f5faff;box-shadow:0 0 0 2px rgba(0,147,233,.12);}
   .ol-sec .cms-field.act .ol-dp-ic{background:#e6f1fb;border-color:#0093e9;}
   .ol-sec .cms-field.act .ol-seg{border-color:#0093e9;box-shadow:0 0 0 2px rgba(0,147,233,.12);}
+  /* clear buttons: per filter and per section */
+  .ol-fw{display:flex;align-items:center;gap:6px;}
+  .ol-fw > .ms, .ol-fw > .cms-input{flex:1;min-width:0;}
+  .ol-fw > .ol-seg{margin-inline-end:auto;}
+  .ol-clr{flex:0 0 26px;height:26px;border:1px solid #f3b9c3;background:#fff6f7;color:#c81e3a;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}
+  .ol-clr:hover{background:#f96a74;border-color:#f96a74;color:#fff;}
+  .ol-clr:disabled{border-color:#e5e7eb;background:#fff;color:#cbd2da;cursor:default;}
+  .ol-sec-clr{margin-inline-start:auto;display:inline-flex;align-items:center;gap:4px;border:1px solid #f3b9c3;background:#fff;color:#c81e3a;border-radius:10px;padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;}
+  .ol-sec-clr:hover{background:#f96a74;border-color:#f96a74;color:#fff;}
+  .ol-sec-clr:disabled{border-color:#e5e7eb;color:#cbd2da;cursor:default;background:#fff;}
+  .ol-sec-clr + .ol-caret{margin-inline-start:10px;}
 </style>
 <script>
 // ---------------- demo shell ----------------
@@ -6601,7 +6612,8 @@ function olField(k){
   else if (OL_SEGS[k]){ lab = OL_SEGS[k].l; inp = olSeg(k); }
   else { var t = OL_TEXTS[k]; lab = t.l; inp = '<input class="cms-input"'+(t.num ? ' inputmode="numeric" dir="ltr" style="text-align:right;"' : '')+' placeholder="'+(t.ph || t.l)+'" value="'+esc(OL.f[k]||'')+'" data-k="ol-'+k+'" data-input="olText" data-enter="olSearch" data-a="'+k+'"/>'; }
   var act = olHas(OL.f[k]) ? ' act' : '';
-  return '<label class="cms-label'+act+'">'+lab+'</label><div class="cms-field'+act+'">'+inp+'</div>';
+  return '<label class="cms-label'+act+'">'+lab+'</label><div class="cms-field'+act+'"><div class="ol-fw">'+inp+
+    '<button class="ol-clr" title="مسح الفلتر"'+(act ? A('olClear', k) : ' disabled')+'>'+ic('x',11,null,3)+'</button></div></div>';
 }
 function olRange(k){
   var d = OL_RANGES[k], a = OL.f[k+'From'] || '', b = OL.f[k+'To'] || '';
@@ -6610,13 +6622,14 @@ function olRange(k){
     : '<input class="cms-input" type="date" value="'+esc(v)+'" data-k="ol-'+k+sfx+'" data-change="olText" data-a="'+k+sfx+'"/>'; }
   return '<div class="ol-range'+(olHas(a) || olHas(b) ? ' act' : '')+'"><label class="cms-label">'+d.l+'</label>'+
     '<div class="ol-range-f"><span>من</span>'+inp('From', a, d.num ? 'من' : '')+'</div><div class="ol-range-f"><span>إلى</span>'+inp('To', b, d.num ? 'إلى' : '')+'</div>'+
-    '<div class="ol-quick"><button class="ol-qb clr" title="مسح"'+A('olRange', k, 'clear')+'>'+ic('x',11,'#fff',3)+'</button>'+
+    '<div class="ol-quick"><button class="'+(d.num ? 'ol-clr' : 'ol-qb clr')+'" title="مسح الفلتر"'+(d.num && !a && !b ? ' disabled' : A('olRange', k, 'clear'))+'>'+ic('x',11,d.num ? null : '#fff',3)+'</button>'+
     (d.num ? '' : '<button class="ol-qb today"'+A('olRange', k, 'today')+'>'+ic('calendar',12,'#fff',2.2)+' اليوم</button><button class="ol-qb week"'+A('olRange', k, 'week')+'>'+ic('calendar',12,'#fff',2.2)+' هذا الاسبوع</button>')+'</div></div>';
 }
 function olSection(s){
   var n = olSecCount(s, OL.f), open = !!OL.open[s[0]];
   var icon = PF_ICONS[s[1]] ? pfIc(s[1],14,'#0b6db0',2.2) : ic(s[1],14,'#0b6db0',2.2);
-  var h = '<section class="cf-sec ol-sec'+(open?'':' closed')+(n?' has':'')+'" id="ol-'+s[0]+'"><div class="cf-sec-h"'+A('olSec', s[0])+'>'+icon+'<b>'+s[2]+'</b>'+(n ? '<span class="cf-count">'+n+' فلتر</span>' : '')+'<span class="ol-caret">'+pathIc('M6 9l6 6 6-6',15,null,2.2)+'</span></div><div class="cf-sec-b">';
+  var h = '<section class="cf-sec ol-sec'+(open?'':' closed')+(n?' has':'')+'" id="ol-'+s[0]+'"><div class="cf-sec-h"'+A('olSec', s[0])+'>'+icon+'<b>'+s[2]+'</b>'+(n ? '<span class="cf-count">'+n+' فلتر</span>' : '')+
+    '<button class="ol-sec-clr" title="مسح فلاتر القسم"'+(n ? A('olSecClear', s[0]) : ' disabled')+'>'+ic('x',11,null,3)+' مسح فلاتر القسم</button><span class="ol-caret">'+pathIc('M6 9l6 6 6-6',15,null,2.2)+'</span></div><div class="cf-sec-b">';
   var rows = s[3], i = 0;
   while (i < rows.length){
     var r = rows[i];
@@ -6692,6 +6705,9 @@ function renderDemoList(){
 function olIso(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 var OL_ACT = {
   olSec: function(id){ OL.open[id] = !OL.open[id]; render(); },
+  olClear: function(k){ if (OL_FIELDS[k]) OL.f[k] = []; else delete OL.f[k]; if (OL.ms===k) OL.ms = null; render(); },
+  olSecClear: function(id){ var sec = OL_SECS.filter(function(x){ return x[0]===id; })[0]; if (!sec) return;
+    olKeysOf(sec).forEach(function(k){ delete OL.f[k]; }); if (OL.dp && olKeysOf(sec).indexOf(OL.dp.k+'From')!==-1) OL.dp = null; OL.ms = null; render(); },
   olAll: function(v){ OL_SECS.forEach(function(s){ OL.open[s[0]] = v==='1'; }); render(); },
   olGo: function(id){ OL.open[id] = true; render(); var el = document.getElementById('ol-' + id); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); },
   olText: function(v, k){ OL.f[k] = v; if (document.activeElement && document.activeElement.type==='date') render(); },
