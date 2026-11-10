@@ -6439,6 +6439,35 @@ setInterval(function(){
   .ol-kv-act .ol-pl{width:auto;flex-basis:auto;margin:0;}
   .ol-mpick{display:block;cursor:pointer;margin:0;} .ol-mpick.off{opacity:.55;}
   .ol-mpick small{display:block;font-size:11px;color:#64748b;line-height:1.6;}
+  /* date range field (single calendar) */
+  .ol-dpf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .dp{position:relative;flex:1;min-width:210px;}
+  .ol-dp-in{display:flex;align-items:center;min-height:34px;border:1px solid #d2d6de;border-radius:6px;background:#fff;cursor:pointer;overflow:hidden;}
+  .dp.open .ol-dp-in{border-color:#67b9ec;}
+  .ol-dp-ic{flex:0 0 36px;align-self:stretch;display:flex;align-items:center;justify-content:center;background:#f4f4f4;border-inline-end:1px solid #d2d6de;}
+  .ol-dp-in .ph{color:#999;font-size:13px;padding:0 10px;} .ol-dp-in .v{color:#1f2937;font-size:12.5px;font-weight:700;padding:0 10px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .ol-dp-pop{position:absolute;top:calc(100% + 4px);right:0;width:272px;background:#fff;border:1px solid #d2d6de;border-radius:8px;box-shadow:0 8px 24px rgba(20,24,34,.16);z-index:45;padding:10px;direction:ltr;}
+  .ol-dp-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .ol-dp-h b{font-size:13px;color:#1f2937;}
+  .ol-dp-h button{border:0;background:none;width:28px;height:28px;border-radius:6px;cursor:pointer;color:#333;display:inline-flex;align-items:center;justify-content:center;}
+  .ol-dp-h button:hover{background:#eee;}
+  .ol-dp-g{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;}
+  .ol-dp-g .dow{font-size:11.5px;font-weight:800;color:#333;padding:5px 0;}
+  .ol-dp-g .d{border:0;background:#fff;height:32px;font:inherit;font-size:12.5px;color:#333;cursor:pointer;border-radius:4px;font-variant-numeric:tabular-nums;}
+  .ol-dp-g .d:hover{background:#eee;}
+  .ol-dp-g .d.out{color:#a7aeb8;}
+  .ol-dp-g .d.today{box-shadow:inset 0 0 0 1px #67b9ec;}
+  .ol-dp-g .d.in{background:#e6f1fb;border-radius:0;color:#1f2937;}
+  .ol-dp-g .d.end{background:#0093e9;color:#fff;font-weight:800;}
+  .ol-dp-f{direction:rtl;text-align:center;font-size:11.5px;color:#97a0ad;margin-top:6px;}
+  .ol-sec:has(.dp.open){z-index:25;}
+  .ol-dprow{align-items:center;}
+  .ol-sec .cms-row.ol-dprow{grid-template-columns:130px minmax(0,1fr) 130px minmax(0,1fr);}
+  .ol-dpf{flex-wrap:nowrap;gap:6px;}
+  .ol-dpf .dp{min-width:170px;}
+  .ol-dpf .ol-qb{padding:6px 8px;font-size:11.5px;gap:3px;}
+  .ol-dpf .ol-quick{gap:3px;flex:none;}
+  .ol-dp-in .v{font-size:12px;padding:0 8px;}
 </style>
 <script>
 // ---------------- demo shell ----------------
@@ -6577,11 +6606,19 @@ function olSection(s){
   var n = olSecCount(s, OL.f), open = !!OL.open[s[0]];
   var icon = PF_ICONS[s[1]] ? pfIc(s[1],14,'#0b6db0',2.2) : ic(s[1],14,'#0b6db0',2.2);
   var h = '<section class="cf-sec ol-sec'+(open?'':' closed')+'" id="ol-'+s[0]+'"><div class="cf-sec-h"'+A('olSec', s[0])+'>'+icon+'<b>'+s[2]+'</b>'+(n ? '<span class="cf-count">'+n+' فلتر</span>' : '')+'<span class="ol-caret">'+pathIc('M6 9l6 6 6-6',15,null,2.2)+'</span></div><div class="cf-sec-b">';
-  s[3].forEach(function(r){
+  var rows = s[3], i = 0;
+  while (i < rows.length){
+    var r = rows[i];
     if (r[0]==='sub') h += '<div class="ol-sub">'+r[1]+'</div>';
-    else if (r[0]==='range') h += olRange(r[1]);
+    else if (r[0]==='range' && OL_RANGES[r[1]].num) h += olRange(r[1]);
+    else if (r[0]==='range'){
+      var nx = rows[i+1], pair = nx && nx[0]==='range' && !OL_RANGES[nx[1]].num;
+      h += '<div class="cms-row ol-dprow">'+olDateField(r[1])+(pair ? olDateField(nx[1]) : '<div></div><div></div>')+'</div>';
+      if (pair) i++;
+    }
     else h += '<div class="cms-row">'+olField(r[0])+olField(r[1])+'</div>';
-  });
+    i++;
+  }
   return h + '</div></section>';
 }
 // applied filters as removable chips (label: values)
@@ -6655,11 +6692,51 @@ var OL_ACT = {
     var a = '', b = '';
     if (how==='today'){ a = b = olIso(new Date()); }
     else if (how==='week'){ var t = new Date(), s = new Date(t); s.setDate(t.getDate() - t.getDay()); var e = new Date(s); e.setDate(s.getDate() + 4); a = olIso(s); b = olIso(e); }   // Sunday → Thursday
-    OL.f[k+'From'] = a; OL.f[k+'To'] = b; render(); },
+    OL.f[k+'From'] = a; OL.f[k+'To'] = b; OL.dp = null; render(); },
   olSearch: function(){ OL.ms = null; OL.af = JSON.parse(JSON.stringify(OL.f)); render(); },
   olReset: function(){ OL.f = {}; OL.af = {}; OL.ms = null; render(); },
   olDrop: function(k, range){ if (range){ delete OL.f[k+'From']; delete OL.f[k+'To']; delete OL.af[k+'From']; delete OL.af[k+'To']; } else { delete OL.f[k]; delete OL.af[k]; } render(); },
 };
+// ---------- one field per date filter: a single-month calendar, first click = من, second click = إلى ----------
+var OL_DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'], OL_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function olDateField(k){
+  var d = OL_RANGES[k], a = OL.f[k+'From'] || '', b = OL.f[k+'To'] || '', open = OL.dp && OL.dp.k===k;
+  var txt = a || b ? 'من <bdi dir="ltr">' + (a || '…') + '</bdi> إلي <bdi dir="ltr">' + (b || '…') + '</bdi>' : '';
+  var h = '<label class="cms-label">'+d.l+'</label><div class="cms-field"><div class="ol-dpf"><div class="dp'+(open?' open':'')+'">'+
+    '<div class="ol-dp-in" role="button"'+A('olDpOpen', k)+'><span class="ol-dp-ic">'+ic('calendar',14,'#555',2)+'</span><span class="'+(txt?'v':'ph')+'">'+(txt || 'اختر الفترة')+'</span></div>';
+  if (open) h += olDpCal(k, a, b);
+  h += '</div><div class="ol-quick"><button class="ol-qb clr" title="مسح"'+A('olRange', k, 'clear')+'>'+ic('x',11,'#fff',3)+' مسح</button>'+
+    '<button class="ol-qb today"'+A('olRange', k, 'today')+'>'+ic('calendar',12,'#fff',2.2)+' اليوم</button><button class="ol-qb week"'+A('olRange', k, 'week')+'>'+ic('calendar',12,'#fff',2.2)+' هذا الاسبوع</button></div></div></div>';
+  return h;
+}
+function olDpCal(k, a, b){
+  var m = OL.dp.m, y = m.getFullYear(), mo = m.getMonth(), first = new Date(y, mo, 1), start = new Date(first), today = olIso(new Date());
+  start.setDate(1 - first.getDay());
+  var h = '<div class="ol-dp-pop"><div class="ol-dp-h"><button'+A('olDpNav', -1)+'>'+pathIc('M15 6l-6 6 6 6',14,null,2.4)+'</button><b>'+OL_MON[mo]+' '+y+'</b><button'+A('olDpNav', 1)+'>'+pathIc('M9 6l6 6-6 6',14,null,2.4)+'</button></div>'+
+    '<div class="ol-dp-g">'+OL_DOW.map(function(x){ return '<span class="dow">'+x+'</span>'; }).join('');
+  for (var i = 0; i < 42; i++){
+    var d = new Date(start); d.setDate(start.getDate() + i); var iso = olIso(d);
+    if (i===35 && d.getMonth()!==mo) break;
+    var cls = (d.getMonth()!==mo ? ' out' : '') + (iso===today ? ' today' : '') +
+      (a && b && iso > a && iso < b ? ' in' : '') + (iso===a || iso===b ? ' end' : '');
+    h += '<button class="d'+cls+'"'+A('olDpPick', k, iso)+'>'+d.getDate()+'</button>';
+  }
+  return h + '</div><div class="ol-dp-f">'+(OL.dp.picking ? 'اختار تاريخ النهاية' : 'اختار تاريخ البداية ثم النهاية')+'</div></div>';
+}
+Object.assign(OL_ACT, {
+  olDpOpen: function(k){
+    if (OL.dp && OL.dp.k===k){ OL.dp = null; render(); return; }
+    var a = parseDay(OL.f[k+'From'] || '') || new Date(); OL.dp = {k:k, m:new Date(a.getFullYear(), a.getMonth(), 1), picking:false}; OL.ms = null; render();
+  },
+  olDpNav: function(n){ var m = OL.dp.m; OL.dp.m = new Date(m.getFullYear(), m.getMonth() + (+n), 1); render(); },
+  olDpPick: function(k, iso){
+    if (!OL.dp.picking){ OL.f[k+'From'] = iso; OL.f[k+'To'] = iso; OL.dp.picking = true; render(); return; }
+    var a = OL.f[k+'From']; if (iso < a){ OL.f[k+'From'] = iso; OL.f[k+'To'] = a; } else OL.f[k+'To'] = iso;
+    OL.dp = null; render();
+  },
+});
+document.addEventListener('click', function(e){ if (OL.dp && root && !e.target.closest('.dp')){ OL.dp = null; render(); } });
+document.addEventListener('keydown', function(e){ if (e.key==='Escape' && OL.dp){ OL.dp = null; render(); } });
 // close an open multi select when clicking outside it; Enter in a filter = بحث
 document.addEventListener('click', function(e){ if (OL.ms && root && !e.target.closest('.ms') && !e.target.closest('[data-act="olMsOpen"]')){ OL.ms = null; render(); } });
 document.addEventListener('keydown', function(e){
