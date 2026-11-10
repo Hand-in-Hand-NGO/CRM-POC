@@ -1678,7 +1678,7 @@ function renderProfile(){
   h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
     '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>')+'</div>'+
     '<div class="cf-meta">'+[d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'].filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div></div>'+
-    '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('user',11,'#64748b',2.2)+'<b dir="ltr">'+esc(p)+'</b>'+(i ? '<em>رقم '+(i+1)+'</em>' : '')+'</span>'; }).join('')+'</div></div>';
+    '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('user',11,'#64748b',2.2)+'<b dir="ltr">'+esc(p)+'</b></span>'; }).join('')+'</div></div>';
   // section nav
   var nav = [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['request','بيانات الطلب'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   h += '<div class="cf-nav">'+nav.map(function(x){ return '<button'+A('pfGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
