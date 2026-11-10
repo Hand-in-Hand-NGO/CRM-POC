@@ -1783,11 +1783,11 @@ function renderProfile(){
     '<div class="cf-kv"><span>نتيجة اللجنة</span><b>'+esc(d.committee||'-')+'</b></div><div class="cf-kv"><span>التمويل</span><b>'+esc(funder || 'غير ممول')+'</b></div></div>';
   var evs = (PF_HOOKS.events ? PF_HOOKS.events(pf.id) : []).filter(function(e){ return e && e.at; }).sort(function(a, b){ return b.at - a.at; });
   var KIND = {call:['اتصال','#2563eb'], msg:['رسالة','#0d9488'], visit:['زيارة','#15803d'], follow:['متابعة','#7c3aed'], survey:['استبيان','#b45309'], maint:['صيانة','#c81e3a'], fund:['تمويل','#0b6db0'], note:['ملاحظة','#64748b']};
-  h += '<div class="cf-card"><div class="cf-card-h">الإجراءات اللي اتعملت <span class="cf-count">'+evs.length+'</span></div>'+(evs.length ? '<ul class="cf-acts">'+evs.slice(0, pf.allActs ? evs.length : 8).map(function(e){
+  h += '<div class="cf-card"><div class="cf-card-h">الإجراءات التي تمت <span class="cf-count">'+evs.length+'</span></div>'+(evs.length ? '<ul class="cf-acts">'+evs.slice(0, pf.allActs ? evs.length : 8).map(function(e){
     var k = KIND[e.kind] || KIND.note;
     return '<li><span class="cf-dot" style="background:'+k[1]+'"></span><div><div class="cf-act-t"><span class="cf-tag" style="color:'+k[1]+';border-color:'+k[1]+'33;background:'+k[1]+'12">'+k[0]+'</span><b>'+esc(e.title)+'</b></div>'+
       (e.sub ? '<div class="cf-act-s">'+esc(e.sub)+'</div>' : '')+'<div class="cf-act-w">'+esc(pfWhen(e.at))+(e.by ? ' · '+esc(e.by) : '')+'</div></div></li>';
-  }).join('')+'</ul>'+(evs.length > 8 ? '<button class="cf-more"'+A('pfAllActs')+'>'+(pf.allActs ? 'عرض أقل' : 'عرض الكل ('+evs.length+')')+'</button>' : '') : '<div class="cf-empty">لسه مفيش إجراءات</div>')+'</div>';
+  }).join('')+'</ul>'+(evs.length > 8 ? '<button class="cf-more"'+A('pfAllActs')+'>'+(pf.allActs ? 'عرض أقل' : 'عرض الكل ('+evs.length+')')+'</button>' : '') : '<div class="cf-empty">فارغ</div>')+'</div>';
   h += '</aside></div></div><div class="prof-foot"><button class="cms-btn cms-add"'+A('profSave')+'>'+pfIc('check',12,'#fff',2.6)+' حفظ</button><button class="cms-btn cf-cancel"'+A('closeProfile')+'>إغلاق</button></div></div>';
   return h;
 }
