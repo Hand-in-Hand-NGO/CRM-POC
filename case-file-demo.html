@@ -6416,6 +6416,29 @@ setInterval(function(){
   .ol-pager button{border:1px solid #ddd;background:#fff;color:#444;border-radius:8px;min-width:32px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer;}
   .ol-pager button.on{background:#0093e9;border-color:#0093e9;color:#fff;font-weight:800;}
   .ol-pager button:disabled{opacity:.45;cursor:default;}
+  /* merged view */
+  .ol-mode{display:inline-flex;border:1px solid #d2d6de;border-radius:10px;overflow:hidden;}
+  .ol-mode button{border:0;background:#f4f4f4;color:#444;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .ol-mode button+button{border-inline-start:1px solid #d2d6de;}
+  .ol-mode button.on{background:#0093e9;color:#fff;}
+  .ol-mhead th{top:0;font-size:12.5px;font-weight:800;text-align:right;padding:9px 12px;}
+  .ol-mtable td.ol-mc{text-align:right;vertical-align:top;white-space:normal;padding:10px 12px;min-width:210px;}
+  .ol-mtable td.ol-mc.ol-stick{min-width:300px;}
+  .ol-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 8px;align-items:baseline;font-size:12.5px;line-height:1.55;padding:1.5px 0;}
+  .ol-kv > span{color:gray;white-space:nowrap;}
+  .ol-kv > div{color:#1f2937;font-weight:600;min-width:0;}
+  .ol-kv > div.nw{white-space:nowrap;}
+  .ol-kv > div > b{font-weight:800;font-variant-numeric:tabular-nums;}
+  .ol-kv .ol-long{margin:0;max-width:240px;}
+  .ol-cpb{display:inline-flex;gap:3px;margin-inline-start:6px;vertical-align:middle;}
+  .ol-srch{width:22px;height:20px;border:1px solid #d2d6de;background:#fff;color:#333;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+  .ol-srch:hover{border-color:#67b9ec;color:#0093e9;}
+  .ol-cp{height:20px;border:0;background:#0093e9;color:#fff;border-radius:4px;padding:0 7px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+  .ol-cp.done{background:#31c860;}
+  .ol-kv-act{display:flex;align-items:center;gap:6px;margin-top:6px;}
+  .ol-kv-act .ol-pl{width:auto;flex-basis:auto;margin:0;}
+  .ol-mpick{display:block;cursor:pointer;margin:0;} .ol-mpick.off{opacity:.55;}
+  .ol-mpick small{display:block;font-size:11px;color:#64748b;line-height:1.6;}
 </style>
 <script>
 // ---------------- demo shell ----------------
@@ -6806,10 +6829,12 @@ function olTable(list){
   h += '<div class="ol-tools"><label class="ol-per">عرض <select class="cms-input" data-change="olPer">'+[[20,'20'],[50,'50'],[100,'100'],[0,'الكل']].map(function(o){ return '<option value="'+o[0]+'"'+(per===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></label>'+
     '<span class="ol-info">'+(list.length ? 'عرض '+(from+1)+' إلي '+(from+rows.length)+' من '+list.length+' سجل' : '')+'</span>'+
     '<span style="margin-inline-start:auto;"></span>'+
-    '<button class="ol-tb'+(OL_T.colsOpen?' on':'')+'"'+A('olColsToggle')+'>'+ic('list',13)+' تفاصيل الجدول <span class="cf-count">'+cols.length+'</span></button>'+
+    '<span class="ol-mode" title="شكل الجدول"><button class="'+(OL_T.mode==='merged'?'on':'')+'"'+A('olMode','merged')+'>أعمدة مضمومة</button><button class="'+(OL_T.mode!=='merged'?'on':'')+'"'+A('olMode','detail')+'>كل الأعمدة</button></span>'+
+    '<button class="ol-tb'+(OL_T.colsOpen?' on':'')+'"'+A('olColsToggle')+'>'+ic('list',13)+' تفاصيل الجدول <span class="cf-count">'+(OL_T.mode==='merged' ? olMVisible().length : cols.length)+'</span></button>'+
     '<button class="ol-tb"'+A('olPrint')+'>'+pathIc('M6 9V3h12v6 M6 18H4v-7h16v7h-2 M8 14h8v7H8z',13)+' طباعة</button>'+
     '<button class="ol-tb xl"'+A('olExcel')+'>'+ic('upload',13,'#fff')+' اكسيل</button></div>';
-  if (OL_T.colsOpen) h += olColsPanel();
+  if (OL_T.colsOpen) h += OL_T.mode==='merged' ? olMColsPanel() : olColsPanel();
+  if (OL_T.mode==='merged') h += olMergedBody(rows); else {
   // two header rows: section bands, then the columns
   var bands = [], last = null;
   cols.forEach(function(c){ if (last && last.g===c[2]) last.n++; else { last = {g:c[2], n:1}; bands.push(last); } });
@@ -6826,6 +6851,7 @@ function olTable(list){
   });
   if (!rows.length) h += '<tr><td colspan="'+(cols.length+3)+'" class="ol-empty">لم يتم العثور علي أي نتائج</td></tr>';
   h += '</tbody></table></div>';
+  }
   // pager
   if (pages > 1){
     var p = OL_T.page, nums = [];
@@ -6848,7 +6874,7 @@ Object.assign(OL_ACT, {
   olDelete: function(id){ var c = caseById(id) || demoCases().filter(function(x){ return x.id===id; })[0]; if (!c || !window.confirm('هل تريد حذف هذا الطلب؟\n' + c.name)) return; OL_T.hidden.push(id); S.toast = 'تم الحذف بنجاح'; render(); setTimeout(function(){ S.toast = null; render(); }, 1600); },
   olSync: function(){ S.toast = 'تم تحديث بيانات الطلب'; render(); setTimeout(function(){ S.toast = null; render(); }, 1400); },
   olExcel: function(){
-    var cols = olVisible(), list = olCurrentList();
+    var cols = OL_T.mode==='merged' ? olMExportCols() : olVisible(), list = olCurrentList();
     function q(v){ v = String(v==null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
     var csv = [cols.map(function(c){ return q(c[2]==='days' ? 'عدد الأيام ' + c[1] : c[1]); }).join(',')].concat(list.map(function(c){ var r = olRowData(c); return cols.map(function(col){ return q(olCsvVal(col, r)); }).join(','); })).join('\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'})); a.download = 'عرض الطلبات.csv'; document.body.appendChild(a); a.click(); a.remove();
@@ -6869,6 +6895,83 @@ renderApp = function(){
   if (S.toast) h += '<div class="toast">'+esc(S.toast)+'</div>';
   return h + '</div>';
 };
+// ---------------- merged view: several CMS columns in one cell ("label: value" lines), like the CMS cards ----------------
+// [key, title, group, fields] – field = [detail column key, label (default = column label), keep (show "—" when empty)]
+var OL_MCOLS = [
+  ['case','بيانات الحالة','personal', [['name','الاسم',1],['code','كود',1],['phone','الهاتف',1],['gov','المحافظة',1],['nid','رقم الهوية',1]]],
+  ['person','البيانات الشخصية','personal', [['gender','النوع',1],['age','السن',1],['dob','تاريخ الميلاد'],['marital','الحالة الإجتماعية'],['education','المؤهل'],['nationality','الجنسية'],['job','الوظيفة']]],
+  ['contact','التواصل والعنوان','contact', [['phone1','هاتف 1',1],['phone2','هاتف 2'],['district','المركز'],['area','المنطقة'],['address','عنوان الإقامة'],['idAddress','العنوان بالبطاقة']]],
+  ['resp','المسئول عن الحالة','contact', [['respName','الاسم'],['respRel','صلة القرابة'],['respPhone','الهاتف'],['respNid','رقم الهوية'],['respAddress','العنوان']]],
+  ['amp','بيانات البتر','amp', [['level','مستوى البتر',1],['side','الطرف المبتور',1],['ampDate','تاريخ البتر'],['cause','سبب البتر'],['causeDetails','التفاصيل'],['lastSurgery','اخر جراحة'],['chronic','أمراض مزمنة'],['devicesCount','عدد الأجهزة']]],
+  ['request','بيانات الطلب','request', [['date','تاريخ الطلب',1],['status','حالة الطلب',1],['callType','نوع المكالمة'],['sentTo','مُرسل إلى'],['heard','كيف عرفتنا'],['photo','التصوير'],['addedBy','أضيف بواسطة'],['addedAt','أضيف في']]],
+  ['funding','بيانات التمويل','request', [['funding','التمويل',1],['sponsor','الكفيل']]],
+  ['research','البحث واللجنة','research', [['researcher','الباحث',1],['assign','إسناد الباحث'],['researchDate','تاريخ البحث'],['signature','التوقيع'],['reported','تبليغ اللجنة'],['psych','التقييم النفسى'],['committeeNotes','ملاحظات اللجنة'],['postponeReason','سبب التأجيل'],['postponeUntil','مؤجل لتاريخ'],['abstain','مرات الامتناع'],['cancelReason','سبب إلغاء البحث']]],
+  ['booking','الحجوزات والإستقبال','booking', [['booking','تاريخ الحجز',1],['attend1','حضر (استقبال 1)'],['deliveryBooking','حجز الاستلام'],['attend2','حضر (استقبال 2)'],['fitting','تاريخ الاستلام'],['rec1Notes','ملاحظات استقبال 1'],['rec2Notes','ملاحظات استقبال 2']]],
+  ['eng','التصنيع والتقييم','eng', [['mfg','حالة التصنيع',1],['quality','جودة الطباعة'],['files','Files ready'],['printer','On printer'],['engA','التقييم الطبى والقياسات'],['engF','تقييم تسليم الطرف'],['mdmNotes','ملاحظات (MDM)'],['fitNotes','ملاحظات (Fitting)']]],
+  ['maint','الصيانة','maint', [['maintN','عدد مرات الصيانة',1],['maintDates','تواريخ الصيانة']]],
+  ['notes','الملاحظات','notes', [['notes','الملاحظات'],['notes2','الملاحظات 2'],['qualityNotes','الجودة'],['followNotes','المتابعة']]],
+  ['days','مدد المراحل (يوم)','days', [['dTotal','الطلب ← الإستلام',1],['d1','الطلب ← تعيين باحث'],['d2','تعيين ← البحث'],['d3','البحث ← التوقيع'],['d4','التوقيع ← اللجنة'],['d5','اللجنة ← حجز مقاس'],['d6','حجز مقاس ← التقييم'],['d9','المقاس ← الجاهزية'],['d7','الجاهزية ← حجز الاستلام'],['d8','حجز الاستلام ← التسليم']]],
+];
+var OL_COL_BY = {}; OL_COLS.forEach(function(c){ OL_COL_BY[c[0]] = c; });
+var OL_COPY = {name:1, code:1, phone:1, phone1:1, phone2:1, nid:1, respPhone:1};
+var OL_MODE_KEY = 'hihdemo_orders_mode_v1';
+(function(){ try { var v = JSON.parse(localStorage.getItem(OL_MODE_KEY) || 'null'); if (v){ OL_T.mode = v.mode || 'merged'; OL_T.mcols = v.mcols || null; } } catch(e){} if (!OL_T.mode) OL_T.mode = 'merged'; })();
+function olSaveMode(){ try { localStorage.setItem(OL_MODE_KEY, JSON.stringify({mode:OL_T.mode, mcols:OL_T.mcols})); } catch(e){} }
+function olMVisible(){ return OL_T.mcols ? OL_MCOLS.filter(function(c){ return c[0]==='case' || OL_T.mcols.indexOf(c[0])!==-1; }) : OL_MCOLS; }
+function olGroup(k){ return OL_GROUPS.filter(function(x){ return x[0]===k; })[0]; }
+// plain value of a detail column (for copy / search / excel)
+function olPlain(key, r){ var col = OL_COL_BY[key]; return String(col[4] ? col[4](r) : olCsvVal(col, r)); }
+function olMCell(mc, r){
+  var lines = mc[3].map(function(f){
+    var col = OL_COL_BY[f[0]], html = col[3](r), empty = html===olDash();
+    if (empty && !f[2]) return '';
+    var val;
+    if (OL_COPY[f[0]] && !empty){
+      var v = olPlain(f[0], r);
+      val = (f[0]==='name' ? '<b class="ol-name">'+esc(v)+'</b>' : '<b dir="ltr">'+esc(v)+'</b>')+
+        '<span class="ol-cpb"><button class="ol-srch" title="بحث بالقيمة"'+A('olFind', v)+'>'+pathIc('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.35-4.35',11,null,2.6)+'</button><button class="ol-cp" title="نسخ"'+A('olCopy', v)+'>نسخ</button></span>';
+    } else val = html;
+    return '<div class="ol-kv"><span>'+esc(f[1] || col[1])+':</span><div'+(OL_COPY[f[0]] && !empty ? ' class="nw"' : '')+'>'+val+'</div></div>';
+  }).join('');
+  if (mc[0]==='case') lines += '<div class="ol-kv-act">'+profBtn(r.c.id).replace('prof-line','prof-line ol-pl')+(DEMO.added.indexOf(r.c.id)!==-1 ? '<span class="dm-new">جديدة</span>' : '')+'</div>';
+  return lines || olDash();
+}
+function olMergedBody(rows){
+  var cols = olMVisible();
+  var h = '<div class="ol-tscroll" data-scroll="ol-tm"><table class="ol-table ol-mtable"><thead><tr class="ol-cols-row ol-mhead">'+
+    cols.map(function(c){ var g = olGroup(c[2]); return '<th class="'+(c[0]==='case'?'ol-stick':'')+'" style="background:'+g[2]+';color:'+g[3]+';border-top:3px solid '+g[3]+';">'+esc(c[1])+'</th>'; }).join('')+
+    '<th>نشط</th><th>حذف</th><th>Sync</th></tr></thead><tbody>';
+  rows.forEach(function(c){
+    var r = olRowData(c);
+    h += '<tr class="'+(r.rank===5 ? 'ol-r-maint' : 'ol-r-new')+'">'+cols.map(function(mc){ var mclick = mc[0]==='maint' && r.x.maintN;
+      return '<td class="ol-mc'+(mc[0]==='case'?' ol-stick':'')+(mclick?' ol-mclick':'')+'"'+(mclick ? ' title="عرض طلبات الصيانة"'+A('openProfile', c.id) : '')+'>'+olMCell(mc, r)+'</td>'; }).join('')+
+      '<td><button class="ol-act-tg '+(r.pf.active===false ? 'off' : 'on')+'" title="'+(r.pf.active===false ? 'تنشيط' : 'إلغاء التنشيط')+'"'+A('olActive', c.id)+'>'+(r.pf.active===false ? ic('x',12,'#fff',3) : ic('check',12,'#fff',3))+'</button></td>'+
+      '<td><button class="ol-act-del" title="حذف"'+A('olDelete', c.id)+'>'+ic('trash',13,'#fff',2.2)+'</button></td>'+
+      '<td><button class="ol-act-sync" title="Sync"'+A('olSync', c.id)+'>'+pathIc('M21 12a9 9 0 1 1-3-6.7L21 8 M21 3v5h-5',13,null,2.2)+'</button></td></tr>';
+  });
+  if (!rows.length) h += '<tr><td colspan="'+(cols.length+3)+'" class="ol-empty">لم يتم العثور علي أي نتائج</td></tr>';
+  return h + '</tbody></table></div>';
+}
+function olMColsPanel(){
+  var vis = olMVisible().map(function(c){ return c[0]; }), all = vis.length===OL_MCOLS.length;
+  return '<div class="ol-cols"><div class="ol-cols-h"><label class="cf-check"><input type="checkbox"'+(all?' checked':'')+A('olMColsAll', all ? '0' : '1')+'/> اختيار الكل</label><span>'+vis.length+' من '+OL_MCOLS.length+' عمود مضموم – كل عمود فيه البيانات المكتوبة تحته</span></div><div class="ol-cols-g">'+
+    OL_MCOLS.map(function(c){ var g = olGroup(c[2]), on = vis.indexOf(c[0])!==-1;
+      return '<label class="ol-cols-sec ol-mpick'+(on?'':' off')+'" style="background:'+g[2]+';"><span class="ol-cols-sh" style="color:'+g[3]+';"><span class="cf-check"><input type="checkbox"'+(on?' checked':'')+(c[0]==='case' ? ' disabled' : A('olMCol', c[0]))+'/> <b>'+esc(c[1])+'</b></span></span>'+
+        '<small>'+c[3].map(function(f){ return esc(f[1] || OL_COL_BY[f[0]][1]); }).join(' · ')+'</small></label>'; }).join('')+'</div></div>';
+}
+// detail columns behind the visible merged columns (for excel)
+function olMExportCols(){ var out = []; olMVisible().forEach(function(mc){ mc[3].forEach(function(f){ out.push(OL_COL_BY[f[0]]); }); }); return out; }
+Object.assign(OL_ACT, {
+  olMode: function(m){ OL_T.mode = m; OL_T.colsOpen = false; olSaveMode(); render(); },
+  olMCol: function(k){ var v = olMVisible().map(function(c){ return c[0]; }), i = v.indexOf(k); if (i===-1) v.push(k); else v.splice(i,1); OL_T.mcols = v; olSaveMode(); render(); },
+  olMColsAll: function(on){ OL_T.mcols = on==='1' ? OL_MCOLS.map(function(c){ return c[0]; }) : ['case']; olSaveMode(); render(); },
+  // copy without re-rendering: the button turns green "تم" for a second
+  olCopy: function(v, b, c, e){
+    var btn = e && e.target.closest('.ol-cp'); try { navigator.clipboard.writeText(v).catch(function(){}); } catch(err){}
+    if (btn){ btn.textContent = 'تم'; btn.classList.add('done'); setTimeout(function(){ btn.textContent = 'نسخ'; btn.classList.remove('done'); }, 1000); }
+  },
+  olFind: function(v){ DEMO.q = v; OL_T.page = 0; render(); var el = root.querySelector('.ol-list'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); },
+});
 Object.assign(ACT, OL_ACT);
 var _demoAdd = ACT.ncAdd, _demoProfile = renderProfile;
 // a case sent to research shows "قسم الأبحاث" as its stage in the file header
