@@ -6537,7 +6537,7 @@ var OL_SEGS = {
   filesReady:{l:'Files ready', o:[['','الكل','all'],['1','نعم','yes'],['0','لا','no']]},
   onPrinter:{l:'On printer', o:[['','الكل','all'],['1','نعم','yes'],['0','لا','no']]},
 };
-var OL_TEXTS = {caseName:{l:'اسم الحالة', pf:'name'}, personalID:{l:'رقم الهوية', pf:'nid', num:true}};
+var OL_TEXTS = {caseName:{l:'الاسم / الكود / التليفون', ph:'بحث بالاسم أو الكود أو رقم التليفون', pf:'name'}, personalID:{l:'رقم الهوية', pf:'nid', num:true}};
 var OL_RANGES = {
   age:{l:'العمر', num:true},
   orderDate:{l:'تاريخ تقديم الطلب', pf:'date'}, assignedDate:{l:'تاريخ إسناد الباحث', pf:'assignDate'}, researchDate:{l:'تاريخ البحث', pf:'researchDate'},
@@ -6547,8 +6547,7 @@ var OL_RANGES = {
 };
 // sections: [id, icon, title, rows] — row = [field, field] | ['range', key] | ['sub', title]
 var OL_SECS = [
-  ['personal', 'user', 'البيانات الشخصية', [['caseName','personalID'], ['gender','marital'], ['nationality','education'], ['job'], ['range','age']]],
-  ['contact', 'phone', 'التواصل والعنوان', [['city','district'], ['zone']]],
+  ['personal', 'user', 'البيانات الشخصية', [['caseName','personalID'], ['gender','marital'], ['nationality','education'], ['job','city'], ['district','zone'], ['range','age']]],
   ['amp', 'check', 'بيانات البتر والحالة الطبية', [['level','limb'], ['cause','chronic'], ['devices']]],
   ['request', 'history', 'بيانات الطلب', [['orderCode','callType'], ['heard','sponsor'], ['agent','finance'], ['active','photo'], ['range','orderDate']]],
   ['research', 'users', 'البحث واللجنة', [['researcher','orderStatus'], ['nextStep','postpone'], ['psych','acceptance'], ['abstained'],
@@ -6600,7 +6599,7 @@ function olField(k){
   var lab, inp;
   if (OL_FIELDS[k]){ lab = OL_FIELDS[k].l; inp = olMulti(k); }
   else if (OL_SEGS[k]){ lab = OL_SEGS[k].l; inp = olSeg(k); }
-  else { var t = OL_TEXTS[k]; lab = t.l; inp = '<input class="cms-input"'+(t.num ? ' inputmode="numeric" dir="ltr" style="text-align:right;"' : '')+' placeholder="'+t.l+'" value="'+esc(OL.f[k]||'')+'" data-k="ol-'+k+'" data-input="olText" data-enter="olSearch" data-a="'+k+'"/>'; }
+  else { var t = OL_TEXTS[k]; lab = t.l; inp = '<input class="cms-input"'+(t.num ? ' inputmode="numeric" dir="ltr" style="text-align:right;"' : '')+' placeholder="'+(t.ph || t.l)+'" value="'+esc(OL.f[k]||'')+'" data-k="ol-'+k+'" data-input="olText" data-enter="olSearch" data-a="'+k+'"/>'; }
   var act = olHas(OL.f[k]) ? ' act' : '';
   return '<label class="cms-label'+act+'">'+lab+'</label><div class="cms-field'+act+'">'+inp+'</div>';
 }
@@ -6652,7 +6651,14 @@ function olFiltered(list){
   var f = OL.af;
   return list.filter(function(c){
     var pf = profileOf(c.id) || {};
-    for (var k in OL_TEXTS){ var t = (f[k]||'').trim(); if (t && String(pf[OL_TEXTS[k].pf] || c[k==='caseName'?'name':''] || '').indexOf(t)===-1) return false; }
+    var nq = (f.caseName||'').trim();
+    if (nq){
+      var digits = nq.replace(/[٠-٩]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); }).replace(/\D/g, ''), code = c.stage==='measurement' ? '' : String(c.code||'');
+      var hit = String(pf.name || c.name || '').indexOf(nq)!==-1 || (code && code.toUpperCase().indexOf(nq.toUpperCase())!==-1) ||
+        (digits.length >= 3 && casePhones(c.id, c.phone).some(function(ph){ return ph.indexOf(digits)!==-1; }));
+      if (!hit) return false;
+    }
+    var iq = (f.personalID||'').trim(); if (iq && String(pf.nid||'').indexOf(iq)===-1) return false;
     for (var m in OL_FIELDS){ var d = OL_FIELDS[m];
       if (m==='orderCode'){ var codes = (f.orderCode||[]); if (codes.length && !olMatch(codes.map(function(x){ return x.toUpperCase ? (x==='allExcept'||x==='blank' ? x : x.toUpperCase()) : x; }), c.stage==='measurement' ? '' : (c.code||''))) return false; continue; }
       if (m==='city'){ if (!olMatch(f.city, c.gov)) return false; continue; }
