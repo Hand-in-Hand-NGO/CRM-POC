@@ -1402,7 +1402,7 @@ var OUTCOME_DEFS = [
   {key:'noAnswer', label:'لم يتم الرد', color:'#c81e3a'},
   {key:'unavailable', label:'غير متاح / مغلق', color:'#c81e3a'},
   {key:'notInterested', label:'عدم رغبة الحالة', color:'#5b6472'},
-  {key:'followUp', label:'هيتم التواصل', color:'#0b6db0', types:['measurement']},
+  {key:'followUp', label:'سيتم التواصل', color:'#0b6db0', types:['measurement']},
 ];
 var FAILED_OUTCOMES = ['noAnswer','unavailable'];
 var NOT_ANSWERED = FAILED_OUTCOMES.concat(['confirmNoAnswer']);
@@ -1677,7 +1677,7 @@ function caseStatus(t, cid){
   if (isHardToReach(cid)) return {key:'hardToReach', label:'صعب الوصول'};
   if (cs === 'noAnswer') return {key:'noAnswer', label:'لم يتم الرد'};
   if (cs === 'unavailable') return {key:'unavailable', label:'غير متاح / مغلق'};
-  if (cs === 'followUp') return {key:'followUp', label:'هيتم التواصل'};
+  if (cs === 'followUp') return {key:'followUp', label:'سيتم التواصل'};
   return {key:'pending', label:'لم يتم التواصل بعد'};
 }
 function isOpenStatus(key){ return ['booked','lockedElsewhere','notInterested','attended','noShow','cancelled','standby'].indexOf(key)===-1; }
@@ -2492,8 +2492,8 @@ var ACT = {
   ncDelPhone: function(i){ S.nc.extraPhones.splice(+i, 1); render(); },
   ncAdd: function(){
     var nc = S.nc, miss = ncMissing(nc);
-    if (miss.length){ nc.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(f){ return f[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
-    if (badExtraPhones(nc.extraPhones).length){ nc.tried = true; toast('اكتب رقم الهاتف اللي اتضاف (11 رقم) أو احذف الخانة'); return render(); }
+    if (miss.length){ nc.tried = true; toast('يرجى استكمال: ' + miss.slice(0,4).map(function(f){ return f[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' حقول أخرى' : '')); return render(); }
+    if (badExtraPhones(nc.extraPhones).length){ nc.tried = true; toast('يرجى كتابة رقم الهاتف المضاف (11 رقمًا) أو حذف الحقل'); return render(); }
     var res = ncResult(nc), dob = parseDay(nc.dob), age = dob ? Math.floor((startOfDay(nowDate()) - dob) / (365.25*86400000)) : 0;
     var result = res.ok ? 'مقبول الشروط' : res.list.map(function(x){ return x.t; }).join(' + ');
     var next = res.ok ? (nc.nextStep==='measurement' ? 'حجز مقاس مباشر' : 'قسم الأبحاث') : 'مؤجل';
@@ -2507,8 +2507,8 @@ var ACT = {
       if (pf){ Object.keys(nc).forEach(function(k){ if (k!=='tried') pf[k] = nc[k]; });
         pf.extraPhones = (nc.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); }).filter(function(x){ return x.length >= 10; });
         pf.addedBy = agentName(S.agentId); pf.addedAt = pfStamp(); pf.code = ''; pf.committee = '-'; pf.researcher = ''; pf.changes = []; pf.attachments = []; saveProfiles(); }
-      msg = 'اتضافت ' + c.name + ' ونزلت في حصالة التقييم الطبي والقياسات للحجز';
-    } else msg = res.ok ? 'اتضافت ' + nc.name + ' واتحولت لقسم الأبحاث' : 'اتسجلت ' + nc.name + ' – ' + result;
+      msg = 'تمت إضافة ' + c.name + ' وانتقلت إلى حصالة التقييم الطبي والقياسات للحجز';
+    } else msg = res.ok ? 'تمت إضافة ' + nc.name + ' وتحويلها إلى قسم الأبحاث' : 'تم تسجيل ' + nc.name + ' – ' + result;
     S.newCases.push({name:nc.name.trim(), phone:nc.phone, result:result, next:next, by:S.agentId, at:now()});
     S.audit.unshift({at:now(), who:actorName(), action:'إضافة حالة جديدة', tid:null, label:nc.name, detail:result + ' · ' + next});
     S.nc = emptyNewCase(); toast(msg); render();
@@ -4287,7 +4287,7 @@ var NC_OPTS = {
   callType:['وارد','صادر'], nationality:['مصري','سوداني','سوري','أخرى'], insured:['نعم','لا'], marital:['أعزب','متزوج','مطلق','أرمل'], gender:['ذكر','أنثى'],
   education:['بدون','ابتدائي','إعدادي','ثانوي','جامعي','فوق جامعي'], job:['لا يعمل','طالب','عامل','موظف','أعمال حرة','ربة منزل','أخرى'],
   heard:['فيسبوك','صديق / قريب','مستشفى','تليفزيون','أخرى'], chronic:['لا يوجد','سكر','ضغط','قلب','أخرى'],
-  side:['الأيمن','الأيسر','الاتنين'], cause:['حادث','سكر','ورم','عيب خلقي','أخرى'], devices:['نعم','لا'], sponsor:['بدون','إدخال كفيل جديد'], responsible:['لا','نعم'],
+  side:['الأيمن','الأيسر','الاثنين'], cause:['حادث','سكر','ورم','عيب خلقي','أخرى'], devices:['نعم','لا'], sponsor:['بدون','إدخال كفيل جديد'], responsible:['لا','نعم'],
 };
 function emptyNewCase(){
   return {date:isoDate(todayOffset()), callType:'', nationality:'', insured:'', nid:'', name:'', marital:'', gender:'', dob:'', gov:'', district:'', area:'',
@@ -4321,13 +4321,13 @@ function fmtDay(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+
 // eligibility shown before "أضف"
 function ncResult(nc){
   var out = [], today = (function(){ var n = typeof nowDate==='function' ? nowDate() : new Date(); n = new Date(n.getTime()); n.setHours(0,0,0,0); return n; })();
-  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ده ('+nc.level+') مش بنشتغل فيه حاليًا'});
+  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ('+nc.level+') غير متاح حاليًا'});
   var ls = parseDay(nc.lastSurgery);
-  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6)), until:fmtDay(addMonths(ls, 6))});
+  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكتمل 6 شهور بتاريخ '+fmtDay(addMonths(ls, 6)), until:fmtDay(addMonths(ls, 6))});
   var dob = parseDay(nc.dob);
-  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60)), until:fmtDay(addMonths(dob, 60))});
+  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'عمر الحالة أقل من 5 سنوات – تكتمل 5 سنوات بتاريخ '+fmtDay(addMonths(dob, 60)), until:fmtDay(addMonths(dob, 60))});
   var w = parseInt(nc.weight,10);
-  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكتر من 120)'});
+  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كجم (أكثر من 120)'});
   if (out.length) return {ok:false, list:out};
   if (!nc.level || !ls || !dob || !nc.weight) return {ok:null, list:[]};
   return {ok:true, list:[{k:'ok', t:'مقبول الشروط', d:''}]};
@@ -4536,10 +4536,10 @@ function renderProfile(){
   // the step whose turn it is: the first one that isn't done / skipped
   var cur = -1; for (var ci = 0; ci < steps.length; ci++){ if (steps[ci].s!=='done' && steps[ci].s!=='skip'){ cur = ci; break; } }
   if (cur!==-1) steps[cur].cur = true;
-  var SL = {done:'تم', now:'جاري', warn:'تنبيه', todo:'لسه', skip:'متخطى'};
+  var SL = {done:'تم', now:'جاري', warn:'تنبيه', todo:'لم يبدأ', skip:'تم تخطيه'};
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
-  h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – بيعدّي الأبحاث واللجنة ويروح للكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
-    return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' الدور هنا</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
+  h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
+    return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
       x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div></div></li>';
   }).join('')+'</ol>');
   h += sec('files', 'upload', 'مرفقات الحالة',
@@ -4593,8 +4593,8 @@ var PF_ACTIONS = {
   profSave: function(){
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
     var miss = ncMissing(d);
-    if (miss.length){ d.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
-    if (badExtraPhones(d.extraPhones).length){ d.tried = true; toast('اكتب رقم الهاتف اللي اتضاف (11 رقم) أو احذف الخانة'); return render(); }
+    if (miss.length){ d.tried = true; toast('يرجى استكمال: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' حقول أخرى' : '')); return render(); }
+    if (badExtraPhones(d.extraPhones).length){ d.tried = true; toast('يرجى كتابة رقم الهاتف المضاف (11 رقمًا) أو حذف الحقل'); return render(); }
     d.extraPhones = (d.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); });
     var st = pfStatus(pf.id, d);
     d.reqStatus = st.status; d.postponeReason = st.reasons.join(' + ');
@@ -4609,7 +4609,7 @@ var PF_ACTIONS = {
     d.changes = old.changes.concat(ch); delete d.tried;
     PROFILES.store[pf.id] = d; saveProfiles();
     PF_HOOKS.afterSave(pf.id, d, ch);
-    PROFILES.open = null; toast(ch.length ? 'اتحفظ ملف ' + d.name + ' (' + ch.length + ' تعديل)' : 'مفيش تعديلات'); render();
+    PROFILES.open = null; toast(ch.length ? 'تم حفظ ملف ' + d.name + ' (' + ch.length + ' تعديل)' : 'لا توجد تعديلات'); render();
   },
 };
 Object.assign(ACT, PF_ACTIONS);
@@ -4965,7 +4965,7 @@ function renderNewCase(){
   var phRows = phoneRows(f, nc.extraPhones, 'nc-ex-', 'ncExtraPhone', 'ncDelPhone', 'ncAddPhone', nc.tried);
   h += sec('contact', 'phone', 'التواصل والعنوان',
     phRows+
-    (dup ? '<div class="rule-hint warn">الرقم ده متسجل قبل كده لحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>' : '')+
+    (dup ? '<div class="rule-hint warn">هذا الرقم مسجل من قبل للحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>' : '')+
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
     row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
   var devRow = nc.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
@@ -4982,13 +4982,13 @@ function renderNewCase(){
   h += '</div><aside class="cf-side">';
   // result before "أضف" (same place as the request status in ملف الحالة)
   h += '<div class="cf-card"><div class="cf-card-h">النتيجة</div>';
-  if (res.ok===null) h += '<div class="cf-status nc-pend">لسه</div>';
+  if (res.ok===null) h += '<div class="cf-status nc-pend">في الانتظار</div>';
   else h += '<div class="cf-status '+(res.ok ? 'ok' : 'warn')+'">'+(res.ok ? 'مقبول' : 'مؤجل')+'</div>'+
     res.list.map(function(x){ return '<div class="cf-kv"><span>'+esc(x.t)+'</span>'+(x.d ? '<b>'+esc(x.d)+'</b>' : '')+'</div>'; }).join('')+
-    (res.ok ? '<div class="cf-kv"><span>الخطوة التالية</span><b>'+(nc.nextStep==='measurement' ? 'حجز مقاس مباشر – الحالة هتنزل في حصالة التقييم الطبي والقياسات' : 'قسم الأبحاث')+'</b></div>' : '');
+    (res.ok ? '<div class="cf-kv"><span>الخطوة التالية</span><b>'+(nc.nextStep==='measurement' ? 'حجز مقاس مباشر – ستنتقل الحالة إلى حصالة التقييم الطبي والقياسات' : 'قسم الأبحاث')+'</b></div>' : '');
   h += '<div class="nc-acts"><button class="cms-btn cms-add"'+A('ncAdd')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button><button class="cms-btn cms-cancel"'+A('ncReset')+'>'+ic('x',12,'#fff',3)+' مسح</button></div></div>';
   var mine = S.newCases.filter(function(x){ return x.by===S.agentId; });
-  h += '<div class="cf-card"><div class="cf-card-h">اتسجل النهارده <span class="cf-count">'+mine.length+'</span></div>'+(mine.length ? '<ul class="cf-acts">'+mine.slice().reverse().map(function(x){
+  h += '<div class="cf-card"><div class="cf-card-h">تم تسجيله اليوم <span class="cf-count">'+mine.length+'</span></div>'+(mine.length ? '<ul class="cf-acts">'+mine.slice().reverse().map(function(x){
     return '<li><span class="cf-dot" style="background:'+(x.next==='مؤجل' ? '#f59e0b' : '#15803d')+'"></span><div><div class="cf-act-t"><b>'+esc(x.name)+'</b></div><div class="cf-act-s" dir="ltr" style="text-align:right;">'+esc(x.phone)+phCopy(x.phone)+'</div>'+
       '<div class="cf-act-s">'+esc(x.result)+' · '+esc(x.next)+'</div><div class="cf-act-w">'+fmtTime(x.at)+'</div></div></li>';
   }).join('')+'</ul>' : '<div class="cf-empty">فارغ</div>')+'</div>';
@@ -6238,7 +6238,7 @@ var PF_HOOKS = {
     Object.keys(S.surveys).forEach(function(k){
       if (k.split('|')[1]!==id) return;
       var sv = S.surveys[k]; if (!sv.at && sv.status!=='closed') return;
-      out.push({at:sv.at || now(), kind:'survey', title:sv.status==='done' ? 'استبيان جودة الخدمة' + (sv.alert ? ' – فيه تنبيه' : '') : sv.status==='closed' ? 'استبيان – اتقفل لم يرد' : 'استبيان – جاري',
+      out.push({at:sv.at || now(), kind:'survey', title:sv.status==='done' ? 'استبيان جودة الخدمة' + (sv.alert ? ' – يوجد تنبيه' : '') : sv.status==='closed' ? 'استبيان – أُغلق لعدم الرد' : 'استبيان – جاري',
         sub:Object.keys(sv.forms||{}).map(function(f){ return sv.forms[f].name; }).join('، '), by:sv.by ? agentName(sv.by) : ''});
     });
     (S.emergencies||[]).forEach(function(e){ if (e.cid===id) out.push({at:e.at, kind:'maint', title:'حجز طوارئ – ' + e.kind, sub:dayLabel(e.dateOffset) + (e.details ? ' · ' + e.details : ''), by:e.byName}); });
@@ -6250,7 +6250,7 @@ var PF_HOOKS = {
     var fa = FUND.alloc && FUND.alloc[id];
     if (fa) out.push({at:fa.at, kind:'fund', title:'تمويل – ' + fa.company, sub:'', by:fa.by || ''});
     var fh = FUND.holds && FUND.holds[id];
-    if (fh) out.push({at:fh.at, kind:'fund', title:'إيقاف من صفحة التمويل', sub:[fh.until ? 'لحد ' + pfWhen(fh.until) : 'مفتوح', fh.note].filter(Boolean).join(' · '), by:fh.by || ''});
+    if (fh) out.push({at:fh.at, kind:'fund', title:'إيقاف من صفحة التمويل', sub:[fh.until ? 'حتى ' + pfWhen(fh.until) : 'مفتوح', fh.note].filter(Boolean).join(' · '), by:fh.by || ''});
     fundNotesFor(id).forEach(function(n){ out.push({at:n.at, kind:'note', title:'ملاحظة من التمويل', sub:n.text, by:n.by}); });
     return out;
   },
@@ -6712,8 +6712,8 @@ function renderDemoList(){
   var h = '<div class="ol-wrap">';
   h += OL_SECS.map(olSection).join('');
   var ap = olApplied();
-  h += '<div class="ol-bar"><div class="ol-applied">'+(ap.length ? '<b style="color:#0b3a57;">الفلاتر المطبقة:</b>'+ap.map(function(x){ return '<span class="ms-chip"><em>'+esc(x[1])+':</em> '+esc(x[2])+'<b title="إزالة"'+A('olDrop', x[0], x[3]||'')+'>×</b></span>'; }).join('') : 'لا توجد فلاتر مطبقة – كل الطلبات ظاهرة')+
-    (dirty ? ' <span class="ol-dirty">فيه تعديلات لم يتم البحث بها</span>' : '')+'</div>'+
+  h += '<div class="ol-bar"><div class="ol-applied">'+(ap.length ? '<b style="color:#0b3a57;">الفلاتر المطبقة:</b>'+ap.map(function(x){ return '<span class="ms-chip"><em>'+esc(x[1])+':</em> '+esc(x[2])+'<b title="إزالة"'+A('olDrop', x[0], x[3]||'')+'>×</b></span>'; }).join('') : 'لا توجد فلاتر مطبقة – يتم عرض جميع الطلبات')+
+    (dirty ? ' <span class="ol-dirty">توجد تعديلات لم يتم البحث بها</span>' : '')+'</div>'+
     '<button class="ol-btn reset"'+A('olReset')+'>'+ic('x',12,'#fff',3)+' مسح الكل</button>'+
     '<button class="ol-btn search"'+A('olSearch')+'>'+pathIc('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.35-4.35',14,'#fff',2.4)+' بحث</button></div></div>';
   var q = DEMO.q.trim(), list = olFiltered(demoCases()).filter(function(c){ return !q || c.name.indexOf(q)!==-1 || (c.code||'').indexOf(q.toUpperCase())!==-1 || (c.phone||'').indexOf(q)!==-1; });
@@ -6771,7 +6771,7 @@ function olDpCal(k, a, b){
       (a && b && iso > a && iso < b ? ' in' : '') + (iso===a || iso===b ? ' end' : '');
     h += '<button class="d'+cls+'"'+A('olDpPick', k, iso)+'>'+d.getDate()+'</button>';
   }
-  return h + '</div><div class="ol-dp-f">'+(OL.dp.picking ? 'اختار تاريخ النهاية' : 'اختار تاريخ البداية ثم النهاية')+'</div></div>';
+  return h + '</div><div class="ol-dp-f">'+(OL.dp.picking ? 'اختر تاريخ النهاية' : 'اختر تاريخ البداية ثم النهاية')+'</div></div>';
 }
 Object.assign(OL_ACT, {
   olDpOpen: function(k){
@@ -7081,7 +7081,7 @@ function olMergedBody(rows){
 }
 function olMColsPanel(){
   var vis = olMVisible().map(function(c){ return c[0]; }), all = vis.length===OL_MCOLS.length;
-  return '<div class="ol-cols"><div class="ol-cols-h"><label class="cf-check"><input type="checkbox"'+(all?' checked':'')+A('olMColsAll', all ? '0' : '1')+'/> اختيار الكل</label><span>'+vis.length+' من '+OL_MCOLS.length+' عمود مضموم – كل عمود فيه البيانات المكتوبة تحته</span></div><div class="ol-cols-g">'+
+  return '<div class="ol-cols"><div class="ol-cols-h"><label class="cf-check"><input type="checkbox"'+(all?' checked':'')+A('olMColsAll', all ? '0' : '1')+'/> اختيار الكل</label><span>'+vis.length+' من '+OL_MCOLS.length+' عمود مضموم – كل عمود يضم البيانات المكتوبة أسفله</span></div><div class="ol-cols-g">'+
     OL_MCOLS.map(function(c){ var g = olGroup(c[2]), on = vis.indexOf(c[0])!==-1;
       return '<label class="ol-cols-sec ol-mpick'+(on?'':' off')+'" style="background:'+g[2]+';"><span class="ol-cols-sh" style="color:'+g[3]+';"><span class="cf-check"><input type="checkbox"'+(on?' checked':'')+(c[0]==='case' ? ' disabled' : A('olMCol', c[0]))+'/> <b>'+esc(c[1])+'</b></span></span>'+
         '<small>'+c[3].map(function(f){ return esc(f[1] || OL_COL_BY[f[0]][1]); }).join(' · ')+'</small></label>'; }).join('')+'</div></div>';
