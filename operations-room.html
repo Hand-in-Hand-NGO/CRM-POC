@@ -122,6 +122,7 @@
     .ft-cols b{font-size:22px;line-height:1.1;} .ft-cols span{font-size:11.5px;opacity:.85;} .ft-cols i{width:1px;align-self:stretch;background:rgba(255,255,255,.25);}
     .ft-bar{width:100%;height:5px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:7px;overflow:hidden;} .ft-bar em{display:block;height:100%;background:#4ade80;border-radius:4px;}
     .focus-total small{font-size:10.5px;opacity:.8;margin-top:3px;}
+    .k-dec{display:inline-block;font-weight:700;border-radius:8px;padding:1px 9px;} .k-dec.post{background:#fff4e5;color:#b45309;} .k-dec.rej{background:#fde8ec;color:#c81e3a;}
     .focus-head-l{display:flex;align-items:center;gap:10px;}
     .undo-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #b9dcf5;background:#f0f8fe;color:#0b3a57;border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;text-align:right;}
     .undo-btn span{display:flex;flex-direction:column;line-height:1.35;} .undo-btn b{font-size:13px;} .undo-btn em{font-style:normal;font-size:11px;color:#64748b;}
@@ -2194,9 +2195,17 @@ function safeUrl(u){ return /^https?:\/\//i.test(u||'') ? u : ''; }
     {id:'K1', name:'مروان أحمد سعيد', gov:'القاهرة', phone:'01012345671', decision:'مقبول – طرف تحت الركبة', day:T-1, level:'تحت الركبة', age:34},
     {id:'K2', name:'ياسمين خالد عمر', gov:'الجيزة', phone:'01112345672', phone2:'01098765432', decision:'مقبول – طرف تحت الكوع', day:T-1, level:'تحت الكوع', age:27},
     {id:'K3', name:'عبد الله محمود حسن', gov:'أسيوط', phone:'01212345673', decision:'مؤجل – استكمال الأوراق', day:T-2, level:'فوق الركبة', age:51},
-    {id:'K4', name:'سلمى إبراهيم فتحي', gov:'المنيا', phone:'01512345674', phone2:'01223344556', decision:'مقبول – طرف فوق الركبة', day:T, level:'فوق الركبة', age:16},
+    {id:'K4', name:'سلمى إبراهيم فتحي', gov:'المنيا', phone:'01512345674', phone2:'01223344556', decision:'مرفوض – الحالة غير مستوفية لشروط البحث', day:T, level:'فوق الركبة', age:16},
     {id:'K5', name:'حازم يوسف عادل', gov:'سوهاج', phone:'01012345675', decision:'مؤجل – إعادة كشف بعد 3 شهور', day:T, level:'تحت الركبة', age:9},
-  ].map(function(k, i){ k.assignee = AGENTS[i % AGENTS.length].id; k.status = null; k.tries = 0; return k; });
+    {id:'K6', name:'نجوى سمير عبد الفتاح', gov:'الفيوم', phone:'01112345676', decision:'مرفوض – عندها طرف من جهة أخرى', day:T-1, level:'تحت الكوع', age:42},
+  ];
+  // تبليغ اللجنة is only for postponed / rejected decisions; an accepted case goes to the medical-evaluation pool to be booked
+  S.committee = S.committee.filter(function(k){
+    if (k.decision.indexOf('مقبول')!==0) return true;
+    var id = 'C-K' + k.id.slice(1);
+    if (!CASE_MAP[id]){ var c = mk(id, k.name, k.gov, 'بدون', k.level, k.age, 0, '', 'measurement', 1, 0); c.phone = k.phone; c.baseFunding = c.funding; CASES.push(c); CASE_MAP[id] = c; }
+    return false;
+  }).map(function(k, i){ k.assignee = AGENTS[i % AGENTS.length].id; k.status = null; k.tries = 0; return k; });
   findTask('t1').priority = {'C-1013':true, 'C-1007':true};
   findTask('t2').priority = {'C-1005':true, 'C-1011':true};
   findTask('t3').priority = {'C-1018':true};
@@ -5098,7 +5107,7 @@ function renderCommittee(){
   h += '<table class="cms-table"><thead><tr><th>الاسم</th><th>الهاتف</th><th>المحافظة</th><th>قرار اللجنة</th><th>عدد محاولات الاتصال</th><th></th></tr></thead><tbody>'+
     list.map(function(k){
       var done = k.status==='notified';
-      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td class="k-phone">'+[k.phone].concat(k.phone2 ? [k.phone2] : []).map(function(ph, i){ return '<div'+(i?' class="k-ph2"':'')+'>'+(i ? '' : '')+'<span dir="ltr">'+fmtPhone(ph)+'</span><button class="k-copy'+(S.copiedPhone===ph?' done':'')+'"'+A('copyPhone', ph)+'>'+(S.copiedPhone===ph ? ic('check',12,null,2.4)+'تم' : ic('copy',12)+'نسخ')+'</button></div>'; }).join('')+'</td><td>'+esc(k.gov)+'</td><td>'+esc(k.decision)+'<div class="k-day">'+dayLabel(k.day)+'</div></td>'+
+      return '<tr'+(done?' class="k-done"':'')+'><td style="font-weight:700;">'+esc(k.name)+'</td><td class="k-phone">'+[k.phone].concat(k.phone2 ? [k.phone2] : []).map(function(ph, i){ return '<div'+(i?' class="k-ph2"':'')+'>'+(i ? '' : '')+'<span dir="ltr">'+fmtPhone(ph)+'</span><button class="k-copy'+(S.copiedPhone===ph?' done':'')+'"'+A('copyPhone', ph)+'>'+(S.copiedPhone===ph ? ic('check',12,null,2.4)+'تم' : ic('copy',12)+'نسخ')+'</button></div>'; }).join('')+'</td><td>'+esc(k.gov)+'</td><td>'+'<span class="k-dec '+(k.decision.indexOf('مرفوض')===0 ? 'rej' : 'post')+'">'+esc(k.decision)+'</span>'+'<div class="k-day">'+dayLabel(k.day)+'</div></td>'+
         '<td class="k-tries">'+(k.tries||0)+'</td>'+
         '<td class="k-acts">'+(done ? '' : '<button class="cms-btn cms-add"'+A('committeeAsk', k.id)+'>تم التبليغ</button> <button class="cms-btn" style="background:#f39c12;"'+A('committeeResult', k.id, 'noAnswer')+'>تعذر الوصول</button>')+'</td></tr>';
     }).join('')+'</tbody></table></div>';
