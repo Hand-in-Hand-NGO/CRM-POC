@@ -2493,6 +2493,7 @@ var ACT = {
   ncAdd: function(){
     var nc = S.nc, miss = ncMissing(nc);
     if (miss.length){ nc.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(f){ return f[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
+    if (badExtraPhones(nc.extraPhones).length){ nc.tried = true; toast('اكتب رقم الهاتف اللي اتضاف (11 رقم) أو احذف الخانة'); return render(); }
     var res = ncResult(nc), dob = parseDay(nc.dob), age = dob ? Math.floor((startOfDay(nowDate()) - dob) / (365.25*86400000)) : 0;
     var result = res.ok ? 'مقبول الشروط' : res.list.map(function(x){ return x.t; }).join(' + ');
     var next = res.ok ? (nc.nextStep==='measurement' ? 'حجز مقاس مباشر' : 'قسم الأبحاث') : 'مؤجل';
@@ -4376,8 +4377,18 @@ var PF_ICONS = {user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21a8 8 0 0 1 16 0',
 // copy button next to a phone number (a span, so it also works inside other buttons)
 function phCopy(ph){ ph = String(ph||'').replace(/\D/g,''); return ph.length >= 10 ? '<span class="ph-copy" role="button" title="نسخ الرقم"'+A('copyPhone', ph)+'>'+pfIc('copy',12)+'</span>' : ''; }
 function pfIc(n, size, color, sw){ return '<svg width="'+(size||13)+'" height="'+(size||13)+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="'+(sw||2)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+PF_ICONS[n]+'"></path></svg>'; }
+// old phone1 / phone2 values become extra numbers (no fixed empty phone fields)
+function pfNormPhones(p){
+  if (!p) return p;
+  if (p.phone1 || p.phone2 || p.extraPhones==null){
+    var main = String(p.phone||'').replace(/\D/g,''), out = [];
+    [p.phone1, p.phone2].concat(p.extraPhones || []).forEach(function(x){ x = String(x||'').replace(/\D/g,''); if (x.length >= 10 && x!==main && out.indexOf(x)===-1) out.push(x); });
+    p.extraPhones = out; p.phone1 = ''; p.phone2 = '';
+  }
+  return p;
+}
 function profileOf(id){
-  if (PROFILES.store[id]) return PROFILES.store[id];
+  if (PROFILES.store[id]) return pfNormPhones(PROFILES.store[id]);
   var bb = PF_HOOKS.base(id), d = bb.d, c = bb.c, b = d || c; if (!b) return null;
   var seed = 0; for (var i=0;i<id.length;i++) seed = (seed*31 + id.charCodeAt(i)) % 9973;
   function pick(a, n){ return a[(seed + (n||0)) % a.length]; }
@@ -4398,7 +4409,7 @@ function profileOf(id){
   };
   if (c && c.pf) Object.assign(p, c.pf);
   var st0 = pfStatus(id, p); p.reqStatus = st0.status; p.postponeReason = st0.reasons.join(' + '); p.postponeUntil = st0.until || '';
-  PROFILES.store[id] = p; return p;
+  pfNormPhones(p); PROFILES.store[id] = p; return p;
 }
 // request status comes from the data: the eligibility result decides مقبول / مؤجل and why.
 // Cases already past measurement (delivery / maintenance) were accepted before and stay مقبول.
@@ -4426,6 +4437,20 @@ function casePhones(id, main){
   list.forEach(function(x){ x = String(x||'').replace(/\D/g,''); if (x.length >= 10 && out.indexOf(x)===-1) out.push(x); });
   return out;
 }
+
+// الهاتف + one field per added number (رقم هاتف 1, 2, …) with a delete button; an added field must be filled
+function phoneRows(f, list, pre, act, delAct, addAct, tried){
+  var cells = [f(['phone','الهاتف',1,'num']).replace(/<\/div>$/, '<button class="cf-add-ph" title="إضافة رقم"'+A(addAct)+'>+</button></div>')];
+  (list || []).forEach(function(x, i){
+    var v = String(x||'').replace(/\D/g,''), bad = tried && v.length < 10;
+    cells.push('<label class="cms-label">رقم هاتف '+(i+1)+' <span class="req">*</span></label><div class="cms-field cf-ph-field"><input class="cms-input'+(bad?' nc-miss':'')+'" type="text" inputmode="numeric" placeholder="اكتب رقم هاتف '+(i+1)+'" value="'+esc(x)+'" data-k="'+pre+i+'" data-input="'+act+'" data-a="'+i+'"/>'+
+      '<button class="cf-del-ph" title="حذف الرقم"'+A(delAct, i)+'>'+pfIc('x',12,null,2.4)+'</button></div>');
+  });
+  var out = ''; for (var i=0;i<cells.length;i+=2) out += '<div class="cms-row">'+cells[i]+(cells[i+1] || '<div></div><div></div>')+'</div>';
+  return out;
+}
+// added numbers that are empty or short (they must be written or deleted)
+function badExtraPhones(list){ return (list || []).filter(function(x){ return String(x||'').replace(/\D/g,'').length < 10; }); }
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4460,11 +4485,7 @@ function renderProfile(){
     row(['marital','الحالة الإجتماعية',1,'select'], ['nationality','الجنسية',1,'select'])+row(['education','المؤهل الدراسى',1,'select'], ['job','الوظيفة',1,'select'])+
     row(['insured','مؤمن عليه',1,'select']), age ? '<span class="cf-h-note">السن: '+esc(age)+'</span>' : '');
   h += sec('contact', 'upload', 'التواصل والعنوان',
-    '<div class="cms-row">'+f(['phone','الهاتف',1,'num']).replace(/<\/div>$/, '<button class="cf-add-ph" title="إضافة رقم"'+A('profAddPhone')+'>+</button></div>')+f(['phone1','رقم هاتف 1',0,'num'])+'</div>'+
-    (function(){ var ex = d.extraPhones || [], cells = [f(['phone2','رقم هاتف 2',0,'num'])];
-      ex.forEach(function(x, i){ cells.push('<label class="cms-label">رقم هاتف '+(i+3)+'</label><div class="cms-field cf-ph-field"><input class="cms-input" type="text" inputmode="numeric" placeholder="رقم هاتف '+(i+3)+'" value="'+esc(x)+'" data-k="pf-ex-'+i+'" data-input="profExtraPhone" data-a="'+i+'"/>'+
-        '<button class="cf-del-ph" title="حذف الرقم"'+A('profDelPhone', i)+'>'+pfIc('x',12,null,2.4)+'</button></div>'); });
-      var out = ''; for (var i=0;i<cells.length;i+=2) out += '<div class="cms-row">'+cells[i]+(cells[i+1] || '<div></div><div></div>')+'</div>'; return out; })()+
+    phoneRows(f, d.extraPhones, 'pf-ex-', 'profExtraPhone', 'profDelPhone', 'profAddPhone', d.tried)+
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
     row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
   var devRow = d.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
@@ -4552,7 +4573,7 @@ function pfDayMs(s){ var d = parseDay(s); return d ? d.getTime() : 0; }
 var PF_ACTIONS = {
   openProfile: function(id){
     loadProfiles(); var p = profileOf(id); if (!p) return;
-    PROFILES.open = {id:id, draft:JSON.parse(JSON.stringify(p)), showChanges:false}; render();
+    PROFILES.open = {id:id, draft:JSON.parse(JSON.stringify(pfNormPhones(p))), showChanges:false}; render();
   },
   closeProfile: function(){ PROFILES.open = null; render(); },
   pfGo: function(sec){ var el = document.getElementById('cf-' + sec); if (el) el.scrollIntoView({block:'start', behavior:'smooth'}); },
@@ -4573,9 +4594,8 @@ var PF_ACTIONS = {
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
     var miss = ncMissing(d);
     if (miss.length){ d.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
-    d.extraPhones = (d.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); }).filter(Boolean);
-    var badPh = d.extraPhones.filter(function(x){ return x.length < 10; })[0];
-    if (badPh){ toast('الرقم ' + badPh + ' ناقص'); return render(); }
+    if (badExtraPhones(d.extraPhones).length){ d.tried = true; toast('اكتب رقم الهاتف اللي اتضاف (11 رقم) أو احذف الخانة'); return render(); }
+    d.extraPhones = (d.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); });
     var st = pfStatus(pf.id, d);
     d.reqStatus = st.status; d.postponeReason = st.reasons.join(' + ');
     if (st.status!=='مؤجل') d.postponeUntil = ''; else if (st.until && !d.postponeUntil) d.postponeUntil = st.until;
@@ -4942,12 +4962,9 @@ function renderNewCase(){
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
     row(['marital','الحالة الإجتماعية',1,'select'], ['nationality','الجنسية',1,'select'])+row(['education','المؤهل الدراسى',1,'select'], ['job','الوظيفة',1,'select'])+
     row(['insured','مؤمن عليه',1,'select'])+(age ? '<div class="nc-age">السن: '+esc(age)+'</div>' : ''));
-  var ex = nc.extraPhones || [], cells = [f(['phone2','رقم هاتف 2',0,'num'])];
-  ex.forEach(function(x, i){ cells.push('<label class="cms-label">رقم هاتف '+(i+3)+'</label><div class="cms-field cf-ph-field"><input class="cms-input" type="text" inputmode="numeric" placeholder="رقم هاتف '+(i+3)+'" value="'+esc(x)+'" data-k="nc-ex-'+i+'" data-input="ncExtraPhone" data-a="'+i+'"/>'+
-    '<button class="cf-del-ph" title="حذف الرقم"'+A('ncDelPhone', i)+'>'+pfIc('x',12,null,2.4)+'</button></div>'); });
-  var phRows = ''; for (var i=0;i<cells.length;i+=2) phRows += '<div class="cms-row">'+cells[i]+(cells[i+1] || '<div></div><div></div>')+'</div>';
+  var phRows = phoneRows(f, nc.extraPhones, 'nc-ex-', 'ncExtraPhone', 'ncDelPhone', 'ncAddPhone', nc.tried);
   h += sec('contact', 'phone', 'التواصل والعنوان',
-    '<div class="cms-row">'+f(['phone','الهاتف',1,'num']).replace(/<\/div>$/, '<button class="cf-add-ph" title="إضافة رقم"'+A('ncAddPhone')+'>+</button></div>')+f(['phone1','رقم هاتف 1',0,'num'])+'</div>'+phRows+
+    phRows+
     (dup ? '<div class="rule-hint warn">الرقم ده متسجل قبل كده لحالة: '+esc(dup.name)+' <span dir="ltr">'+(dup.code||'')+'</span></div>' : '')+
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
     row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
@@ -6837,8 +6854,8 @@ var OL_COLS = [
   ['dob','تاريخ الميلاد','personal', function(r){ return olDt(r.pf.dob); }, function(r){ return r.pf.dob; }],
   ['age','السن','personal', function(r){ return olNum(r.c.age!=null ? r.c.age : ''); }, function(r){ return r.c.age; }],
   ['phone','الهاتف','contact', function(r){ return olPh(r.pf.phone || r.c.phone); }, function(r){ return r.pf.phone || r.c.phone; }],
-  ['phone1','رقم هاتف 1','contact', function(r){ return olPh(r.pf.phone1); }, function(r){ return r.pf.phone1; }],
-  ['phone2','رقم هاتف 2','contact', function(r){ return olPh(r.pf.phone2); }, function(r){ return r.pf.phone2; }],
+  ['phone1','رقم هاتف 1','contact', function(r){ return olPh((r.pf.extraPhones||[])[0]); }, function(r){ return (r.pf.extraPhones||[])[0] || ''; }],
+  ['phone2','رقم هاتف 2','contact', function(r){ return olPh((r.pf.extraPhones||[])[1]); }, function(r){ return (r.pf.extraPhones||[])[1] || ''; }],
   ['gov','المحافظة','contact', function(r){ return olV(r.c.gov); }, function(r){ return r.c.gov; }],
   ['district','القسم او المركز','contact', function(r){ return olV(r.pf.district); }],
   ['area','المنطقة او الشياخة','contact', function(r){ return olV(r.pf.area); }],
