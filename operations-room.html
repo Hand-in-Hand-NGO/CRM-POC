@@ -110,6 +110,7 @@
     .btn-emg{background:var(--danger) !important;color:#fff !important;border-color:var(--danger) !important;}
     .emg-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
     .emg-bar .btn-emg{display:inline-flex;align-items:center;gap:6px;}
+    .emg-visit{display:inline-flex;align-items:center;gap:6px;background:#fff1f2;color:#9f1239;border:1px solid #f3b9c3;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;}
     .cms-btn.btn-emg{margin-inline-start:8px;display:inline-flex;align-items:center;gap:5px;}
     .emg-line{display:flex;align-items:center;gap:5px;width:100%;margin:-4px 0 10px;border:1px solid #f3b9c3;background:#fff7f8;color:var(--danger);border-radius:8px;padding:4px 8px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;}
     .emg-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 12px;margin-bottom:6px;font:inherit;cursor:pointer;text-align:right;}
@@ -3362,9 +3363,8 @@ function renderAgentFocus(){
   if (S.agentTab==='survey') return h + renderSurveyTab() + '</div>';
   if (S.agentTab==='followup') return h + renderFollowTab() + '</div>';
   if (S.agentTab==='inbound'){
-    if (canDo(S.agentId, 'emergency')) h += '<div class="emg-bar"><button class="btn btn-emg"'+A('openEmg')+'>'+ic('alert',14,'#fff',2)+' حجز طوارئ</button>'+
-      (emgFor(todayOffset()).length ? '<button class="link-btn"'+A('openEmgDay', todayOffset())+'>طوارئ النهارده ('+emgFor(todayOffset()).length+')</button>' : '')+'</div>';
-    return h + (canDo(S.agentId, 'inbound') ? renderInbound() + (S.inbound.pick ? renderInboundCase() : '') : '') + '</div>';
+    if (canDo(S.agentId, 'emergency') && emgFor(todayOffset()).length) h += '<div class="emg-bar"><button class="link-btn"'+A('openEmgDay', todayOffset())+'>طوارئ النهارده ('+emgFor(todayOffset()).length+')</button></div>';
+    return h + (canDo(S.agentId, 'inbound') || canDo(S.agentId, 'emergency') ? renderInbound() + (S.inbound.pick ? renderInboundCase() : '') : '') + '</div>';
   }
   if (S.justConfirmed) return h + renderConfirmedCard(S.justConfirmed) + '</div>';
   if (confNow.length) return h + renderConfirmCard(confNow[0], conf.length) + '</div>';
@@ -5592,7 +5592,8 @@ function renderInboundCase(){
 // past the daily emergency limit the agent only gets a warning. No confirmation call.
 // =====================================================================
 var EMG_KINDS = ['كسر أو عطل في الطرف','جرح أو ألم من السوكت','الطرف مش مظبوط ومش قادر يمشي','مشكلة في المفصل أو القدم','أخرى'];
-var EMG_VISITS = [['maintDelivery','صيانة'],['maintEval','تقييم صيانة']];
+// emergency bookings are for maintenance evaluation only
+var EMG_VISITS = [['maintEval','تقييم صيانة']];
 function emgFor(off){ return (S.emergencies||[]).filter(function(e){ return e.dateOffset===off && e.status==='booked'; }); }
 function emgPerson(id){
   var d = DELIVERED_MAP[id]; if (d) return {id:d.id, name:d.name, phone:d.phone, code:d.code, gov:d.gov, level:d.level};
@@ -5632,7 +5633,7 @@ function renderEmg(){
     (e.fixed ? '' : '<button class="link-btn"'+A('emgUnpick')+'>تغيير</button>')+'</div>';
   h += '<div class="field"><label class="field-label">نوع الطوارئ</label><div class="reason-pills">'+EMG_KINDS.map(function(k){ return '<button class="'+(e.kind===k?'on':'')+'"'+A('emgSet', 'kind', k)+'>'+k+'</button>'; }).join('')+'</div>'+
     '<textarea class="note-input" rows="2" style="margin-top:8px;" placeholder="تفاصيل الطوارئ'+(e.kind==='أخرى' ? ' (مطلوب)' : '')+'" data-k="emg-det" data-input="emgDetails">'+esc(e.details)+'</textarea></div>';
-  h += '<div class="field"><label class="field-label">نوع الزيارة</label><div class="seg">'+EMG_VISITS.map(function(v){ return '<button class="seg-btn'+(e.visit===v[0]?' on':'')+'"'+A('emgSet', 'visit', v[0])+'>'+v[1]+'</button>'; }).join('')+'</div></div>';
+  h += '<div class="field"><label class="field-label">نوع الزيارة</label><div class="emg-visit">'+ic('alert',13,'#c81e3a',2)+' تقييم صيانة</div></div>';
   h += '<div class="field"><label class="field-label">الميعاد</label><div style="display:flex;gap:8px;flex-wrap:wrap;">'+
     '<input class="text-input" type="date" style="width:170px;" min="'+isoDate(todayOffset())+'" value="'+isoDate(e.dateOffset)+'" data-k="emg-date" data-change="emgDate"/>'+
     '<input class="text-input" type="time" style="width:130px;" value="'+esc(e.time)+'" data-k="emg-time" data-change="emgTime"/><span class="field-hint" style="align-self:center;margin:0;">داخل المؤسسة</span></div>'+
@@ -5865,7 +5866,7 @@ function renderEmgDay(){
   return h + '</tbody></table></div></div>';
 }
 Object.assign(ACT, {
-  openEmg: function(cid){ S.emg = {q:'', cid:cid||null, fixed:!!cid, kind:'', details:'', visit:'maintDelivery', dateOffset:todayOffset(), time:'', note:''}; render(); },
+  openEmg: function(cid){ S.emg = {q:'', cid:cid||null, fixed:!!cid, kind:'', details:'', visit:'maintEval', dateOffset:todayOffset(), time:'', note:''}; render(); },
   closeEmg: function(){ S.emg = null; render(); },
   emgQ: function(v){ S.emg.q = v; render(); },
   emgPick: function(id){ S.emg.cid = id; render(); },
