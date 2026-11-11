@@ -806,7 +806,7 @@ var OUTCOME_DEFS = [
   {key:'noAnswer', label:'لم يتم الرد', color:'#c81e3a'},
   {key:'unavailable', label:'غير متاح / مغلق', color:'#c81e3a'},
   {key:'notInterested', label:'عدم رغبة الحالة', color:'#5b6472'},
-  {key:'followUp', label:'هيتم التواصل', color:'#0b6db0', types:['measurement']},
+  {key:'followUp', label:'سيتم التواصل', color:'#0b6db0', types:['measurement']},
 ];
 var FAILED_OUTCOMES = ['noAnswer','unavailable'];
 var NOT_ANSWERED = FAILED_OUTCOMES.concat(['confirmNoAnswer']);
@@ -1024,13 +1024,13 @@ function researchOf(c){
     contact:{name:pick(['إسلام','محمود','هاني','وليد'],10)+' '+pick(['سيد','إمام','فتحي'],11), rel:pick(['الابن الأكبر','الأخ','ابن العم','الجار'],12), phone:p.phone1 || p.phone, addr:'نفس العنوان'},
     illness: s%3 ? [{name:p.name||c.name, kind:pick(['سكر','ضغط','سكر + قلب','حساسية صدر'],13), cost:200 + (s%5)*100, note:''}] : [],
     econ: tex > tin ? 'سيئ' : tin - tex < 1000 ? 'متوسط' : 'جيد',
-    home:{desc:pick(['شقة في مساكن إيجار جديد','بيت ريفي دور واحد','شقة إيجار قديم','حجرة في بيت العيلة'],14), walls:pick(['حيطان محارة','طوب أحمر بدون محارة','حيطان دهان قديم'],15), roof:pick(['مسلح','خشب','صاج'],16),
+    home:{desc:pick(['شقة في مساكن إيجار جديد','بيت ريفي دور واحد','شقة إيجار قديم','غرفة في بيت العائلة'],14), walls:pick(['جدران مطلية','طوب أحمر بدون محارة','جدران بطلاء قديم'],15), roof:pick(['مسلح','خشب','صاج'],16),
       floor:pick(['بلاط','سيراميك','أسمنت'],17), rooms:1 + s%3, land: s%4===0 ? 'قيراط' : 'لا يوجد', cattle: s%3===0 ? 'جاموسة' : 'لا يوجد', note:''},
-    devices:[['تلاجة', 1, pick(['متوسطة','قديمة'],18)], ['غسالة', 1, pick(['عادي','قديمة'],19)], ['تليفزيون', 1, 'متوسط']],
+    devices:[['ثلاجة', 1, pick(['متوسطة','قديمة'],18)], ['غسالة', 1, pick(['عادي','قديمة'],19)], ['تليفزيون', 1, 'متوسط']],
     furniture:[['سرير', 1 + s%2, 'متوسط'], ['دولاب', 1, pick(['قديم','متوسط'],20)], ['كنبة', 1, 'قديمة']],
     bio:{pain: s%4===0, wound: s%5===0, insured: p.insured==='نعم', insurer: p.insured==='نعم' ? 'تأمين صحي حكومي' : '', hasLimb: p.devices==='نعم', limbs: p.devices==='نعم' ? 1 : 0, agree:true},
     needs: pick(['طرف صناعي '+(p.level||c.level), 'طرف صناعي + مساعدة شهرية', 'طرف صناعي وعلاج طبيعي'], 21),
-    opinion: 'الحالة '+(male ? 'يعاني' : 'تعاني')+' من بتر '+(p.level||c.level)+' '+(p.side ? '('+p.side+') ' : '')+'نتيجة '+(p.causeDetails && p.causeDetails!=='أخرى' ? p.causeDetails : p.cause && p.cause!=='أخرى' ? p.cause : 'سبب مرضي')+'، '+(male ? 'ويعيش' : 'وتعيش')+' مع أسرة مكونة من '+(fam.length+1)+' أفراد في '+pick(['شقة في مساكن إيجار جديد','بيت ريفي بسيط','شقة إيجار قديم','حجرة في بيت العيلة'],14)+'. '+
+    opinion: 'الحالة '+(male ? 'يعاني' : 'تعاني')+' من بتر '+(p.level||c.level)+' '+(p.side ? '('+p.side+') ' : '')+'نتيجة '+(p.causeDetails && p.causeDetails!=='أخرى' ? p.causeDetails : p.cause && p.cause!=='أخرى' ? p.cause : 'سبب مرضي')+'، '+(male ? 'ويعيش' : 'وتعيش')+' مع أسرة مكونة من '+(fam.length+1)+' أفراد في '+pick(['شقة في مساكن إيجار جديد','بيت ريفي بسيط','شقة إيجار قديم','غرفة في بيت العائلة'],14)+'. '+
       'دخل الأسرة '+tin+' جنيه شهريًا والمصروفات '+tex+' جنيه، والوضع الاقتصادي '+(tex > tin ? 'سيئ ولا يسمح بتحمل تكلفة الطرف' : 'محدود')+'. '+
       'البتر '+(male ? 'أثّر على قدرته' : 'أثّر على قدرتها')+' على الحركة والعمل، و'+(male ? 'يحتاج' : 'تحتاج')+' إلى طرف صناعي '+(male ? 'يساعده' : 'يساعدها')+' على ممارسة '+(male ? 'حياته' : 'حياتها')+' بشكل طبيعي. يوصى بقبول الحالة.',
     researchDate:rd, assignDate:ad, researcher:p.researcher || RESEARCHERS[s % RESEARCHERS.length]};
@@ -1223,7 +1223,7 @@ function renderSurveys(){
   var list = fundedSurveys().filter(function(r){ var c = caseById(r.cid); return (!q || c.name.indexOf(q)!==-1) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.company || funderOf(c)===f.company); });
   var h = '';
   h += '<div class="card"><div class="list-head"><span class="count"><b>'+list.length+'</b> استبيان</span></div><div class="table-scroll"><table class="ftable"><thead><tr>'+
-    '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>النماذج</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>اتعمل</th><th></th></tr></thead><tbody>';
+    '<th>الحالة</th><th>الممول</th><th>الزيارة</th><th>النماذج</th><th>التقييم العام</th><th>الترشيح</th><th>التنبيهات</th><th>أُنجز</th><th></th></tr></thead><tbody>';
   list.forEach(function(r){
     var c = caseById(r.cid), ov = r.answers.overall, rr = SV_RATES.filter(function(x){ return x[0]===ov; })[0];
     h += '<tr><td><div class="who"><b>'+esc(c.name)+profBtn(c.id)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span>'+esc(c.gov)+'</span></div></div></td>'+
@@ -1236,7 +1236,7 @@ function renderSurveys(){
       '<td><button class="btn btn-default btn-sm btn-r"'+A('showSurvey', r.key)+'><i class="fa fa-eye"></i> عرض الإجابات</button></td></tr>';
   });
   h += '</tbody></table>';
-  if (!list.length) h += '<div class="empty"><i class="fa fa-star-o"></i>لسه مفيش استبيانات للحالات الممولة</div>';
+  if (!list.length) h += '<div class="empty"><i class="fa fa-star-o"></i>لا توجد استبيانات للحالات الممولة بعد</div>';
   return h + '</div></div>';
 }
 function renderTable(){
@@ -1260,11 +1260,11 @@ function renderTable(){
     h += '<tr class="'+(on?'sel':'')+'">'+
       '<td class="cb"><input type="checkbox"'+(on?' checked':'')+A('toggleSel', c.id)+'/></td>'+
       '<td><div class="who"><b>'+esc(c.name)+profBtn(c.id)+'</b><div class="sub">'+(hasCode(c) ? '<span class="code">'+c.code+'</span>' : '')+'<span dir="ltr">'+fmtPhone(c.phone)+phCopy(c.phone)+'</span>'+
-        (others.length ? '<span class="limb-chip"'+A('showLimbs', c.id)+' title="الحالة ليها طرف تاني"><i class="fa fa-clone"></i> طرف تاني</span>' : '')+'</div></div></td>'+
+        (others.length ? '<span class="limb-chip"'+A('showLimbs', c.id)+' title="للحالة طرف آخر"><i class="fa fa-clone"></i> طرف آخر</span>' : '')+'</div></div></td>'+
       '<td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td><td>'+storeLbl(c.stage)+'</td>'+
       '<td><div class="wait '+wc+'"><b>'+c.waitingDays+' يوم</b><div class="bar"><i style="width:'+Math.min(100, Math.round(c.waitingDays/365*100))+'%"></i></div></div></td>'+
       '<td>'+(fu ? '<span class="pill p-funded"><i class="fa fa-check"></i>'+esc(fu)+'</span>'+(a ? '<span class="pill-sub">'+isoFromMs(a.at)+'</span>' : '') : '<span class="pill p-unf">غير ممولة</span>')+'</td>'+
-      '<td>'+(hd ? '<span class="pill p-held"><i class="fa fa-pause"></i>'+(hd.until ? 'لحد '+isoFromMs(hd.until) : 'موقوفة')+'</span>'+(hd.note ? '<span class="pill-sub note-cell">'+esc(hd.note)+'</span>' : '') : '<span class="muted">—</span>')+'</td>'+
+      '<td>'+(hd ? '<span class="pill p-held"><i class="fa fa-pause"></i>'+(hd.until ? 'حتى '+isoFromMs(hd.until) : 'موقوفة')+'</span>'+(hd.note ? '<span class="pill-sub note-cell">'+esc(hd.note)+'</span>' : '') : '<span class="muted">—</span>')+'</td>'+
       '<td>'+(notesOf(c).length ? '<button class="note-chip"'+A('showNotes', c.id)+' title="كل الملاحظات"><span>'+esc(notesOf(c)[notesOf(c).length-1].text)+'</span>'+
         (notesOf(c).length > 1 ? '<b>'+notesOf(c).length+'</b>' : '')+'</button>' : '<span class="muted">—</span>')+'</td>'+
       '<td><div class="row-act rs-act"><button class="icon-btn" title="عرض البحث الاجتماعي"'+A('rsView', c.id)+'><i class="fa fa-eye"></i></button>'+
@@ -1288,8 +1288,8 @@ function renderSelBar(){
     '<button class="btn btn-default"'+A('openNote')+'><i class="fa fa-comment-o"></i> ملاحظة</button>'+
     (post ? '' : '<button class="btn btn-warning"'+A('openHold')+'><i class="fa fa-pause-circle"></i> إيقاف</button>')+
     '<select data-change="setCompany"><option value="">— الممول —</option>'+companies().map(function(c){ return '<option'+(F.company===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'<option value="__new">+ ممول جديد…</option></select>'+
-    (post ? '<button class="btn btn-primary"'+A('sendPostponed')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-paper-plane"></i> تمويل وإرسال للحجز</button></div>'
-      : '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختار الممول الأول"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>');
+    (post ? '<button class="btn btn-primary"'+A('sendPostponed')+(F.company ? '' : ' disabled title="اختر الممول أولًا"')+'><i class="fa fa-paper-plane"></i> تمويل وإرسال للحجز</button></div>'
+      : '<button class="btn btn-primary"'+A('assignFunder')+(F.company ? '' : ' disabled title="اختر الممول أولًا"')+'><i class="fa fa-check"></i> تعيين الممول</button></div>');
 }
 
 // ---- استبيانات شركات التمويل
@@ -1298,13 +1298,13 @@ function renderForms(){
   var forms = SVF.forms.slice().sort(function(a,b){ return (a.company||'').localeCompare(b.company||'') || (b.savedAt||0) - (a.savedAt||0); });
   var h = '<div class="card forms-card"><div class="list-head"><span class="count"><i class="fa fa-list-alt"></i> استبيانات شركات التمويل <b>'+forms.length+'</b></span><span class="sp"></span>'+
     '<button class="btn btn-primary btn-sm btn-r"'+A('svfNew')+'><i class="fa fa-plus"></i> نموذج جديد</button></div>';
-  if (!forms.length) return h + '<div class="empty"><i class="fa fa-list-alt"></i>لسه مفيش نماذج</div></div>';
-  h += '<div class="table-scroll"><table class="ftable"><thead><tr><th>النموذج</th><th>شركة التمويل</th><th>الحالة</th><th>الأسئلة</th><th>الحالات الممولة</th><th>اتجاوب</th><th>آخر تعديل</th><th></th></tr></thead><tbody>';
+  if (!forms.length) return h + '<div class="empty"><i class="fa fa-list-alt"></i>لا توجد نماذج بعد</div></div>';
+  h += '<div class="table-scroll"><table class="ftable"><thead><tr><th>النموذج</th><th>شركة التمويل</th><th>الحالة</th><th>الأسئلة</th><th>الحالات الممولة</th><th>عدد الإجابات</th><th>آخر تعديل</th><th></th></tr></thead><tbody>';
   forms.forEach(function(f){
     var p = svfPublished(f), co = p ? p.company : f.company, n = co ? CASES.concat(waitingPostponed()).filter(function(c){ return funderOf(c)===co; }).length : 0;
     var answered = Object.keys(F.surveys||{}).filter(function(k){ var r = F.surveys[k]; return r.forms && r.forms[f.id] && r.forms[f.id].status==='done'; }).length;
-    h += '<tr><td><b>'+esc(f.name || 'نموذج من غير اسم')+'</b></td><td>'+(co ? '<span class="pill p-funded">'+esc(co)+'</span>' : '<span class="muted">—</span>')+'</td>'+
-      '<td>'+(p ? '<span class="svx-badge pub">منشور · إصدار '+p.v+'</span>' : '<span class="svx-badge draft">مسودة</span>')+(p && svfDirty(f) ? '<span class="svx-badge draft">تعديلات مش منشورة</span>' : '')+'</td>'+
+    h += '<tr><td><b>'+esc(f.name || 'نموذج بدون اسم')+'</b></td><td>'+(co ? '<span class="pill p-funded">'+esc(co)+'</span>' : '<span class="muted">—</span>')+'</td>'+
+      '<td>'+(p ? '<span class="svx-badge pub">منشور · إصدار '+p.v+'</span>' : '<span class="svx-badge draft">مسودة</span>')+(p && svfDirty(f) ? '<span class="svx-badge draft">تعديلات غير منشورة</span>' : '')+'</td>'+
       '<td>'+(p ? p.qs.length : (f.draft||[]).length)+'</td><td>'+n+'</td><td>'+answered+'</td>'+
       '<td>'+(f.savedAt ? isoFromMs(f.savedAt) : p ? isoFromMs(p.at) : '—')+'</td>'+
       '<td><div class="row-act"><button class="btn btn-default btn-sm btn-r"'+A('svfEdit', f.id)+'><i class="fa fa-pencil"></i> تعديل</button>'+
@@ -1315,7 +1315,7 @@ function renderForms(){
 function renderCompanies(){
   var rows = companies().map(function(co){ return {co:co, n:CASES.filter(function(c){ return inStores(c) && funderOf(c)===co; }).length}; }).filter(function(r){ return r.n; });
   var h = '<div class="card"><div class="card-head"><i class="fa fa-building"></i>الحالات حسب الممول</div><div class="card-body">';
-  if (!rows.length) return h + '<div class="empty" style="padding:10px;">مفيش حالات ممولة</div></div></div>';
+  if (!rows.length) return h + '<div class="empty" style="padding:10px;">لا يوجد حالات ممولة</div></div></div>';
   var max = Math.max.apply(null, rows.map(function(r){ return r.n; }));
   rows.forEach(function(r){
     h += '<div class="co-row"><b>'+esc(r.co)+'</b><span class="tot">'+r.n+' حالة</span><div class="co-bar"><i style="width:'+(r.n/max*100)+'%;background:#0093e9;"></i></div></div>';
@@ -1326,7 +1326,7 @@ function renderCompanies(){
 function renderHistory(){
   var log = F.store.log;
   var h = '<div class="card"><div class="card-head"><i class="fa fa-history"></i>السجل<span class="cnt">'+log.length+'</span></div><div class="card-body">';
-  if (!log.length) return h + '<div class="empty" style="padding:10px;"><i class="fa fa-clock-o"></i>لسه مفيش عمليات</div></div></div>';
+  if (!log.length) return h + '<div class="empty" style="padding:10px;"><i class="fa fa-clock-o"></i>لا توجد عمليات بعد</div></div></div>';
   log.slice().reverse().slice(0, 15).forEach(function(b){
     h += '<div class="hist"><b>'+esc(b.action)+'</b> · '+b.ids.length+' حالة'+(b.detail ? ' <span class="muted">('+esc(b.detail)+')</span>' : '')+
       '<div class="meta">'+isoFromMs(b.at)+' '+timeFromMs(b.at)+' · '+esc(b.by)+'</div></div>';
@@ -1334,7 +1334,7 @@ function renderHistory(){
   return h + '</div></div>';
 }
 
-function noteRow(n){ return '<div class="note-row"><div>'+esc(n.text)+'</div><span>'+esc(n.by)+' · '+isoFromMs(n.at)+' '+timeFromMs(n.at)+(n.group > 1 ? ' · مع '+(n.group-1)+' حالة تانية' : '')+(n.toOps ? ' · اتبعتت للأوبريشن'+(n.day ? ' – يتحجز يوم '+n.day : '') : '')+'</span></div>'; }
+function noteRow(n){ return '<div class="note-row"><div>'+esc(n.text)+'</div><span>'+esc(n.by)+' · '+isoFromMs(n.at)+' '+timeFromMs(n.at)+(n.group > 1 ? ' · مع '+(n.group-1)+' حالة أخرى' : '')+(n.toOps ? ' · أُرسلت لفريق العمليات'+(n.day ? ' – يُحجز يوم '+n.day : '') : '')+'</span></div>'; }
 function modalShell(title, body, foot){
   return '<div class="modal-backdrop fade in"></div><div class="modal show-modal" '+A('closeModalBg')+'><div class="modal-dialog"><div class="modal-content">'+
     '<div class="modal-header"><button class="close"'+A('closeModal')+'>&times;</button><h4 class="modal-title">'+title+'</h4></div>'+
@@ -1344,21 +1344,21 @@ function renderModal(){
   var m = F.modal; if (!m) return '';
   if (m.kind==='limb'){
     var c = caseById(m.cid), others = otherLimbs(c), free = others.filter(function(o){ return inStores(o) && F.sel.indexOf(o.id)===-1; });
-    var body = '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>الحالة <b>'+esc(c.name)+'</b> ليها طرف تاني</div></div>'+
+    var body = '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>الحالة <b>'+esc(c.name)+'</b> لها طرف آخر</div></div>'+
       '<table class="table table-bordered"><thead><tr><th>الكود</th><th>مستوى البتر</th><th>المرحلة</th><th>التمويل</th></tr></thead><tbody>'+others.map(function(o){
         return '<tr><td class="code">'+(hasCode(o) ? o.code : '—')+'</td><td>'+esc(o.level)+'</td><td>'+TASK_TYPES[o.stage].label+'</td><td>'+(funderOf(o) ? esc(funderOf(o)) : '<span class="muted">غير ممولة</span>')+'</td></tr>';
       }).join('')+'</tbody></table>';
-    var foot = (m.fromSelect && free.length ? '<button class="btn btn-primary"'+A('selectOthers', c.id)+'><i class="fa fa-plus"></i> اختار الطرف التاني كمان</button>' : '')+
-      '<button class="btn btn-default"'+A('closeModal')+'>'+(m.fromSelect && free.length ? 'ده بس' : 'تمام')+'</button>';
-    return modalShell('الحالة ليها طرف تاني', body, foot);
+    var foot = (m.fromSelect && free.length ? '<button class="btn btn-primary"'+A('selectOthers', c.id)+'><i class="fa fa-plus"></i> اختر الطرف الآخر أيضًا</button>' : '')+
+      '<button class="btn btn-default"'+A('closeModal')+'>'+(m.fromSelect && free.length ? 'هذه فقط' : 'حسنًا')+'</button>';
+    return modalShell('للحالة طرف آخر', body, foot);
   }
   if (m.kind==='note'){
     var nIds = m.ids, one = nIds.length===1 ? caseById(nIds[0]) : null;
     return modalShell(one ? 'ملاحظة على ' + esc(one.name) : 'ملاحظة على ' + nIds.length + ' حالة',
 
       '<textarea class="form-control" rows="4" data-k="note-text" data-input="setNoteText" placeholder="اكتب الملاحظة">'+esc(m.text)+'</textarea>'+
-      '<div class="ops-opt"><label style="margin:0;display:inline-flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox"'+(m.toOps?' checked':'')+A('toggleNoteOps')+'/> ابعتها للأوبريشن</label>'+
-        (m.toOps ? '<span>يتحجزلها يوم (اختياري)</span><input class="form-control" type="date" value="'+esc(m.day||'')+'" data-k="note-day" data-change="setNoteDay"/>' : '')+'</div>'+
+      '<div class="ops-opt"><label style="margin:0;display:inline-flex;gap:6px;align-items:center;cursor:pointer;"><input type="checkbox"'+(m.toOps?' checked':'')+A('toggleNoteOps')+'/> أرسلها لفريق العمليات</label>'+
+        (m.toOps ? '<span>يُحجز لها يوم (اختياري)</span><input class="form-control" type="date" value="'+esc(m.day||'')+'" data-k="note-day" data-change="setNoteDay"/>' : '')+'</div>'+
       (one && notesOf(one).length ? '<div class="notes-list">'+notesOf(one).slice().reverse().map(noteRow).join('')+'</div>' : ''),
       '<button class="btn btn-primary"'+A('saveNote')+'><i class="fa fa-check"></i> حفظ الملاحظة</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
   }
@@ -1370,7 +1370,7 @@ function renderModal(){
   if (m.kind==='survey'){
     var recs = m.keys.map(function(k){ var r = F.surveys[k]; r.key = k; return r; }), sc = caseById(recs[0].cid);
     return modalShell('استبيان متابعة جودة الخدمة – ' + esc(sc.name), recs.map(function(r){
-      return '<div class="sv-head"><b>'+TASK_TYPES[r.type].label+'</b> · زيارة '+esc(r.day)+' · اتعمل '+(r.at ? isoFromMs(r.at) : '')+' بواسطة '+esc(r.by||'')+' · الممول: '+esc(funderOf(sc))+'</div>'+
+      return '<div class="sv-head"><b>'+TASK_TYPES[r.type].label+'</b> · زيارة '+esc(r.day)+' · أُنجز '+(r.at ? isoFromMs(r.at) : '')+' بواسطة '+esc(r.by||'')+' · الممول: '+esc(funderOf(sc))+'</div>'+
         (r.alerts && r.alerts.length ? '<div class="note note-warn"><i class="fa fa-exclamation-triangle"></i><div>'+r.alerts.map(esc).join('<br>')+'</div></div>' : '')+svRecHtml(r);
     }).join('<hr>'), '<button class="btn btn-default"'+A('closeModal')+'>إغلاق</button>');
   }
@@ -1388,7 +1388,7 @@ function renderModal(){
       '<div class="hold-opts"><button class="'+(m.mode==='open'?'on':'')+'"'+A('setHoldMode','open')+'><b><i class="fa fa-pause"></i> إيقاف</b></button>'+
         '<button class="'+(m.mode==='days'?'on':'')+'"'+A('setHoldMode','days')+'><b><i class="fa fa-clock-o"></i> إيقاف لمدة</b></button></div>'+
       (m.mode==='days' ? '<div class="dur-row"><span>لمدة</span><input class="form-control" type="text" inputmode="numeric" data-k="hold-days" value="'+esc(m.days)+'" data-input="setHoldDays"/><span>يوم</span>'+
-        (parseInt(m.days,10)>0 ? '<span class="muted">· لحد '+isoFromMs(Date.now() + parseInt(m.days,10)*86400000)+'</span>' : '')+'</div>' : '')+
+        (parseInt(m.days,10)>0 ? '<span class="muted">· حتى '+isoFromMs(Date.now() + parseInt(m.days,10)*86400000)+'</span>' : '')+'</div>' : '')+
       '<div class="form-group" style="margin:0;"><label>ملاحظات</label><textarea class="form-control" rows="3" data-k="hold-note" data-input="setHoldNote" placeholder="سبب الإيقاف أو أي تفاصيل">'+esc(m.note)+'</textarea></div>';
     var ok = m.mode==='open' || parseInt(m.days,10)>0;
     return modalShell('إيقاف الحالات', b, '<button class="btn btn-warning"'+A('confirmHold')+(ok ? '' : ' disabled')+'><i class="fa fa-pause-circle"></i> إيقاف</button><button class="btn btn-default"'+A('closeModal')+'>إلغاء</button>');
@@ -1426,8 +1426,8 @@ var ACT = {
     saveSurveyForms(); svfOpen(id); SVE.sel = SVE.work[0].id; render();
   },
   svfEdit: function(id){ svfOpen(id); render(); },
-  svfBack: function(){ if (svfWorkDirty() && !confirm('فيه تعديلات مش محفوظة – تخرج من غير حفظ؟')) return; SVE.id = null; render(); },
-  svfRemove: function(id){ var f = svfById(id); if (!f || svfPublished(f)) return; if (!confirm('تحذف النموذج ده؟')) return; SVF.forms = SVF.forms.filter(function(x){ return x.id!==id; }); saveSurveyForms(); render(); },
+  svfBack: function(){ if (svfWorkDirty() && !confirm('توجد تعديلات غير محفوظة – هل تريد الخروج دون حفظ؟')) return; SVE.id = null; render(); },
+  svfRemove: function(id){ var f = svfById(id); if (!f || svfPublished(f)) return; if (!confirm('هل تريد حذف هذا النموذج؟')) return; SVF.forms = SVF.forms.filter(function(x){ return x.id!==id; }); saveSurveyForms(); render(); },
   // opened from the operations room: go back to that tab instead of loading another file
   goOps: function(v, a, b, e){
     if (window.opener && !window.opener.closed){ if (e) e.preventDefault(); window.opener.focus(); window.close(); }
@@ -1474,22 +1474,22 @@ var ACT = {
     loadStores(); var at = Date.now(), ids = F.sel.filter(function(id){ var c = caseById(id); return c && c.stage==='postponed'; });
     ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER}; F.store.released[id] = {company:F.company, at:at, by:CSR_USER}; });
     logIt('تمويل وإرسال للحجز: ' + F.company, ids, 'من مؤجل لمرحلة أخرى');
-    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    if (!saveStore()){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return render(); }
     releasePostponed(F.store.released);
-    F.sel = []; toast(ids.length + ' حالة اتمولت من ' + F.company + ' واتبعتت لحصالة التقييم الطبي والقياسات'); render();
+    F.sel = []; toast(ids.length + ' حالة مُوّلت من ' + F.company + ' وأُرسلت إلى حصالة التقييم الطبي والقياسات'); render();
   },
   assignFunder: function(){
     if (!F.sel.length || !F.company) return;
     loadStores(); var at = Date.now(), ids = F.sel.slice();
     ids.forEach(function(id){ F.store.alloc[id] = {company:F.company, at:at, by:CSR_USER}; });
     logIt('تعيين ممول: ' + F.company, ids);
-    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
-    F.sel = []; toast('اتعين ' + F.company + ' ممول لـ ' + ids.length + ' حالة'); render();
+    if (!saveStore()){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return render(); }
+    F.sel = []; toast('تم تعيين ' + F.company + ' ممول لـ ' + ids.length + ' حالة'); render();
   },
   unfund: function(cid){
     loadStores(); var a = F.store.alloc[cid]; if (!a) return;
     delete F.store.alloc[cid]; logIt('إلغاء تمويل ' + a.company, [cid]); saveStore();
-    toast('اتلغى التمويل'); render();
+    toast('أُلغي التمويل'); render();
   },
   showSurvey: function(k){ F.modal = {kind:'survey', keys:[k]}; render(); },
   showCaseSurveys: function(cid){ F.modal = {kind:'survey', keys:surveysOf(cid).map(function(r){ return r.key; })}; render(); },
@@ -1501,14 +1501,14 @@ var ACT = {
   setNoteText: function(v){ F.modal.text = v; },
   saveNote: function(){
     var m = F.modal, txt = (m.text||'').trim();
-    if (!txt){ toast('اكتب الملاحظة الأول'); return render(); }
+    if (!txt){ toast('اكتب الملاحظة أولًا'); return render(); }
     loadStores(); var at = Date.now();
     m.ids.forEach(function(id){ (F.store.notes[id] = F.store.notes[id] || []).push({text:txt, by:CSR_USER, at:at, group:m.ids.length, toOps:!!m.toOps, day:m.toOps ? m.day||'' : ''}); });
     if (m.toOps) F.store.opsNotes.push({id:'N'+at, ids:m.ids.slice(), text:txt, day:m.day||'', by:CSR_USER, at:at});   // shows up in the operations room
     logIt('ملاحظة', m.ids, txt.length > 40 ? txt.slice(0,40) + '…' : txt);
-    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    if (!saveStore()){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return render(); }
     if (m.ids.length > 1) F.sel = [];
-    F.modal = null; toast('اتكتبت الملاحظة على ' + (m.ids.length > 1 ? m.ids.length + ' حالة' : caseById(m.ids[0]).name) + (m.toOps ? ' واتبعتت للأوبريشن' : '')); render();
+    F.modal = null; toast('كُتبت الملاحظة على ' + (m.ids.length > 1 ? m.ids.length + ' حالة' : caseById(m.ids[0]).name) + (m.toOps ? ' وأُرسلت لفريق العمليات' : '')); render();
   },
   openHold: function(){ if (!F.sel.length) return; F.modal = {kind:'hold', mode:'open', days:'7', note:''}; render(); },
   setHoldMode: function(v){ F.modal.mode = v; render(); },
@@ -1519,22 +1519,22 @@ var ACT = {
     var days = parseInt(m.days,10)||0, at = Date.now(), until = m.mode==='days' && days>0 ? at + days*86400000 : null, ids = F.sel.slice();
     ids.forEach(function(id){ F.store.holds[id] = {at:at, by:CSR_USER, until:until, note:m.note.trim()}; });
     logIt('إيقاف', ids, (until ? days + ' يوم' : 'مفتوح') + (m.note.trim() ? ' – ' + m.note.trim() : ''));
-    if (!saveStore()){ toast('مقدرناش نحفظ – المتصفح مانع التخزين'); return render(); }
+    if (!saveStore()){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return render(); }
     F.sel = []; F.modal = null;
-    toast('اتوقفت ' + ids.length + ' حالة' + (until ? ' لحد ' + isoFromMs(until) : ''));
+    toast('أُوقفت ' + ids.length + ' حالة' + (until ? ' حتى ' + isoFromMs(until) : ''));
     render();
   },
   releaseOne: function(cid){
     loadStores(); if (!F.store.holds[cid]) return;
     delete F.store.holds[cid]; logIt('فك الإيقاف', [cid]); saveStore();
-    toast('اتفك إيقاف الحالة'); render();
+    toast('تم فك إيقاف الحالة'); render();
   },
   closeModal: function(){ F.modal = null; render(); },
   closeModalBg: function(v, a, b, e){ if (e && e.target.classList.contains('show-modal')){ F.modal = null; render(); } },
   exportCsv: function(){
     function q(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
-    var rows = [['الكود','الاسم','التليفون','المحافظة','السن','مستوى البتر','الحصالة','مدة الانتظار','الممول','الإيقاف','ملاحظات'].map(q)];
-    filtered().forEach(function(c){ var hd = holdOf(c); rows.push([hasCode(c) ? c.code : '', c.name, c.phone, c.gov, c.age, c.level, STORES[c.stage], c.waitingDays, funderOf(c)||'غير ممولة', hd ? (hd.until ? 'لحد ' + isoFromMs(hd.until) : 'موقوفة') : '', hd ? hd.note||'' : ''].map(q)); });
+    var rows = [['الكود','الاسم','الهاتف','المحافظة','السن','مستوى البتر','الحصالة','مدة الانتظار','الممول','الإيقاف','ملاحظات'].map(q)];
+    filtered().forEach(function(c){ var hd = holdOf(c); rows.push([hasCode(c) ? c.code : '', c.name, c.phone, c.gov, c.age, c.level, STORES[c.stage], c.waitingDays, funderOf(c)||'غير ممولة', hd ? (hd.until ? 'حتى ' + isoFromMs(hd.until) : 'موقوفة') : '', hd ? hd.note||'' : ''].map(q)); });
     var blob = new Blob(['﻿' + rows.map(function(r){ return r.join(','); }).join('\r\n')], {type:'text/csv;charset=utf-8'});
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'التمويل-' + isoFromMs(Date.now()) + '.csv';
     document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 0);
@@ -1586,13 +1586,13 @@ function fmtDay(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+
 // eligibility shown before "أضف"
 function ncResult(nc){
   var out = [], today = (function(){ var n = typeof nowDate==='function' ? nowDate() : new Date(); n = new Date(n.getTime()); n.setHours(0,0,0,0); return n; })();
-  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر ده ('+nc.level+') مش بنشتغل فيه حاليًا'});
+  if (nc.level && UNSUPPORTED_LEVELS.indexOf(nc.level)!==-1) out.push({k:'stage', t:'مؤجل لمرحلة أخرى', d:'مستوى البتر هذا ('+nc.level+') لا نعمل عليه حاليًا'});
   var ls = parseDay(nc.lastSurgery);
-  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكمل 6 شهور يوم '+fmtDay(addMonths(ls, 6)), until:fmtDay(addMonths(ls, 6))});
+  if (ls && addMonths(ls, 6) > today) out.push({k:'6m', t:'مؤجل لإتمام 6 شهور', d:'آخر جراحة '+nc.lastSurgery+' – تكتمل 6 أشهر يوم '+fmtDay(addMonths(ls, 6)), until:fmtDay(addMonths(ls, 6))});
   var dob = parseDay(nc.dob);
-  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'الحالة أقل من 5 سنين – تكمل 5 سنين يوم '+fmtDay(addMonths(dob, 60)), until:fmtDay(addMonths(dob, 60))});
+  if (dob && addMonths(dob, 60) > today) out.push({k:'age', t:'مؤجل بسبب العمر', d:'عمر الحالة أقل من 5 سنوات – تُكمل 5 سنوات يوم '+fmtDay(addMonths(dob, 60)), until:fmtDay(addMonths(dob, 60))});
   var w = parseInt(nc.weight,10);
-  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكتر من 120)'});
+  if (w > 120) out.push({k:'weight', t:'مؤجل بسبب الوزن', d:'الوزن '+w+' كيلو (أكثر من 120)'});
   if (out.length) return {ok:false, list:out};
   if (!nc.level || !ls || !dob || !nc.weight) return {ok:null, list:[]};
   return {ok:true, list:[{k:'ok', t:'مقبول الشروط', d:''}]};
@@ -1781,10 +1781,10 @@ function renderProfile(){
   // the step whose turn it is: the first one that isn't done / skipped
   var cur = -1; for (var ci = 0; ci < steps.length; ci++){ if (steps[ci].s!=='done' && steps[ci].s!=='skip'){ cur = ci; break; } }
   if (cur!==-1) steps[cur].cur = true;
-  var SL = {done:'تم', now:'جاري', warn:'تنبيه', todo:'لسه', skip:'متخطى'};
+  var SL = {done:'تم', now:'جاري', warn:'تنبيه', todo:'لم يتم', skip:'متخطى'};
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
-  h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – بيعدّي الأبحاث واللجنة ويروح للكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
-    return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' الدور هنا</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
+  h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى مركز الاتصال' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
+    return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
       x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div></div></li>';
   }).join('')+'</ol>');
   h += sec('files', 'upload', 'مرفقات الحالة',
@@ -1838,7 +1838,7 @@ var PF_ACTIONS = {
   profSave: function(){
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
     var miss = ncMissing(d);
-    if (miss.length){ d.tried = true; toast('اكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات تانية' : '')); return render(); }
+    if (miss.length){ d.tried = true; toast('أكمل: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' خانات أخرى' : '')); return render(); }
     d.extraPhones = (d.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); }).filter(Boolean);
     var badPh = d.extraPhones.filter(function(x){ return x.length < 10; })[0];
     if (badPh){ toast('الرقم ' + badPh + ' ناقص'); return render(); }
@@ -1855,7 +1855,7 @@ var PF_ACTIONS = {
     d.changes = old.changes.concat(ch); delete d.tried;
     PROFILES.store[pf.id] = d; saveProfiles();
     PF_HOOKS.afterSave(pf.id, d, ch);
-    PROFILES.open = null; toast(ch.length ? 'اتحفظ ملف ' + d.name + ' (' + ch.length + ' تعديل)' : 'مفيش تعديلات'); render();
+    PROFILES.open = null; toast(ch.length ? 'تم حفظ ملف ' + d.name + ' (' + ch.length + ' تعديل)' : 'لا يوجد تعديلات'); render();
   },
 };
 Object.assign(ACT, PF_ACTIONS);
@@ -1871,30 +1871,30 @@ window.addEventListener('storage', function(e){ if (e.key===PROFILE_KEY){ loadPr
 var SURVEY_TYPES = ['measurement','newDelivery','maintDelivery'];
 var SV_RATES = [[5,'ممتاز'],[4,'جيد جدًا'],[3,'جيد'],[2,'مقبول'],[1,'ضعيف']];
 var SURVEY_Q = [
-  {k:'reception', t:'الاستقبال (الريسبشن)', qs:[
-    {k:'rec_treat', t:'استقبال الريسبشن ومعاملتهم ليك كانت عاملة إزاي؟', type:'rate'},
-    {k:'rec_wait', t:'انتظرت قد إيه لحد ما دخلت؟', type:'choice', opts:['أقل من ربع ساعة','ربع لنص ساعة','نص ساعة لساعة','أكتر من ساعة']}]},
+  {k:'reception', t:'الاستقبال', qs:[
+    {k:'rec_treat', t:'كيف كان استقبال موظفي الاستقبال ومعاملتهم لك؟', type:'rate'},
+    {k:'rec_wait', t:'كم انتظرت حتى دخلت؟', type:'choice', opts:['أقل من ربع ساعة','من ربع إلى نصف ساعة','من نصف ساعة إلى ساعة','أكثر من ساعة']}]},
   {k:'engineer', t:'المهندس / الفني', qs:[
-    {k:'eng_explain', t:'المهندس شرحلك اللي هيعمله بشكل واضح؟', type:'rate'},
-    {k:'eng_care', t:'رأيك في تعامل المهندس واهتمامه بيك؟', type:'rate'}]},
+    {k:'eng_explain', t:'هل شرح لك المهندس ما سيقوم به بوضوح؟', type:'rate'},
+    {k:'eng_care', t:'ما رأيك في تعامل المهندس واهتمامه بك؟', type:'rate'}]},
   {k:'physio', t:'دكتور العلاج الطبيعي', qs:[
-    {k:'pt_teach', t:'دكتور العلاج الطبيعي فهّمك إزاي تستخدم الطرف وتتمرن عليه؟', type:'rate'},
-    {k:'pt_follow', t:'رأيك في التمارين والمتابعة؟', type:'rate'}]},
+    {k:'pt_teach', t:'هل أوضح لك أخصائي العلاج الطبيعي كيفية استخدام الطرف والتدرب عليه؟', type:'rate'},
+    {k:'pt_follow', t:'ما رأيك في التمارين والمتابعة؟', type:'rate'}]},
   {k:'psych', t:'الدعم النفسي', qs:[
     {k:'psych_met', t:'قابلت الأخصائي النفسي؟', type:'choice', opts:['نعم','لا']},
-    {k:'psych_rate', t:'الجلسة فادتك قد إيه؟', type:'rate', when:function(a){ return a.psych_met==='نعم'; }}]},
+    {k:'psych_rate', t:'ما مدى استفادتك من الجلسة؟', type:'rate', when:function(a){ return a.psych_met==='نعم'; }}]},
   {k:'service', t:'الخدمة في المؤسسة', qs:[
     {k:'svc_clean', t:'نظافة المكان وراحته', type:'rate'},
-    {k:'svc_time', t:'المواعيد كانت مظبوطة؟ (اتلزمنا بميعادك ولا اتأخرنا)', type:'rate'},
-    {k:'svc_cc', t:'الكول سنتر كان واضح في الحجز والتأكيد؟', type:'rate'}]},
+    {k:'svc_time', t:'هل كانت المواعيد منضبطة؟ (هل التزمنا بموعدك أم تأخرنا؟)', type:'rate'},
+    {k:'svc_cc', t:'هل كان مركز الاتصال واضحًا في الحجز والتأكيد؟', type:'rate'}]},
   {k:'limb', t:'الطرف', delivery:true, qs:[
-    {k:'limb_comfort', t:'الطرف مريح ومظبوط عليك؟', type:'rate'},
-    {k:'limb_use', t:'بتقدر تمشي / تستخدمه في حياتك اليومية؟', type:'rate'},
-    {k:'limb_problem', t:'فيه أي ألم أو مشكلة في الطرف دلوقتي؟', type:'choice', opts:['لا','نعم']}]},
+    {k:'limb_comfort', t:'هل الطرف مريح ومضبوط عليك؟', type:'rate'},
+    {k:'limb_use', t:'هل تستطيع المشي / استخدامه في حياتك اليومية؟', type:'rate'},
+    {k:'limb_problem', t:'هل يوجد أي ألم أو مشكلة في الطرف حاليًا؟', type:'choice', opts:['لا','نعم']}]},
   {k:'general', t:'أسئلة عامة', qs:[
     {k:'overall', t:'تقييمك العام لتجربتك مع هاند إن هاند', type:'rate'},
-    {k:'recommend', t:'ترشّح المؤسسة لحد يعرفك محتاج طرف؟', type:'choice', opts:['أكيد','غالبًا','مش متأكد','لا']},
-    {k:'suggest', t:'فيه أي حاجة عايز تقولها أو اقتراح؟', type:'text', optional:true}]},
+    {k:'recommend', t:'هل ترشح المؤسسة لشخص تعرفه يحتاج إلى طرف؟', type:'choice', opts:['أكيد','غالبًا','غير متأكد','لا']},
+    {k:'suggest', t:'هل لديك أي ملاحظة أو اقتراح؟', type:'text', optional:true}]},
 ];
 function svSectionsFor(type){ return SURVEY_Q.filter(function(sec){ return !sec.delivery || type!=='measurement'; }); }
 var SURVEY_KEY = 'hih_surveys_v1';
@@ -1902,10 +1902,10 @@ function readSurveys(){ try { return JSON.parse(localStorage.getItem(SURVEY_KEY)
 // ---- survey forms (like Google Forms): the base form (call-center supervisor) + funding-company forms (funding officer).
 // Each publish adds a version; an answered form keeps a copy of the questions it was answered with.
 var SVF_KEY = 'hih_survey_forms_v1';
-var SVQ_TYPES = {yesno:'نعم / لا', truefalse:'صح / غلط', single:'اختيار واحد', multi:'اختيارات متعددة', short:'نص قصير', long:'نص طويل', rating:'تقييم'};
+var SVQ_TYPES = {yesno:'نعم / لا', truefalse:'صحيح / خطأ', single:'اختيار واحد', multi:'اختيارات متعددة', short:'نص قصير', long:'نص طويل', rating:'تقييم'};
 function svClone(x){ return JSON.parse(JSON.stringify(x)); }
 function svEsc(v){ return esc(v==null ? '' : String(v)); }
-function svqOpts(q){ return q.type==='yesno' ? ['نعم','لا'] : q.type==='truefalse' ? ['صح','غلط'] : (q.type==='single' || q.type==='multi') ? (q.options||[]) : []; }
+function svqOpts(q){ return q.type==='yesno' ? ['نعم','لا'] : q.type==='truefalse' ? ['صحيح','خطأ'] : (q.type==='single' || q.type==='multi') ? (q.options||[]) : []; }
 function svLegacyQ(sec, q){
   var yn = q.opts && q.opts.length===2 && q.opts.indexOf('نعم')!==-1 && q.opts.indexOf('لا')!==-1;
   var type = q.type==='rate' ? 'rating' : q.type==='text' ? 'long' : yn ? 'yesno' : 'single';
@@ -1937,25 +1937,34 @@ function svfFollowSeed(){
     f('fu1', 'متابعة استخدام الطرف', ['follow_up'], [
       {id:'foundation_eval', text:'تقييمك للمؤسسة', type:'rating', required:true, sec:'التقييم'},
       {id:'device_eval', text:'تقييمك للطرف (الجهاز)', type:'rating', required:true, sec:'التقييم'},
-      {id:'use_device', text:'بتستخدم الطرف إزاي؟', type:'single', required:true, options:['منتظم','غير منتظم','غير مستخدم'], sec:'الاستخدام'},
-      {id:'use_hours', text:'بتلبسه كام ساعة في اليوم تقريبًا؟', type:'single', required:false, options:['أقل من 3 ساعات','3 – 6 ساعات','أكتر من 6 ساعات'], sec:'الاستخدام'},
-      {id:'pain', text:'فيه ألم أو جرح من الطرف؟', type:'yesno', required:true, alertOn:'نعم', sec:'الحالة'},
+      {id:'use_device', text:'كيف تستخدم الطرف؟', type:'single', required:true, options:['منتظم','غير منتظم','غير مستخدم'], sec:'الاستخدام'},
+      {id:'use_hours', text:'كم ساعة ترتديه يوميًا تقريبًا؟', type:'single', required:false, options:['أقل من 3 ساعات','3 – 6 ساعات','أكثر من 6 ساعات'], sec:'الاستخدام'},
+      {id:'pain', text:'هل يوجد ألم أو جرح من الطرف؟', type:'yesno', required:true, alertOn:'نعم', sec:'الحالة'},
       {id:'psych_eval', text:'تقييمك للخدمة النفسية', type:'rating', required:false, sec:'الحالة'},
-      {id:'fu_notes', text:'أي حاجة تانية عايز تقولها؟', type:'long', required:false, sec:'الحالة'}]),
+      {id:'fu_notes', text:'هل لديك أي ملاحظات أخرى؟', type:'long', required:false, sec:'الحالة'}]),
     f('fu2', 'متابعة – لا يستخدم الطرف', ['no_maintenance_required'], [
-      {id:'why_not', text:'ليه مش بيستخدم الطرف؟', type:'multi', required:true, options:['الطرف واسع / ضيق','كسر أو عطل','ألم أو جرح','مش مرتاح فيه','أخرى']},
-      {id:'since', text:'بقاله قد إيه مش بيستخدمه؟', type:'single', required:true, options:['أقل من شهر','1 – 3 شهور','أكتر من 3 شهور']},
+      {id:'why_not', text:'لماذا لا يستخدم الطرف؟', type:'multi', required:true, options:['الطرف واسع / ضيق','كسر أو عطل','ألم أو جرح','غير مرتاح فيه','أخرى']},
+      {id:'since', text:'منذ متى لا يستخدمه؟', type:'single', required:true, options:['أقل من شهر','1 – 3 شهور','أكثر من 3 أشهر']},
       {id:'device_eval', text:'تقييمك للطرف (الجهاز)', type:'rating', required:false}])];
 }
 function svfSeed(){
   var qs = svLegacyQs();
   return {base:{id:'base', name:'الاستبيان الأساسي', company:'', draft:svClone(qs), versions:[{v:1, at:Date.now() - 30*86400000, by:'النظام', name:'الاستبيان الأساسي', company:'', qs:svClone(qs)}]}, forms:[]};
 }
+var SVF_MSA = {"استقبال الريسبشن ومعاملتهم ليك كانت عاملة إزاي؟": "كيف كان استقبال موظفي الاستقبال ومعاملتهم لك؟", "انتظرت قد إيه لحد ما دخلت؟": "كم انتظرت حتى دخلت؟", "ربع لنص ساعة": "من ربع إلى نصف ساعة", "نص ساعة لساعة": "من نصف ساعة إلى ساعة", "المهندس شرحلك اللي هيعمله بشكل واضح؟": "هل شرح لك المهندس ما سيقوم به بوضوح؟", "رأيك في تعامل المهندس واهتمامه بيك؟": "ما رأيك في تعامل المهندس واهتمامه بك؟", "دكتور العلاج الطبيعي فهّمك إزاي تستخدم الطرف وتتمرن عليه؟": "هل أوضح لك أخصائي العلاج الطبيعي كيفية استخدام الطرف والتدرب عليه؟", "رأيك في التمارين والمتابعة؟": "ما رأيك في التمارين والمتابعة؟", "الجلسة فادتك قد إيه؟": "ما مدى استفادتك من الجلسة؟", "المواعيد كانت مظبوطة؟ (اتلزمنا بميعادك ولا اتأخرنا)": "هل كانت المواعيد منضبطة؟ (هل التزمنا بموعدك أم تأخرنا؟)", "الكول سنتر كان واضح في الحجز والتأكيد؟": "هل كان مركز الاتصال واضحًا في الحجز والتأكيد؟", "الطرف مريح ومظبوط عليك؟": "هل الطرف مريح ومضبوط عليك؟", "بتقدر تمشي / تستخدمه في حياتك اليومية؟": "هل تستطيع المشي / استخدامه في حياتك اليومية؟", "فيه أي ألم أو مشكلة في الطرف دلوقتي؟": "هل يوجد أي ألم أو مشكلة في الطرف حاليًا؟", "ترشّح المؤسسة لحد يعرفك محتاج طرف؟": "هل ترشح المؤسسة لشخص تعرفه يحتاج إلى طرف؟", "مش متأكد": "غير متأكد", "فيه أي حاجة عايز تقولها أو اقتراح؟": "هل لديك أي ملاحظة أو اقتراح؟", "الاستقبال (الريسبشن)": "الاستقبال", "بتستخدم الطرف إزاي؟": "كيف تستخدم الطرف؟", "بتلبسه كام ساعة في اليوم تقريبًا؟": "كم ساعة ترتديه يوميًا تقريبًا؟", "أكتر من 6 ساعات": "أكثر من 6 ساعات", "فيه ألم أو جرح من الطرف؟": "هل يوجد ألم أو جرح من الطرف؟", "أي حاجة تانية عايز تقولها؟": "هل لديك أي ملاحظات أخرى؟", "ليه مش بيستخدم الطرف؟": "لماذا لا يستخدم الطرف؟", "مش مرتاح فيه": "غير مرتاح فيه", "بقاله قد إيه مش بيستخدمه؟": "منذ متى لا يستخدمه؟", "أكتر من 3 شهور": "أكثر من 3 أشهر", "أكتر من ساعة": "أكثر من ساعة", "صح": "صحيح", "غلط": "خطأ"};
+// forms saved before the wording moved to standard Arabic: update the seeded texts once
+function svfMigrateText(){
+  var changed = false, tr = function(v){ if (typeof v==='string' && SVF_MSA[v]){ changed = true; return SVF_MSA[v]; } return v; };
+  var fixQs = function(qs){ (qs||[]).forEach(function(q){ q.text = tr(q.text); q.sec = tr(q.sec); if (q.options) q.options = q.options.map(tr); if (q.alertOn) q.alertOn = tr(q.alertOn); if (q.cond) q.cond.v = tr(q.cond.v); }); };
+  [SVF.base].concat(SVF.forms||[], SVF.follow||[]).forEach(function(f){ if (!f) return; fixQs(f.draft); (f.versions||[]).forEach(function(v){ fixQs(v.qs); }); });
+  if (changed) saveSurveyForms();
+}
 function loadSurveyForms(){
   var s = null; try { s = JSON.parse(localStorage.getItem(SVF_KEY) || 'null'); } catch(e){}
   SVF = s && s.base ? s : svfSeed(); SVF.forms = SVF.forms || [];
   var fresh = !s; if (!SVF.follow){ SVF.follow = svfFollowSeed(); fresh = true; }
   if (fresh) saveSurveyForms();
+  svfMigrateText();
   return SVF;
 }
 function saveSurveyForms(){ try { localStorage.setItem(SVF_KEY, JSON.stringify(SVF)); return true; } catch(e){ return false; } }
@@ -2026,7 +2035,7 @@ function svFormHtml(r, type, o){
     h += '</div>';
   });
   closeSec();
-  return h || '<div class="sva-none" style="padding:10px;">مفيش أسئلة</div>';
+  return h || '<div class="sva-none" style="padding:10px;">لا يوجد أسئلة</div>';
 }
 // answers of one form, shown with the questions it was answered with
 function svAnswersHtml(r, type){
@@ -2060,7 +2069,7 @@ function svfEditorHtml(){
   var f = svfById(SVE.id); if (!f) return '';
   var p = svfPublished(f), isBase = f.id==='base', can = svfCan(f.id), wd = svfWorkDirty();
   var st = (p ? '<span class="svx-badge pub">منشور · إصدار '+p.v+'</span>' : '<span class="svx-badge draft">مسودة</span>')+
-    (p && svfDirty(f) ? '<span class="svx-badge draft">فيه مسودة مش منشورة</span>' : '')+(wd ? '<span class="svx-badge unsaved">تعديلات مش محفوظة</span>' : '');
+    (p && svfDirty(f) ? '<span class="svx-badge draft">توجد مسودة غير منشورة</span>' : '')+(wd ? '<span class="svx-badge unsaved">تعديلات غير محفوظة</span>' : '');
   var h = '<div class="svf"><div class="svf-head"><div class="svf-title">'+(isBase ? '' : '<button class="svf-ic"'+A('svfBack')+' title="رجوع">&#8594;</button>')+
     '<b>'+(isBase ? 'إدارة الاستبيان الأساسي' : svEsc(SVE.name || 'نموذج جديد'))+'</b>'+st+'</div>';
   if (can) h += '<div class="svf-acts"><button class="svf-btn'+(SVE.preview ? ' on' : '')+'"'+A('svfPreview')+'>'+(SVE.preview ? 'رجوع للتعديل' : 'معاينة')+'</button>'+
@@ -2070,7 +2079,7 @@ function svfEditorHtml(){
   if (isFollow) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
     '<div class="svf-sts"><span>يظهر مع حالة الطلب</span><div>'+FOLLOW_STATUSES.filter(function(x){ return x.forms; }).map(function(x){ var on = SVE.statuses.indexOf(x.k)!==-1; return '<button class="svf-tog'+(on?' on':'')+'"'+(can ? A('svfStatus', x.k) : '')+'><i></i>'+x.label+'</button>'; }).join('')+'</div></div></div>';
   else if (!isBase) h += '<div class="svf-meta"><label>اسم النموذج<input class="svx-in" value="'+svEsc(SVE.name)+'" data-k="svf-name" data-input="svfName"'+(can?'':' disabled')+'/></label>'+
-    '<label>شركة التمويل<select class="svx-in" data-change="svfCompany"'+(can?'':' disabled')+'><option value="">— اختار الشركة —</option>'+svfCompanies().map(function(c){ return '<option'+(SVE.company===c?' selected':'')+'>'+svEsc(c)+'</option>'; }).join('')+'</select></label></div>';
+    '<label>شركة التمويل<select class="svx-in" data-change="svfCompany"'+(can?'':' disabled')+'><option value="">— اختر الشركة —</option>'+svfCompanies().map(function(c){ return '<option'+(SVE.company===c?' selected':'')+'>'+svEsc(c)+'</option>'; }).join('')+'</select></label></div>';
   if (p) h += '<div class="svf-vers">'+f.versions.slice().reverse().map(function(v){ return '<span>إصدار '+v.v+' · '+svEsc(v.by)+' · '+new Date(v.at).toLocaleDateString('ar-EG')+' · '+v.qs.length+' سؤال'+(v.company && !isBase ? ' · '+svEsc(v.company) : '')+(v.statuses ? ' · '+v.statuses.map(function(k){ var x = followStatus(k); return x ? x.label : k; }).join('، ') : '')+'</span>'; }).join('')+'</div>';
   if (SVE.preview){
     var pv = SVE.preview;
@@ -2082,9 +2091,9 @@ function svfEditorHtml(){
   h += '<div class="svf-list">';
   SVE.work.forEach(function(q, i){
     if (SVE.sel!==q.id || !can){
-      h += '<div class="svf-q"'+(can ? A('svfSel', q.id) : '')+'><span class="svf-n">'+(i+1)+'</span><div class="svf-qt">'+(q.sec ? '<em>'+svEsc(q.sec)+'</em>' : '')+svEsc(q.text || 'سؤال من غير عنوان')+
+      h += '<div class="svf-q"'+(can ? A('svfSel', q.id) : '')+'><span class="svf-n">'+(i+1)+'</span><div class="svf-qt">'+(q.sec ? '<em>'+svEsc(q.sec)+'</em>' : '')+svEsc(q.text || 'سؤال بدون عنوان')+
         '<div class="svf-chips"><span>'+SVQ_TYPES[q.type]+'</span><span class="'+(q.required ? 'req' : '')+'">'+(q.required ? 'إلزامي' : 'اختياري')+'</span>'+
-        ((q.type==='single' || q.type==='multi') ? '<span>'+(q.options||[]).length+' اختيار</span>' : '')+(q.visits==='delivery' ? '<span>التسليم بس</span>' : '')+(q.cond ? '<span>مشروط</span>' : '')+(q.alertOn ? '<span class="al">تنبيه: '+svEsc(q.alertOn)+'</span>' : '')+'</div></div></div>';
+        ((q.type==='single' || q.type==='multi') ? '<span>'+(q.options||[]).length+' اختيار</span>' : '')+(q.visits==='delivery' ? '<span>التسليم فقط</span>' : '')+(q.cond ? '<span>مشروط</span>' : '')+(q.alertOn ? '<span class="al">تنبيه: '+svEsc(q.alertOn)+'</span>' : '')+'</div></div></div>';
       return;
     }
     var prev = SVE.work.slice(0, i).filter(function(x){ return svqOpts(x).length; });
@@ -2100,10 +2109,10 @@ function svfEditorHtml(){
     } else if (q.type==='rating') h += '<div class="svf-hint">'+SV_RATES.map(function(x){ return x[0]+' '+x[1]; }).join(' · ')+'</div>';
     else if (svqOpts(q).length) h += '<div class="svf-hint">'+svqOpts(q).join(' · ')+'</div>';
     h += '<div class="svf-row">';
-    if (isBase) h += '<label>يظهر في<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|visits"><option value="">كل الزيارات</option><option value="delivery"'+(q.visits==='delivery'?' selected':'')+'>زيارات التسليم بس</option></select></label>';
-    h += '<label>يظهر بس لو<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|cond"><option value="">دايمًا</option>'+prev.map(function(x){ return svqOpts(x).map(function(o){ var val = x.id+'::'+o; return '<option value="'+svEsc(val)+'"'+(q.cond && q.cond.q===x.id && q.cond.v===o ? ' selected' : '')+'>'+svEsc((x.text||'').slice(0,40))+' = '+svEsc(o)+'</option>'; }).join(''); }).join('')+'</select></label>';
-    if (svqOpts(q).length) h += '<label>تنبيه للمشرف لو الإجابة<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|alertOn"><option value="">—</option>'+svqOpts(q).map(function(o){ return '<option'+(q.alertOn===o?' selected':'')+'>'+svEsc(o)+'</option>'; }).join('')+'</select></label>';
-    h += '</div><div class="svf-foot"><button class="svf-ic"'+A('svfMove', q.id, -1)+(i ? '' : ' disabled')+' title="لفوق">&#8593;</button><button class="svf-ic"'+A('svfMove', q.id, 1)+(i < SVE.work.length-1 ? '' : ' disabled')+' title="لتحت">&#8595;</button>'+
+    if (isBase) h += '<label>يظهر في<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|visits"><option value="">كل الزيارات</option><option value="delivery"'+(q.visits==='delivery'?' selected':'')+'>زيارات التسليم فقط</option></select></label>';
+    h += '<label>يظهر فقط إذا<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|cond"><option value="">دائمًا</option>'+prev.map(function(x){ return svqOpts(x).map(function(o){ var val = x.id+'::'+o; return '<option value="'+svEsc(val)+'"'+(q.cond && q.cond.q===x.id && q.cond.v===o ? ' selected' : '')+'>'+svEsc((x.text||'').slice(0,40))+' = '+svEsc(o)+'</option>'; }).join(''); }).join('')+'</select></label>';
+    if (svqOpts(q).length) h += '<label>تنبيه للمشرف إذا كانت الإجابة<select class="svx-in" data-change="svfSet" data-a="'+q.id+'|alertOn"><option value="">—</option>'+svqOpts(q).map(function(o){ return '<option'+(q.alertOn===o?' selected':'')+'>'+svEsc(o)+'</option>'; }).join('')+'</select></label>';
+    h += '</div><div class="svf-foot"><button class="svf-ic"'+A('svfMove', q.id, -1)+(i ? '' : ' disabled')+' title="للأعلى">&#8593;</button><button class="svf-ic"'+A('svfMove', q.id, 1)+(i < SVE.work.length-1 ? '' : ' disabled')+' title="للأسفل">&#8595;</button>'+
       '<button class="svf-link"'+A('svfDup', q.id)+'>تكرار</button><button class="svf-link danger"'+A('svfDel', q.id)+'>حذف</button><span class="sp"></span><button class="svf-link"'+A('svfSel', '')+'>تم</button></div></div></div>';
   });
   h += '</div>';
@@ -2112,15 +2121,15 @@ function svfEditorHtml(){
 }
 // cleans the working draft; returns an error text or ''
 function svfCheck(qs, forPublish){
-  if (forPublish && !qs.length) return 'النموذج مفيهوش أسئلة';
+  if (forPublish && !qs.length) return 'النموذج لا يحتوي على أسئلة';
   var ids = {};
   for (var i=0;i<qs.length;i++){
     var q = qs[i];
     q.text = (q.text||'').trim(); q.sec = (q.sec||'').trim();
-    if (!q.text) return 'سؤال رقم ' + (i+1) + ' من غير نص';
+    if (!q.text) return 'سؤال رقم ' + (i+1) + ' بدون نص';
     if (q.type==='single' || q.type==='multi'){
       q.options = (q.options||[]).map(function(o){ return (o||'').trim(); }).filter(Boolean);
-      if (q.options.length < 2) return 'سؤال رقم ' + (i+1) + ' محتاج اختيارين على الأقل';
+      if (q.options.length < 2) return 'سؤال رقم ' + (i+1) + ' يحتاج إلى اختيارين على الأقل';
     } else delete q.options;
     if (q.alertOn && svqOpts(q).indexOf(q.alertOn)===-1) delete q.alertOn;
     if (q.cond){ var t = qs.filter(function(x){ return x.id===q.cond.q; })[0]; if (!t || !ids[t.id] || svqOpts(t).indexOf(q.cond.v)===-1) delete q.cond; }
@@ -2129,7 +2138,7 @@ function svfCheck(qs, forPublish){
   }
   return '';
 }
-function svfGuard(){ if (!SVE.id || !svfCan(SVE.id)){ toast('مش مسموح لك تعدّل النموذج ده'); return false; } return true; }
+function svfGuard(){ if (!SVE.id || !svfCan(SVE.id)){ toast('غير مسموح لك بتعديل هذا النموذج'); return false; } return true; }
 var SVF_ACTIONS = {
   svfSel: function(id){ SVE.sel = id || null; render(); },
   svfSet: function(v, ab){
@@ -2160,7 +2169,7 @@ var SVF_ACTIONS = {
   svfPvA: function(qid, v){ var pv = SVE.preview; if (!pv) return; var r = {qs:SVE.work, answers:pv.answers}; svSetAnswer(r, qid, v); render(); },
   svfPvT: function(v, qid){ if (SVE.preview) SVE.preview.answers[qid] = v; },
   svfPvN: function(v, sec){ if (SVE.preview) SVE.preview.notes[sec] = v; },
-  svfPvCheck: function(){ var pv = SVE.preview; if (!pv) return; pv.miss = true; var m = svMissing({qs:SVE.work, answers:pv.answers}, pv.type); toast(m.length ? 'فاضل ' + m.length + ' سؤال إلزامي' : 'كل الأسئلة الإلزامية متجاوبة'); render(); },
+  svfPvCheck: function(){ var pv = SVE.preview; if (!pv) return; pv.miss = true; var m = svMissing({qs:SVE.work, answers:pv.answers}, pv.type); toast(m.length ? 'متبقٍ ' + m.length + ' سؤال إلزامي' : 'تمت الإجابة عن جميع الأسئلة الإلزامية'); render(); },
   svfSave: function(silent){
     if (!svfGuard()) return false;
     var err = svfCheck(SVE.work, false); if (err){ toast(err); render(); return false; }
@@ -2168,25 +2177,25 @@ var SVF_ACTIONS = {
     f.draft = svClone(SVE.work); f.name = SVE.id==='base' ? f.name : SVE.name.trim(); f.company = SVE.id==='base' || f.kind==='follow' ? '' : SVE.company;
     if (f.kind==='follow') f.statuses = SVE.statuses.slice();
     f.savedAt = Date.now(); f.savedBy = svfUser(); SVE.name = f.name;
-    saveSurveyForms(); if (silent!==true){ toast('اتحفظت المسودة'); render(); }
+    saveSurveyForms(); if (silent!==true){ toast('تم حفظ المسودة'); render(); }
     return true;
   },
   svfPublish: function(){
     if (!svfGuard()) return;
     if (SVE.id!=='base' && !SVE.name.trim()){ toast('اكتب اسم النموذج'); return render(); }
     var isF = svfIsFollow(SVE.id);
-    if (SVE.id!=='base' && !isF && !SVE.company){ toast('اختار شركة التمويل'); return render(); }
-    if (isF && !SVE.statuses.length){ toast('اختار حالة الطلب اللي النموذج يظهر معاها'); return render(); }
+    if (SVE.id!=='base' && !isF && !SVE.company){ toast('اختر شركة التمويل'); return render(); }
+    if (isF && !SVE.statuses.length){ toast('اختر حالة الطلب التي يظهر معها النموذج'); return render(); }
     var err = svfCheck(SVE.work, true); if (err){ toast(err); return render(); }
     if (!ACT.svfSave(true)) return;
     var f = svfById(SVE.id), p = svfPublished(f);
-    if (p && !svfDirty(f)){ toast('مفيش تعديلات من آخر نشر'); return render(); }
+    if (p && !svfDirty(f)){ toast('لا توجد تعديلات منذ آخر نشر'); return render(); }
     f.versions = f.versions || [];
     var ver = {v:f.versions.length + 1, at:Date.now(), by:svfUser(), name:f.name, company:f.company||'', qs:svClone(f.draft)};
     if (f.kind==='follow') ver.statuses = (f.statuses||[]).slice();
     f.versions.push(ver);
     saveSurveyForms(); SVE.preview = null; SVE.sel = null;
-    toast('اتنشر الإصدار ' + f.versions.length + ' – بيتطبق على الاستبيانات الجديدة'); render();
+    toast('نُشر الإصدار ' + f.versions.length + ' – يُطبَّق على الاستبيانات الجديدة'); render();
   },
 };
 Object.assign(ACT, SVF_ACTIONS);
@@ -2201,9 +2210,9 @@ var PF_HOOKS = {
   events: function(id){
     var out = [], st = F.store || {};
     var a = (st.alloc||{})[id]; if (a) out.push({at:a.at, kind:'fund', title:'تمويل – ' + a.company, sub:'', by:a.by || ''});
-    var hd = (st.holds||{})[id]; if (hd) out.push({at:hd.at, kind:'fund', title:'إيقاف', sub:[hd.until ? 'لحد ' + pfWhen(hd.until) : 'مفتوح', hd.note].filter(Boolean).join(' · '), by:hd.by || ''});
-    ((st.notes||{})[id] || []).forEach(function(n){ out.push({at:n.at, kind:'note', title:n.toOps ? 'ملاحظة – اتبعتت للأوبريشن' : 'ملاحظة', sub:n.text, by:n.by}); });
-    (st.released||{})[id] && out.push({at:st.released[id].at || 0, kind:'fund', title:'اتبعتت للحجز', sub:'', by:st.released[id].by || ''});
+    var hd = (st.holds||{})[id]; if (hd) out.push({at:hd.at, kind:'fund', title:'إيقاف', sub:[hd.until ? 'حتى ' + pfWhen(hd.until) : 'مفتوح', hd.note].filter(Boolean).join(' · '), by:hd.by || ''});
+    ((st.notes||{})[id] || []).forEach(function(n){ out.push({at:n.at, kind:'note', title:n.toOps ? 'ملاحظة – أُرسلت لفريق العمليات' : 'ملاحظة', sub:n.text, by:n.by}); });
+    (st.released||{})[id] && out.push({at:st.released[id].at || 0, kind:'fund', title:'أُرسلت للحجز', sub:'', by:st.released[id].by || ''});
     Object.keys(F.surveys||{}).forEach(function(k){ var r = F.surveys[k]; if (r.cid===id && r.at) out.push({at:r.at, kind:'survey', title:'استبيان جودة الخدمة – ' + TASK_TYPES[r.type].label, sub:svRecForms(r).map(function(f){ return f.name; }).join('، '), by:r.by}); });
     return out;
   },
