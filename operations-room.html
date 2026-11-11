@@ -123,6 +123,9 @@
     .ft-bar{width:100%;height:5px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:7px;overflow:hidden;} .ft-bar em{display:block;height:100%;background:#4ade80;border-radius:4px;}
     .focus-total small{font-size:10.5px;opacity:.8;margin-top:3px;}
     .k-dec{display:inline-block;font-weight:700;border-radius:8px;padding:1px 9px;} .k-dec.post{background:#fff4e5;color:#b45309;} .k-dec.rej{background:#fde8ec;color:#c81e3a;}
+    .ph-add{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1.5px dashed #94c9ee;background:#f5faff;color:#0b6db0;border-radius:9px;cursor:pointer;padding:0;vertical-align:middle;}
+    .ph-add:hover{background:#0093e9;border-color:#0093e9;color:#fff;}
+    .ph-cur{display:flex;flex-wrap:wrap;gap:6px;} .ph-cur span{background:#f1f5f9;border-radius:8px;padding:3px 10px;font-weight:700;font-size:13px;}
     .focus-head-l{display:flex;align-items:center;gap:10px;}
     .undo-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #b9dcf5;background:#f0f8fe;color:#0b3a57;border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;text-align:right;}
     .undo-btn span{display:flex;flex-direction:column;line-height:1.35;} .undo-btn b{font-size:13px;} .undo-btn em{font-style:normal;font-size:11px;color:#64748b;}
@@ -2974,7 +2977,18 @@ function onePhone(ph, extra, n){
 // every number the case has (main first)
 function phoneChip(c){
   var all = casePhones(c.id, c.phone);
-  return onePhone(all[0] || c.phone) + all.slice(1).map(function(ph, i){ return onePhone(ph, true, i+2); }).join('');
+  return onePhone(all[0] || c.phone) + all.slice(1).map(function(ph, i){ return onePhone(ph, true, i+2); }).join('') +
+    (isCC() && profileOf(c.id) ? '<button class="ph-add" title="إضافة رقم للحالة"'+A('openAddPhone', c.id)+'>'+pathIc('M12 5v14M5 12h14',14,null,2.6)+'</button>' : '');
+}
+// "+" next to the numbers: add a number to the case without opening ملف الحالة (saved in the case file)
+function renderAddPhone(){
+  var x = S.addPh; if (!x) return '';
+  var pf = profileOf(x.id), list = casePhones(x.id, (caseById(x.id) || emgPerson(x.id) || {}).phone);
+  return '<div class="scrim scrim-top"'+A('closeAddPhone')+'></div><div class="modal modal-sm" style="width:420px;"><div class="modal-head"><div><div class="drawer-title">إضافة رقم</div><div class="drawer-sub">'+esc(pf ? pf.name : '')+'</div></div>'+
+    '<button class="icon-btn"'+A('closeAddPhone')+'>'+ic('x',15,null,2)+'</button></div><div class="modal-body">'+
+    '<div class="field"><label class="field-label">الأرقام الحالية</label><div class="ph-cur">'+list.map(function(p){ return '<span dir="ltr">'+esc(fmtPhone(p))+'</span>'; }).join('')+'</div></div>'+
+    '<div class="field"><label class="field-label">الرقم الجديد</label><input class="text-input" type="text" inputmode="numeric" dir="ltr" placeholder="01xxxxxxxxx" value="'+esc(x.num)+'" data-k="addph" data-input="addPhoneNum"/></div></div>'+
+    '<div class="modal-foot"><button class="btn btn-primary"'+A('saveAddPhone')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' إضافة</button><button class="btn btn-secondary"'+A('closeAddPhone')+'>إلغاء</button></div></div>';
 }
 function reasonChips(p, max){
   return p.reasons.slice(0, max||6).map(function(r){ return '<span class="reason '+r.k+'">'+esc(r.t)+'</span>'; }).join('');
@@ -3028,7 +3042,7 @@ function renderApp(){
   h += renderOverlays();
   h += renderCallModal();
   if (S.fuOpen) h += renderFollowModal();
-  h += renderCancelBooking();
+  h += renderCancelBooking() + renderAddPhone();
   h += renderPoolModal();
   h += renderEmgDay() + renderEmg() + renderProfile();
   h += renderDash();
@@ -6353,6 +6367,23 @@ function undoBtn(){
     '<span><b>رجوع للمكالمة</b><em>'+esc(u.name)+' · '+esc(u.label)+'</em></span></button>';
 }
 Object.assign(ACT, {
+  openAddPhone: function(id){ if (!isCC()) return; S.addPh = {id:id, num:''}; render(); var el = document.querySelector('[data-k="addph"]'); if (el) el.focus(); },
+  closeAddPhone: function(){ S.addPh = null; render(); },
+  addPhoneNum: function(v){ if (S.addPh) S.addPh.num = v; },
+  saveAddPhone: function(){
+    var x = S.addPh; if (!x) return;
+    var num = String(x.num||'').replace(/\D/g, '');
+    if (!/^01[0125]\d{8}$/.test(num)){ toast('اكتب رقم موبايل صحيح (11 رقم يبدأ بـ 01)'); return render(); }
+    loadProfiles(); var pf = profileOf(x.id); if (!pf) return;
+    var cur = casePhones(x.id, (caseById(x.id) || emgPerson(x.id) || {}).phone);
+    if (cur.indexOf(num)!==-1){ toast('الرقم ده موجود بالفعل'); return render(); }
+    var before = (pf.extraPhones || []).join('، ') || '-';
+    pf.extraPhones = (pf.extraPhones || []).concat([num]);
+    pf.changes = (pf.changes || []).concat([{field:'أرقام إضافية', from:before, to:pf.extraPhones.join('، '), by:actorName(), at:pfStamp()}]);
+    PROFILES.store[x.id] = pf; saveProfiles();
+    S.audit.unshift({at:now(), who:actorName(), action:'إضافة رقم', tid:null, label:pf.name, detail:num});
+    S.addPh = null; toast('اتضاف الرقم ' + fmtPhone(num) + ' لـ ' + pf.name); render();
+  },
   undoLast: function(){
     var u = S.undo; if (!u) return;
     UNDO_KEYS.forEach(function(k){ var v = JSON.parse(u.snap[k]); if (v===null && S[k]===undefined) return; S[k] = v; });
