@@ -126,6 +126,8 @@
     .ph-add{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1.5px dashed #94c9ee;background:#f5faff;color:#0b6db0;border-radius:9px;cursor:pointer;padding:0;vertical-align:middle;}
     .ph-add:hover{background:#0093e9;border-color:#0093e9;color:#fff;}
     .ph-cur{display:flex;flex-wrap:wrap;gap:6px;} .ph-cur span{background:#f1f5f9;border-radius:8px;padding:3px 10px;font-weight:700;font-size:13px;}
+    .sv-draft{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:#b45309;background:#fff4e5;border-radius:10px;padding:2px 9px;align-self:center;}
+    .cms-btn.sv-draft-btn{background:#f59e0b;border-color:#d97706;color:#fff;}
     .focus-head-l{display:flex;align-items:center;gap:10px;}
     .undo-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #b9dcf5;background:#f0f8fe;color:#0b3a57;border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;text-align:right;}
     .undo-btn span{display:flex;flex-direction:column;line-height:1.35;} .undo-btn b{font-size:13px;} .undo-btn em{font-style:normal;font-size:11px;color:#64748b;}
@@ -5871,7 +5873,7 @@ function renderSurveyTab(){
     h += '<div class="sv-row'+(x.later?' later':'')+'"><div><div class="q-name">'+esc(c.name)+profBtn(x.cid)+'</div>'+
       '<div class="q-line">'+phoneChip(c)+'<span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><span class="field-hint" style="margin:0;">زيارة '+dayLabel(x.t.dateOffset)+(x.sv && x.sv.tries ? ' · محاولات '+x.sv.tries+' من '+S.settings.surveyTries : '')+(x.later ? ' · معاد الاتصال '+fmtWhen(x.sv.nextAt) : '')+'</span></div>'+
       '<div class="sv-fchips">'+svFormChips(x.key)+(started && left.length ? '<span class="sv-left">متبقي '+left.length+' من '+all.filter(function(f){ return f.req; }).length+'</span>' : '')+'</div></div>'+
-      '<div class="sv-acts"><button class="btn btn-primary btn-sm"'+A('svStart', x.key)+'>'+ic('phone',12,'#fff')+' '+(started ? 'استكمال الاستبيان' : 'ابدأ الاستبيان')+'</button><button class="btn btn-secondary btn-sm"'+A('svNoAnswer', x.key)+'>تعذر الاتصال</button></div></div>';
+      '<div class="sv-acts">'+(started ? '<span class="sv-draft">'+ic('history',12,'#b45309')+' مسودة محفوظة</span>' : '')+'<button class="btn btn-primary btn-sm"'+A('svStart', x.key)+'>'+ic('phone',12,'#fff')+' رد</button><button class="btn btn-secondary btn-sm"'+A('svNoAnswer', x.key)+'>تعذر الوصول</button></div></div>';
   });
   return h;
 }
@@ -5891,7 +5893,7 @@ function renderSurveyCase(){
       '<button class="btn btn-sm '+(st==='done' ? 'btn-secondary' : 'btn-primary')+'"'+A('svOpenForm', x.fid)+'>'+(st==='done' ? 'عرض' : st==='progress' ? 'استكمال' : 'ابدأ')+'</button></div></div>';
   });
   h += '</div><div class="cms-actions" style="justify-content:flex-start;">'+(left.length ? '' : '<button class="cms-btn cms-add"'+A('svFinish')+'>'+ic('check',13,'#fff',2.6)+' إنهاء المكالمة</button>')+
-    '<button class="cms-btn cms-cancel"'+A('svNoAnswer', k)+'>تعذر الاتصال</button><button class="cms-btn cms-cancel"'+A('svClose')+'>كمّل بعدين</button></div>';
+    '<button class="cms-btn sv-draft-btn"'+A('svDraft')+'>'+ic('history',13,'#fff')+' حفظ كمسودة</button><button class="cms-btn cms-cancel"'+A('svNoAnswer', k)+'>تعذر الوصول</button></div>';
   return h + '</div></div>';
 }
 function svCur(){ var sv = S.surveys[S.surveyOpen]; return sv && sv.forms ? sv.forms[S.surveyForm] : null; }
@@ -5904,7 +5906,7 @@ function renderSurveyForm(){
   h += svFormHtml(r, t.type, {act:'svAns', txt:'svText', note:'svNote', miss:S.svMiss});
   var miss = svMissing(r, t.type).length;
   h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('svFormDone')+'>'+ic('check',13,'#fff',2.6)+' إكمال النموذج</button>'+
-    '<button class="cms-btn cms-cancel"'+A('svFormBack')+'>حفظ ورجوع للنماذج</button>'+(miss ? '<span class="field-hint" style="align-self:center;margin:0 8px;">فاضل '+miss+' سؤال إلزامي</span>' : '')+'</div>';
+    '<button class="cms-btn sv-draft-btn"'+A('svDraft')+'>'+ic('history',13,'#fff')+' حفظ كمسودة</button>'+(miss ? '<span class="field-hint" style="align-self:center;margin:0 8px;">فاضل '+miss+' سؤال إلزامي</span>' : '')+'</div>';
   return h + '</div></div>';
 }
 function renderSurveyDone(){
@@ -5953,7 +5955,16 @@ function renderSurveyReport(){
 }
 function svPersist(){ publishSurveys(); }
 Object.assign(ACT, {
-  svStart: function(k){ if (!isCC()){ toast('الاستبيان بيعبّيه موظف الكول سنتر'); return; } S.surveyOpen = k; S.surveyForm = null; S.svMiss = false; render(); },
+  svStart: function(k){ if (!isCC()){ toast('الاستبيان بيعبّيه موظف الكول سنتر'); return; } S.surveyOpen = k; S.surveyForm = null; S.svMiss = false;
+    var fs = svCaseForms(k); if (fs.length===1) return ACT.svOpenForm(fs[0].fid); render(); },
+  // keep what was answered and leave: the agent comes back any time and continues from where they stopped
+  svDraft: function(){
+    if (!isCC() || !S.surveyOpen) return;
+    var k = S.surveyOpen, sv = S.surveys[k], name = caseById(k.split('|')[1]).name;
+    if (sv) svPersist();
+    S.surveyOpen = null; S.surveyForm = null; S.svMiss = false;
+    toast('اتحفظ استبيان ' + name + ' كمسودة – تقدر ترجعله في أي وقت وتكمل من مكانك'); render();
+  },
   svClose: function(){ S.surveyOpen = null; S.surveyForm = null; S.svMiss = false; render(); },
   svOpenForm: function(fid){
     if (!isCC()) return;
@@ -5993,8 +6004,8 @@ Object.assign(ACT, {
   svNoAnswer: function(k){
     var sv = S.surveys[k] || {status:'open', tries:0, forms:{}};
     sv.tries = (sv.tries||0) + 1;
-    if (sv.tries >= S.settings.surveyTries){ sv.status = 'closed'; toast('اتقفلت – تعذر الاتصال ' + sv.tries + ' مرات'); }
-    else { sv.status = 'open'; sv.nextAt = now() + S.settings.retryMinutes*60000; toast('تعذر الاتصال – هترجع في قايمتك ' + fmtWhen(sv.nextAt)); }
+    if (sv.tries >= S.settings.surveyTries){ sv.status = 'closed'; toast('اتقفلت – تعذر الوصول ' + sv.tries + ' مرات'); }
+    else { sv.status = 'open'; sv.nextAt = now() + S.settings.retryMinutes*60000; toast('تعذر الوصول – هترجع في قايمتك ' + fmtWhen(sv.nextAt)); }
     S.surveys[k] = sv; S.surveyOpen = null; S.surveyForm = null; svPersist(); render();
   },
   svNext: function(){ S.surveyDone = null; render(); },
@@ -6359,7 +6370,7 @@ function caseNameOf(id){ var p = emgPerson(id) || caseById(id); return p ? p.nam
 withUndo('confirmResult', function(key, result){ if (result==='confirmed') return null; return {name:caseNameOf(key.split('|')[1]), label:result==='cancelled' ? 'اعتذر' : 'تعذر الاتصال', tab:'calls'}; });
 withUndo('saveCall', function(){ var d = S.callDraft, co = S.callOpen; if (!d || !co || ['noAnswer','unavailable','notInterested'].indexOf(d.outcome)===-1) return null;
   return {name:caseNameOf(co.cid), label:outcomeDef(d.outcome).label, tab:'calls'}; });
-withUndo('svNoAnswer', function(k){ return {name:caseNameOf(String(k).split('|')[1]), label:'تعذر الاتصال – Survey', tab:'survey'}; });
+withUndo('svNoAnswer', function(k){ return {name:caseNameOf(String(k).split('|')[1]), label:'تعذر الوصول – Survey', tab:'survey'}; });
 withUndo('fuSave', function(){ var d = S.fuDraft; if (!d || !(d.callType==='صادر' && d.responding==='noReply')) return null; return {name:caseNameOf(S.fuOpen), label:'تعذر الاتصال – متابعة', tab:'followup'}; });
 withUndo('committeeResult', function(id, result){ if (result==='notified') return null; var k = S.committee.filter(function(x){ return x.id===id; })[0]; return {name:k ? k.name : '', label:'تعذر الوصول – تبليغ اللجنة', tab:'committee'}; });
 function undoBtn(){
