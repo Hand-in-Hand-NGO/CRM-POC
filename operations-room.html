@@ -133,6 +133,13 @@
     .as-types button span{background:#f1f5f9;color:#475569;border-radius:10px;padding:0 8px;font-size:11.5px;}
     .as-types button.on{border-color:var(--edge,#101828);background:var(--tint,#101828);color:var(--edge,#fff);}
     .as-types button:first-child.on{background:#101828;border-color:#101828;color:#fff;} .as-types button.on span{background:#fff;}
+    .sup-nav{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;flex:1;}
+    .sn-group{display:flex;flex-direction:column;gap:4px;padding-inline-start:10px;border-inline-start:1px solid var(--border);}
+    .sn-t{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;color:var(--text-faint);letter-spacing:.2px;}
+    .sn-items{display:flex;gap:3px;background:#f1f5f9;border-radius:10px;padding:3px;}
+    .sn-items button{border:0;background:none;border-radius:8px;padding:6px 11px;font:inherit;font-size:12.5px;font-weight:700;color:#475569;cursor:pointer;white-space:nowrap;}
+    .sn-items button:hover{color:#101828;background:rgba(255,255,255,.6);}
+    .sn-items button.on{background:#fff;color:#101828;box-shadow:0 1px 3px rgba(0,0,0,.12);}
     .focus-head-l{display:flex;align-items:center;gap:10px;}
     .undo-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #b9dcf5;background:#f0f8fe;color:#0b3a57;border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;text-align:right;}
     .undo-btn span{display:flex;flex-direction:column;line-height:1.35;} .undo-btn b{font-size:13px;} .undo-btn em{font-style:normal;font-size:11px;color:#64748b;}
@@ -3081,6 +3088,21 @@ function renderTopbar(){
   return h;
 }
 
+// supervisor / operations sections, grouped, shown in the top bar of "قوائم الكول سنتر"
+function supNavGroups(){
+  var sup = isSupervisor(), g = [
+    {t:'المكالمات', ic:'phone', items:[['lists','قوائم الاتصال'],['assign','إسناد المكالمات'],['routing','توزيع أنواع المكالمات']]},
+    {t:'جودة الخدمة', ic:'check', items:[['survey','متابعة جودة الخدمة']].concat(sup ? [['svforms','إدارة الاستبيان الأساسي']] : [])}];
+  if (sup) g.push({t:'المتابعات', ic:'calendar', items:[['follow','المتابعات']]}, {t:'التقارير', ic:'history', items:[['cancels','إلغاء الحجوزات']]});
+  return g;
+}
+function supNav(){
+  var cur = S.supTab || 'lists';
+  return '<div class="sup-nav">'+supNavGroups().map(function(g){
+    return '<div class="sn-group"><span class="sn-t">'+ic(g.ic,12)+g.t+'</span><div class="sn-items">'+g.items.map(function(x){
+      return '<button class="'+(cur===x[0]?'on':'')+'"'+A('setSupTab', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div></div>';
+  }).join('')+'</div>';
+}
 function renderSubbar(){
   var dueCount = isCC() ? agentTotal(S.agentId) : queueItems('').filter(function(x){ return x.group==='due'; }).length + confirmItems('').length;
   var h = '<div class="subbar"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
@@ -3088,6 +3110,7 @@ function renderSubbar(){
     '<button class="main-tab'+(S.mainView==='calendar'?' active':'')+'"'+A('setMainView','calendar')+'>'+ic('calendar',14)+'التقويم</button>'+
     '<button class="main-tab'+(S.mainView==='queue'?' active':'')+'"'+A('setMainView','queue')+'>'+ic('list',14)+(isCC() ? 'قائمتي النهارده' : 'قوائم الكول سنتر')+
     ' <span class="count">'+dueCount+'</span></button></div>';
+  if (S.mainView==='queue' && !isCC()) h += supNav();
   if (S.mainView==='calendar'){
     var periodLabel;
     if (S.viewMode==='month'){
@@ -3406,8 +3429,7 @@ function queueItems(agent){
 function queueOrder(a, b){ return (b.prio - a.prio) || (a.t.dateOffset - b.t.dateOffset) || (b.p.score - a.p.score); }
 function renderQueue(){
   if (isCC()) return renderAgentFocus();
-  var tabs = '<div class="sup-tabs">'+[['lists','قوائم الاتصال'],['assign','إسناد المكالمات'],['routing','توزيع أنواع المكالمات'],['survey','متابعة جودة الخدمة']].concat(isSupervisor() ? [['svforms','إدارة الاستبيان الأساسي'],['follow','المتابعات'],['cancels','إلغاء الحجوزات']] : []).map(function(x){
-    return '<button class="'+(S.supTab===x[0]?'on':'')+'"'+A('setSupTab', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
+  var tabs = '';   // the supervisor's sections live in the top bar (supNav)
   if (S.supTab==='assign') return '<div class="sup-wrap">'+tabs+renderAssign()+'</div>';
   if (S.supTab==='routing') return '<div class="sup-wrap">'+tabs+renderRouting()+'</div>';
   if (S.supTab==='survey') return '<div class="sup-wrap">'+tabs+renderSurveyReport()+'</div>';
