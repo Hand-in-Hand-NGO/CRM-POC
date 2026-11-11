@@ -3029,9 +3029,10 @@ function renderSubbar(){
 
 var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
 // cases available to book in a stage (any governorate)
+function postponedIds(k){ var o = {}; postponedFor(k).forEach(function(x){ o[x.c.id] = true; }); return o; }
 function poolCases(type){
-  var ctx = {id:'__pool', type:type, loc:'org', gov:null, dateOffset:todayOffset()};
-  return CASES.map(function(c){ return priorityOf(ctx, c); }).filter(function(p){ return p.eligible; })
+  var ctx = {id:'__pool', type:type, loc:'org', gov:null, dateOffset:todayOffset()}, pp = postponedIds(type);
+  return CASES.map(function(c){ return priorityOf(ctx, c); }).filter(function(p){ return p.eligible && !pp[p.c.id]; })
     .sort(function(a,b){ return b.score - a.score; }).map(function(p){ return p.c; });
 }
 // notes the funding page sent to operations about this case (FUND.opsNotes, newest first)
@@ -3755,7 +3756,9 @@ function addCasesCtx(){
 // with the pool's filters (search, code, funder, amputation level, sort)
 function filteredCases(){
   var f = S.addCasesFilters, ctx = addCasesCtx(), sel = S.addCasesSelected, pctx = poolCtx(ctx), q = (f.q||'').trim(), cq = (f.code||'').trim().toUpperCase();
-  var scored = CASES.map(function(c){ return priorityOf(pctx, c); }).filter(function(p){ return p.eligible || sel.indexOf(p.c.id)!==-1; });
+  var pp = postponedIds(ctx.type);
+  // المؤجلات live in their own tab only (an exception picked there is counted in the selection, not listed here)
+  var scored = CASES.map(function(c){ return priorityOf(pctx, c); }).filter(function(p){ return !pp[p.c.id] && (p.eligible || sel.indexOf(p.c.id)!==-1); });
   var list = scored.filter(function(p){
     var c = p.c;
     if (c.stage!==ctx.type && sel.indexOf(c.id)===-1) return false;
@@ -3843,7 +3846,7 @@ function renderAddCases(){
       '<select class="filter-select" data-change="setFilter" data-a="level"><option value="">مستوى البتر: الكل</option>'+levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select>'+
       '<select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select>'+
       (f.q || f.code || f.funding || f.level ? '<button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button>' : '')+'</div>';
-    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
+    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length+(function(){ var n = sel.filter(function(id){ return pp.some(function(x){ return x.c.id===id; }); }).length; return n ? ' ('+n+' من المؤجلات)' : ''; })() : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
       '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
     list.forEach(function(c, i){
