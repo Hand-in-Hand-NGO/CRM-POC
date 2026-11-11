@@ -909,9 +909,9 @@ var CASES = [
 // for the medical evaluation checks (weight over 120 / under 5 years / under 6 months since surgery)
 (function(){
   function set(id, f){ var c = CASES.filter(function(x){ return x.id===id; })[0]; if (c) Object.assign(c, f); }
-  set('C-1028', {postponed:{until:T0+10, contact:'org', reason:'جلسات علاج طبيعي قبل الاستلام', kind:'physio', stage:'newDelivery'}});
-  set('C-1045', {postponed:{until:T0+7, contact:'org', reason:'جرح في مكان البتر', kind:'wound', stage:'maintEval'}});
-  set('C-1035', {postponed:{until:T0+14, contact:'org', reason:'لحين فك الرباط', kind:'binding', stage:'maintDelivery'}});
+  set('C-1028', {postponed:{at:T0-2, until:T0+10, contact:'org', reason:'جلسات علاج طبيعي قبل الاستلام', kind:'physio', stage:'newDelivery'}});
+  set('C-1045', {postponed:{at:T0-1, until:T0+7, contact:'org', reason:'جرح في مكان البتر', kind:'wound', stage:'maintEval'}});
+  set('C-1035', {postponed:{at:T0-10, until:T0+14, contact:'org', reason:'لحين فك الرباط', kind:'binding', stage:'maintDelivery'}});
   set('C-1030', {pf:{weight:'128'}});
   set('C-1025', {age:4});
   set('C-1034', {pf:{lastSurgery:(function(){ var d = new Date(); d.setMonth(d.getMonth()-3); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); })()}});
