@@ -5113,7 +5113,8 @@ function renderNewCase(){
 // =====================================================================
 // Agent: committee decision calls (تبليغ اللجنة)
 // =====================================================================
-function committeeFor(agent){ return S.committee.filter(function(k){ return k.assignee===agent; }); }
+// a notified call stays in the agent's list for the rest of that day only; from the next day it's gone
+function committeeFor(agent){ var today = nowDate(); return S.committee.filter(function(k){ return k.assignee===agent && !(k.status==='notified' && !(k.at && isSameDate(new Date(k.at), today))); }); }
 function renderCommittee(){
   var list = committeeFor(S.agentId), open = list.filter(function(k){ return k.status!=='notified'; });
   var h = '<div class="nc-card"><div class="cms-head"><div class="cms-title">'+ic('phone',15,'#535252')+' تبليغ قرار اللجنة ('+open.length+')</div></div>';
