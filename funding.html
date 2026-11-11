@@ -815,6 +815,7 @@ function outcomeDef(key){
   if (key === 'maintRequest') return {key:'maintRequest', label:'تسجيل طلب صيانة', color:'#2f6fed'};
   if (key === 'confirmed') return {key:'confirmed', label:'أكد الحضور', color:'#15803d'};
   if (key === 'cancelled') return {key:'cancelled', label:'اعتذر عن الموعد', color:'#9f1239'};
+  if (key === 'bookingCancelled') return {key:'bookingCancelled', label:'إلغاء الحجز من الموظف', color:'#9f1239'};
   if (key === 'confirmNoAnswer') return {key:'confirmNoAnswer', label:'لم يرد على مكالمة التأكيد', color:'#c81e3a'};
   if (key === 'standby') return {key:'standby', label:'وافق – قائمة احتياطي', color:'#7c3aed'};
   for (var i=0;i<OUTCOME_DEFS.length;i++){ if (OUTCOME_DEFS[i].key===key) return OUTCOME_DEFS[i]; }
