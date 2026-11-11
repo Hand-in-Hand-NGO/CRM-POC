@@ -3555,7 +3555,7 @@ function renderConvoyBox(t){
   return h + '</div>';
 }
 function convoyFields(d, act, kp){
-  return '<div class="convoy-head" style="margin-bottom:8px;">'+pathIc(CONVOY_ICON_PATH,15,'#7c3aed')+' بيانات القافلة للكول سنتر</div>'+
+  return '<div class="convoy-head" style="margin-bottom:8px;">'+pathIc(CONVOY_ICON_PATH,15,'#7c3aed')+' بيانات القافلة</div>'+
     '<div class="cap-inputs">'+
     '<div><label>ميعاد الحضور</label><input class="text-input" type="time" value="'+esc(d.meetingTime)+'" data-k="'+kp+'-time" data-input="'+act+'" data-a="meetingTime"/></div>'+
     '<div><label>مكان الحضور</label><input class="text-input" placeholder="مثال: مستشفى المحافظة – البوابة الرئيسية" value="'+esc(d.meetingPoint)+'" data-k="'+kp+'-place" data-input="'+act+'" data-a="meetingPoint"/></div></div>'+
