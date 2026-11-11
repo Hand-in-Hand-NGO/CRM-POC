@@ -110,6 +110,13 @@
     .btn-emg{background:var(--danger) !important;color:#fff !important;border-color:var(--danger) !important;}
     .emg-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
     .emg-bar .btn-emg{display:inline-flex;align-items:center;gap:6px;}
+    .cf-filters{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:12px;}
+    .cff{display:flex;flex-direction:column;gap:4px;min-width:160px;} .cff label{font-size:12px;font-weight:700;color:#334155;margin:0;}
+    .cff-q{flex:1 1 380px;} .cff-row{display:flex;gap:6px;align-items:center;} .cff-row .case-search{flex:1;min-width:140px;}
+    .cff .filter-select{min-width:160px;} .cff-end{min-width:0;justify-content:flex-end;padding-bottom:6px;}
+    .ffb{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:8px;padding:7px 12px;font:inherit;font-size:12px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;}
+    .ffb.red{background:#f96a74;} .ffb.blue{background:#0093e9;} .ffb.green{background:#31c860;}
+    .ffb:hover{filter:brightness(.95);}
     .pp-td{background:#e3f1fb;width:210px;}
     .pp-card{display:flex;flex-direction:column;align-items:center;gap:1px;background:#fff;border:1px solid #d7dee6;border-radius:8px;padding:6px 10px;text-align:center;font-size:12.5px;line-height:1.5;}
     .pp-card b{font-weight:700;color:#1f2937;} .pp-card span{color:#1f2937;}
@@ -2787,11 +2794,21 @@ var ACT = {
   setQueueAgent: function(v){ S.queueAgent = v; render(); },
   setPoolTab: function(v){ S.poolTab = v; render(); },
   togglePoolNotes: function(cid){ S.poolNotesOpen = S.poolNotesOpen===cid ? null : cid; render(); },
-  openPool: function(k){ S.poolOpen = k; S.poolTab = 'av'; S.poolSearch = ''; S.poolCode = ''; S.poolLevel = ''; S.poolFund = ''; render(); },
+  openPool: function(k){ S.poolOpen = k; S.poolTab = 'av'; S.poolSearch = ''; S.poolGov = ''; S.poolLevel = ''; S.poolFund = ''; render(); },
   poolFund: function(v){ S.poolFund = v; render(); },
   poolCode: function(v){ S.poolCode = v; render(); },
   poolLevel: function(v){ S.poolLevel = v; render(); },
-  poolClear: function(){ S.poolSearch = ''; S.poolCode = ''; S.poolLevel = ''; S.poolFund = ''; render(); },
+  poolClear: function(){ S.poolSearch = ''; S.poolGov = ''; S.poolLevel = ''; S.poolFund = ''; render(); },
+  fltSet: function(v, ta){ var p = (ta||'').split('|'); if (p[0]==='pool'){ if (p[1]==='q') S.poolSearch = v; else if (p[1]==='gov') S.poolGov = v; else S.poolLevel = v; } else S.addCasesFilters[p[1]] = v; render(); },
+  fltClear: function(t){ if (t==='pool') S.poolSearch = ''; else S.addCasesFilters.q = ''; render(); },
+  fltCopy: function(t){ var v = fltState(t).q || ''; if (!v.trim()){ toast('مفيش حاجة تتنسخ'); return render(); }
+    var done = function(){ toast('اتنسخ: ' + v); render(); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(done, function(){ legacyCopy(v); done(); }); return; } } catch(e){}
+    legacyCopy(v); done(); },
+  fltPaste: function(t){
+    var put = function(v){ v = String(v||'').trim(); if (!v){ toast('الحافظة فاضية'); return render(); } if (t==='pool') S.poolSearch = v; else S.addCasesFilters.q = v; render(); };
+    try { if (navigator.clipboard && navigator.clipboard.readText){ navigator.clipboard.readText().then(put, function(){ toast('المتصفح مش سامح باللصق – استخدم Ctrl+V'); render(); }); return; } } catch(e){}
+    toast('المتصفح مش سامح باللصق – استخدم Ctrl+V'); render(); },
   poolSortBy: function(v){ S.poolSort = v || ''; render(); },
   closePool: function(){ S.poolOpen = null; render(); },
   poolSearch: function(v){ S.poolSearch = v; render(); },
@@ -3096,18 +3113,39 @@ function renderPools(){
       '<span class="pool-ic">'+pathIc(m.iconPath,16,m.color)+'</span></button>';
   }).join('') + '</div></div>';
 }
+// ---- filters used by the pools and the task "الحالات" window (both tabs): name / code / phone, governorate, level
+function caseMatchQ(c, q, withCode){
+  q = (q||'').trim(); if (!q) return true;
+  var qd = q.replace(/[٠-٩]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); }).replace(/\D/g, '');
+  if (c.name.indexOf(q)!==-1 || c.gov.indexOf(q)!==-1) return true;
+  if (withCode && (c.code||'').toUpperCase().indexOf(q.toUpperCase())!==-1) return true;
+  return qd.length >= 3 && casePhones(c.id, c.phone).some(function(p){ return p.indexOf(qd)!==-1; });
+}
+function fltState(t){ return t==='pool' ? {q:S.poolSearch||'', gov:S.poolGov||'', level:S.poolLevel||''} : S.addCasesFilters; }
+function caseFilterBar(t, govs, levels, extra, govLocked){
+  var f = fltState(t);
+  function sel(field, label, ph, opts, dis){ return '<div class="cff"><label>'+label+'</label><select class="filter-select" data-change="fltSet" data-a="'+t+'|'+field+'"'+(dis ? ' disabled' : '')+'><option value="">'+ph+'</option>'+
+    opts.map(function(o){ return '<option'+(f[field]===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select></div>'; }
+  return '<div class="cf-filters"><div class="cff cff-q"><label>اسم الحالة / كود الطلب / الهاتف</label><div class="cff-row">'+
+    '<input class="case-search" placeholder="ابحث بالاسم أو الكود" value="'+esc(f.q)+'" data-k="'+t+'-fq" data-input="fltSet" data-a="'+t+'|q"/>'+
+    '<button class="ffb red"'+A('fltClear', t)+'>'+ic('x',11,'#fff',3)+' مسح</button><button class="ffb blue"'+A('fltCopy', t)+'>'+ic('copy',11,'#fff',2.4)+' نسخ</button>'+
+    '<button class="ffb green"'+A('fltPaste', t)+'>'+ic('copy',11,'#fff',2.4)+' لصق</button></div></div>'+
+    sel('gov', 'المحافظة', 'اختر المحافظة', govs, govLocked)+sel('level', 'مستوى البتر', 'اختر مستوى البتر', levels)+(extra||'')+'</div>';
+}
+function fltFields(list, key){ var o = []; list.forEach(function(c){ if (c[key] && o.indexOf(c[key])===-1) o.push(c[key]); }); return o; }
 function renderPoolModal(){
   var k = S.poolOpen; if (!k) return '';
-  var m = TASK_TYPES[k], q = (S.poolSearch||'').trim(), lv = S.poolLevel || '', cq = (S.poolCode||'').trim().toUpperCase();
+  var m = TASK_TYPES[k], q = (S.poolSearch||'').trim(), lv = S.poolLevel || '', gv = S.poolGov || '';
   var hasCode = k!=='measurement';   // cases in the medical evaluation pool don't have a limb code yet
   var fundF = S.poolFund || '';   // c.funding = the funding page's allocation, else the case's own funder
-  var list = poolCases(k).filter(function(c){
-    if (q && c.name.indexOf(q)===-1 && c.gov.indexOf(q)===-1) return false;
+  function passes(c){
+    if (!caseMatchQ(c, q, hasCode)) return false;
     if (lv && c.level!==lv) return false;
-    if (hasCode && cq && c.code.toUpperCase().indexOf(cq)===-1) return false;
+    if (gv && c.gov!==gv) return false;
     if (fundF && (fundF==='بدون' ? c.funding!=='بدون' : c.funding!==fundF)) return false;
     return true;
-  });
+  }
+  var list = poolCases(k).filter(passes);
   var srt = S.poolSort;
   if (srt) list = list.slice().sort(function(a,b){
     if (srt==='gov') return a.gov.localeCompare(b.gov, 'ar') || a.age - b.age;
@@ -3122,27 +3160,26 @@ function renderPoolModal(){
   }
   var h = '<div class="scrim"'+A('closePool')+'></div><div class="modal" style="width:1000px;max-width:96vw;"><div class="modal-head"><div><div class="drawer-title" style="color:'+m.color+';">'+POOL_NAMES[k]+'</div>'+
     '<div class="drawer-sub">'+poolCases(k).length+' حالة</div></div><button class="icon-btn"'+A('closePool')+'>'+ic('x',15,null,2)+'</button></div>';
-  var pp = postponedFor(k);
+  var ppAll = postponedFor(k), pp = ppAll.filter(function(x){ return passes(x.c); });
+  var both = poolCases(k).concat(ppAll.map(function(x){ return x.c; })), filtOn = q || lv || gv || fundF;
+  var bar = caseFilterBar('pool', fltFields(both, 'gov'), fltFields(both, 'level'),
+    '<div class="cff"><label>الممول</label><select class="filter-select" data-change="poolFund"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(f){ return f!=='بدون'; }).map(function(f){ return '<option value="'+esc(f)+'"'+(fundF===f?' selected':'')+'>'+esc(f)+'</option>'; }).join('')+
+      '<option value="بدون"'+(fundF==='بدون'?' selected':'')+'>غير ممولة</option></select></div>'+
+    (S.poolTab==='pp' ? '' : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'));
+  var filtNote = function(n, tot){ return filtOn ? '<div class="field-hint" style="margin:-4px 0 8px;">'+n+' من '+tot+' حالة · <button class="link-btn"'+A('poolClear')+'>مسح الفلاتر</button></div>' : ''; };
   h += '<div class="pool-tabs"><button class="'+(S.poolTab!=='pp'?'on':'')+'"'+A('setPoolTab','av')+'>المتاحة للحجز <span class="count">'+poolCases(k).length+'</span></button>'+
-    '<button class="'+(S.poolTab==='pp'?'on':'')+'"'+A('setPoolTab','pp')+'>المؤجلات <span class="count">'+pp.length+'</span></button></div>';
+    '<button class="'+(S.poolTab==='pp'?'on':'')+'"'+A('setPoolTab','pp')+'>المؤجلات <span class="count">'+ppAll.length+'</span></button></div>';
   if (S.poolTab==='pp'){
-    h += '<div class="modal-body" data-scroll="poolpp"><table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>التأجيل</th></tr></thead><tbody>';
+    h += '<div class="modal-body" data-scroll="poolpp">'+bar+filtNote(pp.length, ppAll.length)+'<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>التأجيل</th></tr></thead><tbody>';
     pp.forEach(function(x, i){
       var c = x.c;
       h += '<tr><td class="rank-num">'+(i+1)+'</td>'+(hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+
         '<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
-    return h + '</tbody></table>' + (pp.length ? '' : '<div class="table-empty">مفيش حالات مؤجلة</div>') + '</div></div>';
+    return h + '</tbody></table>' + (pp.length ? '' : '<div class="table-empty">'+(filtOn ? 'لا توجد حالات مطابقة للفلاتر' : 'مفيش حالات مؤجلة')+'</div>') + '</div></div>';
   }
-  var levels = LEVEL_OPTIONS.filter(function(l){ return poolCases(k).some(function(c){ return c.level===l; }); });
-  h += '<div class="modal-body" data-scroll="pool"><div class="pool-filters"><input class="case-search" style="flex:1;min-width:160px;" placeholder="بحث بالاسم أو المحافظة" value="'+esc(S.poolSearch)+'" data-k="pool-q" data-input="poolSearch"/>'+
-    (hasCode ? '<input class="case-search" style="width:130px;" dir="ltr" placeholder="الكود" value="'+esc(S.poolCode||'')+'" data-k="pool-code" data-input="poolCode"/>' : '')+
-    '<select class="filter-select" data-change="poolFund"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(f){ return f!=='بدون'; }).map(function(f){ return '<option value="'+esc(f)+'"'+(fundF===f?' selected':'')+'>'+esc(f)+'</option>'; }).join('')+
-      '<option value="بدون"'+(fundF==='بدون'?' selected':'')+'>غير ممولة</option></select>'+
-    '<select class="filter-select" data-change="poolLevel"><option value="">مستوى البتر: الكل</option>'+levels.map(function(l){ return '<option'+(lv===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select>'+
-    '<select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select></div>';
-  if (q || lv || cq || fundF) h += '<div class="field-hint" style="margin:-4px 0 8px;">'+list.length+' من '+poolCases(k).length+' حالة · <button class="link-btn"'+A('poolClear')+'>مسح الفلاتر</button></div>';
+  h += '<div class="modal-body" data-scroll="pool">'+bar+filtNote(list.length, poolCases(k).length);
   h += '<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
   list.forEach(function(c, i){
     h += '<tr><td class="rank-num">'+(i+1)+'</td>'+(hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+c.code+'</td>' : '')+
@@ -3789,8 +3826,7 @@ function filteredCases(){
     if (f.gov && c.gov!==f.gov) return false;
     if (f.funding && (f.funding==='بدون' ? c.funding!=='بدون' : c.funding!==f.funding)) return false;
     if (f.level && c.level!==f.level) return false;
-    if (ctx.type!=='measurement' && cq && c.code.toUpperCase().indexOf(cq)===-1) return false;
-    if (q && c.name.indexOf(q)===-1 && c.gov.indexOf(q)===-1 && c.phone.indexOf(q)===-1 && (ctx.type==='measurement' || c.code.toUpperCase().indexOf(q.toUpperCase())===-1)) return false;
+    if (!caseMatchQ(c, q, ctx.type!=='measurement')) return false;
     return true;
   });
   var srt = S.addCasesSort || '';
@@ -3845,11 +3881,20 @@ function renderAddCases(){
       (isAdmin() ? '<button class="btn btn-outline-dashed"'+A('setCasesTab','add')+'>+ إضافة من الحصّالة</button>' : '')+'</div></div>';
   }
   var ids = currentAddCasesIds();
-  var f = S.addCasesFilters, srt = S.addCasesSort || '', hasCode = ctx.type!=='measurement', pp = postponedFor(ctx.type);
   var SORTS = [['','الأولوية (افتراضي)'],['waitDesc','مدة الانتظار: الأطول أولًا'],['gov','المحافظة'],['ageAsc','السن: الأصغر الأول'],['ageDesc','السن: الأكبر الأول']];
+  var f = S.addCasesFilters, srt = S.addCasesSort || '', hasCode = ctx.type!=='measurement', ppAll = postponedFor(ctx.type);
+  var pp = ppAll.filter(function(x){ var c = x.c; return caseMatchQ(c, f.q, hasCode) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.funding || (f.funding==='بدون' ? c.funding==='بدون' || !c.funding : c.funding===f.funding)); });
+  var poolAll = CASES.filter(function(c){ return c.stage===ctx.type; }).concat(ppAll.map(function(x){ return x.c; }));
+  var fOn = f.q || f.funding || f.level || (f.gov && ctx.loc!=='convoy');
+  var bar = caseFilterBar('add', fltFields(poolAll, 'gov'), fltFields(poolAll, 'level'),
+    '<div class="cff"><label>الممول</label><select class="filter-select" data-change="setFilter" data-a="funding"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; }).map(function(x){ return '<option value="'+esc(x)+'"'+(f.funding===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+
+      '<option value="بدون"'+(f.funding==='بدون'?' selected':'')+'>غير ممولة</option></select></div>'+
+    (S.addCasesPP ? '' : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>')+
+    (fOn ? '<div class="cff cff-end"><button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>' : ''), ctx.loc==='convoy');
   var list = filteredCases();
   h += '<div class="pool-tabs" style="padding:0;margin-bottom:12px;"><button class="'+(!S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','0')+'>المتاحة للحجز <span class="count">'+list.length+'</span></button>'+
-    '<button class="'+(S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','1')+'>المؤجلات <span class="count">'+pp.length+'</span></button></div>';
+    '<button class="'+(S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','1')+'>المؤجلات <span class="count">'+ppAll.length+'</span></button></div>';
+  h += bar;
   if (S.addCasesPP){
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="pptbl"><table class="cases-table"><thead><tr><th style="width:34px;"></th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+
       '<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>التأجيل</th></tr></thead><tbody>';
@@ -3860,17 +3905,9 @@ function renderAddCases(){
         '<td>'+(c.funding && c.funding!=='بدون' ? esc(c.funding) : '<span class="field-hint" style="margin:0;">غير ممولة</span>')+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
-    h += '</tbody></table>'+(pp.length ? '' : '<div class="table-empty">مفيش حالات مؤجلة</div>')+'</div>';
+    h += '</tbody></table>'+(pp.length ? '' : '<div class="table-empty">'+(fOn ? 'لا توجد حالات مطابقة للفلاتر' : 'مفيش حالات مؤجلة')+'</div>')+'</div>';
   } else {
-    var levels = LEVEL_OPTIONS.filter(function(l){ return CASES.some(function(c){ return c.stage===ctx.type && c.level===l; }); });
-    h += '<div class="pool-filters"><input class="case-search" style="flex:1;min-width:160px;" placeholder="بحث بالاسم أو المحافظة" value="'+esc(f.q)+'" data-k="fq" data-input="setFilter" data-a="q"/>'+
-      (hasCode ? '<input class="case-search" style="width:130px;" dir="ltr" placeholder="الكود" value="'+esc(f.code||'')+'" data-k="fcode" data-input="setFilter" data-a="code"/>' : '')+
-      '<select class="filter-select" data-change="setFilter" data-a="funding"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; }).map(function(x){ return '<option value="'+esc(x)+'"'+(f.funding===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+
-        '<option value="بدون"'+(f.funding==='بدون'?' selected':'')+'>غير ممولة</option></select>'+
-      '<select class="filter-select" data-change="setFilter" data-a="level"><option value="">مستوى البتر: الكل</option>'+levels.map(function(l){ return '<option'+(f.level===l?' selected':'')+'>'+esc(l)+'</option>'; }).join('')+'</select>'+
-      '<select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>ترتيب حسب: '+o[1]+'</option>'; }).join('')+'</select>'+
-      (f.q || f.code || f.funding || f.level ? '<button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button>' : '')+'</div>';
-    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length+(function(){ var n = sel.filter(function(id){ return pp.some(function(x){ return x.c.id===id; }); }).length; return n ? ' ('+n+' من المؤجلات)' : ''; })() : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
+    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length+(function(){ var n = sel.filter(function(id){ return ppAll.some(function(x){ return x.c.id===id; }); }).length; return n ? ' ('+n+' من المؤجلات)' : ''; })() : 'مفيش اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
       '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
     list.forEach(function(c, i){
