@@ -5583,7 +5583,7 @@ function renderInboundCase(){
         : '<tr><td colspan="6" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>';
   }
   h += '<div class="cms-actions" style="justify-content:flex-start;"><button class="cms-btn cms-add"'+A('inboundAdd')+(open?' disabled style="opacity:.5;cursor:not-allowed;"':'')+'>'+pathIc('M12 5v14M5 12h14',13,'#fff',3)+' أضف</button>'+
-    (canDo(S.agentId, 'emergency') ? '<button class="cms-btn btn-emg"'+A('openEmg', d.id)+'>'+ic('alert',13,'#fff',2)+' حجز طوارئ</button>' : '')+'</div>';
+    (canDo(S.agentId, 'emergency') ? '<button class="cms-btn btn-emg"'+A('openEmg', d.id)+(emgBlock(d.id) ? ' disabled title="'+esc(emgBlock(d.id))+'" style="opacity:.5;cursor:not-allowed;"' : '')+'>'+ic('alert',13,'#fff',2)+' حجز طوارئ</button>' : '')+'</div>';
   return h + '</div></div></div>';
 }
 // =====================================================================
@@ -5594,6 +5594,12 @@ function renderInboundCase(){
 var EMG_KINDS = ['كسر أو عطل في الطرف','جرح أو ألم من السوكت','الطرف مش مظبوط ومش قادر يمشي','مشكلة في المفصل أو القدم','أخرى'];
 // emergency bookings are for maintenance evaluation only
 var EMG_VISITS = [['maintEval','تقييم صيانة']];
+// a case with an open maintenance request (or an emergency already booked) can't get another maintenance-evaluation booking
+function emgBlock(cid){
+  if (openMaintenance(cid)) return 'الحالة عندها طلب صيانة مفتوح – مينفعش يتحجزلها تقييم صيانة طوارئ';
+  var e = (S.emergencies||[]).filter(function(x){ return x.cid===cid && x.status==='booked' && x.dateOffset >= todayOffset(); })[0];
+  return e ? 'الحالة محجوزلها طوارئ ' + dayLabel(e.dateOffset) + ' بالفعل' : '';
+}
 function emgFor(off){ return (S.emergencies||[]).filter(function(e){ return e.dateOffset===off && e.status==='booked'; }); }
 function emgPerson(id){
   var d = DELIVERED_MAP[id]; if (d) return {id:d.id, name:d.name, phone:d.phone, code:d.code, gov:d.gov, level:d.level};
@@ -5631,6 +5637,8 @@ function renderEmg(){
   }
   h += '<div class="emg-who"><div><b>'+esc(p.name)+'</b>'+profBtn(p.id)+'</div><span>'+(p.code ? '<span dir="ltr">'+p.code+'</span> · ' : '')+esc(p.gov)+' · '+esc(p.level)+' · <span dir="ltr">'+fmtPhone(p.phone)+'</span>'+phCopy(p.phone)+'</span>'+
     (e.fixed ? '' : '<button class="link-btn"'+A('emgUnpick')+'>تغيير</button>')+'</div>';
+  var blk = emgBlock(p.id);
+  if (blk) return h + '<div class="rule-hint danger">'+esc(blk)+'</div></div><div class="modal-foot"><button class="btn btn-secondary"'+A('closeEmg')+'>إغلاق</button></div></div>';
   h += '<div class="field"><label class="field-label">نوع الطوارئ</label><div class="reason-pills">'+EMG_KINDS.map(function(k){ return '<button class="'+(e.kind===k?'on':'')+'"'+A('emgSet', 'kind', k)+'>'+k+'</button>'; }).join('')+'</div>'+
     '<textarea class="note-input" rows="2" style="margin-top:8px;" placeholder="تفاصيل الطوارئ'+(e.kind==='أخرى' ? ' (مطلوب)' : '')+'" data-k="emg-det" data-input="emgDetails">'+esc(e.details)+'</textarea></div>';
   h += '<div class="field"><label class="field-label">نوع الزيارة</label><div class="emg-visit">'+ic('alert',13,'#c81e3a',2)+' تقييم صيانة</div></div>';
@@ -5878,6 +5886,7 @@ Object.assign(ACT, {
   emgTime: function(v){ S.emg.time = v; render(); },
   emgBook: function(){
     var e = S.emg; if (!e || !e.cid || !e.kind || (e.kind==='أخرى' && !e.details.trim())) return;
+    if (emgBlock(e.cid)){ toast(emgBlock(e.cid)); return render(); }
     var p = emgPerson(e.cid);
     var rec = {id:'E'+Date.now(), cid:e.cid, kind:e.kind, details:e.details.trim(), visit:e.visit, dateOffset:e.dateOffset, time:e.time, note:e.note.trim(),
       by:S.agentId, byName:actorName(), at:now(), status:'booked'};
