@@ -1070,6 +1070,12 @@
     .calls-need{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
     .set-sub{font-size:11px;font-weight:500;color:var(--text-faint);margin-inline-start:6px;}
     .target-mode-row{display:flex;gap:8px;align-items:stretch;}
+    .num-step{flex:1;display:flex;align-items:stretch;border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden;}
+    .num-step .num-input{flex:1;border:0 !important;box-shadow:none !important;min-width:0;}
+    .num-arrows{display:flex;flex-direction:column;border-inline-start:1px solid var(--border);}
+    .num-arrows button{flex:1;display:flex;align-items:center;justify-content:center;width:30px;border:0;background:#f8fafc;color:#475569;cursor:pointer;padding:0;}
+    .num-arrows button:first-child{border-bottom:1px solid var(--border);}
+    .num-arrows button:hover{background:#e6f1fb;color:#0b6db0;}
     .target-mode-row .num-input{flex:1;min-width:0;}
     .auto-num{display:flex;align-items:center;background:var(--surface-2,#f1f5f9);color:var(--text);font-weight:700;cursor:default;}
     .mode-seg{flex:0 0 auto;margin:0;}
@@ -2323,6 +2329,7 @@ var ACT = {
   pickDayType: function(off, type){ S.dayMenu = null; openCreate(type, parseInt(off,10)); },
   setCreateTarget: function(v){ S.createDraft.target = v; render(); },
   setCreateAttend: function(v){ S.createDraft.attend = v; render(); },
+  stepCreateNum: function(field, d){ var x = S.createDraft; if (!x) return; var n = parseInt(x[field], 10); x[field] = String(Math.max(0, (isNaN(n) ? 0 : n) + parseInt(d, 10))); render(); },
   setCreateMode: function(m){
     var d = S.createDraft; if (d.targetMode===m) return;
     if (m==='booking') d.target = String(draftTarget(d) || recommendedFor(d.type, freeCapacity(d.dateOffset, d.editId, d.type)));
@@ -3707,9 +3714,11 @@ function renderCreate(){
   var loads = dayLoad(d.dateOffset, S.tasks.filter(function(x){ return x.id!==d.editId; }).concat([fake]));
   var anyOver = loads.some(function(x){ return x.load > x.cap; });
   h += '<div class="count-box'+(anyOver?' over':'')+'"><label class="field-label">'+(attMode ? 'عدد الحالات المطلوب حضورها' : 'عدد الحجوزات')+'</label><div class="target-mode-row">'+
-    (attMode
+    '<div class="num-step">'+(attMode
       ? '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.attend)+'" data-k="attend" data-input="setCreateAttend"/>'
       : '<input class="num-input" type="text" inputmode="numeric" value="'+esc(d.target)+'" data-k="target" data-input="setCreateTarget"/>')+
+      '<div class="num-arrows"><button title="زوّد"'+A('stepCreateNum', attMode ? 'attend' : 'target', 1)+'>'+pathIc('M6 15l6-6 6 6',13,null,2.6)+'</button>'+
+      '<button title="قلّل"'+A('stepCreateNum', attMode ? 'attend' : 'target', -1)+'>'+pathIc('M6 9l6 6 6-6',13,null,2.6)+'</button></div></div>'+
     '<div class="seg mode-seg"><button class="seg-btn'+(attMode?' on':'')+'"'+A('setCreateMode','attendance')+'>الحضور</button>'+
     '<button class="seg-btn'+(!attMode?' on':'')+'"'+A('setCreateMode','booking')+'>الحجز</button></div></div>';
   if (target>0){
