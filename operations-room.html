@@ -117,6 +117,11 @@
     .ffb{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:8px;padding:7px 12px;font:inherit;font-size:12px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;}
     .ffb.red{background:#f96a74;} .ffb.blue{background:#0093e9;} .ffb.green{background:#31c860;}
     .ffb:hover{filter:brightness(.95);}
+    .focus-total.ft2{padding:8px 16px;min-width:170px;}
+    .ft-cols{display:flex;align-items:center;gap:14px;} .ft-cols > div{display:flex;flex-direction:column;align-items:center;}
+    .ft-cols b{font-size:22px;line-height:1.1;} .ft-cols span{font-size:11.5px;opacity:.85;} .ft-cols i{width:1px;align-self:stretch;background:rgba(255,255,255,.25);}
+    .ft-bar{width:100%;height:5px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:7px;overflow:hidden;} .ft-bar em{display:block;height:100%;background:#4ade80;border-radius:4px;}
+    .focus-total small{font-size:10.5px;opacity:.8;margin-top:3px;}
     .focus-head-l{display:flex;align-items:center;gap:10px;}
     .undo-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #b9dcf5;background:#f0f8fe;color:#0b3a57;border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;text-align:right;}
     .undo-btn span{display:flex;flex-direction:column;line-height:1.35;} .undo-btn b{font-size:13px;} .undo-btn em{font-style:normal;font-size:11px;color:#64748b;}
@@ -3443,7 +3448,9 @@ function renderAgentFocus(){
   var total = due.length + other.length + later.length + hunt.length + conf.length;
   var tabs = agentTabs(); if (tabs.length && !tabs.some(function(x){ return x[0]===S.agentTab; })) S.agentTab = tabs[0][0];
   var h = '<div class="focus-wrap'+(S.agentTab==='newCase'?' wide':'')+'"><div class="focus-head"><div><div class="q-title">قائمتي النهارده – '+esc(agentName(S.agentId))+'</div><div class="q-sub">'+dayLabel(todayOffset())+'</div></div>'+
-    '<div class="focus-head-l">'+undoBtn()+'<div class="focus-total"><b>'+agentTotal(S.agentId)+'</b><span>إجمالي المكالمات</span></div></div></div>';
+    '<div class="focus-head-l">'+undoBtn()+(function(){ var left = agentTotal(S.agentId), doneN = agentDoneToday(S.agentId), all = left + doneN;
+      return '<div class="focus-total ft2"><div class="ft-cols"><div><b>'+all+'</b><span>الإجمالي</span></div><i></i><div><b>'+left+'</b><span>الباقي</span></div></div>'+
+        '<div class="ft-bar"><em style="width:'+(all ? Math.round(doneN/all*100) : 0)+'%"></em></div><small>اتعمل '+doneN+' من '+all+'</small></div>'; })()+'</div></div>';
   if (!tabs.length) return h + '<div class="focus-card empty"><div class="focus-empty-t">مفيش أنواع مكالمات متحددة ليك – كلّم مشرف الكول سنتر</div></div></div>';
   h += '<div class="sup-tabs agent-tabs">'+tabs.map(function(x){ return (x[3] ? '<span class="tab-div"></span>' : '')+'<button class="'+(S.agentTab===x[0]?'on':'')+'"'+A('setAgentTab', x[0])+'>'+x[1]+(x[2]!=null ? ' <span class="count">'+x[2]+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (S.agentTab==='newCase') return h + renderNewCase() + '</div>';
@@ -5089,6 +5096,18 @@ function renderCommittee(){
   return h;
 }
 // all the calls waiting for the agent = the sum of the counts on their tabs
+// calls the agent finished today (worked today and no longer in their lists) -> الإجمالي = المتبقي + اللي اتعمل
+function agentDoneToday(me){
+  var today = nowDate(), isToday = function(ms){ return ms && isSameDate(new Date(ms), today); }, open = {}, done = {};
+  queueItems(me).forEach(function(x){ open[x.t.id+'|'+x.cid] = 1; });
+  confirmItems(me).forEach(function(x){ open[x.t.id+'|'+x.cid] = 1; });
+  S.callLog.forEach(function(l){ if (l.agentId===me && isToday(l.at) && l.taskId && !open[l.taskId+'|'+l.caseId]) done['b|'+l.taskId+'|'+l.caseId] = 1; });
+  S.committee.forEach(function(k){ if (k.assignee===me && isToday(k.at) && k.status==='notified') done['k|'+k.id] = 1; });
+  Object.keys(S.surveys).forEach(function(k){ var sv = S.surveys[k]; if (sv.by===me && isToday(sv.at) && (sv.status==='done' || sv.status==='closed')) done['s|'+k] = 1; });
+  var fuOpen = {}; followItems(me).forEach(function(x){ fuOpen[x.id] = 1; });
+  Object.keys(S.followUps).forEach(function(id){ if (!fuOpen[id] && followLog(id).some(function(e){ return e.agentId===me && isToday(e.at); })) done['f|'+id] = 1; });
+  return Object.keys(done).length;
+}
 function agentTotal(me){ var save = S.agentId; S.agentId = me; var n = agentTabs().reduce(function(sum, t){ return sum + (t[2]||0); }, 0); S.agentId = save; return n; }
 // booking calls + attendance confirmations waiting for the agent
 function bookingCount(me){
