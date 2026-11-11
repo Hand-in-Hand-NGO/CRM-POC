@@ -146,7 +146,40 @@
     .pf-modal .cms-empty{text-align:center;color:#555;}
     .pf-modal .cms-ro{background:#eee;border:1px solid #d2d6de;padding:5px 10px;font-size:12.5px;min-height:30px;color:#555;}
     .pf-modal .cms-del{border:0;background:#f96a74;color:#fff;border-radius:4px;width:24px;height:22px;cursor:pointer;}
-    .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+    /* مرفقات الحالة: categories + document types */
+  .att-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .att-total{font-size:12px;font-weight:800;border-radius:10px;padding:2px 10px;background:#f96a74;color:#fff;font-variant-numeric:tabular-nums;}
+  .att-total.part{background:#f39c12;} .att-total.ok{background:#31c860;}
+  .att-tgl{width:30px;height:28px;border:1px solid #b9dcf5;background:#e6f1fb;color:#0093e9;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+  .att-dl{margin-inline-start:auto;display:inline-flex;align-items:center;gap:5px;border:0;background:#f0c27b;color:#fff;border-radius:10px;padding:6px 14px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;}
+  .att-dl:hover{background:#e6a94f;} .att-dl:disabled{opacity:.5;cursor:default;}
+  .att-cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start;}
+  .att-cat{border:1px solid #f3c9cf;border-radius:10px;background:#fff;overflow:hidden;}
+  .att-cat.ok{border-color:#b7e4c4;}
+  .att-cat-h{display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;background:#fff6f7;user-select:none;}
+  .att-cat.ok .att-cat-h{background:#eefbf0;}
+  .att-cat-h b{font-size:13px;color:#c81e3a;} .att-cat.ok .att-cat-h b{color:#15803d;}
+  .att-chev{color:#94a3b8;display:inline-flex;transition:transform .15s;transform:rotate(90deg);} .att-cat.open .att-chev{transform:none;}
+  .att-ic{width:16px;height:16px;border-radius:50%;background:#c81e3a;color:#fff;font-size:11px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  .att-cat.ok .att-ic{background:#15803d;}
+  .att-n{font-size:12px;color:#64748b;font-weight:700;font-variant-numeric:tabular-nums;}
+  .att-badge{margin-inline-start:auto;display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#fff;border-radius:10px;padding:1px 9px;white-space:nowrap;}
+  .att-badge.req{background:#f96a74;} .att-badge.ok{background:#31c860;}
+  .att-items{padding:4px 10px 8px;border-top:1px solid #f1f3f6;}
+  .att-item{padding:5px 0;border-bottom:1px dashed #eef0f3;} .att-item:last-child{border-bottom:0;}
+  .att-item-h{display:flex;align-items:center;gap:6px;font-size:12.5px;}
+  .att-mark{width:16px;display:inline-flex;justify-content:center;color:#c81e3a;flex:none;}
+  .att-name{color:#c81e3a;font-weight:700;}
+  .att-item.ok .att-mark{color:#15803d;} .att-item.ok .att-name{color:#15803d;}
+  .att-add{margin:0 auto 0 0;display:inline-flex;align-items:center;gap:4px;background:#31c860;color:#fff;border-radius:8px;padding:2px 9px;font-size:11.5px;font-weight:800;cursor:pointer;}
+  [dir="rtl"] .att-add, .pf-modal .att-add{margin:0;margin-inline-start:auto;}
+  .att-add:hover{background:#2db457;}
+  .att-file{display:flex;align-items:center;gap:6px;margin:4px 0 0;margin-inline-start:22px;background:#eefbf0;border:1px solid #c9ecd3;border-radius:6px;padding:3px 8px;font-size:11.5px;}
+  .att-fn{font-weight:700;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .att-meta{color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .att-del{margin-inline-start:auto;border:0;background:#f96a74;color:#fff;border-radius:4px;width:20px;height:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  @media (max-width:980px){ .att-cats{grid-template-columns:1fr;} }
+  .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
     .pf-upload{display:flex;justify-content:flex-end;margin-bottom:12px;}
@@ -4451,6 +4484,51 @@ function phoneRows(f, list, pre, act, delAct, addAct, tried){
 }
 // added numbers that are empty or short (they must be written or deleted)
 function badExtraPhones(list){ return (list || []).filter(function(x){ return String(x||'').replace(/\D/g,'').length < 10; }); }
+
+// ---------- مرفقات الحالة: categories that open / close, each with its document types and its own upload ----------
+// a type turns green once a file is uploaded to it; a category turns green as soon as one of its types has a file
+var ATT_CATS = [
+  ['اثبات شخصية', ['باسبور','بطاقة رقم قومى','حيازة زراعية','شهادة ميلاد','مفوضية']],
+  ['اثبات محل الاقامة', ['بحث اجتماعي','عقد ايجار']],
+  ['ارشيف', ['ارشيف','فيديو الحالة']],
+  ['الاقرارات', ['اقرار استلام','اقرار تصنيع','اقرار تصوير']],
+  ['الحالة الاجتماعية', ['شهادة وفاة','عقد زواج','قسيمة طلاق']],
+  ['الدخل والاملاك', ['برينت تأمينى','بيان معاش','مفردات مرتب']],
+  ['مستندات دراسية', ['قيد دراسي','مؤهل دراسي']],
+  ['مستندات طبية', ['أشعة','تقرير طبي']],
+];
+// old attachments (no category) go to ارشيف
+function attOf(d){
+  (d.attachments || []).forEach(function(a){ if (!a.cat){ a.cat = 'ارشيف'; a.item = a.type==='فيديو' ? 'فيديو الحالة' : 'ارشيف'; } });
+  return d.attachments || [];
+}
+function renderAttachments(d){
+  var list = attOf(d), po = PROFILES.open, open = po.attOpen || (po.attOpen = {});
+  var done = ATT_CATS.filter(function(c){ return list.some(function(a){ return a.cat===c[0]; }); }).length;
+  var allOpen = ATT_CATS.every(function(c){ return open[c[0]]!==false; });
+  var h = '<div class="att-bar"><span class="att-total'+(done===ATT_CATS.length ? ' ok' : done ? ' part' : '')+'">'+done+'/'+ATT_CATS.length+'</span>'+
+    '<button class="att-tgl" title="'+(allOpen ? 'طي الكل' : 'فتح الكل')+'"'+A('attAll', allOpen ? '0' : '1')+'>'+pathIc(allOpen ? 'M6 15l6-6 6 6 M6 21l6-6 6 6' : 'M6 3l6 6 6-6 M6 9l6 6 6-6',14,null,2.4)+'</button>'+
+    '<button class="att-dl"'+(list.length ? A('attDownload') : ' disabled')+'>'+pfIc('upload',12,null,2.4).replace('M12 16V4 M7 9l5-5 5 5','M12 4v12 M7 11l5 5 5-5')+' تحميل الكل'+(list.length ? ' ('+list.length+')' : '')+'</button></div><div class="att-cats">';
+  ATT_CATS.forEach(function(c){
+    var files = list.filter(function(a){ return a.cat===c[0]; }), on = c[1].filter(function(it){ return files.some(function(a){ return a.item===it; }); }).length, isOpen = open[c[0]]!==false;
+    h += '<div class="att-cat'+(on ? ' ok' : '')+(isOpen ? ' open' : '')+'"><div class="att-cat-h" role="button"'+A('attCat', c[0])+'>'+
+      '<span class="att-chev">'+pathIc('M6 9l6 6 6-6',13,null,2.6)+'</span><span class="att-ic">'+(on ? pfIc('check',11,'#fff',3.2) : '!')+'</span>'+
+      '<b>'+esc(c[0])+'</b><span class="att-n">('+on+'/'+c[1].length+')</span>'+
+      (on ? '<span class="att-badge ok">'+pfIc('check',10,'#fff',3.2)+' تم الرفع</span>' : '<span class="att-badge req">⚠ مطلوب</span>')+'</div>';
+    if (isOpen){
+      h += '<div class="att-items">'+c[1].map(function(it){
+        var fs = files.filter(function(a){ return a.item===it; });
+        return '<div class="att-item'+(fs.length ? ' ok' : '')+'"><div class="att-item-h"><span class="att-mark">'+(fs.length ? pfIc('check',12,null,3) : pfIc('x',11,null,3))+'</span><span class="att-name">'+esc(it)+'</span>'+
+          '<label class="att-add" title="رفع '+esc(it)+'">'+pathIc('M12 5v14M5 12h14',11,'#fff',3.2)+' أضف<input type="file" hidden'+(it.indexOf('فيديو')!==-1 ? ' accept="video/*"' : '')+' data-change="profAttach" data-a="'+esc(c[0]+'::'+it)+'"/></label></div>'+
+          fs.map(function(a){ var i = list.indexOf(a);
+            return '<div class="att-file">'+pfIc('copy',11,'#15803d',2)+'<span class="att-fn" title="'+esc(a.name)+'">'+esc(a.name)+'</span><span class="att-meta">'+esc(a.by)+' · '+esc(a.at)+'</span><button class="att-del" title="حذف المرفق"'+A('profDetach', i)+'>'+pfIc('x',10,null,3)+'</button></div>'; }).join('')+
+          '</div>';
+      }).join('')+'</div>';
+    }
+    h += '</div>';
+  });
+  return h + '</div>';
+}
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4542,12 +4620,7 @@ function renderProfile(){
     return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
       x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div></div></li>';
   }).join('')+'</ol>');
-  h += sec('files', 'upload', 'مرفقات الحالة',
-    '<div class="pf-upload"><label class="cms-btn pf-up-file">'+pfIc('upload',12,'#fff',2.2)+' رفع ملف<input type="file" hidden data-change="profAttach" data-a="ملف"/></label>'+
-    '<label class="cms-btn pf-up-video">'+pfIc('upload',12,'#fff',2.2)+' رفع فيديو<input type="file" accept="video/*" hidden data-change="profAttach" data-a="فيديو"/></label></div>'+
-    '<table class="cms-table"><thead><tr><th>المرفق</th><th>نوع المرفق</th><th>تم الإضافة بواسطة</th><th>تاريخ الإضافة</th><th>حذف</th></tr></thead><tbody>'+
-    (d.attachments.length ? d.attachments.map(function(a, i){ return '<tr><td>'+esc(a.name)+'</td><td>'+esc(a.type)+'</td><td>'+esc(a.by)+'</td><td>'+esc(a.at)+'</td><td><button class="cms-del"'+A('profDetach', i)+'>'+pfIc('x',12,null,2.4)+'</button></td></tr>'; }).join('')
-      : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>', '<span class="cf-count">'+d.attachments.length+'</span>');
+  h += sec('files', 'upload', 'مرفقات الحالة', renderAttachments(d));
   h += sec('changes', 'history', 'التغييرات التي تمت',
     '<table class="cms-table"><thead><tr><th>الحقل</th><th>من</th><th>إلى</th><th>بواسطة</th><th>التاريخ</th></tr></thead><tbody>'+
       (d.changes.length ? d.changes.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.field)+'</td><td>'+esc(x.from)+'</td><td>'+esc(x.to)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.at)+'</td></tr>'; }).join('')
@@ -4585,10 +4658,15 @@ var PF_ACTIONS = {
   profActive: function(v){ PROFILES.open.draft.active = v==='1'; render(); },
   profToggleFunded: function(){ PROFILES.open.draft.fundedNoResearch = !PROFILES.open.draft.fundedNoResearch; render(); },
   profShowChanges: function(){ PROFILES.open.showChanges = !PROFILES.open.showChanges; render(); },
-  profAttach: function(v, type){
+  profAttach: function(v, key){
     var name = String(v||'').split(/[\\/]/).pop(); if (!name) return;
-    PROFILES.open.draft.attachments.push({name:name, type:type, by:PF_HOOKS.who(), at:pfStamp()}); render();
+    var k = String(key||'').split('::'), cat = k[1] ? k[0] : 'ارشيف', item = k[1] || 'ارشيف';
+    PROFILES.open.draft.attachments.push({name:name, cat:cat, item:item, type:item, by:PF_HOOKS.who(), at:pfStamp()});
+    (PROFILES.open.attOpen || (PROFILES.open.attOpen = {}))[cat] = true; render();
   },
+  attCat: function(c){ var o = PROFILES.open.attOpen || (PROFILES.open.attOpen = {}); o[c] = o[c]===false; render(); },
+  attAll: function(v){ var o = PROFILES.open.attOpen = {}; ATT_CATS.forEach(function(c){ o[c[0]] = v==='1'; }); render(); },
+  attDownload: function(){ var n = attOf(PROFILES.open.draft).length; toast('جاري تحميل ' + n + ' مرفق'); },
   profDetach: function(i){ PROFILES.open.draft.attachments.splice(parseInt(i,10),1); render(); },
   profSave: function(){
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
