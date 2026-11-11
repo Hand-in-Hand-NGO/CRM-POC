@@ -428,7 +428,8 @@
     .lock-badge{margin-right:auto;color:var(--text-faint);}
 
     /* ---------- calendar ---------- */
-    .calendar-grid{display:flex;gap:0;padding:16px 22px 40px;align-items:flex-start;}
+    .calendar-grid{display:flex;gap:0;padding:16px 22px 40px;align-items:stretch;}
+    .day-col{display:flex;flex-direction:column;} .day-col .day-body{flex:1;}
     .day-col{flex:1 1 0;min-width:0;border-right:1px solid var(--border);padding:0 9px;transition:background .12s ease;}
     .day-col:first-child{border-right:none;}
     .day-col.is-today{background:#eef4ff;border-radius:12px;box-shadow:inset 0 0 0 2px #93b8ff;padding-top:8px;margin-top:-8px;padding-bottom:8px;border-right-color:transparent;}
@@ -1971,7 +1972,8 @@ function freeCapacity(off, exceptId, type){
 function draftAttend(d){ return parseInt(d.attend,10)||0; }
 function draftTarget(d){ return d.targetMode==='attendance' ? recommendedFor(d.type, draftAttend(d)) : (parseInt(d.target,10)||0); }
 // default attendees = what the free capacity of the day is expected to bring
-function defaultAttend(type, off, exceptId){ return freeCapacity(off, exceptId, type); }   // what is left of the day's capacity
+// what is left of the day's capacity; a full day still starts from a normal number (no limit on tasks per day)
+function defaultAttend(type, off, exceptId){ var f = freeCapacity(off, exceptId, type); return f > 0 && f !== Infinity ? f : 10; }
 function priorityOf(ctx, c){
   var reasons = [], score = 0, eligible = true, why = '';
   if (c.stage !== ctx.type){ eligible = false; why = 'ليست في مرحلة ' + TASK_TYPES[ctx.type].short; }
@@ -2379,12 +2381,8 @@ var ACT = {
         : publish==='1' ? 'تم إنشاء المهمة ونشرها للكول سنتر' : 'تم إنشاء المهمة كمسودة');
       render();
     };
-    if (!overDays.length){ apply(); return; }
-    S.overlay = 'confirm';
-    S.confirm = {title:'تحذير: تجاوز الطاقة الاستيعابية', tone:'warn', message:'الأيام دي هتتخطى الطاقة الاستيعابية:',
-      items: overDays.map(function(off){ var x = dayLoad(off, after)[0]; return {label:dayLabel(off), value:'المطلوب ' + capTxt(x.load) + ' / المتاح ' + capTxt(x.cap)}; }),
-      confirmLabel:'حفظ رغم التجاوز', onConfirm:apply, returnTo:'create'};
-    render();
+    // no limit on tasks per day: the capacity bar in the form and on the day shows any overage
+    apply();
   },
   setRepeat: function(v){ var r = S.createDraft.repeat; r.on = v!=='0'; if (r.on) r.freq = v; if (!r.days.length) r.days = [weekdayOf(S.createDraft.dateOffset)]; render(); },
   setRepeatMonthBy: function(v){ S.createDraft.repeat.monthBy = v; render(); },
