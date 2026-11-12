@@ -179,6 +179,42 @@
   .att-meta{color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .att-del{margin-inline-start:auto;border:0;background:#f96a74;color:#fff;border-radius:4px;width:20px;height:18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;}
   @media (max-width:980px){ .att-cats{grid-template-columns:1fr;} }
+  /* خريطة البتر (body map) */
+  .bm-wrap{display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);gap:18px;align-items:start;}
+  .bm-fig{position:relative;background:linear-gradient(180deg,#f8fafc,#f1f5f9);border:1px solid #e5e7eb;border-radius:12px;padding:10px 8px 6px;}
+  .bm-svg{display:block;width:100%;height:auto;max-height:440px;direction:ltr;}
+  .bm-base{fill:#d5dae1;stroke:#fff;stroke-width:1.6;}
+  .bm-seg{fill:#d5dae1;stroke:#fff;stroke-width:1.6;transition:fill .15s, filter .15s;}
+  .bm-seg.cur{fill:#f96a74;}
+  .bm-seg.oth{fill:#0093e9;cursor:pointer;}
+  .bm-seg.both{stroke:#0093e9;stroke-width:2.6;stroke-dasharray:4 3;cursor:pointer;}
+  .bm-seg[role=button]:hover, .bm-seg[role=button]:focus{filter:brightness(.88);outline:none;}
+  .bm-seg[role=button]:focus{stroke:#1f2937;stroke-width:2.4;}
+  .bm-side-lbl{font-family:inherit;font-size:11px;font-weight:800;fill:#0b3a57;}
+  .bm-side-arr{fill:none;stroke:#0b6db0;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .bm-menu{position:absolute;transform:translate(-50%,8px);z-index:5;min-width:210px;max-width:260px;background:#fff;border:1px solid #d2d6de;border-radius:10px;box-shadow:0 10px 26px rgba(20,24,34,.18);padding:6px;direction:rtl;}
+  .bm-menu-h{font-size:11.5px;font-weight:800;color:#64748b;padding:2px 6px 6px;border-bottom:1px solid #eef0f3;margin-bottom:4px;}
+  .bm-menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:none;text-align:right;padding:6px;border-radius:7px;font:inherit;font-size:12.5px;color:#1f2937;cursor:pointer;}
+  .bm-menu button:hover{background:#e6f1fb;}
+  .bm-menu button.cur{cursor:default;color:#64748b;} .bm-menu button.cur:hover{background:none;}
+  .bm-menu em{font-style:normal;font-size:11px;color:#c81e3a;font-weight:700;}
+  .bm-info{display:flex;flex-direction:column;gap:8px;min-width:0;}
+  .bm-kv{display:flex;flex-direction:column;gap:2px;background:#f8fafc;border:1px solid #eef0f3;border-radius:10px;padding:8px 12px;}
+  .bm-kv span{font-size:11.5px;font-weight:700;color:#64748b;} .bm-kv b{font-size:15px;font-weight:800;color:#1f2937;}
+  .bm-dot{display:inline-block;width:11px;height:11px;border-radius:3px;flex:none;}
+  .bm-dot.cur{background:#f96a74;} .bm-dot.oth{background:#0093e9;} .bm-dot.base{background:#d5dae1;}
+  .bm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#475569;}
+  .bm-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .bm-warn{font-size:12.5px;font-weight:700;color:#b45309;background:#fff4e5;border-radius:8px;padding:7px 10px;}
+  .bm-note{font-size:12px;color:#475569;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 10px;line-height:1.7;}
+  .bm-others{border-top:1px dashed #e5e7eb;padding-top:8px;}
+  .bm-oh{font-size:12.5px;font-weight:800;color:#0b3a57;margin-bottom:6px;}
+  .bm-oreq{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #b9dcf5;background:#f5faff;border-radius:8px;padding:7px 10px;margin-bottom:6px;font:inherit;font-size:12.5px;color:#1f2937;cursor:pointer;text-align:right;}
+  .bm-oreq:hover{background:#e6f1fb;border-color:#0093e9;}
+  .bm-oreq b{font-weight:800;color:#0b6db0;}
+  .bm-oreq em{font-style:normal;font-size:11px;font-weight:700;color:#64748b;background:#fff;border-radius:8px;padding:0 7px;margin-inline-start:6px;}
+  .bm-hint{font-size:11.5px;color:#97a0ad;}
+  @media (max-width:700px){ .bm-wrap{grid-template-columns:1fr;} .bm-fig{max-width:300px;margin:0 auto;width:100%;} }
   .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
@@ -4529,6 +4565,157 @@ function renderAttachments(d){
   });
   return h + '</div>';
 }
+
+// =====================================================================
+// خريطة البتر – front view of a body inside ملف الحالة
+//  * every limb segment is its own SVG path (id = side + '-' + part), so it can be coloured / clicked on its own
+//  * the person's right is drawn on the viewer's left (front view)
+//  * requests of the same person are linked by case.person (the shared person id), never by name
+//  * colours come from the SAVED profiles (level + side), so they change right after "حفظ"
+// To extend later: add a part to BM_PARTS, a level to BM_LEVELS, or a colour class in .bm-seg.*
+// =====================================================================
+var BM_W = 220, BM_H = 460;
+// person's RIGHT side parts: [part, x1, y1, x2, y2, width at start, width at end, label]
+var BM_PARTS = [
+  ['armUp',    72, 88, 64,128, 24, 22, 'أعلى العضد'],
+  ['armLow',   64,128, 58,170, 22, 19, 'أسفل العضد'],
+  ['forearm',  58,170, 51,240, 18, 14, 'الساعد'],
+  ['hand',     51,240, 47,280, 15, 12, 'اليد'],
+  ['thighUp',  93,238, 91,290, 36, 32, 'أعلى الفخذ'],
+  ['thighLow', 91,290, 90,340, 32, 25, 'أسفل الفخذ'],
+  ['shin',     90,340, 89,412, 23, 16, 'الساق'],
+  ['foot',     89,412, 86,444, 17, 22, 'القدم'],
+];
+// level → amputated parts (from the cut level down to the end of the limb)
+var BM_LEVELS = [
+  {re:/مشط القدم|أصابع القدم/,      parts:['foot']},
+  {re:/تحت الركبة|أسفل الركبة/,      parts:['shin','foot']},
+  {re:/فوق الركبة|أعلى الركبة/,      parts:['thighLow','shin','foot']},
+  {re:/مفصل الحوض/,                 parts:['thighUp','thighLow','shin','foot']},
+  {re:/أصابع اليد/,                  parts:['hand']},
+  {re:/تحت الكوع|الساعد/,            parts:['forearm','hand']},
+  {re:/فوق الكوع|أعلى المرفق/,       parts:['armLow','forearm','hand']},
+  {re:/مفصل الكتف/,                 parts:['armUp','armLow','forearm','hand']},
+];
+var BM_SIDE_TXT = {R:'يمين الحالة', L:'يسار الحالة'};
+// 'الأيمن' / 'أيمن' → R, 'الأيسر' / 'أيسر' → L, 'الاثنين' → both
+function bmSides(side){
+  side = String(side||'');
+  if (/اثنين|اتنين|الجهتين|كلا/.test(side)) return ['R','L'];
+  if (/يمن|يمين/.test(side)) return ['R'];
+  if (/يسر|يسار/.test(side)) return ['L'];
+  return [];
+}
+function bmLevelParts(level){ for (var i=0;i<BM_LEVELS.length;i++){ if (BM_LEVELS[i].re.test(String(level||''))) return BM_LEVELS[i].parts; } return null; }
+// segment ids of one request, e.g. ['R-shin','R-foot']
+function bmRegions(level, side){
+  var parts = bmLevelParts(level), sides = bmSides(side), out = [];
+  if (!parts) return out;
+  sides.forEach(function(s){ parts.forEach(function(p){ out.push(s + '-' + p); }); });
+  return out;
+}
+function bmSideText(side){ var s = bmSides(side); return s.length===2 ? 'الجهتين (يمين ويسار الحالة)' : s.length ? BM_SIDE_TXT[s[0]] : 'غير محددة'; }
+// geometry: tapered segment with rounded ends between two centre points
+function bmSegPath(x1, y1, x2, y2, w1, w2){
+  var dx = x2-x1, dy = y2-y1, L = Math.sqrt(dx*dx + dy*dy), nx = -dy/L, ny = dx/L, r1 = w1/2, r2 = w2/2;
+  function pt(x, y){ return x.toFixed(1) + ' ' + y.toFixed(1); }
+  return 'M' + pt(x1+nx*r1, y1+ny*r1) + ' L' + pt(x2+nx*r2, y2+ny*r2) + ' A' + r2 + ' ' + r2 + ' 0 0 0 ' + pt(x2-nx*r2, y2-ny*r2) +
+    ' L' + pt(x1-nx*r1, y1-ny*r1) + ' A' + r1 + ' ' + r1 + ' 0 0 0 ' + pt(x1+nx*r1, y1+ny*r1) + ' Z';
+}
+// all limb segments of both sides (left side = mirror of the right one)
+var BM_SEGS = (function(){
+  var out = {};
+  BM_PARTS.forEach(function(p){
+    out['R-' + p[0]] = {part:p[0], side:'R', label:p[7], d:bmSegPath(p[1], p[2], p[3], p[4], p[5], p[6]), cx:(p[1]+p[3])/2, cy:(p[2]+p[4])/2};
+    out['L-' + p[0]] = {part:p[0], side:'L', label:p[7], d:bmSegPath(BM_W-p[1], p[2], BM_W-p[3], p[4], p[5], p[6]), cx:BM_W-(p[1]+p[3])/2, cy:(p[2]+p[4])/2};
+  });
+  return out;
+})();
+// the requests of the same person (shared person id) with their saved level / side
+function bmData(id){
+  var c = typeof caseById==='function' ? caseById(id) : null, linked = !!c;
+  var list = linked ? CASES.filter(function(x){ return (x.person || x.id) === (c.person || c.id); }) : [{id:id}];
+  if (!list.some(function(x){ return x.id===id; })) list.unshift({id:id});
+  var reqs = list.map(function(x){
+    var pf = profileOf(x.id) || {}, cx = caseById(x.id);
+    return {id:x.id, cur:x.id===id, name:pf.name || (cx && cx.name) || '', code:pf.code || (cx && cx.stage!=='measurement' ? cx.code : '') || '', level:pf.level || (cx && cx.level) || '', side:pf.side || '',
+      stage:cx && TASK_TYPES[cx.stage] ? TASK_TYPES[cx.stage].label : (cx && cx.stage==='postponed' ? 'مؤجل' : (DELIVERED_MAP[x.id] ? 'استلم الطرف' : '')),
+      regions:bmRegions(pf.level || (cx && cx.level), pf.side)};
+  });
+  reqs.sort(function(a, b){ return (b.cur?1:0) - (a.cur?1:0); });
+  var bySeg = {};
+  reqs.forEach(function(r){ r.regions.forEach(function(s){ (bySeg[s] = bySeg[s] || []).push(r.id); }); });
+  return {id:id, linked:linked, reqs:reqs, bySeg:bySeg, cur:reqs[0]};
+}
+function bmReq(data, rid){ return data.reqs.filter(function(r){ return r.id===rid; })[0]; }
+function bmReqTitle(r){ return (r.code ? r.code + ' – ' : '') + (r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side); }
+function renderBodyMap(id){
+  var data = bmData(id), cur = data.cur, menu = PROFILES.open && PROFILES.open.bmMenu, others = data.reqs.filter(function(r){ return !r.cur; });
+  var body = '<path class="bm-base" d="M110 12 a22 25 0 1 1 -0.1 0 Z"/>'+                                  // head
+    '<path class="bm-base" d="M101 60 h18 v16 h-18 Z"/>'+                                                  // neck
+    '<path class="bm-base" d="M76 78 Q110 70 144 78 Q152 82 150 96 L146 132 Q143 168 140 198 L80 198 Q77 168 74 132 L70 96 Q68 82 76 78 Z"/>'+   // torso
+    '<path class="bm-base" d="M80 198 L140 198 Q147 218 145 240 Q128 250 110 248 Q92 250 75 240 Q73 218 80 198 Z"/>';                      // pelvis
+  Object.keys(BM_SEGS).forEach(function(k){
+    var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return x!==cur.id; });
+    var cls = 'bm-seg' + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
+    var nav = hasOther;   // only parts linked to another request can be clicked
+    var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (r.cur ? 'الطلب الحالي' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
+    body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"'+(nav ? ' role="button" tabindex="0" aria-label="'+esc(tip)+'"'+A('bmPick', k) : '')+'><title>'+esc(tip)+'</title></path>';
+  });
+  var svg = '<svg class="bm-svg" viewBox="0 0 '+BM_W+' '+BM_H+'" role="img" aria-label="رسم جسم الحالة – المنظر الأمامي">'+
+    '<text class="bm-side-lbl" x="34" y="18" text-anchor="middle">يمين الحالة</text><path class="bm-side-arr" d="M34 24 v14 M29 33 l5 5 5-5"/>'+
+    '<text class="bm-side-lbl" x="186" y="18" text-anchor="middle">يسار الحالة</text><path class="bm-side-arr" d="M186 24 v14 M181 33 l5 5 5-5"/>'+
+    body + '</svg>';
+  // small chooser when a part belongs to several requests
+  if (menu && menu.id===id && BM_SEGS[menu.seg]){
+    var sg = BM_SEGS[menu.seg];
+    svg += '<div class="bm-menu" style="left:'+(sg.cx/BM_W*100).toFixed(1)+'%;top:'+(sg.cy/BM_H*100).toFixed(1)+'%;"><div class="bm-menu-h">'+esc(BM_SIDE_TXT[sg.side] + ' – ' + sg.label)+'</div>'+
+      (data.bySeg[menu.seg] || []).map(function(rid){ var r = bmReq(data, rid);
+        return '<button class="'+(r.cur ? 'cur' : '')+'"'+(r.cur ? ' disabled' : A('bmGo', rid))+'><i class="bm-dot '+(r.cur ? 'cur' : 'oth')+'"></i><span>'+esc(bmReqTitle(r))+(r.cur ? ' <em>(الطلب الحالي)</em>' : '')+'</span></button>'; }).join('')+'</div>';
+  }
+  // description next to the drawing
+  var info = '<div class="bm-info"><div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
+    '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
+    (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
+    '<div class="bm-legend"><span><i class="bm-dot cur"></i>الطلب الحالي</span><span><i class="bm-dot oth"></i>طلب آخر لنفس الشخص</span><span><i class="bm-dot base"></i>لا يوجد طلب</span></div>';
+  if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة الطلب الحالي فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
+  else if (others.length){
+    info += '<div class="bm-others"><div class="bm-oh">طلبات أخرى لنفس الشخص ('+others.length+')</div>'+others.map(function(r){
+      return '<button class="bm-oreq"'+A('bmGo', r.id)+'><i class="bm-dot oth"></i><span><b>'+esc(r.code || r.id)+'</b> '+esc((r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side))+(r.stage ? '<em>'+esc(r.stage)+'</em>' : '')+'</span></button>'; }).join('')+
+      '<div class="bm-hint">اضغط على المنطقة الملونة بالأزرق أو على الطلب لفتح بياناته.</div></div>';
+  } else info += '<div class="bm-hint">لا توجد طلبات أخرى لنفس الشخص.</div>';
+  info += '</div>';
+  return '<div class="bm-wrap"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
+}
+// unsaved edits on the open request (same fields the save compares)
+function pfDirty(){
+  var po = PROFILES.open; if (!po) return false;
+  var old = PROFILES.store[po.id] || {}, d = po.draft;
+  return Object.keys(PROFILE_LABELS).some(function(k){ return String(old[k]==null?'':old[k]) !== String(d[k]==null?'':d[k]); }) ||
+    (old.extraPhones||[]).join(',') !== (d.extraPhones||[]).join(',') || (old.attachments||[]).length !== (d.attachments||[]).length;
+}
+var BM_ACTIONS = {
+  bmPick: function(seg){
+    var po = PROFILES.open; if (!po) return;
+    var data = bmData(po.id), ids = data.bySeg[seg] || [];
+    if (!ids.some(function(x){ return x!==po.id; })) return;                 // only the current request → nothing to open
+    if (ids.length===1){ ACT.bmGo(ids[0]); return; }                         // one other request → open it
+    po.bmMenu = po.bmMenu && po.bmMenu.seg===seg ? null : {id:po.id, seg:seg}; render();
+  },
+  bmGo: function(rid){
+    var po = PROFILES.open; if (!po || rid===po.id) return;
+    if (pfDirty() && !window.confirm('توجد تعديلات غير محفوظة على هذا الطلب. هل تريد الانتقال إلى الطلب الآخر وتجاهلها؟')) return;
+    ACT.openProfile(rid);
+    var el = document.getElementById('cf-body'); if (el) el.scrollIntoView({block:'nearest'});
+  },
+};
+Object.assign(ACT, BM_ACTIONS);
+document.addEventListener('click', function(e){ var po = PROFILES.open; if (po && po.bmMenu && !e.target.closest('.bm-menu') && !e.target.closest('[data-act="bmPick"]')){ po.bmMenu = null; render(); } });
+document.addEventListener('keydown', function(e){
+  var el = e.target;
+  if ((e.key==='Enter' || e.key===' ') && el && el.getAttribute && el.getAttribute('data-act')==='bmPick'){ e.preventDefault(); ACT.bmPick(el.getAttribute('data-a')); return; }
+  if (e.key==='Escape' && PROFILES.open && PROFILES.open.bmMenu){ PROFILES.open.bmMenu = null; render(); }
+});
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4555,7 +4742,7 @@ function renderProfile(){
     '<div class="cf-meta">'+[d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'].filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div></div>'+
     '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
   // section nav
-  var nav = [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['request','بيانات الطلب'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
+  var nav = [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['body','خريطة البتر'],['request','بيانات الطلب'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   h += '<div class="cf-nav">'+nav.map(function(x){ return '<button'+A('pfGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-grid"><div class="cf-main">';
   h += sec('personal', 'user', 'البيانات الشخصية',
@@ -4571,6 +4758,7 @@ function renderProfile(){
     row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
     row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+row(['weight','الوزن',1,'num'], ['chronic','الأمراض المزمنة',1,'select'])+devRow+
     (res.ok!==null ? '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.until ? ' حتى ' + x.until : x.k==='ok' ? '' : ' حتى تاريخ'); }).join('<br>')+'</div>' : ''));
+  h += sec('body', 'user', 'خريطة البتر', renderBodyMap(pf.id), '<span class="cf-h-note">المنظر الأمامي – اليمين واليسار من منظور الحالة</span>');
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
     row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
