@@ -185,9 +185,9 @@
   .bm-svg{display:block;width:100%;height:auto;max-height:440px;direction:ltr;}
   .bm-base{fill:#d5dae1;stroke:#fff;stroke-width:1.6;}
   .bm-seg{fill:#d5dae1;stroke:#fff;stroke-width:1.6;transition:fill .15s, filter .15s;}
-  .bm-seg.cur{fill:#f96a74;}
-  .bm-seg.oth{fill:#0093e9;cursor:pointer;}
-  .bm-seg.both{stroke:#0093e9;stroke-width:2.6;stroke-dasharray:4 3;cursor:pointer;}
+  .bm-seg.cur{fill:#31c860;}
+  .bm-seg.oth{fill:#f96a74;cursor:pointer;}
+  .bm-seg.both{stroke:#c81e3a;stroke-width:2.6;stroke-dasharray:4 3;cursor:pointer;}
   .bm-seg[role=button]:hover, .bm-seg[role=button]:focus{filter:brightness(.88);outline:none;}
   .bm-seg[role=button]:focus{stroke:#1f2937;stroke-width:2.4;}
   .bm-side-lbl{font-family:inherit;font-size:11px;font-weight:800;fill:#0b3a57;}
@@ -197,21 +197,21 @@
   .bm-menu button{display:flex;align-items:center;gap:7px;width:100%;border:0;background:none;text-align:right;padding:6px;border-radius:7px;font:inherit;font-size:12.5px;color:#1f2937;cursor:pointer;}
   .bm-menu button:hover{background:#e6f1fb;}
   .bm-menu button.cur{cursor:default;color:#64748b;} .bm-menu button.cur:hover{background:none;}
-  .bm-menu em{font-style:normal;font-size:11px;color:#c81e3a;font-weight:700;}
+  .bm-menu em{font-style:normal;font-size:11px;color:#15803d;font-weight:700;}
   .bm-info{display:flex;flex-direction:column;gap:8px;min-width:0;}
   .bm-kv{display:flex;flex-direction:column;gap:2px;background:#f8fafc;border:1px solid #eef0f3;border-radius:10px;padding:8px 12px;}
   .bm-kv span{font-size:11.5px;font-weight:700;color:#64748b;} .bm-kv b{font-size:15px;font-weight:800;color:#1f2937;}
   .bm-dot{display:inline-block;width:11px;height:11px;border-radius:3px;flex:none;}
-  .bm-dot.cur{background:#f96a74;} .bm-dot.oth{background:#0093e9;} .bm-dot.base{background:#d5dae1;}
+  .bm-dot.cur{background:#31c860;} .bm-dot.oth{background:#f96a74;} .bm-dot.base{background:#d5dae1;}
   .bm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#475569;}
   .bm-legend span{display:inline-flex;align-items:center;gap:5px;}
   .bm-warn{font-size:12.5px;font-weight:700;color:#b45309;background:#fff4e5;border-radius:8px;padding:7px 10px;}
   .bm-note{font-size:12px;color:#475569;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 10px;line-height:1.7;}
   .bm-others{border-top:1px dashed #e5e7eb;padding-top:8px;}
   .bm-oh{font-size:12.5px;font-weight:800;color:#0b3a57;margin-bottom:6px;}
-  .bm-oreq{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #b9dcf5;background:#f5faff;border-radius:8px;padding:7px 10px;margin-bottom:6px;font:inherit;font-size:12.5px;color:#1f2937;cursor:pointer;text-align:right;}
-  .bm-oreq:hover{background:#e6f1fb;border-color:#0093e9;}
-  .bm-oreq b{font-weight:800;color:#0b6db0;}
+  .bm-oreq{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #f3b9c3;background:#fff6f7;border-radius:8px;padding:7px 10px;margin-bottom:6px;font:inherit;font-size:12.5px;color:#1f2937;cursor:pointer;text-align:right;}
+  .bm-oreq:hover{background:#fde8ec;border-color:#f96a74;}
+  .bm-oreq b{font-weight:800;color:#c81e3a;}
   .bm-oreq em{font-style:normal;font-size:11px;font-weight:700;color:#64748b;background:#fff;border-radius:8px;padding:0 7px;margin-inline-start:6px;}
   .bm-hint{font-size:11.5px;color:#97a0ad;}
   @media (max-width:700px){ .bm-wrap{grid-template-columns:1fr;} .bm-fig{max-width:300px;margin:0 auto;width:100%;} }
@@ -4478,6 +4478,11 @@ function profileOf(id){
   };
   if (c && c.pf) Object.assign(p, c.pf);
   var st0 = pfStatus(id, p); p.reqStatus = st0.status; p.postponeReason = st0.reasons.join(' + '); p.postponeUntil = st0.until || '';
+  if (c && typeof CASES!=='undefined'){
+    var main = c.person && c.person!==c.id ? caseById(c.person) : null;
+    if (main){ var mp = profileOf(main.id), ms = bmSides(mp && mp.side); p.side = ms.length===1 && ms[0]==='R' ? 'الأيسر' : 'الأيمن'; }
+    else if (CASES.some(function(x){ return x.person===c.id && x.id!==c.id; }) && bmSides(p.side).length!==1) p.side = 'الأيسر';
+  }
   pfNormPhones(p); PROFILES.store[id] = p; return p;
 }
 // request status comes from the data: the eligibility result decides مقبول / مؤجل and why.
@@ -4676,13 +4681,14 @@ function renderBodyMap(id){
   // description next to the drawing
   var info = '<div class="bm-info"><div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
     '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
+    (Object.keys(data.bySeg).some(function(k){ return data.bySeg[k].length > 1; }) ? '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>' : '')+
     (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
     '<div class="bm-legend"><span><i class="bm-dot cur"></i>الطلب الحالي</span><span><i class="bm-dot oth"></i>طلب آخر لنفس الشخص</span><span><i class="bm-dot base"></i>لا يوجد طلب</span></div>';
   if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة الطلب الحالي فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
   else if (others.length){
     info += '<div class="bm-others"><div class="bm-oh">طلبات أخرى لنفس الشخص ('+others.length+')</div>'+others.map(function(r){
       return '<button class="bm-oreq"'+A('bmGo', r.id)+'><i class="bm-dot oth"></i><span><b>'+esc(r.code || r.id)+'</b> '+esc((r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side))+(r.stage ? '<em>'+esc(r.stage)+'</em>' : '')+'</span></button>'; }).join('')+
-      '<div class="bm-hint">اضغط على المنطقة الملونة بالأزرق أو على الطلب لفتح بياناته.</div></div>';
+      '<div class="bm-hint">اضغط على المنطقة الحمراء أو على الطلب لعرض بياناته، وستتحول إلى الأخضر.</div></div>';
   } else info += '<div class="bm-hint">لا توجد طلبات أخرى لنفس الشخص.</div>';
   info += '</div>';
   return '<div class="bm-wrap"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
