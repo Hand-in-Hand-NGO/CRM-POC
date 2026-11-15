@@ -4910,6 +4910,7 @@ function renderProfile(){
   var funder = (typeof svFunderOf==='function' && svFunderOf(pf.id)) || (c && c.funding && c.funding!=='بدون' ? c.funding : '') || (bb.d && bb.d.funding!=='بدون' ? bb.d.funding : '');
   var h = '<div class="pf-scrim"'+A('closeProfile')+'></div><div class="pf-modal cf"><div class="prof-head"><span>'+pfIc('user',14,'#535252',2.2)+' ملف الحالة</span><button class="cms-close"'+A('closeProfile')+'>'+pfIc('x',15,'#535252',2.4)+'</button></div>';
   // identity strip
+  h += '<div class="cf-layout"><div class="cf-left">';
   h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(pf.sel ? (d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
     '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>') : '<span class="cf-code">'+bmData(pf.id).reqs.length+' '+(bmData(pf.id).reqs.length > 2 ? 'أطراف' : 'طرف')+'</span>')+'</div>'+
     '</div>'+
@@ -4920,7 +4921,7 @@ function renderProfile(){
   var navTrack = [['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+(PF_TAB_IC[x[0]] ? pathIc(PF_TAB_IC[x[0]], 13, null, 2.2) : '')+x[1]+'</button>'; };
   h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
-  h += '<div class="prof-body" data-scroll="profile"><div class="cf-grid"><div class="cf-main">';
+  h += '<div class="prof-body" data-scroll="profile"><div class="cf-main">';
   var devRow = d.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
   h += sec('personal', 'user', 'البيانات الشخصية',
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
@@ -4938,8 +4939,8 @@ function renderProfile(){
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
     row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
-    '<div class="cms-row">'+f(['responsible','هل يوجد مسئول عن الحالة',0,'select'])+'<label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
-      opt('research','قسم الأبحاث', d.nextStep)+opt('measurement','حجز مقاس مباشر', d.nextStep)+'</select></div></div>'+
+    '<div class="cms-row"><label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
+      opt('research','قسم الأبحاث', d.nextStep)+opt('measurement','حجز مقاس مباشر', d.nextStep)+'</select></div><div></div><div></div></div>'+
     '<div class="cms-row"><label class="cms-label">نشط</label><div class="cms-field"><div class="pf-yn"><button class="'+(d.active?'on':'')+'"'+A('profActive','1')+'>'+pfIc('check',12,null,2.4)+' نعم</button><button class="'+(!d.active?'on off':'')+'"'+A('profActive','0')+'>'+pfIc('x',12,null,2.4)+' لا</button></div></div>'+
       f(['notes','الملاحظات',0,'area'])+'</div>');
   // attachments
@@ -4991,7 +4992,7 @@ function renderProfile(){
     '<table class="cms-table"><thead><tr><th>الحقل</th><th>من</th><th>إلى</th><th>بواسطة</th><th>التاريخ</th></tr></thead><tbody>'+
       (d.changes.length ? d.changes.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.field)+'</td><td>'+esc(x.from)+'</td><td>'+esc(x.to)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.at)+'</td></tr>'; }).join('')
         : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>', '<span class="cf-count">'+d.changes.length+'</span>');
-  h += '</div><aside class="cf-side">';
+  h += '</div></div></div><aside class="cf-side">';   // closes cf-main, prof-body, cf-left
   // body map – sticky with the side column, so it stays in view while scrolling
   h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+
     renderBodyMap(pf.id)+'</div>';
@@ -5001,7 +5002,7 @@ function renderProfile(){
     (st.status==='مؤجل' ? '<div class="cf-kv"><span>سبب التأجيل</span><b>'+st.reasons.map(esc).join('<br>')+'</b></div>'+
       '<div class="cf-kv"><span>مؤجل لتاريخ</span><input class="cms-input" type="date" value="'+esc(d.postponeUntil)+'" data-k="pf-postponeUntil" data-change="profSet" data-a="postponeUntil"/></div>' : '')+
     '<div class="cf-kv"><span>نتيجة اللجنة</span><b>'+esc(st.status==='مؤجل' || d.nextStep==='measurement' ? '-' : (d.committee||'-'))+'</b></div><div class="cf-kv"><span>التمويل</span><b>'+esc(funder || 'غير ممول')+'</b></div></div>';
-  h += '</aside></div></div><div class="prof-foot"><button class="cms-btn cms-add"'+A('profSave')+'>'+pfIc('check',12,'#fff',2.6)+' حفظ</button><button class="cms-btn cf-cancel"'+A('closeProfile')+'>إغلاق</button></div></div>';
+  h += '</aside></div><div class="prof-foot"><button class="cms-btn cms-add"'+A('profSave')+'>'+pfIc('check',12,'#fff',2.6)+' حفظ</button><button class="cms-btn cf-cancel"'+A('closeProfile')+'>إغلاق</button></div></div>';
   return h;
 }
 function pfWhen(ms){ var x = new Date(ms); return x.getFullYear() + '-' + ('0'+(x.getMonth()+1)).slice(-2) + '-' + ('0'+x.getDate()).slice(-2) + (x.getHours() || x.getMinutes() ? ' ' + ('0'+x.getHours()).slice(-2) + ':' + ('0'+x.getMinutes()).slice(-2) : ''); }
@@ -7648,6 +7649,24 @@ render();
   .pf-modal.cf .bm-info{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .pf-modal.cf .bm-info > :not(.bm-kv){grid-column:1 / -1;}
   .pf-modal.cf .bm-kv{text-align:center;}
+  /* case file layout: the side column (body map + حالة الطلب) runs from under the title bar to the footer */
+  .pf-modal.cf .cf-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;}
+  .pf-modal.cf .cf-left{display:flex;flex-direction:column;min-height:0;min-width:0;}
+  .pf-modal.cf .cf-left .prof-body{flex:1;min-height:0;overflow:auto;}
+  .pf-modal.cf .cf-side{position:static;max-height:none;overflow-y:auto;padding:14px;border-inline-start:1px solid #eef0f3;background:#fafbfc;}
+  .pf-modal.cf .bm-card .bm-fig{max-width:none;padding:8px 6px 4px;}
+  .pf-modal.cf .bm-card .bm-svg{width:auto;max-width:100%;height:calc(94vh - 300px);min-height:380px;max-height:none;margin:0 auto;}
+  .cfp .pf-modal.cf .cf-left .prof-body{overflow:visible;}
+  .cfp .pf-modal.cf .cf-side{position:sticky;top:62px;align-self:start;max-height:calc(100vh - 130px);}
+  .cfp .pf-modal.cf .bm-card .bm-svg{height:calc(100vh - 290px);}
+  @media (max-width:980px){
+    .pf-modal.cf{overflow-y:auto;}
+    .pf-modal.cf .cf-layout{display:flex;flex-direction:column;}
+    .pf-modal.cf .cf-left{display:contents;}
+    .pf-modal.cf .cf-id{order:1;} .pf-modal.cf .cf-nav{order:2;} .pf-modal.cf .cf-side{order:3;} .pf-modal.cf .cf-left .prof-body{order:4;overflow:visible;flex:none;}
+    .pf-modal.cf .cf-side, .cfp .pf-modal.cf .cf-side{position:static;max-height:none;overflow:visible;border:0;background:none;}
+    .pf-modal.cf .bm-card .bm-svg, .cfp .pf-modal.cf .bm-card .bm-svg{width:100%;height:auto;min-height:0;max-width:320px;}
+  }
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
