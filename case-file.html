@@ -246,58 +246,11 @@
   .bm-meta{margin:0 0 10px;}
   /* التصنيع step + manufacturing action cards (colours of the CMS cards) */
   .cf-path li.j-mfg .cf-path-b{background:#f4f0fa;}
-  /* «تفاصيل إجراءات التصنيع» – CSS of the CMS page */
-  .mfa-panel{margin-top:10px;border:1px solid #c9dfee;border-radius:6px;background:#fff;overflow:hidden;}
-  .mfa-head{display:flex;align-items:center;gap:6px;background:#e8f3fa;border-bottom:1px solid #c9dfee;padding:8px 12px;font-size:12.5px;color:#0b3a57;}
-  .mfa-body{background:#f4f7f9;padding:12px;}
-  .mfa-open{display:inline-flex;align-items:center;gap:5px;background:#0093e9;color:#fff !important;border-radius:3px;padding:4px 10px;font-size:12px;font-weight:700;text-decoration:none;margin-bottom:12px;}
-  .mfa-open:hover{background:#0b7fc7;}
-  .manufacturing-action-card{background:#fff;border:1px solid #dce4e8;border-left:5px solid #607d8b;border-radius:7px;margin-bottom:14px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,.04);transition:background-color .22s ease, box-shadow .22s ease, transform .22s ease;}
-  .manufacturing-action-card:last-child{margin-bottom:0;}
-  .manufacturing-action-card:hover{box-shadow:0 6px 16px rgba(0,0,0,.10);transform:translateY(-2px);}
-  .manufacturing-action-card.measurements-card{border-left-color:#00a65a;} .manufacturing-action-card.measurements-card:hover{background-color:rgba(0,166,90,.07);}
-  .manufacturing-action-card.printing-card{border-left-color:#3c8dbc;} .manufacturing-action-card.printing-card:hover{background-color:rgba(60,141,188,.07);}
-  .manufacturing-action-card.printed-parts-card{border-left-color:#f39c12;} .manufacturing-action-card.printed-parts-card:hover{background-color:rgba(243,156,18,.08);}
-  .manufacturing-action-card.assembly-card{border-left-color:#8e44ad;} .manufacturing-action-card.assembly-card:hover{background-color:rgba(142,68,173,.07);}
-  .manufacturing-action-heading{display:flex;align-items:center;gap:10px;border-bottom:1px solid #edf0f2;padding-bottom:10px;margin-bottom:10px;}
-  .manufacturing-action-heading h4{margin:0;font-weight:700;font-size:15px;color:#555;}
-  .manufacturing-action-heading small{color:#84919a;font-size:11px;}
-  .manufacturing-action-number{align-items:center;background:#455a64;border-radius:50%;color:#fff;display:inline-flex;font-weight:bold;height:30px;justify-content:center;min-width:30px;}
-  .manufacturing-record{background:#fafcfd;border:1px solid #e4eaed;border-radius:5px;margin-top:8px;padding:10px;}
-  .manufacturing-event-title{color:#37474f;font-weight:700;margin-bottom:5px;font-size:13px;}
-  .manufacturing-event-meta{color:#66757f;display:flex;flex-wrap:wrap;gap:18px;font-size:12px;}
-  .manufacturing-event-meta span{display:inline-flex;align-items:center;gap:4px;}
-  .manufacturing-detail-row{border-top:1px dashed #ccd6db;margin-top:10px;padding-top:10px;}
-  .manufacturing-notes{background:#fff8e1;border-radius:4px;color:#665c38;margin-top:8px;padding:8px;font-size:12.5px;}
-  .manufacturing-team{color:#455a64;margin-top:7px;font-size:12.5px;display:flex;align-items:center;gap:4px;}
-  .manufacturing-files{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
-  .manufacturing-files a{background:#e8f3fa;border-radius:4px;padding:6px 9px;font-size:12px;color:#3c8dbc;text-decoration:none;display:inline-flex;align-items:center;gap:4px;direction:rtl;}
-  .manufacturing-files-block{border-top:1px dashed #ccd6db;padding-top:10px;margin-top:10px;}
-  .manufacturing-table-wrap{margin-top:10px;}
-  .manufacturing-details-table{background:#fff;margin-bottom:0;width:100%;border-collapse:collapse;font-size:12.5px;}
-  .manufacturing-details-table th,.manufacturing-details-table td{border:1px solid #ddd;padding:6px 8px;text-align:center;}
-  .manufacturing-details-table th{background:#fff;font-weight:700;color:#333;}
-  .manufacturing-quality-summary{align-items:flex-start;border-top:1px dashed #ccd6db;display:flex;gap:24px;margin-top:10px;padding-top:10px;}
-  .manufacturing-quality-field{flex:1;}
-  .manufacturing-quality-field>label,.manufacturing-quality-percentage>label{color:#59666e;display:block;margin-bottom:4px;font-size:12.5px;font-weight:700;}
-  .manufacturing-quality-percentage{flex:0 0 150px;}
-  .manufacturing-quality-percentage strong{color:#d35400;display:block;font-size:18px;padding-top:7px;}
-  .manufacturing-quality-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-  .manufacturing-quality-list span,.manufacturing-quality-list strong{background:#fff3e0;border-radius:4px;padding:7px 10px;font-size:12px;}
-  .manufacturing-quality-list em{color:#d35400;font-style:normal;margin-right:8px;font-weight:700;}
-  .manufacturing-parts-table-wrap{margin-top:10px;}
-  .manufacturing-parts-table{background:#fff;margin-bottom:0;table-layout:fixed;width:100%;border-collapse:collapse;font-size:12.5px;}
-  .manufacturing-parts-table th{background:rgba(142,68,173,.09);color:#593168;text-align:center;width:50%;border:1px solid #ddd;padding:6px 8px;}
-  .manufacturing-parts-table td{vertical-align:top;border:1px solid #ddd;padding:8px;}
-  .manufacturing-part-item{background:#faf8fc;border:1px solid #e5ddea;border-radius:4px;margin-bottom:7px;padding:8px;}
-  .manufacturing-part-item:last-child{margin-bottom:0;}
-  .manufacturing-part-child{background:#fff;border:1px solid #e5ddea;border-right:3px solid #8e44ad;border-radius:3px;margin-top:8px;margin-right:18px;padding:7px 9px;position:relative;}
-  .manufacturing-part-parent{border-color:#d8c8df;}
-  .manufacturing-part-item b,.manufacturing-part-item span{display:block;}
-  .manufacturing-part-item b{font-weight:700;color:#333;}
-  .manufacturing-no-data{color:#98a3aa;padding:16px;text-align:center;font-size:12.5px;}
-  .manufacturing-empty{color:#a8b0b5;}
-  @media (max-width:767px){ .manufacturing-quality-summary{display:block;} .manufacturing-quality-percentage{margin-top:10px;} }
+  /* مسار الحالة page buttons + sub-heading inside a section */
+  .cf-step-foot{display:flex;justify-content:flex-end;margin-top:8px;}
+  .cf-step-link{display:inline-flex;align-items:center;gap:5px;background:#0093e9;color:#fff !important;border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;text-decoration:none;}
+  .cf-step-link:hover{background:#0b7fc7;}
+  .cf-subh{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#0b3a57;border-top:1px dashed #e5e7eb;margin:6px 0 12px;padding-top:12px;}
   .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
@@ -4809,10 +4762,8 @@ document.addEventListener('keydown', function(e){
   if (e.key==='Escape' && PROFILES.open && PROFILES.open.bmMenu){ PROFILES.open.bmMenu = null; render(); }
 });
 
-// ---------- التصنيع inside مسار الحالة (same data as the CMS: حالة التصنيع + تفاصيل إجراءات التصنيع) ----------
-// p = how far manufacturing went: 0 not started · 1 design · 2 printing · 3 quality check · 4 assembled, ready · 5 delivered
-var MFG_ENGINEERS = ['م. أحمد سامي','م. مريم خالد','م. كريم عادل','م. هبة يوسف'];
-var MFG_PRINTERS = ['طابعة 1 – Raise3D','طابعة 2 – Raise3D','طابعة 3 – Ultimaker'];
+// ---------- التصنيع inside مسار الحالة: the short data only ----------
+// p = how far manufacturing went: 0 not started · 1 design · 2 printing · 3 assembly · 4 ready for delivery · 5 delivered
 var MFG_LEVEL_BY_P = ['', 'جاري التصميم', 'جاري الطباعة', 'جاري التجميع', 'جاهز للتسليم (مخزن الأطراف الجديدة)', 'تم التسليم'];
 function pfAddDays(iso, n){ var x = parseDay(String(iso||'').slice(0,10)); if (!x) return ''; x.setDate(x.getDate() + n); return pfIso(x); }
 function pfMfg(id, d, c, bb, measDone, delivDone){
@@ -4821,95 +4772,25 @@ function pfMfg(id, d, c, bb, measDone, delivDone){
   if (delivDone || bb.d || (c && (c.stage==='maintEval' || c.stage==='maintDelivery'))) p = 5;
   else if (c && c.stage==='newDelivery') p = 4;
   else if (measDone) p = 1 + s % 3;
-  // dates: from the delivery back, or from the request date forward
-  // dates are anchored to today (finished steps in the past): measurement → printing → quality → assembly → ready
-  var today = pfIso(new Date()), meas;
-  if (p === 5) meas = pfAddDays(bb.d && bb.d.delivered ? bb.d.delivered : pfAddDays(today, -(60 + s % 60)), -(24 + s % 8));
-  else if (p === 4) meas = pfAddDays(today, -(22 + s % 10));
-  else meas = pfAddDays(today, -(3 + p * 5 + s % 4));
-  var print = pfAddDays(meas, 6 + s % 4), qual = pfAddDays(print, 4 + s % 3), asm = pfAddDays(qual, 3 + s % 3), ready = pfAddDays(asm, 2);
-  var eng = MFG_ENGINEERS[s % MFG_ENGINEERS.length], team = [MFG_ENGINEERS[(s+1) % MFG_ENGINEERS.length], MFG_ENGINEERS[(s+2) % MFG_ENGINEERS.length]];
-  var quality = 86 + s % 14;
-  function st(n){ return p > n ? 'done' : p === n ? 'now' : 'todo'; }   // action n (1..4) vs progress
-  var x = {s:s, meas:meas, meas2:pfAddDays(meas, 7 + s % 5), print:print, qual:qual, ready:ready, delivered: bb.d && bb.d.delivered ? bb.d.delivered : pfAddDays(ready, 5 + s % 6),
-    reception:MFA_RECEPTION[s % MFA_RECEPTION.length], designer:MFA_DESIGNERS[s % MFA_DESIGNERS.length], tech:MFA_TECHS[s % MFA_TECHS.length], fitter:MFA_FITTERS[s % MFA_FITTERS.length],
-    code: d.code || (c && c.code) || id, level: d.level, age: c && c.age, mdmNote: d.mdmNotes || 'تم مراجعة القياسات مع التقرير الطبي'};
-  return {
-    x:x, p:p, level:MFG_LEVEL_BY_P[p] || '', filesReady: p >= 2 ? 'نعم' : p === 1 ? 'لا' : '', onPrinter: p >= 3 ? 'نعم' : p === 2 ? 'نعم' : p === 1 ? 'لا' : '',
-    quality: p >= 4 || p === 3 ? quality + '%' : '', ready: p >= 4 ? ready : '',
-    actions:[
-      {k:'measurements', t:'القياسات', st: p >= 1 ? 'done' : 'todo', date: p >= 1 ? meas : '', rows:[['المهندس', p >= 1 ? eng : ''], ['التقييم الطبى والقياسات', p >= 1 ? 'مناسب' : ''], ['ملاحظات (MDM)', p >= 1 ? 'تم أخذ المقاس وتصوير الجدعة' : '']]},
-      {k:'printing', t:'الطباعة', st: st(2), date: p >= 2 ? print : '', rows:[['Files ready', p >= 2 ? 'نعم' : p === 1 ? 'لا' : ''], ['On printer', p >= 2 ? 'نعم' : ''], ['الطابعة', p >= 2 ? MFG_PRINTERS[s % MFG_PRINTERS.length] : '']]},
-      {k:'printed-parts', t:'جودة الأجزاء المطبوعة', st: st(3), date: p >= 3 ? qual : '', rows:[['نسبة الجودة', p >= 3 ? quality + '%' : ''], ['ملاحظات الجودة', p >= 3 ? (quality < 92 ? 'تنعيم حواف السوكيت' : 'مطابقة') : '']]},
-      {k:'assembly', t:'التجميع', st: p >= 4 ? 'done' : p === 3 ? 'now' : 'todo', date: p >= 4 ? asm : '', rows:[['فريق التجميع', p >= 3 ? team.join('، ') : ''], ['تقييم تسليم الطرف', p >= 5 ? 'مناسب' : '']]},
-    ]
-  };
+  var ready = p === 5 ? pfAddDays(bb.d && bb.d.delivered ? bb.d.delivered : pfIso(new Date()), -(5 + s % 6)) : p === 4 ? pfAddDays(pfIso(new Date()), -(s % 9)) : '';
+  return {p:p, level:MFG_LEVEL_BY_P[p] || '', ready:ready,
+    filesReady: p >= 2 ? 'نعم' : p === 1 ? 'لا' : '', onPrinter: p >= 2 ? 'نعم' : p === 1 ? 'لا' : '', quality: p >= 3 ? (86 + s % 14) + '%' : ''};
 }
-
-// ---------- «تفاصيل إجراءات التصنيع» – same layout as the CMS panel, inside مسار الحالة ----------
-var MFA_RECEPTION = ['عبد المقصود','سامح فؤاد','نورا عادل'];
-var MFA_DESIGNERS = ['اسلام جمال','مروان هشام','دينا سمير'];
-var MFA_TECHS = ['مصطفى سلامه','محمود رجب','وليد حسن'];
-var MFA_FITTERS = ['جمعة','حسام','رضا'];
-function mfaTs(iso, h, m, sec){ function z(n){ return ('0'+n).slice(-2); } return iso ? iso + ' ' + z(h) + ':' + z(m) + ':' + z(sec) : ''; }
-var MFA_IC = {user:PF_ICONS.user, clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2', file:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6',
-  eng:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 21v-1a7 7 0 0 1 14 0v1 M9 4h6', tool:'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z',
-  factory:'M2 20h20 M4 20V9l5 3V9l5 3V9l5 3v8 M18 4v5', link:'M15 3h6v6 M10 14L21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'};
-function mfaIc(n, size, color){ return pathIc(MFA_IC[n], size || 11, color || '#90a4ae', 2); }
-function mfaRec(title, by, at, extra){
-  return '<div class="manufacturing-record"><div class="manufacturing-event-title">'+esc(title)+'</div>'+
-    '<div class="manufacturing-event-meta"><span>'+mfaIc('user')+' تم الإضافة بواسطة: <b>'+esc(by)+'</b></span><span>'+mfaIc('clock')+' أضيف في: <b dir="ltr">'+esc(at)+'</b></span></div>'+(extra || '')+'</div>';
-}
-function mfaTeam(label, name, icon){ return '<div class="manufacturing-team">'+mfaIc(icon || 'eng', 12, '#455a64')+' '+label+': <b>'+esc(name)+'</b></div>'; }
-function mfaCard(n, cls, title, sub, body){
-  return '<div class="manufacturing-action-card '+cls+'"><div class="manufacturing-action-heading"><span class="manufacturing-action-number">'+n+'</span>'+
-    '<div><h4>'+title+'</h4><small>'+sub+'</small></div></div>'+(body || '<div class="manufacturing-no-data">لا يوجد بيانات</div>')+'</div>';
-}
-// components of the limb (المكونات) – by amputation level, as in the CMS card
-function mfaComponents(level, age){
-  var parts = bmLevelParts(level) || [], leg = parts.indexOf('foot')!==-1, child = age!=null && age < 15;
-  var socket = {b:'سوكيت PP', s:'كود الحالة'}, pipe = {b:'ماسورة', s:child ? 'أطفال' : 'بالغين'};
-  if (leg && parts.length===1) return [{b:'سوكيت سيليكون', s:'مشط قدم'}, {b:'حشوة قدم', s:'مقاس الحذاء'}];
-  if (leg) return [socket].concat(parts.indexOf('thighLow')!==-1 ? [{b:'ركبة', s:'ميكانيكية أحادية المحور'}] : []).concat([pipe, {b:'قدم', s:'ثابت مستورد', kids:[{b:'مقاس القدم', s:child ? '19' : '25'}]}, {b:'مسمار قدم', s:'نعم'}]);
-  return [socket].concat(parts.indexOf('armLow')!==-1 ? [{b:'كوع', s:'ميكانيكي'}] : []).concat([{b:'يد', s:'تجميلية', kids:[{b:'مقاس اليد', s:child ? 'S' : 'M'}]}]);
-}
-function renderMfgActions(m){
-  var x = m.x, p = m.p;
-  var weightDef = 480 + x.s % 120, weightAct = weightDef - (20 + x.s % 40), mat = 'pp';
-  var c1 = '', c2 = '', c3 = '', c4 = '';
-  if (p >= 1){
-    c1 = mfaRec('جاهز للتصميم', x.reception, mfaTs(x.meas, 12, 38, 39)) +
-      mfaRec('جاري التصميم', x.designer, mfaTs(x.meas2, 11, 0, 55), '<div class="manufacturing-detail-row">'+mfaTeam('مهندس التصميم', x.designer)+'<div class="manufacturing-notes">'+esc(x.mdmNote)+'</div></div>');
-  }
-  if (p >= 2){
-    var files = [x.code + '.stl', 'Socket.stl', 'Socket_SMOOTHED.stl', 'SOCKETS.gcode'];
-    c2 = mfaRec('جاهز للطباعة', x.designer, mfaTs(x.print, 10, 1, 6), '<div class="manufacturing-detail-row">'+mfaTeam('مهندس التصميم', x.designer)+'</div>'+
-        '<div class="manufacturing-files-block"><div class="manufacturing-files">'+files.map(function(f){ return '<a href="javascript:void(0)">'+mfaIc('file', 11, '#3c8dbc')+' التصميم: '+esc(f)+'</a>'; }).join('')+'</div>'+
-        '<div class="table-responsive manufacturing-table-wrap"><table class="table table-bordered manufacturing-details-table"><thead><tr><th>المادة</th><th>الوزن الافتراضى</th></tr></thead><tbody><tr><td>'+mat+'</td><td>'+weightDef+'</td></tr></tbody></table></div></div>') +
-      mfaRec('جاري الطباعة', x.designer, mfaTs(x.print, 10, 1, 10));
-  }
-  if (p >= 3){
-    var issues = x.s % 2 ? [['تنعيم حواف السوكيت', 5]] : [], pct = issues.reduce(function(a, i){ return a + i[1]; }, 0);
-    c3 = mfaRec('جاري التجميع', x.tech, mfaTs(x.qual, 10, 44, 18), '<div class="manufacturing-detail-row">'+mfaTeam('فنى التجميع', x.fitter, 'tool')+'</div>'+
-      '<div class="manufacturing-quality-summary"><div class="manufacturing-quality-field"><label>جودة الأجزاء المطبوعة</label>'+
-        (issues.length ? '<div class="manufacturing-quality-list">'+issues.map(function(i){ return '<span>'+esc(i[0])+'<em>'+i[1]+'%</em></span>'; }).join('')+'</div>' : '<div class="manufacturing-quality-list"><span>لا يوجد بيانات</span></div>')+'</div>'+
-        '<div class="manufacturing-quality-percentage"><label>النسبة</label><strong>'+pct+'%</strong></div></div>'+
-      '<div class="table-responsive manufacturing-table-wrap"><table class="table table-bordered manufacturing-details-table"><thead><tr><th>المادة</th><th>الوزن الافتراضى</th><th>الوزن الفعلى</th></tr></thead><tbody><tr><td>'+mat+'</td><td>'+weightDef+'</td><td>'+weightAct+'</td></tr></tbody></table></div>');
-  }
-  if (p >= 4){
-    var comps = mfaComponents(x.level, x.age);
-    function part(it, isChild){ return '<div class="manufacturing-part-item'+(isChild ? ' manufacturing-part-child' : (it.kids ? ' manufacturing-part-parent' : ''))+'"><b>'+esc(it.b)+'</b><span>'+esc(it.s)+'</span>'+(it.kids ? it.kids.map(function(k){ return part(k, true); }).join('') : '')+'</div>'; }
-    c4 = mfaRec('جاهز للتسليم (مخزن الأطراف الجديدة)', x.tech, mfaTs(x.ready, 14, 31, 14), '<div class="manufacturing-detail-row">'+mfaTeam('فنى التجميع', x.fitter, 'tool')+'</div>'+
-      '<div class="table-responsive manufacturing-parts-table-wrap"><table class="table table-bordered manufacturing-parts-table"><thead><tr><th>الاكسسوارات</th><th>المكونات</th></tr></thead><tbody><tr>'+
-        '<td><span class="manufacturing-empty">لا يوجد بيانات</span></td><td>'+comps.map(function(it){ return part(it, false); }).join('')+'</td></tr></tbody></table></div>') +
-      (p >= 5 ? mfaRec('تم التسليم', x.reception, mfaTs(x.delivered, 12, 5, 40)) : '');
-  }
-  return '<div class="mfa-panel"><div class="mfa-head">'+mfaIc('factory', 13, '#0b3a57')+' <b>تفاصيل إجراءات التصنيع</b></div><div class="mfa-body">'+
-    '<a class="mfa-open" href="https://cms.handinhand-eg.com/cms/engineering/list_orders_manufacturing" target="_blank" rel="noopener">'+mfaIc('factory', 12, '#fff')+' التصنيع '+mfaIc('link', 11, '#fff')+'</a>'+
-    mfaCard(1, 'measurements-card', 'التقرير الطبي و القياسات', 'تقرير القياسات', c1)+
-    mfaCard(2, 'printing-card', 'ملفات التصميم والطباعة', 'التصميم / الطباعة', c2)+
-    mfaCard(3, 'printed-parts-card', 'استلام الأجزاء المطبوعة', 'جودة الأجزاء المطبوعة', c3)+
-    mfaCard(4, 'assembly-card', 'استلام الطرف من التجميع', 'الاكسسوارات والمكونات', c4)+'</div></div>';
+// ---------- مسار الحالة: a button on each step that opens its CMS page, searched by the case and the step's action ----------
+// change a page / label here; the page receives ?caseName=…&orderCode=…&action=…
+var STEP_LINKS = {
+  res:   {label:'عرض الأبحاث',     url:'https://cms.handinhand-eg.com/cms/research/list_research'},
+  com:   {label:'توقيع اللجنة',     url:'https://cms.handinhand-eg.com/cms/signature/signature_department'},
+  meas:  {label:'صفحة الزيارات',    url:'https://cms.handinhand-eg.com/cms/engineering/list_engineering_orders'},
+  mfg:   {label:'التصنيع',          url:'https://cms.handinhand-eg.com/cms/engineering/list_orders_manufacturing'},
+  med:   {label:'التقييم النفسي',   url:'https://cms.handinhand-eg.com/cms/psychological/list_orders_psychiatric_and_psychological_assessment'},
+  deliv: {label:'صفحة الزيارات',    url:'https://cms.handinhand-eg.com/cms/engineering/list_engineering_orders'},
+};
+function stepLink(step, d){
+  var L = STEP_LINKS[step.k]; if (!L) return '';
+  var q = 'caseName=' + encodeURIComponent(d.name || '') + '&orderCode=' + encodeURIComponent(d.code || '') + '&action=' + encodeURIComponent(step.t);
+  return '<div class="cf-step-foot"><a class="cf-step-link" href="'+L.url+'?'+q+'" target="_blank" rel="noopener" title="فتح '+esc(L.label)+' والبحث عن '+esc(d.name || 'الحالة')+' – '+esc(step.t)+'">'+
+    esc(L.label)+' '+pathIc('M15 3h6v6 M10 14L21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',11,'#fff',2.4)+'</a></div>';
 }
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
@@ -4939,7 +4820,7 @@ function renderProfile(){
     '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
   // section nav
   // two groups: the request's data, then its follow-up (journey / files / changes)
-  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر']];
+  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
   var navTrack = [['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+x[1]+'</button>'; };
   h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
@@ -4947,11 +4828,11 @@ function renderProfile(){
   h += sec('personal', 'user', 'البيانات الشخصية',
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
     row(['marital','الحالة الإجتماعية',1,'select'], ['nationality','الجنسية',1,'select'])+row(['education','المؤهل الدراسى',1,'select'], ['job','الوظيفة',1,'select'])+
-    row(['insured','مؤمن عليه',1,'select']), age ? '<span class="cf-h-note">السن: '+esc(age)+'</span>' : '');
-  h += sec('contact', 'upload', 'التواصل والعنوان',
+    row(['insured','مؤمن عليه',1,'select'])+
+    '<div class="cf-subh">'+pfIc('phone',13,'#0b6db0',2.2)+' التواصل والعنوان</div>'+
     phoneRows(f, d.extraPhones, 'pf-ex-', 'profExtraPhone', 'profDelPhone', 'profAddPhone', d.tried)+
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
-    row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
+    row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']), age ? '<span class="cf-h-note">السن: '+esc(age)+'</span>' : '');
   var devRow = d.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
   h += sec('amp', 'check', 'بيانات البتر والحالة الطبية',
     row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
@@ -4984,8 +4865,7 @@ function renderProfile(){
       kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
     (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
       return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
-        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready', m.filesReady], ['On printer', m.onPrinter], ['جودة الأجزاء المطبوعة', m.quality]],
-        extra: renderMfgActions(m)}; })(),
+        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready', m.filesReady], ['On printer', m.onPrinter], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
@@ -5008,7 +4888,7 @@ function renderProfile(){
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
   h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
     return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
-      x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+'</div></li>';
+      x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+stepLink(x, d)+'</div></li>';
   }).join('')+'</ol>');
   h += sec('files', 'upload', 'مرفقات الحالة', renderAttachments(d));
   h += sec('changes', 'history', 'التغييرات التي تمت',
