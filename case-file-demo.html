@@ -239,6 +239,8 @@
   @media (max-width:700px){ .pf-modal.cf .bm-wrap{grid-template-columns:130px minmax(0,1fr);} .pf-modal.cf .bm-fig{max-width:none;margin:0;} }
   /* case file tabs + chips inside the body map */
   .cf-sec.cf-hide{display:none;}
+  .cf-tabs{align-items:center;gap:10px 14px;}
+  .cf-tab-grp{display:flex;flex-wrap:wrap;gap:4px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:3px;}
   .cf-tabs button.on{background:#0093e9;border-color:#0093e9;color:#fff;}
   .cf-tabs button.on:hover{background:#0093e9;color:#fff;}
   .bm-meta{margin:0 0 10px;}
@@ -4920,7 +4922,7 @@ function renderProfile(){
   function f(def){ return ncField(def, d, 'profSet', 'pf-'); }
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
-  var tab = pf.tab || 'personal';
+  var tab = pf.tab || 'request';
   function sec(id, icon, title, body, extra){ return '<section class="cf-sec'+(id===tab ? '' : ' cf-hide')+'" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
   function opt(k, label, val){ return '<option value="'+k+'"'+(val===k?' selected':'')+'>'+label+'</option>'; }
   var age = (function(){ var b = parseDay(d.dob); if (!b) return ''; var n = (typeof nowDate==='function' ? nowDate() : new Date()), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
@@ -4934,8 +4936,11 @@ function renderProfile(){
     '</div>'+
     '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
   // section nav
-  var nav = [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['request','بيانات الطلب'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
-  h += '<div class="cf-nav cf-tabs">'+nav.map(function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
+  // two groups: the request's data, then its follow-up (journey / files / changes)
+  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر']];
+  var navTrack = [['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
+  var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+x[1]+'</button>'; };
+  h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-grid"><div class="cf-main">';
   h += sec('personal', 'user', 'البيانات الشخصية',
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
