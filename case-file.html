@@ -5028,6 +5028,25 @@ var CF_FUND_ACTIONS = {
   },
 };
 Object.assign(ACT, CF_FUND_ACTIONS);
+// ---------- التصنيع: download the design file (Files ready) and the print file (On printer) ----------
+// demo: the files are generated in the browser (a small STL / G-code with the request code); in the system they come from the server
+function mfgFileVal(v, kind, code){
+  if (v!=='نعم') return v;
+  return {html: pfVal('نعم') + '<button class="mf-dl" title="'+(kind==='design' ? 'تحميل ملف التصميم' : 'تحميل ملف الطباعة')+'"'+A('mfgDl', kind, code)+'>'+
+    pathIc('M12 4v12 M7 11l5 5 5-5 M4 20h16', 12, '#fff', 2.6)+' '+(kind==='design' ? 'ملف التصميم <bdi dir="ltr">.stl</bdi>' : 'ملف الطباعة <bdi dir="ltr">.gcode</bdi>')+'</button>'};
+}
+var MFG_DL_ACTIONS = {
+  mfgDl: function(kind, code){
+    code = String(code || 'CASE').replace(/[^A-Za-z0-9_-]/g, '');
+    var name = code + (kind==='design' ? '_socket.stl' : '_socket.gcode'), text;
+    if (kind==='design') text = 'solid ' + code + '_socket\n  facet normal 0 0 1\n    outer loop\n      vertex 0 0 0\n      vertex 60 0 0\n      vertex 30 52 0\n    endloop\n  endfacet\n  facet normal 0 0 -1\n    outer loop\n      vertex 0 0 0\n      vertex 30 52 0\n      vertex 30 26 90\n    endloop\n  endfacet\nendsolid ' + code + '_socket\n';
+    else text = '; HandinHand – ملف الطباعة (نسخة تجريبية)\n; case: ' + code + '\n; material: PP\nG21 ; mm\nG90 ; absolute\nG28 ; home\nM104 S230\nM140 S80\nG1 Z0.2 F3000\nG1 X10 Y10 E0.5 F1500\nG1 X60 Y10 E2.0\nG1 X60 Y60 E3.5\nG1 X10 Y60 E5.0\nG1 X10 Y10 E6.5\nM104 S0\nM140 S0\nG28 X0\nM84\n';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/plain;charset=utf-8'})); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('تم تحميل ' + name);
+  },
+};
+Object.assign(ACT, MFG_DL_ACTIONS);
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -5107,7 +5126,7 @@ function renderProfile(){
       kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
     (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
       return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
-        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready', m.filesReady], ['On printer', m.onPrinter], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
+        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready – ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['On printer – ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
@@ -7848,6 +7867,9 @@ render();
   .fd-send{font-weight:700;color:#0b3a57;}
   .fd-muted{font-size:12px;color:#64748b;font-weight:700;}
   .fd-hold{flex-wrap:wrap;} .fd-hold > div{flex:1;min-width:0;} .fd-hold .fd-btn{align-self:center;}
+  /* التصنيع – file downloads */
+  .mf-dl{display:inline-flex;align-items:center;gap:4px;margin-inline-start:8px;border:0;background:#0093e9;color:#fff;border-radius:8px;padding:2px 9px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;direction:rtl;}
+  .mf-dl:hover{background:#0b7fc7;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
