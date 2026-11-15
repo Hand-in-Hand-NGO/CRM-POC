@@ -4772,10 +4772,11 @@ function renderBodyMap(id){
       (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
       (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
       '';
-  } else info += '<div class="bm-pick">'+pfIc('user',14,'#0b6db0',2.2)+'<span>اضغط على الطرف لعرض بياناته ومساره ومرفقاته.</span></div>';
+  }
   if (conflict) info += '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>';
   if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة هذا الطلب فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
   info += '</div>';
+  if (info === '<div class="bm-info"></div>') info = '';   // nothing to say → only the drawing
   return '<div class="bm-wrap'+(sel ? '' : ' bm-nosel')+'"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
 }
 // unsaved edits on the open request (same fields the save compares)
@@ -7004,6 +7005,12 @@ setInterval(function(){
   .cf-tabs button{display:inline-flex;align-items:center;gap:6px;}
   .cf-status{display:flex;align-items:center;justify-content:center;gap:8px;}
   @media (max-width:700px){ .jr-steps{overflow-x:auto;padding-bottom:4px;} .jr-st{width:46px;} .jr-ic{width:32px;height:32px;} .jr-t{font-size:9.5px;} .jr-ln{margin-top:15px;min-width:8px;} }
+  /* body map centred: the drawing on top, level + side under it */
+  .pf-modal.cf .bm-wrap, .bm-in-amp .bm-wrap{grid-template-columns:1fr;justify-items:center;gap:10px;}
+  .pf-modal.cf .bm-fig{width:100%;max-width:260px;margin:0 auto;padding:10px 8px 6px;}
+  .pf-modal.cf .bm-info{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .pf-modal.cf .bm-info > :not(.bm-kv){grid-column:1 / -1;}
+  .pf-modal.cf .bm-kv{text-align:center;}
 </style>
 <script>
 // ---------------- demo shell ----------------
