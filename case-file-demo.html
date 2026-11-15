@@ -237,6 +237,11 @@
     .pf-modal.cf .cf-side{order:-1;max-height:none;overflow:visible;}
   }
   @media (max-width:700px){ .pf-modal.cf .bm-wrap{grid-template-columns:130px minmax(0,1fr);} .pf-modal.cf .bm-fig{max-width:none;margin:0;} }
+  /* case file tabs + chips inside the body map */
+  .cf-sec.cf-hide{display:none;}
+  .cf-tabs button.on{background:#0093e9;border-color:#0093e9;color:#fff;}
+  .cf-tabs button.on:hover{background:#0093e9;color:#fff;}
+  .bm-meta{margin:0 0 10px;}
   .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
@@ -4734,7 +4739,7 @@ var BM_ACTIONS = {
   bmGo: function(rid){
     var po = PROFILES.open; if (!po || rid===po.id) return;
     if (pfDirty() && !window.confirm('توجد تعديلات غير محفوظة على هذا الطلب. هل تريد الانتقال إلى الطلب الآخر وتجاهلها؟')) return;
-    ACT.openProfile(rid);
+    var tab = po.tab; ACT.openProfile(rid); if (PROFILES.open){ PROFILES.open.tab = tab; render(); }
   },
 };
 Object.assign(ACT, BM_ACTIONS);
@@ -4757,7 +4762,8 @@ function renderProfile(){
   function f(def){ return ncField(def, d, 'profSet', 'pf-'); }
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
-  function sec(id, icon, title, body, extra){ return '<section class="cf-sec" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
+  var tab = pf.tab || 'personal';
+  function sec(id, icon, title, body, extra){ return '<section class="cf-sec'+(id===tab ? '' : ' cf-hide')+'" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
   function opt(k, label, val){ return '<option value="'+k+'"'+(val===k?' selected':'')+'>'+label+'</option>'; }
   var age = (function(){ var b = parseDay(d.dob); if (!b) return ''; var n = (typeof nowDate==='function' ? nowDate() : new Date()), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
   var phones = [d.phone, d.phone1, d.phone2].concat(d.extraPhones || []).filter(function(x, i, arr){ return x && arr.indexOf(x)===i; });
@@ -4767,11 +4773,11 @@ function renderProfile(){
   // identity strip
   h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
     '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>')+'</div>'+
-    '<div class="cf-meta">'+[d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'].filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div></div>'+
+    '</div>'+
     '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
   // section nav
   var nav = [['personal','البيانات الشخصية'],['contact','التواصل والعنوان'],['amp','بيانات البتر'],['request','بيانات الطلب'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
-  h += '<div class="cf-nav">'+nav.map(function(x){ return '<button'+A('pfGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
+  h += '<div class="cf-nav cf-tabs">'+nav.map(function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+x[1]+'</button>'; }).join('')+'</div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-grid"><div class="cf-main">';
   h += sec('personal', 'user', 'البيانات الشخصية',
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
@@ -4842,7 +4848,9 @@ function renderProfile(){
         : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>', '<span class="cf-count">'+d.changes.length+'</span>');
   h += '</div><aside class="cf-side">';
   // body map – sticky with the side column, so it stays in view while scrolling
-  h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+renderBodyMap(pf.id)+'</div>';
+  h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+
+    '<div class="cf-meta bm-meta">'+[d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'].filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
+    renderBodyMap(pf.id)+'</div>';
   // request status
   h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-status '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</div>'+
     (st.status==='مؤجل' ? '<div class="cf-kv"><span>سبب التأجيل</span><b>'+st.reasons.map(esc).join('<br>')+'</b></div>'+
@@ -4853,13 +4861,19 @@ function renderProfile(){
 }
 function pfWhen(ms){ var x = new Date(ms); return x.getFullYear() + '-' + ('0'+(x.getMonth()+1)).slice(-2) + '-' + ('0'+x.getDate()).slice(-2) + (x.getHours() || x.getMinutes() ? ' ' + ('0'+x.getHours()).slice(-2) + ':' + ('0'+x.getMinutes()).slice(-2) : ''); }
 function pfDayMs(s){ var d = parseDay(s); return d ? d.getTime() : 0; }
+
+// after a failed save: open the tab of the first highlighted (missing) field
+function pfShowMissing(){
+  var el = document.querySelector('.pf-modal .nc-miss'), sec = el && el.closest('.cf-sec');
+  if (sec && PROFILES.open){ PROFILES.open.tab = sec.id.replace('cf-', ''); render(); }
+}
 var PF_ACTIONS = {
   openProfile: function(id){
     loadProfiles(); var p = profileOf(id); if (!p) return;
     PROFILES.open = {id:id, draft:JSON.parse(JSON.stringify(pfNormPhones(p))), showChanges:false}; render();
   },
   closeProfile: function(){ PROFILES.open = null; render(); },
-  pfGo: function(sec){ var el = document.getElementById('cf-' + sec); if (el) el.scrollIntoView({block:'start', behavior:'smooth'}); },
+  pfGo: function(sec){ PROFILES.open.tab = sec; render(); var b = document.querySelector('.pf-modal .prof-body'); if (b) b.scrollTop = 0; },
   pfAllActs: function(){ PROFILES.open.allActs = !PROFILES.open.allActs; render(); },
   profSet: function(v, k){ PROFILES.open.draft[k] = v; if (['notes','notes2','qualityNotes','address','idAddress','causeDetails'].indexOf(k)===-1) render(); },
   profAddPhone: function(){ var d = PROFILES.open.draft; d.extraPhones = (d.extraPhones || []).concat(['']); render(); var el = document.querySelector('[data-k="pf-ex-'+(d.extraPhones.length-1)+'"]'); if (el) el.focus(); },
@@ -4881,8 +4895,8 @@ var PF_ACTIONS = {
   profSave: function(){
     var pf = PROFILES.open, d = pf.draft; loadProfiles(); var old = profileOf(pf.id);
     var miss = ncMissing(d);
-    if (miss.length){ d.tried = true; toast('يرجى استكمال: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' حقول أخرى' : '')); return render(); }
-    if (badExtraPhones(d.extraPhones).length){ d.tried = true; toast('يرجى كتابة رقم الهاتف المضاف (11 رقمًا) أو حذف الحقل'); return render(); }
+    if (miss.length){ d.tried = true; toast('يرجى استكمال: ' + miss.slice(0,4).map(function(x){ return x[1]; }).join('، ') + (miss.length > 4 ? ' و' + (miss.length-4) + ' حقول أخرى' : '')); render(); return pfShowMissing(); }
+    if (badExtraPhones(d.extraPhones).length){ d.tried = true; toast('يرجى كتابة رقم الهاتف المضاف (11 رقمًا) أو حذف الحقل'); render(); return pfShowMissing(); }
     d.extraPhones = (d.extraPhones || []).map(function(x){ return String(x||'').replace(/\D/g,''); });
     var st = pfStatus(pf.id, d);
     d.reqStatus = st.status; d.postponeReason = st.reasons.join(' + ');
