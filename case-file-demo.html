@@ -4680,7 +4680,7 @@ var BM_LEVELS = [
   {re:/مشط القدم|أصابع القدم/,      parts:['foot']},
   {re:/تحت الركبة|أسفل الركبة/,      parts:['shin','foot']},
   {re:/فوق الركبة|أعلى الركبة/,      parts:['thighLow','shin','foot']},
-  {re:/مفصل الحوض/,                 parts:['thighUp','thighLow','shin','foot']},
+  {re:/مفصل الحوض|الإلية|الفخذ كله/, parts:['hip','thighUp','thighLow','shin','foot']},   // الإلية: the whole thigh from the hip joint
   {re:/أصابع اليد/,                  parts:['hand']},
   {re:/تحت الكوع|الساعد/,            parts:['forearm','hand']},
   {re:/فوق الكوع|أعلى المرفق/,       parts:['armLow','forearm','hand']},
@@ -4718,6 +4718,9 @@ var BM_SEGS = (function(){
     out['R-' + p[0]] = {part:p[0], side:'R', label:p[7], d:bmSegPath(p[1], p[2], p[3], p[4], p[5], p[6]), cx:(p[1]+p[3])/2, cy:(p[2]+p[4])/2};
     out['L-' + p[0]] = {part:p[0], side:'L', label:p[7], d:bmSegPath(BM_W-p[1], p[2], BM_W-p[3], p[4], p[5], p[6]), cx:BM_W-(p[1]+p[3])/2, cy:(p[2]+p[4])/2};
   });
+  // hips = the two halves of the pelvis (person's right = viewer's left)
+  out['R-hip'] = {part:'hip', side:'R', label:'الحوض (الإلية)', d:'M80 198 L110 198 L110 248 Q92 250 75 240 Q73 218 80 198 Z', cx:93, cy:222};
+  out['L-hip'] = {part:'hip', side:'L', label:'الحوض (الإلية)', d:'M110 198 L140 198 Q147 218 145 240 Q128 250 110 248 Z', cx:127, cy:222};
   return out;
 })();
 // the requests of the same person (shared person id) with their saved level / side
@@ -4742,8 +4745,7 @@ function renderBodyMap(id){
   var data = bmData(id), cur = data.cur, menu = PROFILES.open && PROFILES.open.bmMenu, others = data.reqs.filter(function(r){ return !r.cur; });
   var body = '<path class="bm-base" d="M110 12 a22 25 0 1 1 -0.1 0 Z"/>'+                                  // head
     '<path class="bm-base" d="M101 60 h18 v16 h-18 Z"/>'+                                                  // neck
-    '<path class="bm-base" d="M76 78 Q110 70 144 78 Q152 82 150 96 L146 132 Q143 168 140 198 L80 198 Q77 168 74 132 L70 96 Q68 82 76 78 Z"/>'+   // torso
-    '<path class="bm-base" d="M80 198 L140 198 Q147 218 145 240 Q128 250 110 248 Q92 250 75 240 Q73 218 80 198 Z"/>';                      // pelvis
+    '<path class="bm-base" d="M76 78 Q110 70 144 78 Q152 82 150 96 L146 132 Q143 168 140 198 L80 198 Q77 168 74 132 L70 96 Q68 82 76 78 Z"/>';   // torso – the pelvis is drawn as the R-hip / L-hip segments (BM_SEGS)
   Object.keys(BM_SEGS).forEach(function(k){
     var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return x!==cur.id; });
     var cls = 'bm-seg' + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
