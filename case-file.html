@@ -4883,7 +4883,48 @@ function renderJourneyStepper(steps){
 }
 var PF_TAB_IC = {request:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5', personal:PF_ICONS.user,
   amp:'M12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 22l1-8 M16 22l-1-8 M6 9l6-1 6 1 M12 8v6', journey:'M3 12h4l3-9 4 18 3-9h4',
-  files:'M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5', changes:PF_ICONS.history};
+  files:'M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5', changes:PF_ICONS.history,
+  funding:'M2 6h20v12H2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 12h.01 M18 12h.01'};
+// ---------- بيانات التمويل: what the funding page (صفحة التمويل) recorded for this request ----------
+// read from the funding page's store in the browser (key hih_funding_v1, same keys as the page), then this file's own funding store (FUND)
+var CF_FUND_KEYS = ['hih_funding_v1'];
+PF_ICONS.money = 'M2 6h20v12H2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 12h.01 M18 12h.01';
+function cfFundData(cid, c){
+  var stores = CF_FUND_KEYS.map(function(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }).filter(Boolean);
+  if (typeof FUND!=='undefined' && FUND) stores.push(FUND);
+  if (window.CF_FUND_SAMPLE) stores.push(window.CF_FUND_SAMPLE);      // demo data (case-file.html only)
+  function first(key){ for (var i=0;i<stores.length;i++){ var m = stores[i][key]; if (m && m[cid]) return m[cid]; } return null; }
+  var alloc = first('alloc'), released = first('released'), hold = first('holds'), notes = [], log = [];
+  stores.forEach(function(st){
+    ((st.notes || {})[cid] || []).forEach(function(n){ notes.push(n); });
+    (st.log || []).forEach(function(l){ if ((l.ids || []).indexOf(cid)!==-1) log.push(l); });
+  });
+  if (hold && hold.until && hold.until < Date.now()) hold = null;     // the hold period is over
+  var base = c && c.baseFunding!==undefined ? c.baseFunding : (c && c.funding);
+  return {company: alloc ? alloc.company : (base && base!=='بدون' ? base : ''), fromPage:!!alloc, alloc:alloc, released:released, hold:hold,
+    notes:notes.sort(function(a, b){ return b.at - a.at; }), log:log.sort(function(a, b){ return b.at - a.at; })};
+}
+function renderFundingTab(cid, c){
+  var f = cfFundData(cid, c), when = function(ms){ return ms ? pfWhen(ms) : ''; };
+  var state = f.hold ? ['warn', 'موقوف'] : f.company ? ['ok', 'ممول'] : ['off', 'غير ممول'];
+  var h = '<div class="fd-top '+state[0]+'"><span class="fd-ic">'+pfIc('money', 22, null, 2)+'</span><div class="fd-co"><span>الشركة الممولة</span><b>'+esc(f.company || 'لم يتم تحديد ممول')+'</b></div>'+
+    '<span class="fd-state '+state[0]+'">'+pathIc(state[0]==='ok' ? 'M20 6L9 17l-5-5' : state[0]==='warn' ? 'M10 4H6v16h4z M18 4h-4v16h4z' : 'M18 6L6 18M6 6l12 12', 12, null, 3)+' '+state[1]+'</span></div>';
+  h += '<div class="cf-path-kv fd-kv">'+[
+      ['تاريخ التمويل', f.alloc ? when(f.alloc.at) : ''], ['بواسطة', f.alloc ? f.alloc.by : ''],
+      ['المصدر', f.fromPage ? 'صفحة التمويل' : f.company ? 'بيانات الطلب' : ''], ['أُرسل للحجز', f.released ? 'نعم' : f.company ? 'لا' : '']
+    ].map(function(p){ return '<div><span>'+p[0]+'</span><b>'+pfVal(p[1])+'</b></div>'; }).join('')+'</div>';
+  if (f.hold) h += '<div class="fd-hold">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 15, '#b45309', 2.6)+'<div><b>موقوف من صفحة التمويل '+(f.hold.until ? 'حتى <bdi dir="ltr">'+esc(when(f.hold.until).slice(0,10))+'</bdi>' : '(مفتوح)')+'</b>'+
+    (f.hold.note ? '<span>'+esc(f.hold.note)+'</span>' : '')+'<em>'+esc(f.hold.by || '')+' · '+esc(when(f.hold.at))+'</em></div></div>';
+  h += '<div class="cf-subh">'+pfIc('copy', 13, '#0b6db0', 2.2)+' ملاحظات التمويل <span class="cf-count">'+f.notes.length+'</span></div>';
+  h += f.notes.length ? '<ul class="fd-notes">'+f.notes.map(function(n){
+      return '<li><p>'+esc(n.text)+'</p><div>'+(n.toOps ? '<span class="fd-ops">'+pathIc('M22 2L11 13 M22 2l-7 20-4-9-9-4z', 10, null, 2.4)+' أُرسلت للعمليات'+(n.day ? ' – '+esc(n.day) : '')+'</span>' : '')+
+        (n.group > 1 ? '<span class="fd-grp">على '+n.group+' حالات</span>' : '')+'<em>'+esc(n.by || '')+' · '+esc(when(n.at))+'</em></div></li>'; }).join('')+'</ul>'
+    : '<div class="cf-empty">لا توجد ملاحظات</div>';
+  h += '<div class="cf-subh">'+pfIc('history', 13, '#0b6db0', 2.2)+' سجل التمويل <span class="cf-count">'+f.log.length+'</span></div>';
+  h += f.log.length ? '<ol class="fd-log">'+f.log.map(function(l){ return '<li><i></i><div><b>'+esc(l.action)+'</b>'+(l.detail ? '<span>'+esc(l.detail)+'</span>' : '')+'<em>'+esc(l.by || '')+' · '+esc(when(l.at))+'</em></div></li>'; }).join('')+'</ol>'
+    : '<div class="cf-empty">لا يوجد سجل لهذا الطلب في صفحة التمويل</div>';
+  return h;
+}
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4898,7 +4939,7 @@ function renderProfile(){
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
   var tab = pf.tab || (pf.sel ? 'request' : 'personal');
-  var PF_LIMB_SECS = ['request','amp','journey','files','changes'];
+  var PF_LIMB_SECS = ['request','amp','funding','journey','files','changes'];
   function sec(id, icon, title, body, extra){
     if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من خريطة البتر لعرض «'+title+'».</span></div>'; extra = ''; }
     if (id==='amp') body = '<div class="bm-in-amp">'+renderBodyMap(pf.id)+'</div>' + body;
@@ -4917,7 +4958,7 @@ function renderProfile(){
     '</div>';
   // section nav
   // two groups: the request's data, then its follow-up (journey / files / changes)
-  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
+  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر'],['funding','بيانات التمويل']];
   var navTrack = [['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+(PF_TAB_IC[x[0]] ? pathIc(PF_TAB_IC[x[0]], 13, null, 2.2) : '')+x[1]+'</button>'; };
   h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
@@ -4936,6 +4977,7 @@ function renderProfile(){
     row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
     row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+
     (res.ok!==null ? '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.until ? ' حتى ' + x.until : x.k==='ok' ? '' : ' حتى تاريخ'); }).join('<br>')+'</div>' : ''));
+  h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c));
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
     row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
@@ -7667,6 +7709,28 @@ render();
     .pf-modal.cf .cf-side, .cfp .pf-modal.cf .cf-side{position:static;max-height:none;overflow:visible;border:0;background:none;}
     .pf-modal.cf .bm-card .bm-svg, .cfp .pf-modal.cf .bm-card .bm-svg{width:100%;height:auto;min-height:0;max-width:320px;}
   }
+  /* بيانات التمويل */
+  .fd-top{display:flex;align-items:center;gap:12px;border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#f8fafc;border:1px solid #e5e7eb;}
+  .fd-top.ok{background:#eefbf0;border-color:#c9ecd3;} .fd-top.warn{background:#fff8eb;border-color:#f7d9a8;}
+  .fd-ic{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;color:#64748b;border:1px solid #e5e7eb;flex:none;}
+  .fd-top.ok .fd-ic{color:#15803d;border-color:#c9ecd3;} .fd-top.warn .fd-ic{color:#b45309;border-color:#f7d9a8;}
+  .fd-co{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;} .fd-co span{font-size:11.5px;font-weight:700;color:#64748b;} .fd-co b{font-size:17px;font-weight:800;color:#1f2937;}
+  .fd-state{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;border-radius:12px;padding:3px 12px;color:#fff;}
+  .fd-state.ok{background:#31c860;} .fd-state.warn{background:#f59e0b;} .fd-state.off{background:#94a3b8;}
+  .fd-kv{margin-bottom:6px;}
+  .fd-hold{display:flex;gap:10px;align-items:flex-start;background:#fff4e5;border:1px solid #f7d9a8;border-radius:10px;padding:10px 12px;margin:8px 0 4px;font-size:12.5px;}
+  .fd-hold div{display:flex;flex-direction:column;gap:3px;} .fd-hold b{color:#92400e;} .fd-hold span{color:#475569;} .fd-hold em, .fd-notes em, .fd-log em{font-style:normal;font-size:11px;color:#94a3b8;}
+  .fd-notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .fd-notes li{background:#fffdf5;border:1px solid #f1e6c4;border-radius:10px;padding:8px 12px;}
+  .fd-notes p{margin:0 0 4px;font-size:13px;color:#1f2937;line-height:1.7;}
+  .fd-notes li > div{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+  .fd-ops{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:#0b6db0;background:#e6f1fb;border-radius:8px;padding:1px 8px;}
+  .fd-grp{font-size:11px;font-weight:700;color:#475569;background:#f1f5f9;border-radius:8px;padding:1px 8px;}
+  .fd-log{list-style:none;margin:0;padding:0;}
+  .fd-log li{position:relative;display:flex;gap:10px;padding:0 0 12px;}
+  .fd-log li:before{content:'';position:absolute;top:14px;bottom:0;right:5px;width:2px;background:#e5e7eb;} .fd-log li:last-child:before{display:none;}
+  .fd-log li > i{flex:0 0 12px;height:12px;border-radius:50%;background:#0093e9;margin-top:3px;z-index:1;}
+  .fd-log li > div{display:flex;flex-direction:column;gap:2px;font-size:12.5px;} .fd-log b{color:#1f2937;} .fd-log span{color:#475569;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
@@ -7681,6 +7745,22 @@ PROFILE_KEY = 'hihdemo_casefile_v1';            // own saved data, separate from
   ].forEach(function(c){ c.phone = main.phone; c.baseFunding = c.funding; CASES.push(c); CASE_MAP[c.id] = c; });
 })();
 var CFP_FIRST = 'C-1006';
+(function(){
+  var d = 86400000, t = Date.now();
+  window.CF_FUND_SAMPLE = {
+    alloc:{'C-1006':{company:'مؤسسة مصر الخير', at:t-20*d, by:'موظف CSR'}, 'C-1053':{company:'مؤسسة مصر الخير', at:t-6*d, by:'موظف CSR'}},
+    released:{'C-1053':{company:'مؤسسة مصر الخير', at:t-6*d, by:'موظف CSR'}},
+    holds:{'C-1062':{at:t-2*d, by:'موظف CSR', until:t+5*d, note:'في انتظار موافقة الممول على الطرف العلوي'}},
+    notes:{'C-1006':[{text:'الممول طلب صور الطرف بعد التسليم لتقرير المتابعة', by:'موظف CSR', at:t-3*d, group:1, toOps:true, day:'الأحد'},
+                     {text:'تم إرسال ملف البحث الاجتماعي للممول', by:'موظف CSR', at:t-19*d, group:4, toOps:false, day:''}],
+           'C-1062':[{text:'الحالة موقوفة لحين رد الممول', by:'موظف CSR', at:t-2*d, group:1, toOps:true, day:''}]},
+    log:[{at:t-20*d, by:'موظف CSR', action:'تعيين ممول: مؤسسة مصر الخير', ids:['C-1006'], detail:''},
+         {at:t-19*d, by:'موظف CSR', action:'ملاحظة', ids:['C-1006','C-1003','C-1010','C-1014'], detail:'تم إرسال ملف البحث الاجتماعي للممول'},
+         {at:t-6*d, by:'موظف CSR', action:'تمويل وإرسال للحجز: مؤسسة مصر الخير', ids:['C-1053'], detail:'من مؤجل لمرحلة أخرى'},
+         {at:t-3*d, by:'موظف CSR', action:'ملاحظة', ids:['C-1006'], detail:'الممول طلب صور الطرف بعد التسليم'},
+         {at:t-2*d, by:'موظف CSR', action:'إيقاف', ids:['C-1062'], detail:'7 يوم – في انتظار موافقة الممول'}]
+  };
+})();
 // the case file never closes on this page: after save it opens again on the same request and tab
 (function(){
   var save = ACT.profSave;
