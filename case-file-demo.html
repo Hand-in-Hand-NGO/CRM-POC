@@ -4885,14 +4885,29 @@ var PF_TAB_IC = {request:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-
   amp:'M12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 22l1-8 M16 22l-1-8 M6 9l6-1 6 1 M12 8v6', journey:'M3 12h4l3-9 4 18 3-9h4',
   files:'M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5', changes:PF_ICONS.history,
   funding:'M2 6h20v12H2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 12h.01 M18 12h.01'};
-// ---------- بيانات التمويل: what the funding page (صفحة التمويل) recorded for this request ----------
-// read from the funding page's store in the browser (key hih_funding_v1, same keys as the page), then this file's own funding store (FUND)
-var CF_FUND_KEYS = ['hih_funding_v1'];
+// ---------- بيانات التمويل: the admin manages the request's funding here, exactly like صفحة التمويل ----------
+// reads / writes the funding page's own store in the browser (key hih_funding_v1, same structure), so both pages stay in sync.
+// Changes are saved immediately (like the funding page), not with «حفظ».
+var CF_FUND_KEY = 'hih_funding_v1', CF_FUND_KEYS = [CF_FUND_KEY];
+var CF_FUND_USER = 'الأدمن (ملف الحالة)';
 PF_ICONS.money = 'M2 6h20v12H2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 12h.01 M18 12h.01';
+function cfFundRead(){
+  var st = null; try { st = JSON.parse(localStorage.getItem(CF_FUND_KEY) || 'null'); } catch(e){}
+  st = st || {};
+  st.companies = st.companies || []; st.alloc = st.alloc || {}; st.holds = st.holds || {}; st.log = st.log || []; st.notes = st.notes || {}; st.released = st.released || {}; st.opsNotes = st.opsNotes || [];
+  return st;
+}
+function cfFundWrite(st){ try { localStorage.setItem(CF_FUND_KEY, JSON.stringify(st)); return true; } catch(e){ return false; } }
+// funding companies = the base list + the ones added on the funding page / here
+function cfCompanies(){
+  var base = (typeof FUNDING_OPTIONS!=='undefined' ? FUNDING_OPTIONS : []).filter(function(x){ return x && x!=='بدون'; });
+  var extra = cfFundRead().companies.concat(typeof FUND!=='undefined' && FUND && FUND.companies ? FUND.companies : []);
+  return base.concat(extra.filter(function(x, i, a){ return x && base.indexOf(x)===-1 && a.indexOf(x)===i; }));
+}
 function cfFundData(cid, c){
-  var stores = CF_FUND_KEYS.map(function(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }).filter(Boolean);
+  var stores = [cfFundRead()];
   if (typeof FUND!=='undefined' && FUND) stores.push(FUND);
-  if (window.CF_FUND_SAMPLE) stores.push(window.CF_FUND_SAMPLE);      // demo data (case-file.html only)
+  if (window.CF_FUND_SAMPLE) stores.push(window.CF_FUND_SAMPLE);      // demo data when the browser can't store it
   function first(key){ for (var i=0;i<stores.length;i++){ var m = stores[i][key]; if (m && m[cid]) return m[cid]; } return null; }
   var alloc = first('alloc'), released = first('released'), hold = first('holds'), notes = [], log = [];
   stores.forEach(function(st){
@@ -4900,31 +4915,119 @@ function cfFundData(cid, c){
     (st.log || []).forEach(function(l){ if ((l.ids || []).indexOf(cid)!==-1) log.push(l); });
   });
   if (hold && hold.until && hold.until < Date.now()) hold = null;     // the hold period is over
+  var cancelled = (stores[0].cancelled || {})[cid];                   // funding from the request data cancelled here
   var base = c && c.baseFunding!==undefined ? c.baseFunding : (c && c.funding);
-  return {company: alloc ? alloc.company : (base && base!=='بدون' ? base : ''), fromPage:!!alloc, alloc:alloc, released:released, hold:hold,
+  var company = alloc ? alloc.company : (!cancelled && base && base!=='بدون' ? base : '');
+  return {company:company, fromPage:!!alloc, alloc:alloc, released:released, hold:hold,
     notes:notes.sort(function(a, b){ return b.at - a.at; }), log:log.sort(function(a, b){ return b.at - a.at; })};
 }
-function renderFundingTab(cid, c){
-  var f = cfFundData(cid, c), when = function(ms){ return ms ? pfWhen(ms) : ''; };
+function renderFundingTab(cid, c, postponed){
+  var f = cfFundData(cid, c), fd = PROFILES.open.fd || (PROFILES.open.fd = {company:'', newCo:'', addCo:false, send:false, holdMode:'open', holdDays:'7', holdNote:'', note:'', toOps:true, day:''});
+  var when = function(ms){ return ms ? pfWhen(ms) : ''; };
   var state = f.hold ? ['warn', 'موقوف'] : f.company ? ['ok', 'ممول'] : ['off', 'غير ممول'];
   var h = '<div class="fd-top '+state[0]+'"><span class="fd-ic">'+pfIc('money', 22, null, 2)+'</span><div class="fd-co"><span>الشركة الممولة</span><b>'+esc(f.company || 'لم يتم تحديد ممول')+'</b></div>'+
     '<span class="fd-state '+state[0]+'">'+pathIc(state[0]==='ok' ? 'M20 6L9 17l-5-5' : state[0]==='warn' ? 'M10 4H6v16h4z M18 4h-4v16h4z' : 'M18 6L6 18M6 6l12 12', 12, null, 3)+' '+state[1]+'</span></div>';
+  // assign / change / cancel the funding company
+  var cos = cfCompanies(), pick = fd.company || f.company || '';
+  h += '<div class="fd-act"><label>'+(f.company ? 'تغيير الشركة الممولة' : 'تعيين شركة ممولة')+'</label><div class="fd-row">'+
+    '<select class="cms-input" data-change="fdSet" data-a="company"><option value="">— اختر الممول —</option>'+cos.map(function(x){ return '<option'+(pick===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>'+
+    '<button class="fd-btn ok"'+(pick && pick!==f.company ? A('fdAssign') : ' disabled')+'>'+pathIc('M20 6L9 17l-5-5', 12, '#fff', 3)+' '+(f.company ? 'تغيير' : 'تعيين')+'</button>'+
+    (f.company ? '<button class="fd-btn bad"'+A('fdCancel')+'>'+pathIc('M18 6L6 18M6 6l12 12', 12, '#fff', 3)+' إلغاء التمويل</button>' : '')+
+    '<button class="fd-link"'+A('fdToggle', 'addCo')+'>+ ممول جديد</button></div>'+
+    (fd.addCo ? '<div class="fd-row"><input class="cms-input" placeholder="اسم الشركة أو الجهة" value="'+esc(fd.newCo)+'" data-k="fd-newco" data-input="fdText" data-a="newCo"/><button class="fd-btn blue"'+A('fdAddCo')+'>إضافة</button></div>' : '')+
+    (postponed ? '<label class="cf-check fd-send"><input type="checkbox"'+(fd.send?' checked':'')+A('fdToggle', 'send')+'/> تمويل وإرسال للحجز (الحالة مؤجلة لمرحلة أخرى)</label>' : '')+'</div>';
   h += '<div class="cf-path-kv fd-kv">'+[
       ['تاريخ التمويل', f.alloc ? when(f.alloc.at) : ''], ['بواسطة', f.alloc ? f.alloc.by : ''],
       ['المصدر', f.fromPage ? 'صفحة التمويل' : f.company ? 'بيانات الطلب' : ''], ['أُرسل للحجز', f.released ? 'نعم' : f.company ? 'لا' : '']
     ].map(function(p){ return '<div><span>'+p[0]+'</span><b>'+pfVal(p[1])+'</b></div>'; }).join('')+'</div>';
-  if (f.hold) h += '<div class="fd-hold">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 15, '#b45309', 2.6)+'<div><b>موقوف من صفحة التمويل '+(f.hold.until ? 'حتى <bdi dir="ltr">'+esc(when(f.hold.until).slice(0,10))+'</bdi>' : '(مفتوح)')+'</b>'+
-    (f.hold.note ? '<span>'+esc(f.hold.note)+'</span>' : '')+'<em>'+esc(f.hold.by || '')+' · '+esc(when(f.hold.at))+'</em></div></div>';
+  // hold / lift the hold
+  h += '<div class="cf-subh">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 13, '#0b6db0', 2.4)+' الإيقاف</div>';
+  if (f.hold) h += '<div class="fd-hold">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 15, '#b45309', 2.6)+'<div><b>موقوف '+(f.hold.until ? 'حتى <bdi dir="ltr">'+esc(when(f.hold.until).slice(0,10))+'</bdi>' : '(مفتوح)')+'</b>'+
+    (f.hold.note ? '<span>'+esc(f.hold.note)+'</span>' : '')+'<em>'+esc(f.hold.by || '')+' · '+esc(when(f.hold.at))+'</em></div><button class="fd-btn ok"'+A('fdUnhold')+'>'+pathIc('M8 5v14l11-7z', 11, '#fff', 2.4)+' فك الإيقاف</button></div>';
+  else {
+    var days = parseInt(fd.holdDays, 10) || 0;
+    h += '<div class="fd-act"><div class="fd-row"><div class="ol-seg"><button class="'+(fd.holdMode==='open'?'on mid':'')+'"'+A('fdSetSeg', 'holdMode', 'open')+'>إيقاف مفتوح</button><button class="'+(fd.holdMode==='days'?'on mid':'')+'"'+A('fdSetSeg', 'holdMode', 'days')+'>إيقاف لمدة</button></div>'+
+      (fd.holdMode==='days' ? '<input class="cms-input fd-days" inputmode="numeric" value="'+esc(fd.holdDays)+'" data-k="fd-days" data-input="fdText" data-a="holdDays"/><span class="fd-muted">يوم'+(days ? ' · حتى <bdi dir="ltr">'+pfIso(new Date(Date.now() + days*86400000))+'</bdi>' : '')+'</span>' : '')+'</div>'+
+      '<div class="fd-row"><input class="cms-input" placeholder="سبب الإيقاف (اختياري)" value="'+esc(fd.holdNote)+'" data-k="fd-holdnote" data-input="fdText" data-a="holdNote"/>'+
+      '<button class="fd-btn warn"'+(fd.holdMode==='open' || days > 0 ? A('fdHold') : ' disabled')+'>'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 11, '#fff', 2.6)+' إيقاف</button></div></div>';
+  }
+  // notes
   h += '<div class="cf-subh">'+pfIc('copy', 13, '#0b6db0', 2.2)+' ملاحظات التمويل <span class="cf-count">'+f.notes.length+'</span></div>';
+  h += '<div class="fd-act"><textarea class="cms-input" rows="2" placeholder="اكتب ملاحظة" data-k="fd-note" data-input="fdText" data-a="note">'+esc(fd.note)+'</textarea>'+
+    '<div class="fd-row"><label class="cf-check"><input type="checkbox"'+(fd.toOps?' checked':'')+A('fdToggle', 'toOps')+'/> أرسلها لفريق العمليات</label>'+
+    (fd.toOps ? '<span class="fd-muted">يُحجز لها يوم (اختياري)</span><input class="cms-input fd-date" type="date" value="'+esc(fd.day)+'" data-change="fdSet" data-a="day"/>' : '')+
+    '<button class="fd-btn blue"'+A('fdNote')+'>'+pathIc('M12 5v14M5 12h14', 11, '#fff', 3)+' إضافة الملاحظة</button></div></div>';
   h += f.notes.length ? '<ul class="fd-notes">'+f.notes.map(function(n){
-      return '<li><p>'+esc(n.text)+'</p><div>'+(n.toOps ? '<span class="fd-ops">'+pathIc('M22 2L11 13 M22 2l-7 20-4-9-9-4z', 10, null, 2.4)+' أُرسلت للعمليات'+(n.day ? ' – '+esc(n.day) : '')+'</span>' : '')+
+      return '<li><p>'+esc(n.text)+'</p><div>'+(n.toOps ? '<span class="fd-ops">'+pathIc('M22 2L11 13 M22 2l-7 20-4-9-9-4z', 10, null, 2.4)+' أُرسلت للعمليات'+(n.day ? ' – <bdi dir="ltr">'+esc(n.day)+'</bdi>' : '')+'</span>' : '')+
         (n.group > 1 ? '<span class="fd-grp">على '+n.group+' حالات</span>' : '')+'<em>'+esc(n.by || '')+' · '+esc(when(n.at))+'</em></div></li>'; }).join('')+'</ul>'
     : '<div class="cf-empty">لا توجد ملاحظات</div>';
+  // log
   h += '<div class="cf-subh">'+pfIc('history', 13, '#0b6db0', 2.2)+' سجل التمويل <span class="cf-count">'+f.log.length+'</span></div>';
   h += f.log.length ? '<ol class="fd-log">'+f.log.map(function(l){ return '<li><i></i><div><b>'+esc(l.action)+'</b>'+(l.detail ? '<span>'+esc(l.detail)+'</span>' : '')+'<em>'+esc(l.by || '')+' · '+esc(when(l.at))+'</em></div></li>'; }).join('')+'</ol>'
-    : '<div class="cf-empty">لا يوجد سجل لهذا الطلب في صفحة التمويل</div>';
+    : '<div class="cf-empty">لا يوجد سجل لهذا الطلب</div>';
   return h;
 }
+// write one change to the funding store + its log line, then refresh
+function cfFundChange(fn, msg){
+  var po = PROFILES.open; if (!po) return;
+  var st = cfFundRead(), at = Date.now(), cid = po.id;
+  var log = fn(st, cid, at); if (log) st.log.push({at:at, by:CF_FUND_USER, action:log[0], ids:[cid], detail:log[1] || ''});
+  if (!cfFundWrite(st)){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return; }
+  if (typeof loadFunding==='function' && FUND_KEY===CF_FUND_KEY) loadFunding();
+  toast(msg); render();
+}
+var CF_FUND_ACTIONS = {
+  fdSet: function(v, k){ PROFILES.open.fd[k] = v; render(); },
+  fdText: function(v, k){ PROFILES.open.fd[k] = v; if (k==='holdDays'){ PROFILES.open.fd[k] = v.replace(/[^0-9]/g, ''); render(); } },
+  fdToggle: function(k){ PROFILES.open.fd[k] = !PROFILES.open.fd[k]; render(); },
+  fdSetSeg: function(k, v){ PROFILES.open.fd[k] = v; render(); },
+  fdAddCo: function(){
+    var fd = PROFILES.open.fd, n = (fd.newCo || '').trim(); if (!n){ toast('اكتب اسم الممول'); return; }
+    var st = cfFundRead(); if (cfCompanies().indexOf(n)===-1) st.companies.push(n);
+    if (!cfFundWrite(st)){ toast('تعذر الحفظ – المتصفح يمنع التخزين'); return; }
+    fd.company = n; fd.newCo = ''; fd.addCo = false; toast('أُضيف الممول ' + n); render();
+  },
+  fdAssign: function(){
+    var fd = PROFILES.open.fd, co = fd.company; if (!co) return;
+    var send = !!fd.send;
+    cfFundChange(function(st, cid, at){
+      st.alloc[cid] = {company:co, at:at, by:CF_FUND_USER};
+      if (send) st.released[cid] = {company:co, at:at, by:CF_FUND_USER};
+      if (st.cancelled) delete st.cancelled[cid];
+      return send ? ['تمويل وإرسال للحجز: ' + co, 'من مؤجل لمرحلة أخرى'] : ['تعيين ممول: ' + co];
+    }, 'تم تعيين ' + co + ' ممولًا لهذا الطلب' + (send ? ' وإرساله للحجز' : ''));
+    fd.company = ''; fd.send = false;
+  },
+  fdCancel: function(){
+    var po = PROFILES.open, c = caseById(po.id), f = cfFundData(po.id, c);
+    if (!f.company || !window.confirm('إلغاء تمويل ' + f.company + ' لهذا الطلب؟')) return;
+    cfFundChange(function(st, cid){
+      delete st.alloc[cid]; delete st.released[cid];
+      if (!f.fromPage){ st.cancelled = st.cancelled || {}; st.cancelled[cid] = true; }   // funding that came with the request data
+      return ['إلغاء تمويل ' + f.company];
+    }, 'تم إلغاء التمويل');
+  },
+  fdHold: function(){
+    var fd = PROFILES.open.fd, days = parseInt(fd.holdDays, 10) || 0, note = (fd.holdNote || '').trim();
+    cfFundChange(function(st, cid, at){
+      var until = fd.holdMode==='days' && days > 0 ? at + days*86400000 : null;
+      st.holds[cid] = {at:at, by:CF_FUND_USER, until:until, note:note};
+      return ['إيقاف', (until ? days + ' يوم' : 'مفتوح') + (note ? ' – ' + note : '')];
+    }, 'تم إيقاف الطلب');
+    fd.holdNote = '';
+  },
+  fdUnhold: function(){ cfFundChange(function(st, cid){ delete st.holds[cid]; return ['فك الإيقاف']; }, 'تم فك الإيقاف'); },
+  fdNote: function(){
+    var fd = PROFILES.open.fd, txt = (fd.note || '').trim(); if (!txt){ toast('اكتب الملاحظة أولًا'); return; }
+    cfFundChange(function(st, cid, at){
+      (st.notes[cid] = st.notes[cid] || []).push({text:txt, by:CF_FUND_USER, at:at, group:1, toOps:!!fd.toOps, day:fd.toOps ? fd.day || '' : ''});
+      if (fd.toOps) st.opsNotes.push({id:'N'+at, ids:[cid], text:txt, day:fd.day || '', by:CF_FUND_USER, at:at});
+      return ['ملاحظة', txt.length > 40 ? txt.slice(0, 40) + '…' : txt];
+    }, 'كُتبت الملاحظة' + (fd.toOps ? ' وأُرسلت لفريق العمليات' : ''));
+    fd.note = ''; fd.day = '';
+  },
+};
+Object.assign(ACT, CF_FUND_ACTIONS);
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4948,7 +5051,7 @@ function renderProfile(){
   var age = (function(){ var b = parseDay(d.dob); if (!b) return ''; var n = (typeof nowDate==='function' ? nowDate() : new Date()), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
   var phones = [d.phone, d.phone1, d.phone2].concat(d.extraPhones || []).filter(function(x, i, arr){ return x && arr.indexOf(x)===i; });
   var stage = c && typeof TASK_TYPES!=='undefined' && TASK_TYPES[c.stage] ? TASK_TYPES[c.stage].label : (c && c.stage==='postponed' ? 'مؤجل لمرحلة أخرى' : (bb.d ? 'استلم الطرف' : ''));
-  var funder = (typeof svFunderOf==='function' && svFunderOf(pf.id)) || (c && c.funding && c.funding!=='بدون' ? c.funding : '') || (bb.d && bb.d.funding!=='بدون' ? bb.d.funding : '');
+  var funder = cfFundData(pf.id, c).company || (typeof svFunderOf==='function' && svFunderOf(pf.id)) || (c && c.funding && c.funding!=='بدون' ? c.funding : '') || (bb.d && bb.d.funding!=='بدون' ? bb.d.funding : '');
   var h = '<div class="pf-scrim"'+A('closeProfile')+'></div><div class="pf-modal cf"><div class="prof-head"><span>'+pfIc('user',14,'#535252',2.2)+' ملف الحالة</span><button class="cms-close"'+A('closeProfile')+'>'+pfIc('x',15,'#535252',2.4)+'</button></div>';
   // identity strip
   h += '<div class="cf-layout"><div class="cf-left">';
@@ -4977,7 +5080,7 @@ function renderProfile(){
     row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
     row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+
     (res.ok!==null ? '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.until ? ' حتى ' + x.until : x.k==='ok' ? '' : ' حتى تاريخ'); }).join('<br>')+'</div>' : ''));
-  h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c));
+  h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c, st.status==='مؤجل' || (c && c.stage==='postponed')));
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
     row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
@@ -7094,6 +7197,20 @@ setInterval(function(){
   .fd-log li:before{content:'';position:absolute;top:14px;bottom:0;right:5px;width:2px;background:#e5e7eb;} .fd-log li:last-child:before{display:none;}
   .fd-log li > i{flex:0 0 12px;height:12px;border-radius:50%;background:#0093e9;margin-top:3px;z-index:1;}
   .fd-log li > div{display:flex;flex-direction:column;gap:2px;font-size:12.5px;} .fd-log b{color:#1f2937;} .fd-log span{color:#475569;}
+  /* بيانات التمويل – admin controls */
+  .fd-act{display:flex;flex-direction:column;gap:8px;background:#fafbfc;border:1px solid #eef0f3;border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+  .fd-act > label{font-size:12.5px;font-weight:800;color:#0b3a57;margin:0;}
+  .fd-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+  .fd-row .cms-input{flex:1;min-width:180px;border-radius:6px;min-height:34px;}
+  .fd-row .fd-days{flex:0 0 70px;min-width:0;text-align:center;} .fd-row .fd-date{flex:0 0 170px;min-width:0;}
+  .fd-act textarea.cms-input{border-radius:6px;width:100%;}
+  .fd-btn{display:inline-flex;align-items:center;gap:5px;border:0;border-radius:10px;padding:7px 14px;font:inherit;font-size:12.5px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;}
+  .fd-btn.ok{background:#31c860;} .fd-btn.bad{background:#f96a74;} .fd-btn.warn{background:#f59e0b;} .fd-btn.blue{background:#0093e9;}
+  .fd-btn:hover{filter:brightness(.94);} .fd-btn:disabled{opacity:.45;cursor:default;filter:none;}
+  .fd-link{border:0;background:none;color:#0b6db0;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;padding:4px;}
+  .fd-send{font-weight:700;color:#0b3a57;}
+  .fd-muted{font-size:12px;color:#64748b;font-weight:700;}
+  .fd-hold{flex-wrap:wrap;} .fd-hold > div{flex:1;min-width:0;} .fd-hold .fd-btn{align-self:center;}
 </style>
 <script>
 // ---------------- demo shell ----------------
