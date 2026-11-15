@@ -4584,7 +4584,7 @@ var ATT_CATS = [
 ];
 // old attachments (no category) go to ارشيف
 function attOf(d){
-  (d.attachments || []).forEach(function(a){ if (!a.cat){ a.cat = a.type==='فيديو' ? 'فيديوهات' : 'ارشيف'; a.item = a.type==='فيديو' ? 'فيديو الحالة' : 'ارشيف'; } else if (a.cat==='ارشيف' && a.item==='فيديو الحالة') a.cat = 'فيديوهات'; });
+  (d.attachments || []).forEach(function(a){ if (!a.cat || a.item==='فيديو الحالة'){ a.cat = 'ارشيف'; a.item = 'ارشيف'; } });
   return d.attachments || [];
 }
 function renderAttachments(d){
@@ -5050,9 +5050,8 @@ Object.assign(ACT, MFG_DL_ACTIONS);
 // ---------- فيديوهات الحالة: every video uploaded along the case's journey, by where it was uploaded ----------
 // [source key, title, stage icon key, where it is uploaded, slots]; videos uploaded here (ملف الحالة) are attachments with cat 'فيديوهات'
 var VD_SOURCES = [
-  ['file',  'ملف الحالة',         'reg',   'يُرفع من هنا',            ['فيديو الحالة']],
-  ['res',   'البحث الاجتماعي',     'res',   'يُرفع من صفحة الأبحاث',   ['فيديو البحث']],
-  ['deliv', 'تسليم طرف جديد',     'deliv', 'يُرفع من صفحة الزيارات',  ['اللقطة الأمامية','اللقطة الجانبية','أخرى']],
+  ['res',   'البحث الاجتماعي',     'res',   'من صفحة الأبحاث أو من هنا',   ['فيديو البحث']],
+  ['deliv', 'تسليم طرف جديد',     'deliv', 'من صفحة الزيارات أو من هنا',  ['اللقطة الأمامية','اللقطة الجانبية','أخرى']],
 ];
 var VD_SLOT_FILE = {'فيديو البحث':'research', 'اللقطة الأمامية':'front', 'اللقطة الجانبية':'side', 'أخرى':'other'};
 // videos of the other pages (demo: derived from how far the request went; in the system they come from those pages)
@@ -5071,7 +5070,11 @@ function pfVideos(id, d){
     });
   }
   // uploaded here in ملف الحالة
-  (d.attachments || []).forEach(function(a, i){ if (a.cat==='فيديوهات') (out['file|' + (a.item || 'فيديو الحالة')] = out['file|' + (a.item || 'فيديو الحالة')] || []).push({name:a.name, by:a.by, at:a.at, idx:d.attachments.indexOf(a), own:true}); });
+  (d.attachments || []).forEach(function(a){
+    if (a.cat!=='فيديوهات') return;
+    var src = VD_SOURCES.filter(function(x){ return x[4].indexOf(a.item)!==-1; })[0]; if (!src) return;
+    (out[src[0] + '|' + a.item] = out[src[0] + '|' + a.item] || []).push({name:a.name, by:a.by, at:a.at, idx:d.attachments.indexOf(a), own:true});
+  });
   return out;
 }
 function renderVideos(d){
@@ -5085,8 +5088,8 @@ function renderVideos(d){
     src[4].forEach(function(slot){
       var list = vids[src[0] + '|' + slot] || [];
       h += '<div class="vd-slot'+(list.length ? ' ok' : '')+'"><div class="vd-slot-h"><span>'+(list.length ? pathIc('M20 6L9 17l-5-5', 11, null, 3) : pathIc('M12 8v4 M12 16h.01', 11, null, 3))+'</span><b>'+slot+'</b>'+
-        (src[0]==='file' ? '<label class="att-add" title="رفع فيديو">'+pathIc('M12 5v14M5 12h14',11,'#fff',3.2)+' أضف<input type="file" hidden accept="video/*" data-change="profAttach" data-a="'+esc('فيديوهات::' + slot)+'"/></label>' : '')+'</div>';
-      if (!list.length) h += '<div class="vd-none">لم يُرفع'+(src[0]==='file' ? '' : ' – ' + src[3])+'</div>';
+        '<label class="att-add" title="رفع فيديو (يمكن رفع أكثر من فيديو)">'+pathIc('M12 5v14M5 12h14',11,'#fff',3.2)+' أضف<input type="file" hidden accept="video/*" data-change="profAttach" data-a="'+esc('فيديوهات::' + slot)+'"/></label></div>';
+      if (!list.length) h += '<div class="vd-none">لم يُرفع</div>';
       list.forEach(function(v){
         h += '<div class="vd-item"><button class="vd-play" title="مشاهدة"'+A('vdOpen', src[0] + '|' + slot, v.name)+'>'+pathIc('M8 5v14l11-7z', 12, '#fff', 2)+'</button><div class="vd-meta"><b dir="ltr">'+esc(v.name)+'</b><em>'+esc(v.by || '')+' · <bdi dir="ltr">'+esc(v.at || '')+'</bdi>'+(v.dur ? ' · <bdi dir="ltr">'+esc(v.dur)+'</bdi>' : '')+'</em></div>'+
           (v.own ? '<button class="att-del" title="حذف الفيديو"'+A('profDetach', v.idx)+'>'+pfIc('x',10,null,3)+'</button>' : '')+'</div>';
