@@ -251,6 +251,13 @@
   .cf-step-link{display:inline-flex;align-items:center;gap:5px;background:#0093e9;color:#fff !important;border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;text-decoration:none;}
   .cf-step-link:hover{background:#0b7fc7;}
   .cf-subh{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#0b3a57;border-top:1px dashed #e5e7eb;margin:6px 0 12px;padding-top:12px;}
+  /* no limb chosen yet */
+  .cf-pickmsg{display:flex;align-items:center;gap:8px;background:#f5faff;border:1px dashed #b9dcf5;border-radius:10px;padding:14px 16px;font-size:13px;font-weight:700;color:#0b3a57;}
+  .bm-pick{display:flex;align-items:flex-start;gap:8px;background:#f5faff;border:1px dashed #b9dcf5;border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:700;color:#0b3a57;line-height:1.7;}
+  .bm-clear{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border:1px solid #d2d6de;background:#fff;color:#475569;border-radius:10px;padding:4px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .bm-clear:hover{background:#f1f5f9;}
+  .bm-in-amp{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #e5e7eb;}
+  .bm-in-amp .bm-wrap{grid-template-columns:minmax(180px,230px) minmax(0,1fr);}
   .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
@@ -4695,15 +4702,17 @@ function bmData(id){
 function bmReq(data, rid){ return data.reqs.filter(function(r){ return r.id===rid; })[0]; }
 function bmReqTitle(r){ return (r.code ? r.code + ' – ' : '') + (r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side); }
 function renderBodyMap(id){
-  var data = bmData(id), cur = data.cur, menu = PROFILES.open && PROFILES.open.bmMenu, others = data.reqs.filter(function(r){ return !r.cur; });
+  // sel = a limb (request) is chosen; until then every limb of the person is red and the file shows the person only
+  var po = PROFILES.open, sel = !!(po && po.sel);
+  var data = bmData(id), cur = data.cur, menu = po && po.bmMenu, others = data.reqs.filter(function(r){ return !sel || !r.cur; });
   var body = '<path class="bm-base" d="M110 12 a22 25 0 1 1 -0.1 0 Z"/>'+                                  // head
     '<path class="bm-base" d="M101 60 h18 v16 h-18 Z"/>'+                                                  // neck
     '<path class="bm-base" d="M76 78 Q110 70 144 78 Q152 82 150 96 L146 132 Q143 168 140 198 L80 198 Q77 168 74 132 L70 96 Q68 82 76 78 Z"/>';   // torso – the pelvis is drawn as the R-hip / L-hip segments (BM_SEGS)
   Object.keys(BM_SEGS).forEach(function(k){
-    var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return x!==cur.id; });
+    var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = sel && ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return !sel || x!==cur.id; });
     var cls = 'bm-seg' + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
-    var nav = hasOther;   // only parts linked to another request can be clicked
-    var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (r.cur ? 'الطلب الحالي' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
+    var nav = hasOther;   // only parts of a (not chosen) request can be clicked
+    var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (sel && r.cur ? 'الطرف المختار' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
     body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"'+(nav ? ' role="button" tabindex="0" aria-label="'+esc(tip)+'"'+A('bmPick', k) : '')+'><title>'+esc(tip)+'</title></path>';
   });
   var svg = '<svg class="bm-svg" viewBox="0 0 '+BM_W+' '+BM_H+'" role="img" aria-label="رسم جسم الحالة – المنظر الأمامي">'+
@@ -4714,22 +4723,25 @@ function renderBodyMap(id){
   if (menu && menu.id===id && BM_SEGS[menu.seg]){
     var sg = BM_SEGS[menu.seg];
     svg += '<div class="bm-menu" style="left:'+(sg.cx/BM_W*100).toFixed(1)+'%;top:'+(sg.cy/BM_H*100).toFixed(1)+'%;"><div class="bm-menu-h">'+esc(BM_SIDE_TXT[sg.side] + ' – ' + sg.label)+'</div>'+
-      (data.bySeg[menu.seg] || []).map(function(rid){ var r = bmReq(data, rid);
-        return '<button class="'+(r.cur ? 'cur' : '')+'"'+(r.cur ? ' disabled' : A('bmGo', rid))+'><i class="bm-dot '+(r.cur ? 'cur' : 'oth')+'"></i><span>'+esc(bmReqTitle(r))+(r.cur ? ' <em>(الطلب الحالي)</em>' : '')+'</span></button>'; }).join('')+'</div>';
+      (data.bySeg[menu.seg] || []).map(function(rid){ var r = bmReq(data, rid), on = sel && r.cur;
+        return '<button class="'+(on ? 'cur' : '')+'"'+(on ? ' disabled' : A('bmGo', rid))+'><i class="bm-dot '+(on ? 'cur' : 'oth')+'"></i><span>'+esc(bmReqTitle(r))+(on ? ' <em>(الطرف المختار)</em>' : '')+'</span></button>'; }).join('')+'</div>';
   }
-  // description next to the drawing
-  var info = '<div class="bm-info"><div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
-    '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
-    (Object.keys(data.bySeg).some(function(k){ return data.bySeg[k].length > 1; }) ? '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>' : '')+
-    (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
-    (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
-    '<div class="bm-legend"><span><i class="bm-dot cur"></i>الطلب الحالي</span><span><i class="bm-dot oth"></i>طلب آخر لنفس الشخص</span><span><i class="bm-dot base"></i>لا يوجد طلب</span></div>';
-  if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة الطلب الحالي فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
-  else if (others.length){
-    info += '<div class="bm-others"><div class="bm-oh">طلبات أخرى لنفس الشخص ('+others.length+')</div>'+others.map(function(r){
-      return '<button class="bm-oreq"'+A('bmGo', r.id)+'><i class="bm-dot oth"></i><span><b>'+esc(r.code || r.id)+'</b> '+esc((r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side))+(r.stage ? '<em>'+esc(r.stage)+'</em>' : '')+'</span></button>'; }).join('')+
-      '<div class="bm-hint">اضغط على المنطقة الحمراء أو على الطلب لعرض بياناته، وستتحول إلى الأخضر.</div></div>';
-  } else info += '<div class="bm-hint">لا توجد طلبات أخرى لنفس الشخص.</div>';
+  var conflict = Object.keys(data.bySeg).some(function(k){ return data.bySeg[k].length > 1; });
+  var info = '<div class="bm-info">';
+  if (sel){
+    info += '<div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
+      '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
+      (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
+      (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
+      '<button class="bm-clear"'+A('bmClear')+'>'+pfIc('x',11,null,2.6)+' عرض كل الأطراف</button>';
+  } else info += '<div class="bm-pick">'+pfIc('user',14,'#0b6db0',2.2)+'<span>لم يتم اختيار طرف. اضغط على الطرف لعرض بياناته ومساره ومرفقاته.</span></div>';
+  if (conflict) info += '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>';
+  info += '<div class="bm-legend">'+(sel ? '<span><i class="bm-dot cur"></i>الطرف المختار</span>' : '')+'<span><i class="bm-dot oth"></i>'+(sel ? 'طرف آخر لنفس الشخص' : 'طرف مسجل – اضغط لعرضه')+'</span><span><i class="bm-dot base"></i>لا يوجد طلب</span></div>';
+  if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة هذا الطلب فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
+  if (others.length){
+    info += '<div class="bm-others"><div class="bm-oh">'+(sel ? 'أطراف أخرى لنفس الشخص' : 'أطراف الحالة')+' ('+others.length+')</div>'+others.map(function(r){
+      return '<button class="bm-oreq"'+A('bmGo', r.id)+'><i class="bm-dot oth"></i><span><b>'+esc(r.code || r.id)+'</b> '+esc((r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side))+(r.stage ? '<em>'+esc(r.stage)+'</em>' : '')+'</span></button>'; }).join('')+'</div>';
+  } else if (sel) info += '<div class="bm-hint">لا توجد أطراف أخرى لنفس الشخص.</div>';
   info += '</div>';
   return '<div class="bm-wrap"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
 }
@@ -4744,15 +4756,19 @@ var BM_ACTIONS = {
   bmPick: function(seg){
     var po = PROFILES.open; if (!po) return;
     var data = bmData(po.id), ids = data.bySeg[seg] || [];
-    if (!ids.some(function(x){ return x!==po.id; })) return;                 // only the current request → nothing to open
-    if (ids.length===1){ ACT.bmGo(ids[0]); return; }                         // one other request → open it
+    if (!ids.some(function(x){ return !po.sel || x!==po.id; })) return;      // only the chosen limb → nothing to open
+    if (ids.length===1){ ACT.bmGo(ids[0]); return; }                         // one request → open it
     po.bmMenu = po.bmMenu && po.bmMenu.seg===seg ? null : {id:po.id, seg:seg}; render();
   },
+  // choose a limb: its request's data, journey and attachments fill the file (the open tab is kept)
   bmGo: function(rid){
-    var po = PROFILES.open; if (!po || rid===po.id) return;
+    var po = PROFILES.open; if (!po) return;
+    if (rid===po.id){ if (!po.sel){ po.sel = true; po.bmMenu = null; render(); } return; }
     if (pfDirty() && !window.confirm('توجد تعديلات غير محفوظة على هذا الطلب. هل تريد الانتقال إلى الطلب الآخر وتجاهلها؟')) return;
-    var tab = po.tab; ACT.openProfile(rid); if (PROFILES.open){ PROFILES.open.tab = tab; render(); }
+    var tab = po.tab; ACT.openProfile(rid); if (PROFILES.open){ PROFILES.open.sel = true; PROFILES.open.tab = tab; render(); }
   },
+  // back to the person: no limb chosen
+  bmClear: function(){ var po = PROFILES.open; if (!po) return; po.sel = false; po.bmMenu = null; render(); },
 };
 Object.assign(ACT, BM_ACTIONS);
 document.addEventListener('click', function(e){ var po = PROFILES.open; if (po && po.bmMenu && !e.target.closest('.bm-menu') && !e.target.closest('[data-act="bmPick"]')){ po.bmMenu = null; render(); } });
@@ -4805,8 +4821,12 @@ function renderProfile(){
   function f(def){ return ncField(def, d, 'profSet', 'pf-'); }
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
-  var tab = pf.tab || 'request';
-  function sec(id, icon, title, body, extra){ return '<section class="cf-sec'+(id===tab ? '' : ' cf-hide')+'" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
+  var tab = pf.tab || (pf.sel ? 'request' : 'personal');
+  var PF_LIMB_SECS = ['request','amp','journey','files','changes'];
+  function sec(id, icon, title, body, extra){
+    if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من خريطة البتر لعرض «'+title+'».</span></div>'; extra = ''; }
+    if (id==='amp') body = '<div class="bm-in-amp">'+renderBodyMap(pf.id)+'</div>' + body;
+    return '<section class="cf-sec'+(id===tab ? '' : ' cf-hide')+'" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
   function opt(k, label, val){ return '<option value="'+k+'"'+(val===k?' selected':'')+'>'+label+'</option>'; }
   var age = (function(){ var b = parseDay(d.dob); if (!b) return ''; var n = (typeof nowDate==='function' ? nowDate() : new Date()), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
   var phones = [d.phone, d.phone1, d.phone2].concat(d.extraPhones || []).filter(function(x, i, arr){ return x && arr.indexOf(x)===i; });
@@ -4814,8 +4834,8 @@ function renderProfile(){
   var funder = (typeof svFunderOf==='function' && svFunderOf(pf.id)) || (c && c.funding && c.funding!=='بدون' ? c.funding : '') || (bb.d && bb.d.funding!=='بدون' ? bb.d.funding : '');
   var h = '<div class="pf-scrim"'+A('closeProfile')+'></div><div class="pf-modal cf"><div class="prof-head"><span>'+pfIc('user',14,'#535252',2.2)+' ملف الحالة</span><button class="cms-close"'+A('closeProfile')+'>'+pfIc('x',15,'#535252',2.4)+'</button></div>';
   // identity strip
-  h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
-    '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>')+'</div>'+
+  h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(pf.sel ? (d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
+    '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>') : '<span class="cf-code">'+bmData(pf.id).reqs.length+' '+(bmData(pf.id).reqs.length > 2 ? 'أطراف' : 'طرف')+'</span>')+'</div>'+
     '</div>'+
     '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
   // section nav
@@ -4898,10 +4918,11 @@ function renderProfile(){
   h += '</div><aside class="cf-side">';
   // body map – sticky with the side column, so it stays in view while scrolling
   h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+
-    '<div class="cf-meta bm-meta">'+[d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'].filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
+    '<div class="cf-meta bm-meta">'+(pf.sel ? [d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'] : [d.gender, age, d.gov]).filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
     renderBodyMap(pf.id)+'</div>';
   // request status
-  h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-status '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</div>'+
+  if (!pf.sel) h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف لعرض حالة طلبه.</span></div></div>';
+  else h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-status '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</div>'+
     (st.status==='مؤجل' ? '<div class="cf-kv"><span>سبب التأجيل</span><b>'+st.reasons.map(esc).join('<br>')+'</b></div>'+
       '<div class="cf-kv"><span>مؤجل لتاريخ</span><input class="cms-input" type="date" value="'+esc(d.postponeUntil)+'" data-k="pf-postponeUntil" data-change="profSet" data-a="postponeUntil"/></div>' : '')+
     '<div class="cf-kv"><span>نتيجة اللجنة</span><b>'+esc(st.status==='مؤجل' || d.nextStep==='measurement' ? '-' : (d.committee||'-'))+'</b></div><div class="cf-kv"><span>التمويل</span><b>'+esc(funder || 'غير ممول')+'</b></div></div>';
