@@ -4913,7 +4913,7 @@ function renderProfile(){
   h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(pf.sel ? (d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
     '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>') : '<span class="cf-code">'+bmData(pf.id).reqs.length+' '+(bmData(pf.id).reqs.length > 2 ? 'أطراف' : 'طرف')+'</span>')+'</div>'+
     '</div>'+
-    '<div class="cf-phones">'+phones.map(function(p, i){ return '<span class="cf-ph">'+pfIc('phone',12,'#64748b',2)+'<b dir="ltr">'+esc(p)+'</b>'+phCopy(p)+'</span>'; }).join('')+'</div></div>';
+    '</div>';
   // section nav
   // two groups: the request's data, then its follow-up (journey / files / changes)
   var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
