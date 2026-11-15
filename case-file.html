@@ -4748,7 +4748,7 @@ function renderBodyMap(id){
   Object.keys(BM_SEGS).forEach(function(k){
     var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = sel && ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return !sel || x!==cur.id; });
     var cls = 'bm-seg' + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
-    var nav = hasOther;   // only parts of a (not chosen) request can be clicked
+    var nav = hasOther || isCur;   // a request's parts can be clicked; the chosen one goes back to all limbs
     var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (sel && r.cur ? 'الطرف المختار' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
     body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"'+(nav ? ' role="button" tabindex="0" aria-label="'+esc(tip)+'"'+A('bmPick', k) : '')+'><title>'+esc(tip)+'</title></path>';
   });
@@ -4771,15 +4771,10 @@ function renderBodyMap(id){
       '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
       (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
       (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
-      '<button class="bm-clear"'+A('bmClear')+'>'+pfIc('x',11,null,2.6)+' عرض كل الأطراف</button>';
-  } else info += '<div class="bm-pick">'+pfIc('user',14,'#0b6db0',2.2)+'<span>لم يتم اختيار طرف. اضغط على الطرف لعرض بياناته ومساره ومرفقاته.</span></div>';
+      '';
+  } else info += '<div class="bm-pick">'+pfIc('user',14,'#0b6db0',2.2)+'<span>اضغط على الطرف لعرض بياناته ومساره ومرفقاته.</span></div>';
   if (conflict) info += '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>';
-  info += '<div class="bm-legend">'+(sel ? '<span><i class="bm-dot cur"></i>الطرف المختار</span>' : '')+'<span><i class="bm-dot oth"></i>'+(sel ? 'طرف آخر لنفس الشخص' : 'طرف مسجل – اضغط لعرضه')+'</span><span><i class="bm-dot base"></i>لا يوجد طلب</span></div>';
   if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة هذا الطلب فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
-  if (others.length){
-    info += '<div class="bm-others"><div class="bm-oh">'+(sel ? 'أطراف أخرى لنفس الشخص' : 'أطراف الحالة')+' ('+others.length+')</div>'+others.map(function(r){
-      return '<button class="bm-oreq"'+A('bmGo', r.id)+'><i class="bm-dot oth"></i><span><b>'+esc(r.code || r.id)+'</b> '+esc((r.level || 'بدون مستوى') + ' – ' + bmSideText(r.side))+(r.stage ? '<em>'+esc(r.stage)+'</em>' : '')+'</span></button>'; }).join('')+'</div>';
-  } else if (sel) info += '<div class="bm-hint">لا توجد أطراف أخرى لنفس الشخص.</div>';
   info += '</div>';
   return '<div class="bm-wrap'+(sel ? '' : ' bm-nosel')+'"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
 }
@@ -4794,7 +4789,7 @@ var BM_ACTIONS = {
   bmPick: function(seg){
     var po = PROFILES.open; if (!po) return;
     var data = bmData(po.id), ids = data.bySeg[seg] || [];
-    if (!ids.some(function(x){ return !po.sel || x!==po.id; })) return;      // only the chosen limb → nothing to open
+    if (!ids.some(function(x){ return !po.sel || x!==po.id; })){ if (ids.length) ACT.bmClear(); return; }   // the chosen limb → back to all limbs
     if (ids.length===1){ ACT.bmGo(ids[0]); return; }                         // one request → open it
     po.bmMenu = po.bmMenu && po.bmMenu.seg===seg ? null : {id:po.id, seg:seg}; render();
   },
@@ -4998,7 +4993,6 @@ function renderProfile(){
   h += '</div><aside class="cf-side">';
   // body map – sticky with the side column, so it stays in view while scrolling
   h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+
-    '<div class="cf-meta bm-meta">'+(pf.sel ? [d.gender, age, d.gov, d.level ? d.level + (d.side ? ' – ' + d.side : '') : '', stage, funder ? 'ممول: ' + funder : 'غير ممول'] : [d.gender, age, d.gov]).filter(Boolean).map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'+
     renderBodyMap(pf.id)+'</div>';
   // request status
   if (!pf.sel) h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف لعرض حالة طلبه.</span></div></div>';
