@@ -4507,7 +4507,8 @@ function profileOf(id){
   var st0 = pfStatus(id, p); p.reqStatus = st0.status; p.postponeReason = st0.reasons.join(' + '); p.postponeUntil = st0.until || '';
   if (c && typeof CASES!=='undefined'){
     var main = c.person && c.person!==c.id ? caseById(c.person) : null;
-    if (main){ var mp = profileOf(main.id), ms = bmSides(mp && mp.side); p.side = ms.length===1 && ms[0]==='R' ? 'الأيسر' : 'الأيمن'; }
+    if (c.pf && c.pf.side){ /* fixed by the data */ }
+    else if (main){ var mp = profileOf(main.id), ms = bmSides(mp && mp.side); p.side = ms.length===1 && ms[0]==='R' ? 'الأيسر' : 'الأيمن'; }
     else if (CASES.some(function(x){ return x.person===c.id && x.id!==c.id; }) && bmSides(p.side).length!==1) p.side = 'الأيسر';
   }
   pfNormPhones(p); PROFILES.store[id] = p; return p;
