@@ -4941,8 +4941,7 @@ function renderProfile(){
     '<div class="cms-row">'+f(['responsible','هل يوجد مسئول عن الحالة',0,'select'])+'<label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
       opt('research','قسم الأبحاث', d.nextStep)+opt('measurement','حجز مقاس مباشر', d.nextStep)+'</select></div></div>'+
     '<div class="cms-row"><label class="cms-label">نشط</label><div class="cms-field"><div class="pf-yn"><button class="'+(d.active?'on':'')+'"'+A('profActive','1')+'>'+pfIc('check',12,null,2.4)+' نعم</button><button class="'+(!d.active?'on off':'')+'"'+A('profActive','0')+'>'+pfIc('x',12,null,2.4)+' لا</button></div></div>'+
-      '<label class="cms-label">ممول بدون بحث</label><div class="cms-field"><label class="cf-check"><input type="checkbox"'+(d.fundedNoResearch?' checked':'')+A('profToggleFunded')+'/> ممول بدون بحث</label></div></div>'+
-    row(['notes','الملاحظات',0,'area'], ['notes2','الملاحظات 2',0,'area'])+row(['qualityNotes','ملاحظات الجودة',0,'area']));
+      f(['notes','الملاحظات',0,'area'])+'</div>');
   // attachments
   // مسار الحالة: each step with the same data as the CMS bands
   var att = function(x){ return x==='حضر' ? 'تم الحضور' : x==='لم يحضر' ? 'لم يحضر' : '-'; };
