@@ -242,6 +242,20 @@
   .cf-tabs button.on{background:#0093e9;border-color:#0093e9;color:#fff;}
   .cf-tabs button.on:hover{background:#0093e9;color:#fff;}
   .bm-meta{margin:0 0 10px;}
+  /* التصنيع step + manufacturing action cards (colours of the CMS cards) */
+  .cf-path li.j-mfg .cf-path-b{background:#f4f0fa;}
+  .mf-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
+  .mf-card{background:#fff;border:1px solid #dce4e8;border-inline-start:4px solid #607d8b;border-radius:7px;padding:8px 10px;}
+  .mf-card.mf-measurements{border-inline-start-color:#00a65a;} .mf-card.mf-printing{border-inline-start-color:#3c8dbc;}
+  .mf-card.mf-printed-parts{border-inline-start-color:#f39c12;} .mf-card.mf-assembly{border-inline-start-color:#8e44ad;}
+  .mf-card.todo{opacity:.6;}
+  .mf-h{display:flex;align-items:center;gap:6px;border-bottom:1px solid #edf0f2;padding-bottom:6px;margin-bottom:5px;font-size:12.5px;}
+  .mf-n{width:20px;height:20px;border-radius:50%;background:#455a64;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  .mf-card.done .cf-sl{background:#e7f6ec;color:#15803d;} .mf-card.now .cf-sl{background:#e6f1fb;color:#0b6db0;}
+  .mf-date{margin-inline-start:auto;font-size:11px;color:#66757f;font-variant-numeric:tabular-nums;}
+  .mf-row{display:grid;grid-template-columns:130px 1fr;gap:6px;font-size:12px;padding:2px 0;}
+  .mf-row span{color:#59666e;font-weight:700;} .mf-row b{font-weight:400;color:#37474f;}
+  @media (max-width:700px){ .mf-acts{grid-template-columns:1fr;} }
   .pf-panel{border:1px solid #d7dbe0;border-radius:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
     .pf-panel-head{background:#f4f4f4;border-bottom:1px solid #d7dbe0;padding:8px 12px;font-size:12.5px;color:#444;}
     .pf-panel-body{padding:12px;}
@@ -4750,6 +4764,47 @@ document.addEventListener('keydown', function(e){
   if ((e.key==='Enter' || e.key===' ') && el && el.getAttribute && el.getAttribute('data-act')==='bmPick'){ e.preventDefault(); ACT.bmPick(el.getAttribute('data-a')); return; }
   if (e.key==='Escape' && PROFILES.open && PROFILES.open.bmMenu){ PROFILES.open.bmMenu = null; render(); }
 });
+
+// ---------- التصنيع inside مسار الحالة (same data as the CMS: حالة التصنيع + تفاصيل إجراءات التصنيع) ----------
+// p = how far manufacturing went: 0 not started · 1 design · 2 printing · 3 quality check · 4 assembled, ready · 5 delivered
+var MFG_ENGINEERS = ['م. أحمد سامي','م. مريم خالد','م. كريم عادل','م. هبة يوسف'];
+var MFG_PRINTERS = ['طابعة 1 – Raise3D','طابعة 2 – Raise3D','طابعة 3 – Ultimaker'];
+var MFG_LEVEL_BY_P = ['', 'جاري التصميم', 'جاري الطباعة', 'جاري التجميع', 'جاهز للتسليم (مخزن الأطراف الجديدة)', 'تم التسليم'];
+function pfAddDays(iso, n){ var x = parseDay(String(iso||'').slice(0,10)); if (!x) return ''; x.setDate(x.getDate() + n); return pfIso(x); }
+function pfMfg(id, d, c, bb, measDone, delivDone){
+  var s = 0; for (var i=0;i<id.length;i++) s = (s*31 + id.charCodeAt(i)) % 9973;
+  var p = 0;
+  if (delivDone || bb.d || (c && (c.stage==='maintEval' || c.stage==='maintDelivery'))) p = 5;
+  else if (c && c.stage==='newDelivery') p = 4;
+  else if (measDone) p = 1 + s % 3;
+  // dates: from the delivery back, or from the request date forward
+  // dates are anchored to today (finished steps in the past): measurement → printing → quality → assembly → ready
+  var today = pfIso(new Date()), meas;
+  if (p === 5) meas = pfAddDays(bb.d && bb.d.delivered ? bb.d.delivered : pfAddDays(today, -(60 + s % 60)), -(24 + s % 8));
+  else if (p === 4) meas = pfAddDays(today, -(22 + s % 10));
+  else meas = pfAddDays(today, -(3 + p * 5 + s % 4));
+  var print = pfAddDays(meas, 6 + s % 4), qual = pfAddDays(print, 4 + s % 3), asm = pfAddDays(qual, 3 + s % 3), ready = pfAddDays(asm, 2);
+  var eng = MFG_ENGINEERS[s % MFG_ENGINEERS.length], team = [MFG_ENGINEERS[(s+1) % MFG_ENGINEERS.length], MFG_ENGINEERS[(s+2) % MFG_ENGINEERS.length]];
+  var quality = 86 + s % 14;
+  function st(n){ return p > n ? 'done' : p === n ? 'now' : 'todo'; }   // action n (1..4) vs progress
+  return {
+    p:p, level:MFG_LEVEL_BY_P[p] || '', filesReady: p >= 2 ? 'نعم' : p === 1 ? 'لا' : '', onPrinter: p >= 3 ? 'نعم' : p === 2 ? 'نعم' : p === 1 ? 'لا' : '',
+    quality: p >= 4 || p === 3 ? quality + '%' : '', ready: p >= 4 ? ready : '',
+    actions:[
+      {k:'measurements', t:'القياسات', st: p >= 1 ? 'done' : 'todo', date: p >= 1 ? meas : '', rows:[['المهندس', p >= 1 ? eng : ''], ['التقييم الطبى والقياسات', p >= 1 ? 'مناسب' : ''], ['ملاحظات (MDM)', p >= 1 ? 'تم أخذ المقاس وتصوير الجدعة' : '']]},
+      {k:'printing', t:'الطباعة', st: st(2), date: p >= 2 ? print : '', rows:[['Files ready', p >= 2 ? 'نعم' : p === 1 ? 'لا' : ''], ['On printer', p >= 2 ? 'نعم' : ''], ['الطابعة', p >= 2 ? MFG_PRINTERS[s % MFG_PRINTERS.length] : '']]},
+      {k:'printed-parts', t:'جودة الأجزاء المطبوعة', st: st(3), date: p >= 3 ? qual : '', rows:[['نسبة الجودة', p >= 3 ? quality + '%' : ''], ['ملاحظات الجودة', p >= 3 ? (quality < 92 ? 'تنعيم حواف السوكيت' : 'مطابقة') : '']]},
+      {k:'assembly', t:'التجميع', st: p >= 4 ? 'done' : p === 3 ? 'now' : 'todo', date: p >= 4 ? asm : '', rows:[['فريق التجميع', p >= 3 ? team.join('، ') : ''], ['تقييم تسليم الطرف', p >= 5 ? 'مناسب' : '']]},
+    ]
+  };
+}
+function renderMfgActions(m){
+  var SL = {done:'تم', now:'جاري', todo:'لم يبدأ'};
+  return '<div class="mf-acts">'+m.actions.map(function(a, i){
+    return '<div class="mf-card mf-'+a.k+' '+a.st+'"><div class="mf-h"><span class="mf-n">'+(i+1)+'</span><b>'+a.t+'</b><span class="cf-sl">'+SL[a.st]+'</span>'+(a.date ? '<span class="mf-date">'+esc(a.date)+'</span>' : '')+'</div>'+
+      a.rows.map(function(r){ return '<div class="mf-row"><span>'+r[0]+'</span><b>'+esc(r[1] || '-')+'</b></div>'; }).join('')+'</div>';
+  }).join('')+'</div>';
+}
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -4818,6 +4873,10 @@ function renderProfile(){
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
       kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
+    (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
+      return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
+        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready', m.filesReady], ['On printer', m.onPrinter], ['جودة الأجزاء المطبوعة', m.quality]],
+        extra: renderMfgActions(m)}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
@@ -4828,7 +4887,7 @@ function renderProfile(){
   if (st.status==='مؤجل'){
     // postponed by the registered data: the case hasn't passed registration, so the later steps stay empty
     steps[0].s = 'warn'; steps[0].sl = 'مؤجل'; steps[0].kv = steps[0].kv.concat([['سبب التأجيل', st.reasons.join(' + ')], ['مؤجل لتاريخ', d.postponeUntil || '-']]);
-    steps.slice(1).forEach(function(x){ x.s = x.s==='skip' ? 'skip' : 'todo'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); });
+    steps.slice(1).forEach(function(x){ x.s = x.s==='skip' ? 'skip' : 'todo'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.extra = ''; });
   } else {
     // a later step already happened -> the earlier ones were done (even if their date isn't recorded here)
     for (var si = steps.length - 1, seen = false; si >= 0; si--){ if (seen && steps[si].s==='todo') steps[si].s = 'done'; if (steps[si].s==='done' || steps[si].s==='now') seen = true; }
@@ -4840,7 +4899,7 @@ function renderProfile(){
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
   h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
     return '<li class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i></i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
-      x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div></div></li>';
+      x.kv.map(function(p){ var val = p[1] && p[1].html ? p[1].html : esc(p[1]==null || p[1]==='' ? '-' : p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+'</div></li>';
   }).join('')+'</ol>');
   h += sec('files', 'upload', 'مرفقات الحالة', renderAttachments(d));
   h += sec('changes', 'history', 'التغييرات التي تمت',
