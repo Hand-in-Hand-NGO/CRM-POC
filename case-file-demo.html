@@ -4393,7 +4393,14 @@ function renderRouting(){
 // =====================================================================
 /*__PF_START__*/
 // levels we don't work on now -> "مؤجل لمرحلة أخرى" (the postponed list's levels + a few more)
-var UNSUPPORTED_LEVELS = POSTPONED_LEVELS.concat(['مفصل الحوض','أصابع اليد']).filter(function(l, i, a){ return a.indexOf(l)===i; });
+// one finger / toe on its own (the body map colours only that digit)
+// fingers / toes: all of them, or one by its name (grouped in the level list)
+var BM_LEVEL_GROUPS = [
+  ['أصابع اليد',  ['أصابع اليد كاملة','إبهام اليد','سبابة اليد','وسطى اليد','بنصر اليد','خنصر اليد']],
+  ['أصابع القدم', ['أصابع القدم كاملة','إبهام القدم','إصبع القدم الثاني','إصبع القدم الثالث','إصبع القدم الرابع','خنصر القدم']],
+];
+var BM_LEVEL_DIGITS = BM_LEVEL_GROUPS[0][1].concat(BM_LEVEL_GROUPS[1][1]);
+var UNSUPPORTED_LEVELS = POSTPONED_LEVELS.concat(['مفصل الحوض'], BM_LEVEL_DIGITS).filter(function(l, i, a){ return a.indexOf(l)===i; });
 var NC_OPTS = {
   reqStatus:['مقبول','مؤجل','مرفوض','تحت البحث'], postponeReason:['مؤجل لمرحلة اخرى','مؤجل لإتمام 6 شهور','مؤجل بسبب العمر','مؤجل بسبب الوزن','أخرى'],
   callType:['وارد','صادر'], nationality:['مصري','سوداني','سوري','أخرى'], insured:['نعم','لا'], marital:['أعزب','متزوج','مطلق','أرمل'], gender:['ذكر','أنثى'],
@@ -4459,9 +4466,12 @@ function ncField(f, nc, act, pre){
   var k = f[0], v = nc[k], miss = nc.tried && f[2] && !String(v||'').trim(), cls = 'cms-input'+(miss?' nc-miss':'');
   var lab = '<label class="cms-label">'+f[1]+(f[2] ? ' <span class="req">*</span>' : '')+'</label>', inp;
   if (f[3]==='select' || f[3]==='gov' || f[3]==='level'){
-    var list = f[3]==='gov' ? GOVERNORATES : f[3]==='level' ? LEVEL_OPTIONS.concat(UNSUPPORTED_LEVELS) : NC_OPTS[k];
-    if (v && list.indexOf(v)===-1) list = [v].concat(list);
-    inp = '<select class="'+cls+'" data-change="'+act+'" data-a="'+k+'"><option value="">'+f[1]+'</option>'+list.map(function(o){ return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>';
+    var list = f[3]==='gov' ? GOVERNORATES : f[3]==='level' ? LEVEL_OPTIONS.concat(UNSUPPORTED_LEVELS).filter(function(l, i, a){ return a.indexOf(l)===i && BM_LEVEL_DIGITS.indexOf(l)===-1; }) : NC_OPTS[k];
+    var all = f[3]==='level' ? list.concat(BM_LEVEL_DIGITS) : list;
+    if (v && all.indexOf(v)===-1) list = [v].concat(list);
+    function opt(o){ return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>'; }
+    inp = '<select class="'+cls+'" data-change="'+act+'" data-a="'+k+'"><option value="">'+f[1]+'</option>'+list.map(opt).join('')+
+      (f[3]==='level' ? BM_LEVEL_GROUPS.map(function(g){ return '<optgroup label="'+esc(g[0])+'">'+g[1].map(opt).join('')+'</optgroup>'; }).join('') : '')+'</select>';
   } else if (f[3]==='date'){
     inp = '<input class="'+cls+'" type="date" value="'+esc(v)+'" data-k="'+pre+k+'" data-change="'+act+'" data-a="'+k+'"/>';
   } else if (f[3]==='area'){
@@ -4703,6 +4713,9 @@ var BM_FINGERS = ['fThumb','fIndex','fMiddle','fRing','fPinky'], BM_TOES = ['t1'
 // level → amputated parts (from the cut level down to the end of the limb); one finger / toe can be named on its own
 var BM_LEVELS = [
   {re:/إبهام القدم|إصبع القدم الكبير/, parts:['t1']},
+  {re:/القدم الثاني/,                 parts:['t2']},
+  {re:/القدم الثالث/,                 parts:['t3']},
+  {re:/القدم الرابع/,                 parts:['t4']},
   {re:/خنصر القدم/,                   parts:['t5']},
   {re:/أصابع القدم/,                  parts:BM_TOES},
   {re:/مشط القدم/,                    parts:['forefoot'].concat(BM_TOES)},
@@ -4710,9 +4723,9 @@ var BM_LEVELS = [
   {re:/فوق الركبة|أعلى الركبة/,       parts:['thighLow','shin','heel','forefoot'].concat(BM_TOES)},
   {re:/مفصل الحوض|الإلية|الفخذ كله/,  parts:['hip','thighUp','thighLow','shin','heel','forefoot'].concat(BM_TOES)},   // الإلية: the whole thigh from the hip joint
   {re:/إبهام اليد|الإبهام/,           parts:['fThumb']},
-  {re:/السبابة/,                      parts:['fIndex']},
-  {re:/الوسطى/,                       parts:['fMiddle']},
-  {re:/البنصر/,                       parts:['fRing']},
+  {re:/سبابة/,                        parts:['fIndex']},
+  {re:/وسطى/,                         parts:['fMiddle']},
+  {re:/بنصر/,                         parts:['fRing']},
   {re:/خنصر اليد|الخنصر/,             parts:['fPinky']},
   {re:/أصابع اليد/,                   parts:BM_FINGERS},
   {re:/تحت الكوع|الساعد/,             parts:['forearm','palm'].concat(BM_FINGERS)},
