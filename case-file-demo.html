@@ -4864,6 +4864,8 @@ function pfVal(v){
   if (!s || s==='-') return '<span class="jv-na">—</span>';
   if (s==='حضر' || s==='تم الحضور') return '<span class="jv ok">'+pathIc(JV_IC.ok,11,null,3)+' حضر</span>';
   if (s==='لم يحضر') return '<span class="jv bad">'+pathIc(JV_IC.bad,11,null,3)+' لم يحضر</span>';
+  if (s==='تم') return '<span class="jv ok">'+pathIc(JV_IC.ok,11,null,3)+' تم</span>';
+  if (s==='لم يتم') return '<span class="jv bad">'+pathIc(JV_IC.bad,11,null,3)+' لم يتم</span>';
   if (s==='نعم') return '<span class="jv ok">'+pathIc(JV_IC.ok,11,null,3)+' نعم</span>';
   if (s==='لا') return '<span class="jv bad">'+pathIc(JV_IC.bad,11,null,3)+' لا</span>';
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return '<span class="jv-dt">'+pathIc(JV_IC.cal,11,'#64748b',2)+' '+esc(s)+'</span>';
@@ -5031,8 +5033,8 @@ Object.assign(ACT, CF_FUND_ACTIONS);
 // ---------- التصنيع: download the design file (Files ready) and the print file (On printer) ----------
 // demo: the files are generated in the browser (a small STL / G-code with the request code); in the system they come from the server
 function mfgFileVal(v, kind, code){
-  if (v!=='نعم') return v;
-  return {html: pfVal('نعم') + '<button class="mf-dl" title="'+(kind==='design' ? 'تحميل ملف التصميم' : 'تحميل ملف الطباعة')+'"'+A('mfgDl', kind, code)+'>'+
+  if (v!=='نعم') return v ? 'لم يُرفع' : '';
+  return {html: '<button class="mf-dl" title="'+(kind==='design' ? 'تحميل ملف التصميم' : 'تحميل ملف الطباعة')+'"'+A('mfgDl', kind, code)+'>'+
     pathIc('M12 4v12 M7 11l5 5 5-5 M4 20h16', 12, '#fff', 2.6)+' '+(kind==='design' ? 'ملف التصميم <bdi dir="ltr">.stl</bdi>' : 'ملف الطباعة <bdi dir="ltr">.gcode</bdi>')+'</button>'};
 }
 var MFG_DL_ACTIONS = {
@@ -5112,6 +5114,22 @@ Object.assign(ACT, {
   vdOpen: function(key, name){ PROFILES.open.vid = {key:key, name:name}; render(); },
   vdClose: function(){ PROFILES.open.vid = null; render(); },
 });
+// ---------- البحث الاجتماعي: one research per person, merged into all the person's requests (limbs) ----------
+// the research lives on the person's first request (case.person); a later stage on any limb means the research was added
+function pfResearch(id, d){
+  var c = caseById(id), primary = c ? (c.person || c.id) : id, ids = bmData(id).reqs.map(function(r){ return r.id; });
+  var main = (primary===id ? d : profileOf(primary)) || d;
+  var s = 0; for (var i=0;i<primary.length;i++) s = (s*31 + primary.charCodeAt(i)) % 9973;
+  var assign = main.assignDate || d.assignDate || '', rdate = main.researchDate || d.researchDate || '';
+  var later = ids.some(function(x){
+    var p = x===id ? d : profileOf(x), cx = caseById(x), bb = PF_HOOKS.base(x);
+    return (p && p.committee && p.committee!=='-') || !!bb.d || (cx && cx.stage && cx.stage!=='measurement' && cx.stage!=='postponed');
+  });
+  var added = !!rdate || later, base = main.date || d.date;
+  if (added && !rdate) rdate = pfAddDays(base, 9 + s % 6);           // demo: the date the research was added
+  if (added && !assign) assign = pfAddDays(base, 2 + s % 4);
+  return {n:ids.length, researcher: main.researcher || d.researcher, assignDate:assign, researchDate:rdate, added:added, assigned:!!assign};
+}
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -5183,15 +5201,18 @@ function renderProfile(){
   var chip = function(t, cls){ return {html:'<span class="cf-res '+cls+'">'+esc(t)+'</span>'}; };
   var steps = [
     {k:'reg', t:'تسجيل الطلب', s:d.date ? 'done' : 'todo', kv:[['تاريخ تقديم الطلب', d.date], ['تم الإضافة بواسطة', d.addedBy]]},
-    {k:'res', t:'البحث الاجتماعي', s:d.researchDate ? 'done' : d.assignDate ? 'now' : (d.fundedNoResearch ? 'skip' : 'todo'),
-      kv:[['اسم الباحث', d.fundedNoResearch && !d.researchDate ? 'ممول بدون بحث' : d.researcher], ['تاريخ الإسناد', d.assignDate], ['تاريخ البحث', d.researchDate]]},
+    (function(){ var R = pfResearch(pf.id, d);   // the same research on every limb of the person
+      return {k:'res', t:'البحث الاجتماعي', s:R.added ? 'done' : R.assigned ? 'now' : (d.fundedNoResearch ? 'skip' : 'todo'), sl: !R.added && R.assigned ? 'في انتظار إضافة البحث' : '',
+        note: R.n > 1 ? 'بحث واحد لكل أطراف الحالة (' + R.n + ')' : '',
+        kv:[['اسم الباحث', d.fundedNoResearch && !R.added ? 'ممول بدون بحث' : R.researcher], ['تاريخ الإسناد', R.assignDate],
+            ['إضافة البحث', R.added ? 'تم' : R.assigned ? 'لم يتم' : ''], ['تاريخ إضافة البحث', R.added ? R.researchDate : '']]}; })(),
     {k:'com', t:'اللجنة', s:d.committee && d.committee!=='-' ? (d.committee==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
       kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
     (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
       return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
-        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['Files ready – ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['On printer – ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
+        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
@@ -5202,7 +5223,8 @@ function renderProfile(){
   if (st.status==='مؤجل'){
     // postponed by the registered data: the case hasn't passed registration, so the later steps stay empty
     steps[0].s = 'warn'; steps[0].sl = 'مؤجل'; steps[0].kv = steps[0].kv.concat([['سبب التأجيل', st.reasons.join(' + ')], ['مؤجل لتاريخ', d.postponeUntil || '-']]);
-    steps.slice(1).forEach(function(x){ x.s = x.s==='skip' ? 'skip' : 'todo'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.extra = ''; });
+    steps.slice(1).forEach(function(x){ if (x.k==='res') return;   // the research is the person's, not this request's
+      x.s = x.s==='skip' ? 'skip' : 'todo'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.extra = ''; });
   } else {
     // a later step already happened -> the earlier ones were done (even if their date isn't recorded here)
     for (var si = steps.length - 1, seen = false; si >= 0; si--){ if (seen && steps[si].s==='todo') steps[si].s = 'done'; if (steps[si].s==='done' || steps[si].s==='now') seen = true; }
