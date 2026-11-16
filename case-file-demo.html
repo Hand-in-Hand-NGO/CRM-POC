@@ -5255,6 +5255,13 @@ function pfResearch(id, d){
   if (added && !assign) assign = pfAddDays(base, 2 + s % 4);
   return {n:ids.length, researcher: main.researcher || d.researcher, assignDate:assign, researchDate:rdate, added:added, assigned:!!assign};
 }
+// postponement reason / date show only when the stage is really postponed (one of them has a value)
+function jrKv(kv){
+  var PP = ['سبب التأجيل', 'مؤجل لتاريخ'];
+  function real(v){ v = String(v==null ? '' : v).trim(); return !!v && v!=='-' && v!=='—'; }
+  var pp = kv.some(function(p){ return PP.indexOf(p[0])!==-1 && real(p[1]); });
+  return pp ? kv : kv.filter(function(p){ return PP.indexOf(p[0])===-1; });
+}
 // ---------- مرفقات مراحل المسار: what was uploaded for the case at each stage (research / medical assessment & measurements / delivery) ----------
 // the research is one for the person, so its files come from all the person's limbs; the other stages are per limb
 var JR_ATT_STAGES = {res:'صفحة الأبحاث', meas:'صفحة الزيارات (التقييم الطبي والقياسات)', deliv:'صفحة الزيارات (تسليم طرف جديد)'};
@@ -5445,7 +5452,7 @@ function renderProfile(){
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
   h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
     return '<li id="jr-'+x.k+'" class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i>'+pathIc(PF_STEP_IC[x.k] || PF_STEP_IC.reg, 15, null, 2.2)+'</i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+stIc(x.s, 9)+' '+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
-      x.kv.map(function(p){ var val = pfVal(p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+jrAttHtml(x)+stepLink(x, d)+'</div></li>';
+      jrKv(x.kv).map(function(p){ var val = pfVal(p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+jrAttHtml(x)+stepLink(x, d)+'</div></li>';
   }).join('')+'</ol>'+jrVideoModal());
   h += sec('changes', 'history', 'التغييرات التي تمت',
     '<table class="cms-table"><thead><tr><th>الحقل</th><th>من</th><th>إلى</th><th>بواسطة</th><th>التاريخ</th></tr></thead><tbody>'+
