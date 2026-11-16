@@ -5408,8 +5408,11 @@ function renderProfile(){
     (function(){ var R = pfResearch(pf.id, d);   // the same research on every limb of the person
       return {k:'res', t:'البحث الاجتماعي', s:R.added ? 'done' : R.assigned ? 'now' : (d.fundedNoResearch ? 'skip' : 'todo'), sl: !R.added && R.assigned ? 'في انتظار إضافة البحث' : '',
         note: R.n > 1 ? 'بحث واحد لكل أطراف الحالة (' + R.n + ')' : '',
-        kv:[['اسم الباحث', d.fundedNoResearch && !R.added ? 'ممول بدون بحث' : R.researcher], ['تاريخ الإسناد', R.assignDate],
-            ['إضافة البحث', R.added ? 'تم' : R.assigned ? 'لم يتم' : ''], ['تاريخ إضافة البحث', R.added ? R.researchDate : '']]}; })(),
+        kv:[['تاريخ الإسناد', R.assignDate]],
+        // «البحث»: the research itself, one block
+        extra:'<div class="jr-sub"><div class="jr-sub-h">'+pathIc(PF_STEP_IC.res, 12, '#0b6db0', 2.4)+' البحث</div><div class="cf-path-kv">'+
+          [['إضافة البحث', R.added ? 'تم' : R.assigned ? 'لم يتم' : ''], ['تاريخ إضافة البحث', R.added ? R.researchDate : ''], ['اسم الباحث', d.fundedNoResearch && !R.added ? 'ممول بدون بحث' : R.researcher]]
+            .map(function(p){ return '<div><span>'+p[0]+'</span><b>'+pfVal(p[1])+'</b></div>'; }).join('')+'</div></div>'}; })(),
     {k:'com', t:'اللجنة', s:d.committee && d.committee!=='-' ? (d.committee==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
@@ -5423,7 +5426,7 @@ function renderProfile(){
       kv:[['تاريخ حجز الاستلام', bb.d ? bb.d.delivered : v.deliv.day], ['هل حضر', bb.d ? 'تم الحضور' : att(v.deliv.att)], ['النتيجة', delivDone ? 'تم التسليم' : '-'], ['سبب التأجيل', ppDeliv ? PP_KINDS[ppDeliv.kind] : '-'], ['مؤجل لتاريخ', ppDeliv ? ppUntil(ppDeliv) : '-']]}];
   // two routes: الخطوة التالية "قسم الأبحاث" goes step by step; "حجز مقاس مباشر" skips research + committee and goes to the call center
   var direct = d.nextStep==='measurement';
-  if (direct) [steps[1], steps[2]].forEach(function(x){ x.s = 'skip'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.note = 'حجز مباشر'; });
+  if (direct) [steps[1], steps[2]].forEach(function(x){ x.s = 'skip'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.extra = ''; x.note = 'حجز مباشر'; });
   if (st.status==='مؤجل'){
     // postponed by the registered data: the case hasn't passed registration, so the later steps stay empty
     steps[0].s = 'warn'; steps[0].sl = 'مؤجل'; steps[0].kv = steps[0].kv.concat([['سبب التأجيل', st.reasons.join(' + ')], ['مؤجل لتاريخ', d.postponeUntil || '-']]);
@@ -8268,6 +8271,8 @@ render();
   .cf-path li.done .cf-sl{display:none;}   /* green already means «تم» */
   .cf-path li .cf-turn, .cf-path li.cur.warn .cf-turn{background:#64748b;}
   .cf-path li:not(.done) .cf-path-h b{color:#64748b;}
+  .jr-sub{margin-top:8px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:6px 10px 4px;}
+  .jr-sub-h{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#0b3a57;border-bottom:1px dashed #e5e7eb;padding-bottom:4px;margin-bottom:2px;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
