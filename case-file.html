@@ -5438,7 +5438,7 @@ function renderProfile(){
   if (cur!==-1) steps[cur].cur = true;
   var SL = {done:'تم', now:'جاري', warn:'تنبيه', todo:'لم يبدأ', skip:'تم تخطيه'};
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
-  h += sec('journey', 'history', 'مسار الحالة', renderJourneyStepper(steps) + '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
+  h += sec('journey', 'history', 'مسار الحالة', '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
     return '<li id="jr-'+x.k+'" class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i>'+pathIc(PF_STEP_IC[x.k] || PF_STEP_IC.reg, 15, null, 2.2)+'</i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+stIc(x.s, 9)+' '+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
       x.kv.map(function(p){ var val = pfVal(p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+jrAttHtml(x)+stepLink(x, d)+'</div></li>';
   }).join('')+'</ol>'+jrVideoModal());
@@ -8257,6 +8257,17 @@ render();
   .jr-att-sh{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#0b3a57;border-bottom:1px dashed #e5e7eb;padding-bottom:4px;}
   .jr-att-g.empty .jr-att-gh{color:#64748b;} .jr-att-g .jr-att-none{margin-inline-start:16px;}
   .jr-att-src{font-size:11px;color:#94a3b8;font-weight:700;}
+  /* مسار الحالة: one colour – green once the case passed the stage, grey until then */
+  .cf-path li .cf-path-b, .cf-path li.cur .cf-path-b{background:#f8fafc !important;border:1px solid #eef0f3;box-shadow:none !important;}
+  .cf-path li.done .cf-path-b{background:#effaf3 !important;border-color:#cdeed8;}
+  .cf-path li > i, .cf-path li.now > i, .cf-path li.warn > i{background:#fff;border-color:#cbd5e1;color:#94a3b8;box-shadow:none;}
+  .cf-path li.done > i{background:#15803d;border-color:#15803d;color:#fff;}
+  .cf-path li.cur > i{transform:none;}
+  .cf-path li:before{background:#e5e7eb;} .cf-path li.done:before{background:#15803d;}
+  .cf-path li .cf-sl, .cf-path li.now .cf-sl, .cf-path li.warn .cf-sl{background:#eef0f3;color:#64748b;}
+  .cf-path li.done .cf-sl{background:#dcf3e4;color:#15803d;}
+  .cf-path li .cf-turn, .cf-path li.cur.warn .cf-turn{background:#64748b;}
+  .cf-path li:not(.done) .cf-path-h b{color:#64748b;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
