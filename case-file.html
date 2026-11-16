@@ -5269,6 +5269,7 @@ function renderProfile(){
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
   var tab = pf.tab || (pf.sel ? 'request' : 'personal');
+  if (!pf.sel && ['funding','journey','files','changes'].indexOf(tab)!==-1) tab = 'amp';   // these tabs show once a limb is chosen
   var PF_LIMB_SECS = ['request','amp','funding','journey','files','changes'];
   function sec(id, icon, title, body, extra){
     if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من المجسم في «بيانات البتر» لعرض «'+title+'».</span>'+(id==='amp' ? '' : '<button class="cf-pick-btn"'+A('pfGo', 'amp')+'>'+pathIc(PF_TAB_IC.amp, 12, '#fff', 2.4)+' اختيار الطرف</button>')+'</div>'; extra = ''; }
@@ -5291,7 +5292,7 @@ function renderProfile(){
   var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
   var navTrack = [['funding','بيانات التمويل'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+(PF_TAB_IC[x[0]] ? pathIc(PF_TAB_IC[x[0]], 13, null, 2.2) : '')+x[1]+'</button>'; };
-  h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
+  h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div>'+(pf.sel ? '<div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div>' : '')+'</div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-main">';
   var devRow = d.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
   h += sec('personal', 'user', 'البيانات الشخصية',
