@@ -4804,51 +4804,120 @@ function bmReqTitle(r){ return (r.code ? r.code + ' – ' : '') + (r.level || '�
 var BM_PART_LEVEL = {armUp:'مفصل الكتف', armLow:'فوق الكوع', forearm:'تحت الكوع', palm:'تحت الكوع', fThumb:'إبهام اليد', fIndex:'سبابة اليد', fMiddle:'وسطى اليد', fRing:'بنصر اليد', fPinky:'خنصر اليد',
   hip:'مفصل الحوض (الإلية)', thighUp:'مفصل الحوض (الإلية)', thighLow:'فوق الركبة', shin:'تحت الركبة', heel:'تحت الركبة', forefoot:'مشط القدم',
   t1:'إبهام القدم', t2:'إصبع القدم الثاني', t3:'إصبع القدم الثالث', t4:'إصبع القدم الرابع', t5:'خنصر القدم'};
-function renderBodyMap(id, edit){
-  // sel = a limb (request) is chosen; until then every limb of the person is red and the file shows the person only
-  var po = PROFILES.open, sel = !!(po && po.sel);
-  edit = !!(edit && sel && po.id===id);
-  var data = bmData(id), cur = data.cur, menu = po && po.bmMenu, others = data.reqs.filter(function(r){ return !sel || !r.cur; });
-  var body = bmOutline() + bmBaseBody();
+function renderBodyMap(id){
+  // sel = a limb (request) is chosen; until then every limb of the person is shown and the file shows the person only
+  // edit = «تعديل مستوى البتر» was pressed: only the chosen limb can be changed (tap a part to set the level, tap it again to cancel)
+  var po = PROFILES.open, sel = !!(po && po.sel), edit = !!(sel && po.bmEdit && po.id===id);
+  var data = bmData(id), cur = data.cur, menu = po && po.bmMenu, v = bmView();
+  var body = bmOutline() + bmBaseBody(), hl = '';
   Object.keys(BM_SEGS).forEach(function(k){
     var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = sel && ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return !sel || x!==cur.id; });
     var cls = 'bm-seg' + (/^(f[A-Z]|t\d)/.test(sg.part) ? ' dig' : '') + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
-    var nav = hasOther || isCur;   // a request's parts can be clicked; the chosen one goes back to all limbs
-    if (edit && (isCur || !hasOther)){   // editor: choose / cancel the level of the chosen limb
-      var lv = BM_PART_LEVEL[sg.part], etip = isCur ? 'إلغاء مستوى البتر (' + (cur.level || '') + ')' : 'تحديد: ' + lv + ' – ' + BM_SIDE_TXT[sg.side];
-      body += '<path class="'+cls+' ed" d="'+sg.d+'" data-seg="'+k+'" role="button" tabindex="0" aria-label="'+esc(etip)+'"'+A('bmEdit', k)+'><title>'+esc(etip)+'</title></path>';
+    if (isCur) hl += '<path d="'+sg.d+'"/>';
+    if (edit){
+      if (isCur || !hasOther){
+        var lv = BM_PART_LEVEL[sg.part], etip = isCur ? 'إلغاء مستوى البتر (' + (cur.level || '') + ')' : 'تحديد: ' + lv + ' – ' + BM_SIDE_TXT[sg.side];
+        body += '<path class="'+cls+' ed" d="'+sg.d+'" data-seg="'+k+'" role="button" tabindex="0" aria-label="'+esc(etip)+'"'+A('bmEdit', k)+'><title>'+esc(etip)+'</title></path>';
+      } else body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"><title>'+esc(BM_SIDE_TXT[sg.side] + ' – ' + sg.label + ' – طرف آخر (لا يُعدَّل من هنا)')+'</title></path>';
       return;
     }
+    var nav = hasOther || isCur;   // a request's parts can be clicked; the chosen one goes back to all limbs
     var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (sel && r.cur ? 'الطرف المختار' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
     body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"'+(nav ? ' role="button" tabindex="0" aria-label="'+esc(tip)+'"'+A('bmPick', k) : '')+'><title>'+esc(tip)+'</title></path>';
   });
-  body += bmDetails();
-  var svg = '<svg class="bm-svg" viewBox="0 0 '+BM_W+' '+BM_H+'" role="img" aria-label="رسم جسم الحالة – المنظر الأمامي">'+
+  body = body.replace(bmBaseBody(), (hl ? '<g class="bm-hl">' + hl + '</g>' : '') + bmBaseBody()) + bmDetails();   // glow around the limb we are on (under the fills, so only its outer edge shows)
+  var svg = '<svg class="bm-svg" viewBox="'+[v.x, v.y, v.w, v.w*BM_H/BM_W].map(bmF).join(' ')+'" role="img" aria-label="رسم جسم الحالة – المنظر الأمامي">'+
     '<text class="bm-side-lbl" x="42" y="18" text-anchor="middle">يمين الحالة</text><path class="bm-side-arr" d="M42 24 v14 M37 33 l5 5 5-5"/>'+
     '<text class="bm-side-lbl" x="178" y="18" text-anchor="middle">يسار الحالة</text><path class="bm-side-arr" d="M178 24 v14 M173 33 l5 5 5-5"/>'+
     body + '</svg>';
+  // zoom (mouse wheel / pinch / buttons; drag to move)
+  svg += '<div class="bm-zoombar"><button title="تكبير"'+A('bmZoom', 'in')+'>'+pathIc('M12 5v14M5 12h14',13,null,2.6)+'</button><button title="تصغير"'+A('bmZoom', 'out')+'>'+pathIc('M5 12h14',13,null,2.6)+'</button>'+
+    '<button title="الحجم الأصلي"'+(v.w < BM_W ? A('bmZoom', 'reset') : ' disabled')+'>'+pathIc('M3 12a9 9 0 1 0 3-6.7 M3 4v5h5',13,null,2.4)+'</button></div>';
   // small chooser when a part belongs to several requests
   if (menu && menu.id===id && BM_SEGS[menu.seg]){
     var sg = BM_SEGS[menu.seg];
-    svg += '<div class="bm-menu" style="left:'+(sg.cx/BM_W*100).toFixed(1)+'%;top:'+(sg.cy/BM_H*100).toFixed(1)+'%;"><div class="bm-menu-h">'+esc(BM_SIDE_TXT[sg.side] + ' – ' + sg.label)+'</div>'+
+    svg += '<div class="bm-menu" style="left:'+Math.max(5, Math.min(95, (sg.cx - v.x)/v.w*100)).toFixed(1)+'%;top:'+Math.max(3, Math.min(90, (sg.cy - v.y)/(v.w*BM_H/BM_W)*100)).toFixed(1)+'%;"><div class="bm-menu-h">'+esc(BM_SIDE_TXT[sg.side] + ' – ' + sg.label)+'</div>'+
       (data.bySeg[menu.seg] || []).map(function(rid){ var r = bmReq(data, rid), on = sel && r.cur;
         return '<button class="'+(on ? 'cur' : '')+'"'+(on ? ' disabled' : A('bmGo', rid))+'><i class="bm-dot '+(on ? 'cur' : 'oth')+'"></i><span>'+esc(bmReqTitle(r))+(on ? ' <em>(الطرف المختار)</em>' : '')+'</span></button>'; }).join('')+'</div>';
   }
+  // bar on top: which limb we are on + «تعديل مستوى البتر»
+  var title = (cur.code ? cur.code + ' – ' : '') + (cur.level || 'مستوى البتر غير محدد') + (cur.side ? ' – ' + bmSideText(cur.side) : '');
+  var bar = !sel ? '<div class="bm-bar">'+pfIc('user',14,'#0b6db0',2.2)+'<span>اختر الطرف من المجسم لعرض بياناته وتعديلها.</span></div>'
+    : edit ? '<div class="bm-bar on"><span class="bm-bar-ic">'+pathIc('M15 3l6 6-11 11H4v-6z',13,'#fff',2.4)+'</span><span><em>جاري تعديل مستوى البتر لهذا الطرف</em><b>'+esc(title)+'</b></span><button class="bm-bar-btn done"'+A('bmEditToggle')+'>'+pfIc('check',12,'#fff',3)+' إنهاء التعديل</button></div>'
+    : '<div class="bm-bar"><span class="bm-bar-ic cur">'+pfIc('user',13,'#fff',2.4)+'</span><span><em>الطرف الحالي</em><b>'+esc(title)+'</b></span><button class="bm-bar-btn"'+A('bmEditToggle')+'>'+pathIc('M15 3l6 6-11 11H4v-6z',12,'#fff',2.4)+' تعديل مستوى البتر</button></div>';
   var conflict = Object.keys(data.bySeg).some(function(k){ return data.bySeg[k].length > 1; });
-  var info = '<div class="bm-info">' + (edit ? '<div class="bm-edhint">'+pathIc('M15 3l6 6-11 11H4v-6z',13,'#0b6db0',2.2)+'<span>اضغط على موضع البتر في المجسم لتحديد المستوى والجهة، واضغط على الجزء المحدد مرة أخرى لإلغائه. يمكن أيضًا التغيير من القائمة.</span></div>' : '');
+  var info = '<div class="bm-info">' + (edit ? '<div class="bm-edhint">'+pathIc('M15 3l6 6-11 11H4v-6z',13,'#0b6db0',2.2)+'<span>اضغط على موضع البتر في المجسم لتحديد المستوى والجهة، واضغط على الجزء المحدد مرة أخرى لإلغائه. الأطراف الأخرى لا تُعدَّل من هنا. ثم اضغط «حفظ».</span></div>' : '');
   if (sel){
     info += '<div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
       '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
       (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
-      (!cur.regions.length ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '')+
-      '';
+      (!cur.regions.length && cur.level ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '');
   }
   if (conflict) info += '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>';
   if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة هذا الطلب فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
   info += '</div>';
-  if (info === '<div class="bm-info"></div>') info = '';   // nothing to say → only the drawing
-  return '<div class="bm-wrap'+(sel ? '' : ' bm-nosel')+(edit ? ' bm-edit' : '')+'"><div class="bm-fig">'+svg+'</div>'+info+'</div>';
+  if (info === '<div class="bm-info"></div>') info = '';
+  return '<div class="bm-wrap'+(sel ? '' : ' bm-nosel')+(edit ? ' bm-edit' : '')+'">'+bar+'<div class="bm-fig bm-zoom'+(v.w < BM_W ? ' zoomed' : '')+'">'+svg+'</div><div class="bm-zhint">'+pathIc('M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14 M21 21l-5-5 M11 8v6 M8 11h6',12,'#94a3b8',2.2)+' كبّر بعجلة الماوس (أو بإصبعين على الموبايل) واسحب لتحريك المجسم – مفيد لاختيار صباع معيّن</div>'+info+'</div>';
 }
+// small figure next to the name: every amputation of the person (the limb we are on in blue), for information
+function bmMini(id){
+  var po = PROFILES.open, sel = !!(po && po.sel), data = bmData(id), cur = data.cur, body = bmOutline() + bmBaseBody();
+  Object.keys(BM_SEGS).forEach(function(k){ var ids = data.bySeg[k] || []; if (!ids.length) return;
+    body += '<path class="bm-seg ' + (!sel || ids.indexOf(cur.id)!==-1 ? 'cur' : 'oth') + '" d="'+BM_SEGS[k].d+'"/>'; });
+  var tip = 'أطراف الحالة: ' + data.reqs.map(function(r){ return bmReqTitle(r); }).join('، ');
+  return '<button class="bm-mini-btn" title="'+esc(tip)+'"'+A('pfGo', 'amp')+'><svg class="bm-mini" viewBox="40 14 140 466" aria-label="'+esc(tip)+'">'+body+'</svg></button>';
+}
+// ---------- zoom of the body map: the view (x, y, width) of the drawing, kept on the open file ----------
+function bmView(){ var po = PROFILES.open; return (po && po.bmView) || {x:0, y:0, w:BM_W}; }
+function bmClampView(v){
+  v.w = Math.max(36, Math.min(BM_W, v.w)); var h = v.w*BM_H/BM_W;
+  v.x = Math.max(0, Math.min(BM_W - v.w, v.x)); v.y = Math.max(0, Math.min(BM_H - h, v.y)); return v;
+}
+function bmApplyView(svg, v){
+  var po = PROFILES.open; if (po) po.bmView = v;
+  svg.setAttribute('viewBox', [v.x, v.y, v.w, v.w*BM_H/BM_W].map(bmF).join(' '));
+  var fig = svg.closest('.bm-zoom'); if (fig) fig.classList.toggle('zoomed', v.w < BM_W - 0.5);
+  var rb = fig && fig.querySelector('.bm-zoombar button:last-child'); if (rb) rb.disabled = !(v.w < BM_W - 0.5);
+  if (po && po.bmMenu){ po.bmMenu = null; var m = fig && fig.querySelector('.bm-menu'); if (m) m.remove(); }
+}
+// zoom by factor f around the drawing point (px, py)
+function bmZoomAt(svg, f, px, py){
+  var v = bmView(), nw = Math.max(36, Math.min(BM_W, v.w*f)), k = nw / v.w;
+  bmApplyView(svg, bmClampView({x:px - (px - v.x)*k, y:py - (py - v.y)*k, w:nw}));
+}
+function bmSvgPoint(svg, cx, cy){ var r = svg.getBoundingClientRect(), v = bmView(); return [v.x + (cx - r.left)/r.width*v.w, v.y + (cy - r.top)/r.height*(v.w*BM_H/BM_W)]; }
+document.addEventListener('wheel', function(e){
+  var svg = e.target.closest && e.target.closest('.bm-zoom .bm-svg'); if (!svg) return;
+  e.preventDefault(); var p = bmSvgPoint(svg, e.clientX, e.clientY);
+  bmZoomAt(svg, e.deltaY < 0 ? 0.8 : 1.25, p[0], p[1]);
+}, {passive:false});
+// drag to move (when zoomed) and pinch with two fingers; a drag never counts as a tap on a part
+var BM_PTR = {pts:{}, drag:null, moved:false};
+document.addEventListener('pointerdown', function(e){
+  var svg = e.target.closest && e.target.closest('.bm-zoom .bm-svg'); if (!svg) return;
+  BM_PTR.pts[e.pointerId] = [e.clientX, e.clientY]; BM_PTR.moved = false;
+  var ids = Object.keys(BM_PTR.pts);
+  BM_PTR.drag = {svg:svg, v:Object.assign({}, bmView()), sx:e.clientX, sy:e.clientY, pinch: ids.length===2 ? bmPinchState(svg) : null};
+});
+function bmPinchState(svg){ var p = Object.keys(BM_PTR.pts).map(function(k){ return BM_PTR.pts[k]; });
+  return {d:Math.hypot(p[0][0]-p[1][0], p[0][1]-p[1][1]) || 1, w:bmView().w, mid:bmSvgPoint(svg, (p[0][0]+p[1][0])/2, (p[0][1]+p[1][1])/2)}; }
+document.addEventListener('pointermove', function(e){
+  var dr = BM_PTR.drag; if (!dr || !BM_PTR.pts[e.pointerId]) return;
+  BM_PTR.pts[e.pointerId] = [e.clientX, e.clientY];
+  var p = Object.keys(BM_PTR.pts).map(function(k){ return BM_PTR.pts[k]; });
+  if (p.length===2 && dr.pinch){
+    var d = Math.hypot(p[0][0]-p[1][0], p[0][1]-p[1][1]), v = bmView(), nw = Math.max(36, Math.min(BM_W, dr.pinch.w * dr.pinch.d / d)), k = nw / v.w, m = dr.pinch.mid;
+    bmApplyView(dr.svg, bmClampView({x:m[0] - (m[0] - v.x)*k, y:m[1] - (m[1] - v.y)*k, w:nw})); BM_PTR.moved = true; return;
+  }
+  if (dr.v.w >= BM_W - 0.5) return;   // nothing to move at full size
+  var r = dr.svg.getBoundingClientRect(), dx = e.clientX - dr.sx, dy = e.clientY - dr.sy;
+  if (!BM_PTR.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+  BM_PTR.moved = true;
+  bmApplyView(dr.svg, bmClampView({x:dr.v.x - dx/r.width*dr.v.w, y:dr.v.y - dy/r.height*(dr.v.w*BM_H/BM_W), w:dr.v.w}));
+});
+function bmPtrEnd(e){ delete BM_PTR.pts[e.pointerId]; if (!Object.keys(BM_PTR.pts).length) BM_PTR.drag = null; else if (BM_PTR.drag){ BM_PTR.drag.pinch = null; BM_PTR.drag.v = Object.assign({}, bmView()); var q = BM_PTR.pts[Object.keys(BM_PTR.pts)[0]]; BM_PTR.drag.sx = q[0]; BM_PTR.drag.sy = q[1]; } }
+document.addEventListener('pointerup', bmPtrEnd); document.addEventListener('pointercancel', bmPtrEnd);
+window.addEventListener('click', function(e){ if (BM_PTR.moved && e.target.closest && e.target.closest('.bm-zoom')){ e.stopPropagation(); e.preventDefault(); BM_PTR.moved = false; } }, true);
 // unsaved edits on the open request (same fields the save compares)
 function pfDirty(){
   var po = PROFILES.open; if (!po) return false;
@@ -4857,6 +4926,14 @@ function pfDirty(){
     (old.extraPhones||[]).join(',') !== (d.extraPhones||[]).join(',') || (old.attachments||[]).length !== (d.attachments||[]).length;
 }
 var BM_ACTIONS = {
+  bmEditToggle: function(){ var po = PROFILES.open; if (!po || !po.sel) return; po.bmEdit = !po.bmEdit; po.bmMenu = null; render(); },
+  bmZoom: function(dir){
+    var po = PROFILES.open; if (!po) return; var v = bmView();
+    if (dir==='reset') po.bmView = null;
+    else { var f = dir==='in' ? 0.7 : 1/0.7, nw = Math.max(36, Math.min(BM_W, v.w*f)), cx = v.x + v.w/2, cy = v.y + v.w*BM_H/BM_W/2;
+      po.bmView = bmClampView({x:cx - nw/2, y:cy - nw*BM_H/BM_W/2, w:nw}); }
+    po.bmMenu = null; render();
+  },
   bmEdit: function(seg){
     var po = PROFILES.open, sg = BM_SEGS[seg]; if (!po || !sg) return;
     var d = po.draft;
@@ -4879,7 +4956,7 @@ var BM_ACTIONS = {
     var tab = po.tab; ACT.openProfile(rid); if (PROFILES.open){ PROFILES.open.sel = true; PROFILES.open.tab = tab; render(); }
   },
   // back to the person: no limb chosen
-  bmClear: function(){ var po = PROFILES.open; if (!po) return; po.sel = false; po.bmMenu = null; render(); },
+  bmClear: function(){ var po = PROFILES.open; if (!po) return; po.sel = false; po.bmEdit = false; po.bmMenu = null; render(); },
 };
 Object.assign(ACT, BM_ACTIONS);
 document.addEventListener('click', function(e){ var po = PROFILES.open; if (po && po.bmMenu && !e.target.closest('.bm-menu') && !e.target.closest('[data-act="bmPick"]')){ po.bmMenu = null; render(); } });
@@ -5223,8 +5300,8 @@ function renderProfile(){
   var tab = pf.tab || (pf.sel ? 'request' : 'personal');
   var PF_LIMB_SECS = ['request','amp','funding','journey','files','changes'];
   function sec(id, icon, title, body, extra){
-    if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من خريطة البتر لعرض «'+title+'».</span></div>'; extra = ''; }
-    if (id==='amp') body = '<div class="bm-in-amp">'+renderBodyMap(pf.id, true)+'</div>' + body;
+    if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من المجسم في «بيانات البتر» لعرض «'+title+'».</span>'+(id==='amp' ? '' : '<button class="cf-pick-btn"'+A('pfGo', 'amp')+'>'+pathIc(PF_TAB_IC.amp, 12, '#fff', 2.4)+' اختيار الطرف</button>')+'</div>'; extra = ''; }
+    if (id==='amp') body = '<div class="bm-in-amp">'+renderBodyMap(pf.id)+'</div>' + body;
     return '<section class="cf-sec'+(id===tab ? '' : ' cf-hide')+'" id="cf-'+id+'"><div class="cf-sec-h">'+pfIc(icon,14,'#0b6db0',2.2)+'<b>'+title+'</b>'+(extra||'')+'</div><div class="cf-sec-b">'+body+'</div></section>'; }
   function opt(k, label, val){ return '<option value="'+k+'"'+(val===k?' selected':'')+'>'+label+'</option>'; }
   var age = (function(){ var b = parseDay(d.dob); if (!b) return ''; var n = (typeof nowDate==='function' ? nowDate() : new Date()), a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a >= 0 ? a + ' سنة' : ''; })();
@@ -5235,7 +5312,7 @@ function renderProfile(){
   // identity strip
   h += '<div class="cf-layout"><div class="cf-left">';
   h += '<div class="cf-id"><div class="cf-av">'+esc((d.name||'؟').trim().charAt(0))+'</div><div class="cf-id-main"><div class="cf-name">'+esc(d.name||'-')+(pf.sel ? (d.code ? '<span class="cf-code" dir="ltr">'+esc(d.code)+'</span>' : '')+
-    '<span class="cf-chip '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+st.status+'</span>'+(d.active ? '' : '<span class="cf-chip off">غير نشط</span>') : '<span class="cf-code">'+bmData(pf.id).reqs.length+' '+(bmData(pf.id).reqs.length > 2 ? 'أطراف' : 'طرف')+'</span>')+'</div>'+
+    (d.active ? '' : '<span class="cf-chip off">غير نشط</span>') : '<span class="cf-code">'+bmData(pf.id).reqs.length+' '+(bmData(pf.id).reqs.length > 2 ? 'أطراف' : 'طرف')+'</span>')+bmMini(pf.id)+'</div>'+
     '</div>'+
     '</div>';
   // section nav
@@ -5321,15 +5398,12 @@ function renderProfile(){
       (d.changes.length ? d.changes.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.field)+'</td><td>'+esc(x.from)+'</td><td>'+esc(x.to)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.at)+'</td></tr>'; }).join('')
         : '<tr><td colspan="5" class="cms-empty">لم يتم العثور علي أي نتائج</td></tr>')+'</tbody></table>', '<span class="cf-count">'+d.changes.length+'</span>');
   h += '</div></div></div><aside class="cf-side">';   // closes cf-main, prof-body, cf-left
-  // body map – sticky with the side column, so it stays in view while scrolling
-  h += '<div class="cf-card bm-card"><div class="cf-card-h">'+pfIc('user',13,'#0b6db0',2.2)+'&nbsp;خريطة البتر<span class="bm-sub">المنظر الأمامي</span></div>'+
-    renderBodyMap(pf.id)+'</div>';
   // request status
   if (!pf.sel) h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف لعرض حالة طلبه.</span></div></div>';
   else h += '<div class="cf-card"><div class="cf-card-h">حالة الطلب</div><div class="cf-status '+(st.status==='مؤجل' ? 'warn' : 'ok')+'">'+pathIc(st.status==='مؤجل' ? 'M10 4H6v16h4z M18 4h-4v16h4z' : 'M20 6L9 17l-5-5', 18, null, 3)+st.status+'</div>'+
     (st.status==='مؤجل' ? '<div class="cf-kv"><span>سبب التأجيل</span><b>'+st.reasons.map(esc).join('<br>')+'</b></div>'+
       '<div class="cf-kv"><span>مؤجل لتاريخ</span><input class="cms-input" type="date" value="'+esc(d.postponeUntil)+'" data-k="pf-postponeUntil" data-change="profSet" data-a="postponeUntil"/></div>' : '')+
-    '<div class="cf-kv"><span>نتيجة اللجنة</span><b>'+esc(st.status==='مؤجل' || d.nextStep==='measurement' ? '-' : (d.committee||'-'))+'</b></div><div class="cf-kv"><span>التمويل</span><b>'+esc(funder || 'غير ممول')+'</b></div></div>';
+    '</div>';
   h += '</aside></div><div class="prof-foot"><button class="cms-btn cms-add"'+A('profSave')+'>'+pfIc('check',12,'#fff',2.6)+' حفظ</button><button class="cms-btn cf-cancel"'+A('closeProfile')+'>إغلاق</button></div></div>';
   return h;
 }
@@ -8078,6 +8152,40 @@ render();
   .bm-edit .bm-seg.ed:not(.cur):hover, .bm-edit .bm-seg.ed:not(.cur):focus{fill:#9fd2f4;opacity:1;}
   .bm-edhint{display:flex;align-items:flex-start;gap:7px;background:#f5faff;border:1px dashed #b9dcf5;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;color:#0b3a57;line-height:1.7;}
   .bm-edhint svg{flex:none;margin-top:3px;}
+  /* ===== body map only in «بيانات البتر»: current limb bar, «تعديل مستوى البتر», zoom ===== */
+  .pf-modal.cf .cf-layout{grid-template-columns:minmax(0,1fr) 290px;}
+  .bm-bar{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;font-size:12.5px;font-weight:700;color:#0b3a57;}
+  .bm-bar > span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;}
+  .bm-bar em{font-style:normal;font-size:11px;font-weight:700;color:#64748b;} .bm-bar b{font-size:14px;font-weight:800;color:#1f2937;}
+  .bm-bar-ic{width:30px;height:30px;border-radius:50%;background:#0093e9;display:flex;align-items:center;justify-content:center;flex:none;}
+  .bm-bar-btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:10px;padding:8px 14px;background:#0093e9;color:#fff;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  .bm-bar-btn:hover{filter:brightness(.93);} .bm-bar-btn.done{background:#15803d;}
+  .bm-bar.on{background:#e6f4fd;border:2px solid #0093e9;padding:7px 9px;} .bm-bar.on em{color:#0570b3;font-weight:800;} .bm-bar.on .bm-bar-ic{animation:bmPulse 1.6s ease-in-out infinite;}
+  @keyframes bmPulse{0%,100%{box-shadow:0 0 0 3px rgba(0,147,233,.25);}50%{box-shadow:0 0 0 7px rgba(0,147,233,.08);}}
+  .bm-edit .bm-fig{border:2px solid #0093e9;box-shadow:0 0 0 4px rgba(0,147,233,.14);}
+  .bm-edit .bm-seg.oth{opacity:.25;cursor:default;}
+  .bm-hl path{fill:none;stroke:#38bdf8;stroke-width:6;stroke-linejoin:round;pointer-events:none;animation:bmGlow 1.8s ease-in-out infinite;}
+  @keyframes bmGlow{0%,100%{opacity:.3;}50%{opacity:.9;}}
+  .bm-zoom{position:relative;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
+  .bm-zoom.zoomed{touch-action:none;} .bm-zoom.zoomed .bm-svg{cursor:grab;} .bm-zoom.zoomed .bm-svg:active{cursor:grabbing;}
+  .bm-zoombar{position:absolute;bottom:8px;inset-inline-end:8px;display:flex;flex-direction:column;gap:4px;z-index:3;}
+  .bm-zoombar button{width:30px;height:30px;border:1px solid #d2d6de;background:#fff;border-radius:8px;color:#334155;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .bm-zoombar button:hover{background:#e6f1fb;color:#0b6db0;} .bm-zoombar button:disabled{opacity:.4;cursor:default;background:#fff;color:#334155;}
+  .bm-zhint{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:#94a3b8;text-align:center;}
+  .pf-modal.cf .bm-in-amp .bm-fig{max-width:420px;}
+  .bm-in-amp .bm-svg, .pf-modal.cf .bm-in-amp .bm-svg{max-height:640px;width:100%;height:auto;}
+  .cf-pickmsg .cf-pick-btn{margin-inline-start:auto;display:inline-flex;align-items:center;gap:5px;border:0;border-radius:10px;padding:6px 12px;background:#0093e9;color:#fff;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  /* small figure next to the name */
+  .bm-mini-btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;background:#f8fafc;border-radius:10px;padding:3px 6px;margin-inline-start:10px;cursor:pointer;vertical-align:middle;}
+  .bm-mini-btn:hover{border-color:#0093e9;background:#e6f1fb;}
+  .bm-mini{height:58px;width:auto;display:block;}
+  .bm-mini .bm-ol path{stroke-width:5;} .bm-mini .bm-seg{stroke:none;}
+  .cf-name{display:flex;align-items:center;flex-wrap:wrap;gap:6px 0;}
+  /* the drawing keeps its proportions, so zooming follows the mouse */
+  .pf-modal.cf .bm-in-amp .bm-fig{max-width:340px;padding:6px;box-sizing:border-box;}
+  .bm-in-amp .bm-svg, .pf-modal.cf .bm-in-amp .bm-svg{width:100%;max-width:none;height:auto;max-height:none;margin:0;}
+  .bm-mini{height:64px;}
+  @media (max-width:700px){ .bm-bar{flex-wrap:wrap;} .bm-bar-btn{width:100%;justify-content:center;} }
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
