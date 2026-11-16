@@ -5410,9 +5410,11 @@ function renderProfile(){
         note: R.n > 1 ? 'بحث واحد لكل أطراف الحالة (' + R.n + ')' : '',
         kv:[['تاريخ الإسناد', R.assignDate]],
         // «البحث»: the research itself, one block
-        extra:'<div class="jr-sub"><div class="jr-sub-h">'+pathIc(PF_STEP_IC.res, 12, '#0b6db0', 2.4)+' البحث</div><div class="cf-path-kv">'+
-          [['إضافة البحث', R.added ? 'تم' : R.assigned ? 'لم يتم' : ''], ['تاريخ إضافة البحث', R.added ? R.researchDate : ''], ['اسم الباحث', d.fundedNoResearch && !R.added ? 'ممول بدون بحث' : R.researcher]]
-            .map(function(p){ return '<div><span>'+p[0]+'</span><b>'+pfVal(p[1])+'</b></div>'; }).join('')+'</div></div>'}; })(),
+        // «البحث»: added or not · date added · researcher – no labels, the values speak for themselves
+        extra:(function(){ var who = d.fundedNoResearch && !R.added ? 'ممول بدون بحث' : R.researcher, st = R.added ? 'تم' : R.assigned ? 'لم يتم' : '';
+          return '<div class="jr-sub jr-sub-in"><b class="jr-sub-h">'+pathIc(PF_STEP_IC.res, 13, '#0b6db0', 2.4)+' البحث</b>'+
+            (st ? pfVal(st) : '<span class="jv-na">لم يُسند بعد</span>')+(R.added && R.researchDate ? '<span class="jr-sub-v">'+pfVal(R.researchDate)+'</span>' : '')+
+            (who ? '<span class="jr-sub-v jr-who" title="الباحث">'+pfIc('user', 12, '#64748b', 2.2)+' '+esc(who)+'</span>' : '')+'</div>'; })()}; })(),
     {k:'com', t:'اللجنة', s:d.committee && d.committee!=='-' ? (d.committee==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
@@ -7636,6 +7638,9 @@ setInterval(function(){
   .cf-path li:not(.done) .cf-path-h b{color:#64748b;}
   .jr-sub{margin-top:8px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:6px 10px 4px;}
   .jr-sub-h{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#0b3a57;border-bottom:1px dashed #e5e7eb;padding-bottom:4px;margin-bottom:2px;}
+  .jr-sub-in{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:8px 12px;}
+  .jr-sub-in .jr-sub-h{border:0;padding:0;margin:0;font-size:13px;}
+  .jr-sub-v{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:#334155;font-weight:700;}
 </style>
 <script>
 // ---------------- demo shell ----------------
