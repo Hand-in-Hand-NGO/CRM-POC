@@ -5255,6 +5255,83 @@ function pfResearch(id, d){
   if (added && !assign) assign = pfAddDays(base, 2 + s % 4);
   return {n:ids.length, researcher: main.researcher || d.researcher, assignDate:assign, researchDate:rdate, added:added, assigned:!!assign};
 }
+// ---------- مرفقات مراحل المسار: what was uploaded for the case at each stage (research / medical assessment & measurements / delivery) ----------
+// the research is one for the person, so its files come from all the person's limbs; the other stages are per limb
+var JR_ATT_STAGES = {res:'صفحة الأبحاث', meas:'صفحة الزيارات (التقييم الطبي والقياسات)', deliv:'صفحة الزيارات (تسليم طرف جديد)'};
+// video slots of each stage (where they are uploaded)
+var JR_VID_SLOTS = {res:['فيديو البحث'], meas:['فيديو التقييم الطبي والقياسات'], deliv:['اللقطة الأمامية','اللقطة الجانبية','أخرى']};
+function jrAttStage(a){
+  if (a.cat==='فيديوهات'){ for (var k in JR_VID_SLOTS){ if (JR_VID_SLOTS[k].indexOf(a.item)!==-1) return k; } return a.item==='فيديو الحالة' ? 'res' : 'deliv'; }
+  if (a.cat==='مستندات طبية' || a.item==='اقرار تصنيع' || a.item==='اقرار تصوير') return 'meas';
+  if (a.item==='اقرار استلام') return 'deliv';
+  return 'res';
+}
+// demo files (in the system they come from those pages)
+function jrAttDemo(id, d){
+  var bb = PF_HOOKS.base(id), c = bb.c, s = 0; for (var i=0;i<id.length;i++) s = (s*31 + id.charCodeAt(i)) % 9973;
+  var code = d.code || (c && c.code) || id, out = [], past = !!bb.d || (c && c.stage && c.stage!=='measurement' && c.stage!=='postponed');
+  var R = pfResearch(id, d), delivered = !!bb.d || (c && (c.stage==='maintEval' || c.stage==='maintDelivery'));
+  function at(iso, h, m){ return iso ? iso + ' ' + ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) : ''; }
+  var pid = (c && c.person) || id, pcode = (profileOf(pid) || {}).code || code;
+  if (R.added) [['بطاقة رقم قومى', pid + '_national_id.jpg'], ['بحث اجتماعي', pid + '_social_research.pdf'], ['شهادة ميلاد', pid + '_birth_certificate.jpg']].forEach(function(x, k){
+    out.push({stage:'res', item:x[0], name:x[1], by:R.researcher || 'الباحث', at:at(R.researchDate, 12, 40 + k*3)}); });
+  if (past){ var md = pfAddDays(d.date, 20 + s % 9);
+    [['تقرير طبي', code + '_medical_report.pdf'], ['أشعة', code + '_xray.jpg'], ['اقرار تصنيع', code + '_manufacturing_consent.pdf']].forEach(function(x, k){
+      out.push({stage:'meas', item:x[0], name:x[1], by:['م. أحمد سامي','م. مريم خالد','م. كريم عادل'][(s + k) % 3], at:at(md, 10, 15 + k*5)}); });
+    out.push({stage:'meas', item:'فيديو التقييم الطبي والقياسات', name:code + '_assessment.mp4', by:'م. مريم خالد', at:at(md, 10, 40), dur:'01:' + ('0' + (s % 60)).slice(-2), video:true}); }
+  if (delivered){ var dd = bb.d && bb.d.delivered ? bb.d.delivered : pfAddDays(pfIso(new Date()), -(40 + s % 60));
+    out.push({stage:'deliv', item:'اقرار استلام', name:code + '_delivery_receipt.pdf', by:'م. أحمد سامي', at:at(dd, 11, 2)}); }
+  return out;
+}
+// files of one stage: [{item, name, by, at, video, dur, vkey}]
+function jrAttFiles(stage){
+  var po = PROFILES.open, d = po.draft, ids = stage==='res' ? bmData(po.id).reqs.map(function(r){ return r.id; }) : [po.id], out = [], seen = {};
+  ids.forEach(function(id){
+    var p = id===po.id ? d : (profileOf(id) || {});
+    (p.attachments || []).forEach(function(a){ if (jrAttStage(a)===stage) out.push({item:a.item || a.type || 'ارشيف', name:a.name, by:a.by, at:a.at, video:a.cat==='فيديوهات'}); });
+    jrAttDemo(id, p).forEach(function(x){ if (x.stage===stage){ x.demo = true; out.push(x); } });
+    var cc = caseById(id), vids = stage==='res' && cc && cc.person && cc.person!==id ? {} : pfVideos(id, p);   // one research → its video from the person's first request
+    Object.keys(vids).forEach(function(k){ var src = k.split('|')[0], slot = k.split('|')[1]; if (src!==stage) return;
+      vids[k].forEach(function(v){ if (!v.own) out.push({item:slot, name:v.name, by:v.by, at:v.at, dur:v.dur, video:true, demo:true}); }); });
+  });
+  return out.filter(function(x){ if (seen[x.name]) return false; seen[x.name] = 1; return true; });
+}
+function jrAttHtml(step){
+  if (!JR_ATT_STAGES[step.k]) return '';
+  var po = PROFILES.open, open = !!(po.jrAtt && po.jrAtt[step.k]), groups = [];
+  var files = jrAttFiles(step.k).filter(function(f){ return !f.demo || (step.s!=='todo' && step.s!=='skip'); });   // demo files only on a stage that started
+  var vids = files.filter(function(f){ return f.video; }), docs = files.filter(function(f){ return !f.video; });
+  docs.forEach(function(f){ var g = groups.filter(function(x){ return x[0]===f.item; })[0]; if (!g) groups.push(g = [f.item, []]); g[1].push(f); });
+  function row(f){
+    return '<div class="jr-att-f">'+(f.video ? '<button class="vd-play" title="مشاهدة"'+A('vdOpen', step.k + '|' + f.item, f.name)+'>'+pathIc('M8 5v14l11-7z', 12, '#fff', 2)+'</button>'
+      : '<span class="jr-att-ic">'+pfIc('copy', 12, '#0b6db0', 2)+'</span>')+
+      '<div class="jr-att-m"><b dir="ltr">'+esc(f.name)+'</b><em>'+esc(f.by || '')+(f.at ? ' · <bdi dir="ltr">'+esc(f.at)+'</bdi>' : '')+(f.dur ? ' · <bdi dir="ltr">'+esc(f.dur)+'</bdi>' : '')+'</em></div></div>'; }
+  var h = '<div class="jr-att'+(open ? ' open' : '')+(files.length ? ' has' : '')+'"><button class="jr-att-h"'+A('jrAtt', step.k)+'>'+pathIc('M21.4 11.6l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5', 13, null, 2.2)+
+    '<b>المرفقات</b><span class="jr-att-n">'+files.length+'</span>'+(vids.length ? '<span class="jr-att-tag">'+pathIc('M23 7l-7 5 7 5z M1 5h15v14H1z', 11, null, 2.2)+' '+vids.length+'</span>' : '')+(docs.length ? '<span class="jr-att-tag">'+pfIc('copy', 11, null, 2.2)+' '+docs.length+'</span>' : '')+
+    (step.k==='res' && bmData(po.id).reqs.length > 1 ? '<em>لكل أطراف الحالة</em>' : '')+'<span class="jr-att-chev">'+pathIc('M6 9l6 6 6-6', 13, null, 2.6)+'</span></button>';
+  if (open){
+    h += '<div class="jr-att-b"><div class="jr-att-sh">'+pathIc('M23 7l-7 5 7 5z M1 5h15v14H1z', 12, '#0b6db0', 2.2)+' الفيديوهات</div>';
+    JR_VID_SLOTS[step.k].forEach(function(slot){
+      var list = vids.filter(function(f){ return f.item===slot; });
+      h += '<div class="jr-att-g'+(list.length ? '' : ' empty')+'"><div class="jr-att-gh">'+(list.length ? pathIc('M20 6L9 17l-5-5', 10, '#15803d', 3) : pathIc('M12 8v4 M12 16h.01', 10, '#f59e0b', 3))+' '+esc(slot)+' <span>('+list.length+')</span></div>'+
+        (list.length ? list.map(row).join('') : '<div class="jr-att-none">لم يُرفع</div>')+'</div>';
+    });
+    h += '<div class="jr-att-sh">'+pfIc('copy', 12, '#0b6db0', 2.2)+' المستندات</div>';
+    if (!docs.length) h += '<div class="jr-att-none">لم يُرفع أي مستند لهذه المرحلة</div>';
+    groups.forEach(function(g){ h += '<div class="jr-att-g"><div class="jr-att-gh">'+esc(g[0])+' <span>('+g[1].length+')</span></div>'+g[1].map(row).join('')+'</div>'; });
+    h += '<div class="jr-att-src">يُرفع من '+JR_ATT_STAGES[step.k]+'</div></div>';
+  }
+  return h + '</div>';
+}
+// video player (demo: the file itself is on the server)
+function jrVideoModal(){
+  var pv = PROFILES.open && PROFILES.open.vid; if (!pv) return '';
+  return '<div class="vd-scrim"'+A('vdClose')+'></div><div class="vd-modal"><div class="vd-modal-h"><b>'+esc(pv.key.split('|')[1])+'</b><button class="vd-close" title="إغلاق"'+A('vdClose')+'>'+pfIc('x',15,'#535252',2.4)+'</button></div>'+
+    '<div class="vd-screen">'+pathIc('M8 5v14l11-7z', 46, 'rgba(255,255,255,.85)', 1.6)+'<span dir="ltr">'+esc(pv.name)+'</span><em>معاينة الفيديو تعمل في السيستم (الملف محفوظ على السيرفر)</em></div></div>';
+}
+Object.assign(ACT, {
+  jrAtt: function(k){ var po = PROFILES.open; po.jrAtt = po.jrAtt || {}; po.jrAtt[k] = !po.jrAtt[k]; render(); },
+});
 // always on its own line under the case name
 function profBtn(id){ return '<span class="prof-line"><button class="prof-btn" title="ملف الحالة"'+A('openProfile', id)+'>'+pfIc('user',12)+' ملف الحالة</button></span>'; }
 var PROFILE_LABELS = {};
@@ -5269,8 +5346,9 @@ function renderProfile(){
   function row(a, b){ return '<div class="cms-row">'+f(a)+(b ? f(b) : '<div></div><div></div>')+'</div>'; }
   function ro(label, val){ return '<label class="cms-label">'+label+'</label><div class="cms-field"><div class="cms-ro">'+esc(val||'-')+'</div></div>'; }
   var tab = pf.tab || (pf.sel ? 'request' : 'personal');
-  if (!pf.sel && ['funding','journey','files','changes'].indexOf(tab)!==-1) tab = 'amp';   // these tabs show once a limb is chosen
-  var PF_LIMB_SECS = ['request','amp','funding','journey','files','changes'];
+  if (!pf.sel && ['funding','journey','changes'].indexOf(tab)!==-1) tab = 'amp';   // these tabs show once a limb is chosen
+  var PF_LIMB_SECS = ['request','amp','funding','journey','changes'];
+  if (tab==='files') tab = 'journey';   // المرفقات are inside مسار الحالة now
   function sec(id, icon, title, body, extra){
     if (!pf.sel && PF_LIMB_SECS.indexOf(id)!==-1){ body = '<div class="cf-pickmsg">'+pfIc('user',16,'#0b6db0',2.2)+'<span>اختر الطرف من المجسم في «بيانات البتر» لعرض «'+title+'».</span>'+(id==='amp' ? '' : '<button class="cf-pick-btn"'+A('pfGo', 'amp')+'>'+pathIc(PF_TAB_IC.amp, 12, '#fff', 2.4)+' اختيار الطرف</button>')+'</div>'; extra = ''; }
     if (id==='amp') body = '<div class="bm-in-amp">'+renderBodyMap(pf.id)+'</div>' + body;
@@ -5290,7 +5368,7 @@ function renderProfile(){
   // section nav
   // two groups: the request's data, then its follow-up (journey / files / changes)
   var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
-  var navTrack = [['funding','بيانات التمويل'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
+  var navTrack = [['funding','بيانات التمويل'],['journey','مسار الحالة'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+(PF_TAB_IC[x[0]] ? pathIc(PF_TAB_IC[x[0]], 13, null, 2.2) : '')+x[1]+'</button>'; };
   h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div>'+(pf.sel ? '<div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div>' : '')+'</div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-main">';
@@ -5362,9 +5440,8 @@ function renderProfile(){
   steps.forEach(function(x){ if (x.s==='warn' && !x.sl && ((x.k==='meas' && ppMeas) || (x.k==='deliv' && ppDeliv) || (x.k==='med' && d.psychResult && d.psychResult!=='مقبول'))) x.sl = 'مؤجل'; if (x.s==='warn' && !x.sl && (x.k==='meas' || x.k==='deliv')) x.sl = 'لم يحضر'; });
   h += sec('journey', 'history', 'مسار الحالة', renderJourneyStepper(steps) + '<div class="cf-route">'+(direct ? 'حجز مقاس مباشر – يتخطى الأبحاث واللجنة وينتقل إلى الكول سنتر' : 'قسم الأبحاث – بالترتيب')+'</div><ol class="cf-path">'+steps.map(function(x){
     return '<li id="jr-'+x.k+'" class="'+x.s+' j-'+x.k+(x.cur ? ' cur' : '')+'"><i>'+pathIc(PF_STEP_IC[x.k] || PF_STEP_IC.reg, 15, null, 2.2)+'</i><div class="cf-path-b"><div class="cf-path-h"><b>'+x.t+'</b><span class="cf-sl">'+stIc(x.s, 9)+' '+(x.sl || SL[x.s])+'</span>'+(x.cur ? '<span class="cf-turn">'+pfIc('check',11,'#fff',3)+' المرحلة الحالية</span>' : '')+(x.note ? '<span class="cf-note">'+x.note+'</span>' : '')+'</div><div class="cf-path-kv">'+
-      x.kv.map(function(p){ var val = pfVal(p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+stepLink(x, d)+'</div></li>';
-  }).join('')+'</ol>');
-  h += sec('files', 'upload', 'مرفقات الحالة', renderAttachments(d));
+      x.kv.map(function(p){ var val = pfVal(p[1]); return '<div><span>'+p[0]+'</span><b>'+val+'</b></div>'; }).join('')+'</div>'+(x.extra || '')+jrAttHtml(x)+stepLink(x, d)+'</div></li>';
+  }).join('')+'</ol>'+jrVideoModal());
   h += sec('changes', 'history', 'التغييرات التي تمت',
     '<table class="cms-table"><thead><tr><th>الحقل</th><th>من</th><th>إلى</th><th>بواسطة</th><th>التاريخ</th></tr></thead><tbody>'+
       (d.changes.length ? d.changes.slice().reverse().map(function(x){ return '<tr><td>'+esc(x.field)+'</td><td>'+esc(x.from)+'</td><td>'+esc(x.to)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.at)+'</td></tr>'; }).join('')
@@ -8160,6 +8237,26 @@ render();
   @media (max-width:700px){ .bm-bar{flex-wrap:wrap;} .bm-bar-btn{width:100%;justify-content:center;} }
   .fd-ro{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:4px;}
   @media (max-width:700px){ .fd-ro{grid-template-columns:1fr;} }
+  /* مرفقات كل مرحلة داخل مسار الحالة */
+  .jr-att{margin-top:8px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;overflow:hidden;}
+  .jr-att-h{display:flex;align-items:center;gap:7px;width:100%;border:0;background:none;padding:7px 10px;font:inherit;font-size:12.5px;color:#475569;cursor:pointer;text-align:right;}
+  .jr-att-h:hover{background:#f5faff;}
+  .jr-att-h b{font-weight:800;color:#1f2937;}
+  .jr-att-n{font-size:11px;font-weight:800;background:#cbd5e1;color:#fff;border-radius:10px;padding:0 8px;}
+  .jr-att.has .jr-att-n{background:#0093e9;} .jr-att.has .jr-att-h > svg{color:#0b6db0;}
+  .jr-att-h em{font-style:normal;font-size:11px;font-weight:700;color:#94a3b8;}
+  .jr-att-chev{margin-inline-start:auto;display:inline-flex;transition:transform .15s;color:#94a3b8;}
+  .jr-att.open .jr-att-chev{transform:rotate(180deg);}
+  .jr-att-b{border-top:1px solid #eef0f3;padding:8px 10px;display:flex;flex-direction:column;gap:8px;background:#fafbfc;}
+  .jr-att-none{font-size:12px;color:#94a3b8;font-weight:700;}
+  .jr-att-gh{font-size:12px;font-weight:800;color:#0b3a57;margin-bottom:4px;} .jr-att-gh span{color:#94a3b8;font-weight:700;}
+  .jr-att-f{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;margin-bottom:4px;}
+  .jr-att-ic{flex:0 0 26px;height:22px;border-radius:5px;background:#e6f1fb;display:flex;align-items:center;justify-content:center;}
+  .jr-att-m{flex:1;min-width:0;display:flex;flex-direction:column;} .jr-att-m b{font-size:12px;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;} .jr-att-m em{font-style:normal;font-size:11px;color:#94a3b8;}
+  .jr-att-tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#64748b;background:#f1f5f9;border-radius:8px;padding:0 6px;}
+  .jr-att-sh{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#0b3a57;border-bottom:1px dashed #e5e7eb;padding-bottom:4px;}
+  .jr-att-g.empty .jr-att-gh{color:#64748b;} .jr-att-g .jr-att-none{margin-inline-start:16px;}
+  .jr-att-src{font-size:11px;color:#94a3b8;font-weight:700;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
