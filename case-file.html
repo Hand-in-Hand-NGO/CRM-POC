@@ -5163,8 +5163,8 @@ function renderProfile(){
     '</div>';
   // section nav
   // two groups: the request's data, then its follow-up (journey / files / changes)
-  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر'],['funding','بيانات التمويل']];
-  var navTrack = [['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
+  var navData = [['request','بيانات الطلب'],['personal','البيانات الشخصية'],['amp','بيانات البتر']];
+  var navTrack = [['funding','بيانات التمويل'],['journey','مسار الحالة'],['files','المرفقات'],['changes','التغييرات']];
   var navBtn = function(x){ return '<button class="'+(x[0]===tab ? 'on' : '')+'"'+A('pfGo', x[0])+'>'+(PF_TAB_IC[x[0]] ? pathIc(PF_TAB_IC[x[0]], 13, null, 2.2) : '')+x[1]+'</button>'; };
   h += '<div class="cf-nav cf-tabs"><div class="cf-tab-grp">'+navData.map(navBtn).join('')+'</div><div class="cf-tab-grp">'+navTrack.map(navBtn).join('')+'</div></div>';
   h += '<div class="prof-body" data-scroll="profile"><div class="cf-main">';
