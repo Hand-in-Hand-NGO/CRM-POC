@@ -4623,13 +4623,25 @@ function renderAttachments(d){
 //  * colours come from the SAVED profiles (level + side), so they change right after "حفظ"
 // To extend later: add a part to BM_PARTS, a level to BM_LEVELS, or a colour class in .bm-seg.*
 // =====================================================================
+// ---- body geometry v3 (natural front view). Every part is drawn for the person's RIGHT side (viewer's left); the left side is its mirror ----
+// the body is drawn as ONE silhouette: all shapes are first drawn with a thick outline (layer .bm-ol), then filled again on top,
+// so only the outer contour shows (no robot seams between parts); each finger and toe is its own part
 var BM_W = 220, BM_H = 480;
-// person's RIGHT side parts: [part, x1, y1, x2, y2, width at start, width at end, label]
-// ---- body geometry (front view). Every part is drawn for the person's RIGHT side (viewer's left); the left side is its mirror ----
-// shapes use absolute "x y" pairs with M / L / Q / C / Z only, so bmMirror can flip them
 function bmMirror(d){ return d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, function(m, x, y){ return (BM_W - parseFloat(x)).toFixed(1) + ' ' + y; }); }
 function bmCenter(d){ var xs = 0, ys = 0, n = 0; d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, function(m, x, y){ xs += +x; ys += +y; n++; }); return n ? [xs/n, ys/n] : [0, 0]; }
-// smooth limb piece: centre line [[x, y, width], …] → closed outline (Catmull-Rom through the points)
+function bmF(v){ return (Math.round(v*10)/10).toFixed(1); }
+// closed smooth curve through points (Catmull-Rom → cubic Bézier)
+function bmSmooth(pts){
+  var n = pts.length, d = 'M' + bmF(pts[0][0]) + ' ' + bmF(pts[0][1]);
+  for (var i = 0; i < n; i++){
+    var p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
+    d += ' C' + bmF(p1[0] + (p2[0]-p0[0])/6) + ' ' + bmF(p1[1] + (p2[1]-p0[1])/6) + ' ' + bmF(p2[0] - (p3[0]-p1[0])/6) + ' ' + bmF(p2[1] - (p3[1]-p1[1])/6) + ' ' + bmF(p2[0]) + ' ' + bmF(p2[1]);
+  }
+  return d + ' Z';
+}
+// symmetric shape: right half (top centre → bottom centre, x < 110) + its mirror
+function bmSym(half){ var m = half.slice(1, -1).reverse().map(function(p){ return [BM_W - p[0], p[1]]; }); return bmSmooth(half.concat(m)); }
+// smooth limb piece: centre line [[x, y, width], …] → closed outline with flat ends (the cut lines)
 function bmLimb(pts){
   var S = [], n = pts.length;
   function P(i){ return pts[Math.max(0, Math.min(n-1, i))]; }
@@ -4647,40 +4659,83 @@ function bmLimb(pts){
     var a = S[Math.max(0, i-1)], b = S[Math.min(S.length-1, i+1)], dx = b[0]-a[0], dy = b[1]-a[1], l = Math.sqrt(dx*dx + dy*dy) || 1, nx = -dy/l, ny = dx/l, h = q[2]/2;
     L.push([q[0]+nx*h, q[1]+ny*h]); R.push([q[0]-nx*h, q[1]-ny*h]);
   });
-  return 'M' + L.concat(R.reverse()).map(function(p){ return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L') + ' Z';
+  return 'M' + L.concat(R.reverse()).map(function(p){ return bmF(p[0]) + ' ' + bmF(p[1]); }).join(' L') + ' Z';
 }
-// finger / toe with a rounded tip, hanging down from y0
-function bmDigit(x, y0, len, w){ var r = w/2, y1 = y0 + len - r;
-  return 'M' + (x-r).toFixed(1) + ' ' + y0 + ' L' + (x-r).toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + (x-r).toFixed(1) + ' ' + (y1+r*1.3).toFixed(1) + ' ' + x + ' ' + (y1+r*1.3).toFixed(1) +
-    ' Q' + (x+r).toFixed(1) + ' ' + (y1+r*1.3).toFixed(1) + ' ' + (x+r).toFixed(1) + ' ' + y1.toFixed(1) + ' L' + (x+r).toFixed(1) + ' ' + y0 + ' Z'; }
-// [part, label, path (person's right side)]
+// local frame (origin, direction of the axis, scale) → world point; +x local = towards the body's middle
+function bmFrame(ox, oy, dx, dy, s){ var l = Math.sqrt(dx*dx + dy*dy); dx /= l; dy /= l;
+  return function(p){ return [ox + s*(p[0]*dy + p[1]*dx), oy + s*(-p[0]*dx + p[1]*dy)]; }; }
+// finger / toe in a local frame: base (bx, by), angle (rad, + = towards the middle), length, width at base / tip
+function bmDigit(T, bx, by, ang, len, w0, w1){
+  var sx = Math.sin(ang), cy = Math.cos(ang), px = cy, py = -sx;   // axis (sx, cy), side (px, py)
+  function at(t, off){ return T([bx + sx*t + px*off, by + cy*t + py*off]); }
+  var r = w1/2, e = len - r, pts = [at(-2, -w0/2), at(len*0.5, -(w0+w1)/4), at(e, -r)];
+  for (var k = 1; k < 4; k++){ var a = Math.PI*k/4; pts.push(T([bx + sx*(e + r*Math.sin(a)) - px*r*Math.cos(a), by + cy*(e + r*Math.sin(a)) - py*r*Math.cos(a)])); }
+  pts.push(at(e, r), at(len*0.5, (w0+w1)/4), at(-2, w0/2));
+  return bmSmooth(pts);
+}
+// right hand: wrist at the end of the forearm, along the forearm's direction; thumb on the outer side (palm forward)
+var BM_HAND = bmFrame(41.5, 246, -10.5, 60, 1.15);
+var BM_FOOT = bmFrame(95.5, 445, 0, 1, 1);
+function bmHandPts(pts){ return pts.map(BM_HAND); }
 var BM_PARTS = [
-  ['armUp',    'أعلى العضد',  bmLimb([[74.5,81,12],[72,90,25],[67,109,23],[63.5,130,21]])],
-  ['armLow',   'أسفل العضد',  bmLimb([[63.5,130,21],[61,150,19],[58.5,170,15.5]])],
-  ['forearm',  'الساعد',      bmLimb([[58.5,170,15.5],[56.5,190,18],[53,220,14.5],[49,247,12]])],
-  ['palm',     'كف اليد',     'M43 246 L55 246 Q58.5 256 57.8 268 L41.2 268 Q40 256 43 246 Z'],
-  ['fingers',  'أصابع اليد',  bmDigit(43.4, 267, 16, 3.5) + ' ' + bmDigit(47.3, 267, 18.5, 3.6) + ' ' + bmDigit(51.2, 267, 17, 3.5) + ' ' + bmDigit(55, 267, 13.5, 3.3) +
-                              ' M42.6 250 Q38 253 35.8 261 Q35 265.6 37.3 266.2 Q39.2 265.6 40.4 260.6 Q41.6 256.6 43.6 255.6 Z'],   // 4 fingers + thumb
-  ['thighUp',  'أعلى الفخذ',  bmLimb([[92,246,36],[91.5,272,34],[91,298,31]])],
-  ['thighLow', 'أسفل الفخذ',  bmLimb([[91,298,31],[90.5,322,27],[89.5,346,21]])],
-  ['shin',     'الساق',       bmLimb([[89.5,346,21],[89.2,368,23.5],[88.5,395,18],[87.6,420,13.6],[87,432,13]])],
-  ['heel',     'الكاحل وظهر القدم', 'M80.5 431 L93.5 431 Q95 439 96.6 446 L77.4 446 Q79 439 80.5 431 Z'],
-  ['forefoot', 'مشط القدم',   'M77.4 446 L96.6 446 Q99.6 451 100.6 457 L76 457 Q76.4 451 77.4 446 Z'],
-  ['toes',     'أصابع القدم', bmDigit(97.2, 456, 8.4, 5.6) + ' ' + bmDigit(91.8, 456, 7.4, 4.3) + ' ' + bmDigit(87.6, 456, 6.8, 3.9) + ' ' + bmDigit(83.6, 456, 6.2, 3.6) + ' ' + bmDigit(79.6, 456, 5.4, 3.3)],
-  ['hip',      'الحوض (الإلية)', 'M80 200 L110 200 L110 254 Q101 252 92 248 Q81 245 74 243 Q72 222 80 200 Z'],
+  ['armUp',    'أعلى العضد',  bmSmooth([[73,96.5],[64,98.5],[57.2,105],[54.4,116],[52.6,130],[50.7,141],[49.7,148],[49.8,152],[59.6,153],[69.3,153],[69.7,147],[70.8,136],[71.8,124],[74.4,110]])],
+  ['armLow',   'أسفل العضد',  bmLimb([[59.5,146,18.5],[56.5,166,16.5],[53,186,14]])],
+  ['forearm',  'الساعد',      bmLimb([[53,186,14],[50.5,200,16.5],[46.5,224,13.5],[42.8,240,11.4],[41.5,247,11.2]])],
+  ['palm',     'كف اليد',     bmSmooth(bmHandPts([[-5.6,-1.5],[5.6,-1.5],[7.4,7],[8.4,16],[8,23.5],[3,25],[-2,25.2],[-7,24],[-7.6,14],[-6.6,5]]))],
+  ['fThumb',   'إبهام اليد',  bmDigit(BM_HAND, -5.2, 5, -0.42, 18.5, 5.6, 3.9)],
+  ['fIndex',   'السبابة',     bmDigit(BM_HAND, -5.1, 23.5, -0.09, 17.5, 3.7, 3.1)],
+  ['fMiddle',  'الوسطى',      bmDigit(BM_HAND, -1.2, 24.5, -0.01, 19.5, 3.9, 3.2)],
+  ['fRing',    'البنصر',      bmDigit(BM_HAND, 2.7, 24, 0.07, 18, 3.6, 3)],
+  ['fPinky',   'خنصر اليد',   bmDigit(BM_HAND, 6.2, 22.5, 0.16, 14, 3.2, 2.7)],
+  ['thighUp',  'أعلى الفخذ',  bmLimb([[92,214,34],[90.6,234,40],[90,262,40.5],[91.2,296,33.5]])],
+  ['thighLow', 'أسفل الفخذ',  bmLimb([[91.2,296,33.5],[92.4,326,28.5],[93.4,350,23.5]])],
+  ['shin',     'الساق',       bmLimb([[93.4,350,23.5],[93.2,364,23],[92.6,384,25.5],[93.6,410,18.5],[95,434,13.4],[95.5,445,13]])],
+  ['heel',     'الكاحل وظهر القدم', bmSmooth([[88.6,440],[102.4,440],[103,447],[105.6,457],[95.5,459.5],[84.6,457],[87.6,447]])],
+  ['forefoot', 'مشط القدم',   bmSmooth([[84.8,457],[95.5,457.5],[105.4,457],[107.4,463],[106.5,467.5],[95.5,468],[84,467],[83.4,462]])],
+  ['t1',       'إبهام القدم',          bmDigit(BM_FOOT, 7.2, 20, 0.05, 9.6, 6, 5.4)],
+  ['t2',       'إصبع القدم الثاني',    bmDigit(BM_FOOT, 1.6, 21, 0, 8.6, 3.9, 3.5)],
+  ['t3',       'إصبع القدم الثالث',    bmDigit(BM_FOOT, -2.4, 21, -0.05, 7.8, 3.7, 3.3)],
+  ['t4',       'إصبع القدم الرابع',    bmDigit(BM_FOOT, -6.1, 20.5, -0.11, 7, 3.5, 3.1)],
+  ['t5',       'خنصر القدم',           bmDigit(BM_FOOT, -9.6, 19.5, -0.2, 6, 3.2, 2.8)],
+  ['hip',      'الحوض (الإلية)', bmSmooth([[79.6,199],[109.5,204],[109.5,250],[96,249],[80.5,241],[74.2,227],[75.8,211]])],
 ];
-// level → amputated parts (from the cut level down to the end of the limb)
+var BM_FINGERS = ['fThumb','fIndex','fMiddle','fRing','fPinky'], BM_TOES = ['t1','t2','t3','t4','t5'];
+// level → amputated parts (from the cut level down to the end of the limb); one finger / toe can be named on its own
 var BM_LEVELS = [
-  {re:/أصابع القدم/,                  parts:['toes']},
-  {re:/مشط القدم/,                    parts:['forefoot','toes']},
-  {re:/تحت الركبة|أسفل الركبة/,       parts:['shin','heel','forefoot','toes']},
-  {re:/فوق الركبة|أعلى الركبة/,       parts:['thighLow','shin','heel','forefoot','toes']},
-  {re:/مفصل الحوض|الإلية|الفخذ كله/,  parts:['hip','thighUp','thighLow','shin','heel','forefoot','toes']},   // الإلية: the whole thigh from the hip joint
-  {re:/أصابع اليد/,                   parts:['fingers']},
-  {re:/تحت الكوع|الساعد/,             parts:['forearm','palm','fingers']},
-  {re:/فوق الكوع|أعلى المرفق/,        parts:['armLow','forearm','palm','fingers']},
-  {re:/مفصل الكتف/,                  parts:['armUp','armLow','forearm','palm','fingers']},
+  {re:/إبهام القدم|إصبع القدم الكبير/, parts:['t1']},
+  {re:/خنصر القدم/,                   parts:['t5']},
+  {re:/أصابع القدم/,                  parts:BM_TOES},
+  {re:/مشط القدم/,                    parts:['forefoot'].concat(BM_TOES)},
+  {re:/تحت الركبة|أسفل الركبة/,       parts:['shin','heel','forefoot'].concat(BM_TOES)},
+  {re:/فوق الركبة|أعلى الركبة/,       parts:['thighLow','shin','heel','forefoot'].concat(BM_TOES)},
+  {re:/مفصل الحوض|الإلية|الفخذ كله/,  parts:['hip','thighUp','thighLow','shin','heel','forefoot'].concat(BM_TOES)},   // الإلية: the whole thigh from the hip joint
+  {re:/إبهام اليد|الإبهام/,           parts:['fThumb']},
+  {re:/السبابة/,                      parts:['fIndex']},
+  {re:/الوسطى/,                       parts:['fMiddle']},
+  {re:/البنصر/,                       parts:['fRing']},
+  {re:/خنصر اليد|الخنصر/,             parts:['fPinky']},
+  {re:/أصابع اليد/,                   parts:BM_FINGERS},
+  {re:/تحت الكوع|الساعد/,             parts:['forearm','palm'].concat(BM_FINGERS)},
+  {re:/فوق الكوع|أعلى المرفق/,        parts:['armLow','forearm','palm'].concat(BM_FINGERS)},
+  {re:/مفصل الكتف/,                  parts:['armUp','armLow','forearm','palm'].concat(BM_FINGERS)},
 ];
+// head, neck, torso (not clickable)
+var BM_BASE = [
+  bmSym([[110,19],[99.5,22],[92.2,32],[91.2,46],[93.4,58],[98.6,68.5],[104.5,74.5],[110,76.5]]),                         // head
+  'M90.5 41 C86.5 40.5 86 48 88.2 52.4 C89.2 54.4 91 55 92.4 54.2 Z',                                                 // ear
+  'M129.5 41 C133.5 40.5 134 48 131.8 52.4 C130.8 54.4 129 55 127.6 54.2 Z',
+  bmSym([[110,66],[101.5,66],[101,78],[99,88],[110,90]]),                                                               // neck
+  bmSym([[110,80],[100.5,81],[93,88],[80,92.5],[69,96],[62,100],[59,108],[61,120],[70.5,128],[72.6,142],[75.8,162],[77.8,180],[76.6,196],[73.6,212],[72.6,226],[76,240],[92,248],[110,250]]), // torso
+];
+function bmBaseBody(){ return BM_BASE.map(function(d){ return '<path class="bm-base" d="'+d+'"/>'; }).join(''); }
+// one outline around the whole body (drawn under the fills)
+function bmOutline(){ var all = BM_BASE.slice(); Object.keys(BM_SEGS).forEach(function(k){ all.push(BM_SEGS[k].d); }); return '<g class="bm-ol">' + all.map(function(d){ return '<path d="'+d+'"/>'; }).join('') + '</g>'; }
+function bmDetails(){
+  var knee = 'M88 344 Q93.4 340.5 98.8 344 M88.6 357 Q93.4 360 98.2 357', pec = 'M76 128 Q90 141 107.5 133', clav = 'M83 95.5 Q94 99 106 96.5', groin = 'M84 226 Q95 236 103 245',
+      elbow = 'M51 186.5 Q53.5 184 56 186.5', ankle = 'M89.6 441 Q91.5 444 89 447', abd = 'M100 162 Q105 164 108.5 163';
+  var side = [knee, pec, clav, groin, elbow, abd].join(' ');
+  return '<path class="bm-line" d="'+side+' '+bmMirror(side)+' M110 140 L110 183"/><ellipse class="bm-line" cx="110" cy="191" rx="1.3" ry="1.8"/>';
+}
 var BM_SIDE_TXT = {R:'يمين الحالة', L:'يسار الحالة'};
 // 'الأيمن' / 'أيمن' → R, 'الأيسر' / 'أيسر' → L, 'الاثنين' → both
 function bmSides(side){
@@ -4709,19 +4764,6 @@ var BM_SEGS = (function(){
   });
   return out;
 })();
-// head, neck, torso (not clickable) + anatomy lines drawn over everything
-function bmBaseBody(){
-  var ear = 'M90.4 31 Q86.2 32 86.6 37.6 Q87 42.4 90.8 41.4 Z';
-  return '<path class="bm-base" d="M110 12 C122.5 12 130.5 22 130.5 36 C130.5 50.5 121.5 60 110 60 C98.5 60 89.5 50.5 89.5 36 C89.5 22 97.5 12 110 12 Z"/>'+
-    '<path class="bm-base" d="'+ear+'"/><path class="bm-base" d="'+bmMirror(ear)+'"/>'+
-    '<path class="bm-base" d="M102 56 L118 56 Q118 64 122.5 70 L97.5 70 Q102 64 102 56 Z"/>'+
-    '<path class="bm-base" d="M98 68 L122 68 Q138 72 148 80 Q156 86 154 100 L150 128 Q146 160 141 200 L79 200 Q74 160 70 128 L66 100 Q64 86 72 80 Q82 72 98 68 Z"/>';
-}
-function bmDetails(){
-  var knee = 'M84 341 Q89.5 345.5 95 341', elbow = 'M53.5 170.5 Q58.5 173.5 63.5 170.5', ankle = 'M82 431.5 Q87 434 92 431.5';
-  return '<path class="bm-line" d="M86 84 Q98 88.5 108 84.5 M112 84.5 Q122 88.5 134 84 M84 108 Q97 117 108 110 M112 110 Q123 117 136 108 M110 118 L110 184 M98 141 Q110 144 122 141 M99 156 Q110 159 121 156 '+
-    knee+' '+bmMirror(knee)+' '+elbow+' '+bmMirror(elbow)+' '+ankle+' '+bmMirror(ankle)+'"/><circle class="bm-line" cx="110" cy="170" r="1.4"/>';
-}
 // the requests of the same person (shared person id) with their saved level / side
 function bmData(id){
   var c = typeof caseById==='function' ? caseById(id) : null, linked = !!c;
@@ -4744,10 +4786,10 @@ function renderBodyMap(id){
   // sel = a limb (request) is chosen; until then every limb of the person is red and the file shows the person only
   var po = PROFILES.open, sel = !!(po && po.sel);
   var data = bmData(id), cur = data.cur, menu = po && po.bmMenu, others = data.reqs.filter(function(r){ return !sel || !r.cur; });
-  var body = bmBaseBody();
+  var body = bmOutline() + bmBaseBody();
   Object.keys(BM_SEGS).forEach(function(k){
     var sg = BM_SEGS[k], ids = data.bySeg[k] || [], isCur = sel && ids.indexOf(cur.id)!==-1, hasOther = ids.some(function(x){ return !sel || x!==cur.id; });
-    var cls = 'bm-seg' + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
+    var cls = 'bm-seg' + (/^(f[A-Z]|t\d)/.test(sg.part) ? ' dig' : '') + (isCur ? ' cur' : hasOther ? ' oth' : '') + (isCur && hasOther ? ' both' : '');
     var nav = hasOther || isCur;   // a request's parts can be clicked; the chosen one goes back to all limbs
     var tip = BM_SIDE_TXT[sg.side] + ' – ' + sg.label + (ids.length ? ' – ' + ids.map(function(x){ var r = bmReq(data, x); return (sel && r.cur ? 'الطرف المختار' : 'طلب ' + (r.code || r.id)); }).join('، ') : '');
     body += '<path class="'+cls+'" d="'+sg.d+'" data-seg="'+k+'"'+(nav ? ' role="button" tabindex="0" aria-label="'+esc(tip)+'"'+A('bmPick', k) : '')+'><title>'+esc(tip)+'</title></path>';
@@ -7987,6 +8029,15 @@ render();
   .vd-screen{aspect-ratio:16/9;background:#111827;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
   .vd-screen span{font-size:13px;font-weight:700;} .vd-screen em{font-style:normal;font-size:11.5px;color:#9ca3af;}
   @media (max-width:980px){ .vd-flow{flex-direction:column;} .vd-arrow{justify-content:center;transform:rotate(-90deg);} }
+  /* ===== body map v3: one natural silhouette, every finger / toe on its own ===== */
+  .bm-ol path{fill:#e9edf1;stroke:#8e99a6;stroke-width:2.1;stroke-linejoin:round;}
+  .bm-base, .bm-seg{fill:#e9edf1;stroke:#e9edf1;stroke-width:.7;}
+  .bm-seg.dig{stroke:#b4bdc8;stroke-width:.55;}
+  .bm-seg.cur{fill:#0093e9;stroke:#0570b3;stroke-width:.6;}
+  .bm-seg.oth{fill:#1f2937;stroke:#0b1220;stroke-width:.6;}
+  .bm-nosel .bm-seg.oth{fill:#0093e9;stroke:#0570b3;}
+  .bm-seg.both{stroke:#f96a74;stroke-width:1.6;stroke-dasharray:2.5 1.5;}
+  .bm-line{fill:none;stroke:#a3adb9;stroke-width:.8;stroke-linecap:round;pointer-events:none;opacity:.75;}
 </style>
 <script>
 // ---------------- standalone ملف الحالة ----------------
