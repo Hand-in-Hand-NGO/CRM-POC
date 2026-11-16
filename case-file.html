@@ -5262,6 +5262,8 @@ function jrKv(kv){
   var pp = kv.some(function(p){ return PP.indexOf(p[0])!==-1 && real(p[1]); });
   return pp ? kv : kv.filter(function(p){ return PP.indexOf(p[0])===-1; });
 }
+// the day the measurements were taken (demo: when the page has no date; the stage's files use the same day)
+function jrMeasDate(id, d){ var s = 0; for (var i=0;i<id.length;i++) s = (s*31 + id.charCodeAt(i)) % 9973; return pfAddDays(d.date, 20 + s % 9); }
 // ---------- مرفقات مراحل المسار: what was uploaded for the case at each stage (research / medical assessment & measurements / delivery) ----------
 // the research is one for the person, so its files come from all the person's limbs; the other stages are per limb
 var JR_ATT_STAGES = {res:'صفحة الأبحاث', meas:'صفحة الزيارات (التقييم الطبي والقياسات)', deliv:'صفحة الزيارات (تسليم طرف جديد)'};
@@ -5282,7 +5284,7 @@ function jrAttDemo(id, d){
   var pid = (c && c.person) || id, pcode = (profileOf(pid) || {}).code || code;
   if (R.added) [['بطاقة رقم قومى', pid + '_national_id.jpg'], ['بحث اجتماعي', pid + '_social_research.pdf'], ['شهادة ميلاد', pid + '_birth_certificate.jpg']].forEach(function(x, k){
     out.push({stage:'res', item:x[0], name:x[1], by:R.researcher || 'الباحث', at:at(R.researchDate, 12, 40 + k*3)}); });
-  if (past){ var md = pfAddDays(d.date, 20 + s % 9);
+  if (past){ var md = jrMeasDate(id, d);
     [['تقرير طبي', code + '_medical_report.pdf'], ['أشعة', code + '_xray.jpg'], ['اقرار تصنيع', code + '_manufacturing_consent.pdf']].forEach(function(x, k){
       out.push({stage:'meas', item:x[0], name:x[1], by:['م. أحمد سامي','م. مريم خالد','م. كريم عادل'][(s + k) % 3], at:at(md, 10, 15 + k*5)}); });
     out.push({stage:'meas', item:'فيديو التقييم الطبي والقياسات', name:code + '_assessment.mp4', by:'م. مريم خالد', at:at(md, 10, 40), dur:'01:' + ('0' + (s % 60)).slice(-2), video:true}); }
@@ -5425,14 +5427,14 @@ function renderProfile(){
     {k:'com', t:'اللجنة', s:d.committee && d.committee!=='-' ? (d.committee==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['نتيجة اللجنة', d.committee && d.committee!=='-' ? chip(d.committee, d.committee==='مقبول' ? 'ok' : 'warn') : '-'], ['مؤجل لتاريخ', d.committeeUntil]]},
     {k:'meas', t:'التقييم الطبي والقياسات', s:ppMeas ? 'warn' : measDone ? 'done' : v.meas.att==='لم يحضر' ? 'warn' : v.meas.day!=='-' ? 'now' : 'todo',
-      kv:[['تاريخ حضور المقاسات', v.meas.day], ['هل حضر', att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
+      kv:[['تاريخ حضور المقاسات', measDone && (!v.meas.day || v.meas.day==='-') ? jrMeasDate(pf.id, d) : v.meas.day], ['هل حضر', measDone ? att('حضر') : att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
     (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
       return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
         kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
-      kv:[['تاريخ حجز الاستلام', bb.d ? bb.d.delivered : v.deliv.day], ['هل حضر', bb.d ? 'تم الحضور' : att(v.deliv.att)], ['النتيجة', delivDone ? 'تم التسليم' : '-'], ['سبب التأجيل', ppDeliv ? PP_KINDS[ppDeliv.kind] : '-'], ['مؤجل لتاريخ', ppDeliv ? ppUntil(ppDeliv) : '-']]}];
+      kv:[['تاريخ حجز الاستلام', bb.d ? bb.d.delivered : v.deliv.day], ['هل حضر', delivDone ? att('حضر') : att(v.deliv.att)], ['النتيجة', delivDone ? 'تم التسليم' : '-'], ['سبب التأجيل', ppDeliv ? PP_KINDS[ppDeliv.kind] : '-'], ['مؤجل لتاريخ', ppDeliv ? ppUntil(ppDeliv) : '-']]}];
   // two routes: الخطوة التالية "قسم الأبحاث" goes step by step; "حجز مقاس مباشر" skips research + committee and goes to the call center
   var direct = d.nextStep==='measurement';
   if (direct) [steps[1], steps[2]].forEach(function(x){ x.s = 'skip'; x.kv = x.kv.map(function(p){ return [p[0], '-']; }); x.extra = ''; x.note = 'حجز مباشر'; });
