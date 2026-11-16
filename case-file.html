@@ -5262,7 +5262,7 @@ function renderProfile(){
   h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c, st.status==='مؤجل' || (c && c.stage==='postponed')));
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
-    row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+devRow+
+    row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'])+devRow+
     '<div class="cms-row"><label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
       opt('research','قسم الأبحاث', d.nextStep)+opt('measurement','حجز مقاس مباشر', d.nextStep)+'</select></div><div></div><div></div></div>'+
     '<div class="cms-row"><label class="cms-label">نشط</label><div class="cms-field"><div class="pf-yn"><button class="'+(d.active?'on':'')+'"'+A('profActive','1')+'>'+pfIc('check',12,null,2.4)+' نعم</button><button class="'+(!d.active?'on off':'')+'"'+A('profActive','0')+'>'+pfIc('x',12,null,2.4)+' لا</button></div></div>'+
