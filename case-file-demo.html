@@ -4426,7 +4426,7 @@ var NC_ROWS = [
   [['phone2','رقم هاتف 2',0,'num'], ['education','المؤهل الدراسى',1,'select']],
   [['job','الوظيفة',1,'select'], ['heard','كيف عرفتنا',1,'select']],
   [['chronic','الأمراض المزمنة',1,'select'], ['weight','الوزن',1,'num']],
-  [['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select']],
+  [['level','مستوى البتر',1,'level'], ['side','الطرف المبتور',1,'select']],
   [['ampDate','تاريخ البتر',1,'date'], ['cause','سبب البتر',1,'select']],
   [['causeDetails','تفاصيل سبب البتر',1,'area'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date']],
   [['devices','يوجد أجهزة',1,'select'], null],
@@ -4851,7 +4851,7 @@ function renderBodyMap(id){
     info += '<div class="bm-kv"><span>مستوى البتر</span><b>'+esc(cur.level || 'غير محدد')+'</b></div>'+
       '<div class="bm-kv"><span>الجهة</span><b>'+esc(bmSideText(cur.side))+'</b></div>'+
       (bmSides(cur.side).length===2 ? '<div class="bm-warn">هذا الطلب مسجل على الطرفين. كل طلب يخص طرفًا واحدًا: اختر جهة واحدة واحفظ، ثم سجّل الطرف الآخر في طلب مستقل.</div>' : '')+
-      (!cur.regions.length && cur.level ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «البتر بالطرف» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '');
+      (!cur.regions.length && cur.level ? '<div class="bm-warn">'+(bmLevelParts(cur.level) ? 'الجهة غير محددة، لذلك لا يمكن تلوين المنطقة. حدّد «الطرف المبتور» ثم احفظ.' : 'مستوى البتر غير مدعوم في الرسم بعد.')+'</div>' : '');
   }
   if (conflict) info += '<div class="bm-warn">يوجد تعارض: نفس الجزء مسجل في أكثر من طلب لنفس الشخص (محدد بإطار متقطع). راجع مستوى البتر والجهة.</div>';
   if (!data.linked) info += '<div class="bm-note">هذا الطلب غير مرتبط بمعرّف شخص (person)، لذلك تظهر منطقة هذا الطلب فقط. لإتاحة التنقل بين طلبات نفس الشخص يجب إضافة حقل person (معرّف الشخص المشترك) لسجلات الطلبات المسلّمة.</div>';
@@ -5304,7 +5304,7 @@ function renderProfile(){
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
     row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']), age ? '<span class="cf-h-note">السن: '+esc(age)+'</span>' : '');
   h += sec('amp', 'check', 'بيانات البتر والحالة الطبية',
-    row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
+    row(['level','مستوى البتر',1,'level'], ['side','الطرف المبتور',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
     row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+
     (res.ok!==null ? '<div class="pf-result '+(res.ok ? 'ok' : 'bad')+'">'+res.list.map(function(x){ return x.t + (x.until ? ' حتى ' + x.until : x.k==='ok' ? '' : ' حتى تاريخ'); }).join('<br>')+'</div>' : ''));
   h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c, st.status==='مؤجل' || (c && c.stage==='postponed')));
@@ -5792,7 +5792,7 @@ function renderNewCase(){
     row(['address','عنوان الإقامة',1,'area'], ['idAddress','العنوان بالبطاقة',0,'area']));
   var devRow = nc.devices==='نعم' ? row(['devices','يوجد أجهزة',1,'select'], ['devicesCount','عدد الأجهزة',1,'num']) : row(['devices','يوجد أجهزة',1,'select']);
   h += sec('amp', 'check', 'بيانات البتر والحالة الطبية',
-    row(['level','مستوى البتر',1,'level'], ['side','البتر بالطرف',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
+    row(['level','مستوى البتر',1,'level'], ['side','الطرف المبتور',1,'select'])+'<div class="side-hint">كل طلب يخص طرفًا واحدًا. إذا كان البتر في الطرفين يُسجَّل كل طرف في طلب مستقل.</div>'+row(['ampDate','تاريخ البتر',1,'date'], ['lastSurgery','تاريخ اخر جراحة في مكان البتر',1,'date'])+
     row(['cause','سبب البتر',1,'select'], ['causeDetails','تفاصيل سبب البتر',1,'area'])+row(['weight','الوزن',1,'num'], ['chronic','الأمراض المزمنة',1,'select'])+devRow);
   h += sec('request', 'history', 'بيانات الطلب',
     row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
@@ -6401,7 +6401,7 @@ function renderInboundCase(){
     profRow('رقم هاتف 2', d.phone2, true)+profRow('المؤهل الدراسى', d.edu)+
     profRow('الوظيفة', d.job)+profRow('كيف عرفتنا', d.howKnown)+
     profRow('الأمراض المزمنة', d.chronic)+profRow('الوزن', d.weight)+
-    profRow('مستوى البتر', d.level)+profRow('البتر بالطرف', d.side)+
+    profRow('مستوى البتر', d.level)+profRow('الطرف المبتور', d.side)+
     profRow('تاريخ البتر', d.ampDate)+profRow('سبب البتر', d.cause)+
     profRow('تفاصيل سبب البتر', d.causeDetails)+profRow('تاريخ اخر جراحة في مكان البتر', d.lastSurgery)+
     profRow('تاريخ استلام الطرف', d.delivered)+profRow('التمويل', d.funding)+'</div>';
@@ -7550,7 +7550,7 @@ var OL_FIELDS = {
   district:{l:'القسم او المركز', o:function(){ var g = (OL.f.city||[]).filter(function(x){ return GOVERNORATES.indexOf(x)!==-1; }); return (g.length ? g : GOVERNORATES).map(function(x){ return 'مركز ' + x; }); }, pf:'district'},
   zone:{l:'المنطقة او الشياخة', o:function(){ var g = (OL.f.city||[]).filter(function(x){ return GOVERNORATES.indexOf(x)!==-1; }); return (g.length ? g : GOVERNORATES.slice(0,4)).reduce(function(a, x){ return a.concat([x + ' – الشياخة الأولى', x + ' – الشياخة الثانية']); }, []); }, pf:'area'},
   level:{l:'مستوى البتر', o:LEVEL_OPTIONS.concat(UNSUPPORTED_LEVELS).filter(function(l, i, a){ return a.indexOf(l)===i; }), pf:'level'},
-  limb:{l:'البتر بالطرف', o:NC_OPTS.side, pf:'side'},
+  limb:{l:'الطرف المبتور', o:NC_OPTS.side, pf:'side'},
   cause:{l:'سبب البتر', o:NC_OPTS.cause, pf:'cause'},
   nextStep:{l:'عرض الطلبات المُرسلة إلى', o:['قسم الأبحاث','قسم التوقيع']},
   orderStatus:{l:'حالة الطلب', o:['مقبول الشروط','تم تعيين الباحث','جارى التوقيع','مقبول','مؤجل','مرفوض','إستبعاد','الامتناع عن التصويت'], pf:'reqStatus'},
@@ -7883,7 +7883,7 @@ var OL_COLS = [
   ['respAddress','عنوان المسئول','contact', function(r){ return olV(r.pf.responsible==='نعم' ? r.pf.respAddress : ''); }],
   ['respRel','صلة القرابة','contact', function(r){ return olV(r.pf.responsible==='نعم' ? r.pf.respRel : ''); }],
   ['level','مستوى البتر','amp', function(r){ return olV(r.c.level); }, function(r){ return r.c.level; }],
-  ['side','البتر بالطرف','amp', function(r){ return olV(r.pf.side); }],
+  ['side','الطرف المبتور','amp', function(r){ return olV(r.pf.side); }],
   ['cause','سبب البتر','amp', function(r){ return olV(r.pf.cause); }],
   ['chronic','الأمراض المزمنة','amp', function(r){ return olV(r.pf.chronic); }],
   ['causeDetails','تفاصيل سبب البتر','amp', function(r){ return olTxt(r.pf.causeDetails); }],
