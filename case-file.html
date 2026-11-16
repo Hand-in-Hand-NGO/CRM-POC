@@ -5430,7 +5430,7 @@ function renderProfile(){
       kv:[['تاريخ حضور المقاسات', measDone && (!v.meas.day || v.meas.day==='-') ? jrMeasDate(pf.id, d) : v.meas.day], ['هل حضر', measDone ? att('حضر') : att(v.meas.att)], ['النتيجة', measDone ? 'تم أخذ مقاس' : '-'], ['سبب التأجيل', ppMeas ? PP_KINDS[ppMeas.kind] : '-'], ['مؤجل لتاريخ', ppMeas ? ppUntil(ppMeas) : '-']]},
     (function(){ var m = pfMfg(pf.id, d, c, bb, measDone, delivDone);
       return {k:'mfg', t:'التصنيع', s: m.p >= 4 ? 'done' : m.p >= 1 ? 'now' : 'todo',
-        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)], ['جودة الأجزاء المطبوعة', m.quality]]}; })(),
+        kv:[['حالة التصنيع', m.level ? chip(m.level, m.p >= 4 ? 'ok' : 'warn') : '-'], ['جاهز للتسليم بتاريخ', m.ready], ['ملف التصميم', mfgFileVal(m.filesReady, 'design', d.code || pf.id)], ['ملف الطباعة', mfgFileVal(m.onPrinter, 'print', d.code || pf.id)]]}; })(),
     {k:'med', t:'التقييم النفسي', s:d.psychResult ? (d.psychResult==='مقبول' ? 'done' : 'warn') : 'todo',
       kv:[['النتيجة', d.psychResult ? chip(d.psychResult, d.psychResult==='مقبول' ? 'ok' : 'warn') : '-'], ['سبب التأجيل', d.psychReason], ['مؤجل لتاريخ', d.psychUntil]]},
     {k:'deliv', t:'تسليم طرف جديد', s:ppDeliv ? 'warn' : delivDone ? 'done' : v.deliv.att==='لم يحضر' ? 'warn' : v.deliv.day!=='-' ? 'now' : 'todo',
