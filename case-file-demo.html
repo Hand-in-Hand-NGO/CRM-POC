@@ -5077,50 +5077,21 @@ function cfFundData(cid, c){
   return {company:company, fromPage:!!alloc, alloc:alloc, released:released, hold:hold,
     notes:notes.sort(function(a, b){ return b.at - a.at; }), log:log.sort(function(a, b){ return b.at - a.at; })};
 }
-function renderFundingTab(cid, c, postponed){
-  var f = cfFundData(cid, c), fd = PROFILES.open.fd || (PROFILES.open.fd = {company:'', newCo:'', addCo:false, send:false, holdMode:'open', holdDays:'7', holdNote:'', note:'', toOps:true, day:''});
-  var when = function(ms){ return ms ? pfWhen(ms) : ''; };
+// view only: funding status, the funding company and the date of that action; changes are made on صفحة التمويل
+var CF_FUNDING_URL = 'funding.html';   // صفحة التمويل (same link as the top bar button)
+function renderFundingTab(cid, c){
+  var f = cfFundData(cid, c), d = PROFILES.open.draft || {};
   var state = f.hold ? ['warn', 'موقوف'] : f.company ? ['ok', 'ممول'] : ['off', 'غير ممول'];
+  var lastLog = f.log[0], at = f.hold ? f.hold.at : f.alloc ? f.alloc.at : (lastLog ? lastLog.at : 0);
+  var stTxt = f.hold ? 'موقوف ' + (f.hold.until ? 'حتى <bdi dir="ltr">' + esc(pfWhen(f.hold.until).slice(0, 10)) + '</bdi>' : '(مفتوح)') : esc(state[1]);
   var h = '<div class="fd-top '+state[0]+'"><span class="fd-ic">'+pfIc('money', 22, null, 2)+'</span><div class="fd-co"><span>الشركة الممولة</span><b>'+esc(f.company || 'لم يتم تحديد ممول')+'</b></div>'+
     '<span class="fd-state '+state[0]+'">'+pathIc(state[0]==='ok' ? 'M20 6L9 17l-5-5' : state[0]==='warn' ? 'M10 4H6v16h4z M18 4h-4v16h4z' : 'M18 6L6 18M6 6l12 12', 12, null, 3)+' '+state[1]+'</span></div>';
-  // assign / change / cancel the funding company
-  var cos = cfCompanies(), pick = fd.company || f.company || '';
-  h += '<div class="fd-act"><label>'+(f.company ? 'تغيير الشركة الممولة' : 'تعيين شركة ممولة')+'</label><div class="fd-row">'+
-    '<select class="cms-input" data-change="fdSet" data-a="company"><option value="">— اختر الممول —</option>'+cos.map(function(x){ return '<option'+(pick===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>'+
-    '<button class="fd-btn ok"'+(pick && pick!==f.company ? A('fdAssign') : ' disabled')+'>'+pathIc('M20 6L9 17l-5-5', 12, '#fff', 3)+' '+(f.company ? 'تغيير' : 'تعيين')+'</button>'+
-    (f.company ? '<button class="fd-btn bad"'+A('fdCancel')+'>'+pathIc('M18 6L6 18M6 6l12 12', 12, '#fff', 3)+' إلغاء التمويل</button>' : '')+
-    '<button class="fd-link"'+A('fdToggle', 'addCo')+'>+ ممول جديد</button></div>'+
-    (fd.addCo ? '<div class="fd-row"><input class="cms-input" placeholder="اسم الشركة أو الجهة" value="'+esc(fd.newCo)+'" data-k="fd-newco" data-input="fdText" data-a="newCo"/><button class="fd-btn blue"'+A('fdAddCo')+'>إضافة</button></div>' : '')+
-    (postponed ? '<label class="cf-check fd-send"><input type="checkbox"'+(fd.send?' checked':'')+A('fdToggle', 'send')+'/> تمويل وإرسال للحجز (الحالة مؤجلة لمرحلة أخرى)</label>' : '')+'</div>';
-  h += '<div class="cf-path-kv fd-kv">'+[
-      ['تاريخ التمويل', f.alloc ? when(f.alloc.at) : ''], ['بواسطة', f.alloc ? f.alloc.by : ''],
-      ['المصدر', f.fromPage ? 'صفحة التمويل' : f.company ? 'بيانات الطلب' : ''], ['أُرسل للحجز', f.released ? 'نعم' : f.company ? 'لا' : '']
-    ].map(function(p){ return '<div><span>'+p[0]+'</span><b>'+pfVal(p[1])+'</b></div>'; }).join('')+'</div>';
-  // hold / lift the hold
-  h += '<div class="cf-subh">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 13, '#0b6db0', 2.4)+' الإيقاف</div>';
-  if (f.hold) h += '<div class="fd-hold">'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 15, '#b45309', 2.6)+'<div><b>موقوف '+(f.hold.until ? 'حتى <bdi dir="ltr">'+esc(when(f.hold.until).slice(0,10))+'</bdi>' : '(مفتوح)')+'</b>'+
-    (f.hold.note ? '<span>'+esc(f.hold.note)+'</span>' : '')+'<em>'+esc(f.hold.by || '')+' · '+esc(when(f.hold.at))+'</em></div><button class="fd-btn ok"'+A('fdUnhold')+'>'+pathIc('M8 5v14l11-7z', 11, '#fff', 2.4)+' فك الإيقاف</button></div>';
-  else {
-    var days = parseInt(fd.holdDays, 10) || 0;
-    h += '<div class="fd-act"><div class="fd-row"><div class="ol-seg"><button class="'+(fd.holdMode==='open'?'on mid':'')+'"'+A('fdSetSeg', 'holdMode', 'open')+'>إيقاف مفتوح</button><button class="'+(fd.holdMode==='days'?'on mid':'')+'"'+A('fdSetSeg', 'holdMode', 'days')+'>إيقاف لمدة</button></div>'+
-      (fd.holdMode==='days' ? '<input class="cms-input fd-days" inputmode="numeric" value="'+esc(fd.holdDays)+'" data-k="fd-days" data-input="fdText" data-a="holdDays"/><span class="fd-muted">يوم'+(days ? ' · حتى <bdi dir="ltr">'+pfIso(new Date(Date.now() + days*86400000))+'</bdi>' : '')+'</span>' : '')+'</div>'+
-      '<div class="fd-row"><input class="cms-input" placeholder="سبب الإيقاف (اختياري)" value="'+esc(fd.holdNote)+'" data-k="fd-holdnote" data-input="fdText" data-a="holdNote"/>'+
-      '<button class="fd-btn warn"'+(fd.holdMode==='open' || days > 0 ? A('fdHold') : ' disabled')+'>'+pathIc('M10 4H6v16h4z M18 4h-4v16h4z', 11, '#fff', 2.6)+' إيقاف</button></div></div>';
-  }
-  // notes
-  h += '<div class="cf-subh">'+pfIc('copy', 13, '#0b6db0', 2.2)+' ملاحظات التمويل <span class="cf-count">'+f.notes.length+'</span></div>';
-  h += '<div class="fd-act"><textarea class="cms-input" rows="2" placeholder="اكتب ملاحظة" data-k="fd-note" data-input="fdText" data-a="note">'+esc(fd.note)+'</textarea>'+
-    '<div class="fd-row"><label class="cf-check"><input type="checkbox"'+(fd.toOps?' checked':'')+A('fdToggle', 'toOps')+'/> أرسلها لفريق العمليات</label>'+
-    (fd.toOps ? '<span class="fd-muted">يُحجز لها يوم (اختياري)</span><input class="cms-input fd-date" type="date" value="'+esc(fd.day)+'" data-change="fdSet" data-a="day"/>' : '')+
-    '<button class="fd-btn blue"'+A('fdNote')+'>'+pathIc('M12 5v14M5 12h14', 11, '#fff', 3)+' إضافة الملاحظة</button></div></div>';
-  h += f.notes.length ? '<ul class="fd-notes">'+f.notes.map(function(n){
-      return '<li><p>'+esc(n.text)+'</p><div>'+(n.toOps ? '<span class="fd-ops">'+pathIc('M22 2L11 13 M22 2l-7 20-4-9-9-4z', 10, null, 2.4)+' أُرسلت للعمليات'+(n.day ? ' – <bdi dir="ltr">'+esc(n.day)+'</bdi>' : '')+'</span>' : '')+
-        (n.group > 1 ? '<span class="fd-grp">على '+n.group+' حالات</span>' : '')+'<em>'+esc(n.by || '')+' · '+esc(when(n.at))+'</em></div></li>'; }).join('')+'</ul>'
-    : '<div class="cf-empty">لا توجد ملاحظات</div>';
-  // log
-  h += '<div class="cf-subh">'+pfIc('history', 13, '#0b6db0', 2.2)+' سجل التمويل <span class="cf-count">'+f.log.length+'</span></div>';
-  h += f.log.length ? '<ol class="fd-log">'+f.log.map(function(l){ return '<li><i></i><div><b>'+esc(l.action)+'</b>'+(l.detail ? '<span>'+esc(l.detail)+'</span>' : '')+'<em>'+esc(l.by || '')+' · '+esc(when(l.at))+'</em></div></li>'; }).join('')+'</ol>'
-    : '<div class="cf-empty">لا يوجد سجل لهذا الطلب</div>';
+  h += '<div class="cf-path-kv fd-kv fd-ro">'+[
+      ['حالة التمويل', stTxt], ['الشركة الممولة', f.company], ['تاريخ الإجراء', at ? pfWhen(at) : '']
+    ].map(function(p){ return '<div><span>'+p[0]+'</span><b>'+(p[0]==='حالة التمويل' ? p[1] : p[0]==='تاريخ الإجراء' && p[1] ? '<bdi dir="ltr">'+esc(p[1])+'</bdi>' : pfVal(p[1]))+'</b></div>'; }).join('')+'</div>';
+  var q = 'caseName=' + encodeURIComponent(d.name || '') + '&orderCode=' + encodeURIComponent(d.code || '');
+  h += '<div class="cf-step-foot"><a class="cf-step-link" href="'+CF_FUNDING_URL+'?'+q+'" target="_blank" rel="noopener" title="فتح صفحة التمويل والبحث عن '+esc(d.name || 'الحالة')+'">صفحة التمويل '+
+    pathIc('M15 3h6v6 M10 14L21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',11,'#fff',2.4)+'</a></div>';
   return h;
 }
 // write one change to the funding store + its log line, then refresh
@@ -7549,6 +7520,8 @@ setInterval(function(){
   .bm-in-amp .bm-svg, .pf-modal.cf .bm-in-amp .bm-svg{width:100%;max-width:none;height:auto;max-height:none;margin:0;}
   .bm-mini{height:64px;}
   @media (max-width:700px){ .bm-bar{flex-wrap:wrap;} .bm-bar-btn{width:100%;justify-content:center;} }
+  .fd-ro{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:4px;}
+  @media (max-width:700px){ .fd-ro{grid-template-columns:1fr;} }
 </style>
 <script>
 // ---------------- demo shell ----------------
