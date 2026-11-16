@@ -5246,7 +5246,7 @@ function renderProfile(){
     row(['name','اسم الحالة',1,'text'], ['nid','رقم الهوية',1,'num'])+row(['gender','النوع',1,'select'], ['dob','تاريخ الميلاد',1,'date'])+
     row(['marital','الحالة الإجتماعية',1,'select'], ['nationality','الجنسية',1,'select'])+row(['education','المؤهل الدراسى',1,'select'], ['job','الوظيفة',1,'select'])+
     row(['insured','مؤمن عليه',1,'select'])+
-    row(['weight','الوزن',1,'num'], ['chronic','الأمراض المزمنة',1,'select'])+devRow+
+    row(['weight','الوزن',1,'num'], ['chronic','الأمراض المزمنة',1,'select'])+
     '<div class="cf-subh">'+pfIc('phone',13,'#0b6db0',2.2)+' التواصل والعنوان</div>'+
     phoneRows(f, d.extraPhones, 'pf-ex-', 'profExtraPhone', 'profDelPhone', 'profAddPhone', d.tried)+
     row(['gov','المحافظة',1,'gov'], ['district','القسم او المركز',1,'text'])+row(['area','المنطقة او الشياخة',0,'text'])+
@@ -5258,7 +5258,7 @@ function renderProfile(){
   h += sec('funding', 'money', 'بيانات التمويل', renderFundingTab(pf.id, c, st.status==='مؤجل' || (c && c.stage==='postponed')));
   h += sec('request', 'history', 'بيانات الطلب',
     '<div class="cms-row">'+ro('تم الإضافة بواسطة', d.addedBy)+ro('أضيف في', d.addedAt)+'</div>'+
-    row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+
+    row(['date','تاريخ تقديم الطلب',0,'date'], ['callType','نوع المكالمة',1,'select'])+row(['heard','كيف عرفتنا',1,'select'], ['sponsor','الكفيل',0,'select'])+devRow+
     '<div class="cms-row"><label class="cms-label">الخطوة التالية</label><div class="cms-field"><select class="cms-input" data-change="profSet" data-a="nextStep">'+
       opt('research','قسم الأبحاث', d.nextStep)+opt('measurement','حجز مقاس مباشر', d.nextStep)+'</select></div><div></div><div></div></div>'+
     '<div class="cms-row"><label class="cms-label">نشط</label><div class="cms-field"><div class="pf-yn"><button class="'+(d.active?'on':'')+'"'+A('profActive','1')+'>'+pfIc('check',12,null,2.4)+' نعم</button><button class="'+(!d.active?'on off':'')+'"'+A('profActive','0')+'>'+pfIc('x',12,null,2.4)+' لا</button></div></div>'+
