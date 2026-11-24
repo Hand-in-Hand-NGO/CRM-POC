@@ -1299,8 +1299,8 @@
     .k-ph2{margin-top:4px;}
     .k-day{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
     .k-tries{text-align:center;font-weight:800;}
-    .pool-tabs{display:flex;gap:4px;padding:0 22px;border-bottom:1px solid var(--border);}
-    .pool-tabs button{border:0;background:none;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center;}
+    .pool-tabs{display:flex;flex-wrap:wrap;gap:0 2px;padding:0 22px;border-bottom:1px solid var(--border);}
+    .pool-tabs button{border:0;background:none;border-bottom:2px solid transparent;padding:10px 10px;font:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;}
     .pool-tabs button.on{color:var(--text);border-bottom-color:var(--text);}
     .pool-tabs .count{background:var(--neutral-tint);border-radius:10px;padding:0 7px;font-size:11px;}
     .pp-reason{display:inline-block;background:var(--warning-tint);color:#8a4b08;border-radius:10px;padding:1px 8px;font-size:11.5px;font-weight:700;margin:2px 0 2px 4px;}
@@ -3482,7 +3482,7 @@ var ACT = {
     S.overlay = 'addCases'; render();
   },
   addCasesSortBy: function(v){ S.addCasesSort = v || ''; render(); },
-  setAddCasesPP: function(v){ S.addCasesPP = v==='1'; render(); },
+  setAddCasesPP: function(v){ S.addCasesPP = v==='av' ? '' : v; S.addCasesFilters.ppReason = ''; render(); },
   closeAddCases: function(){
     var m = S.addCasesMode;
     S.overlay = (m && m.kind==='existing') ? 'detail' : (S.createDraft ? 'create' : null);
@@ -3722,7 +3722,7 @@ var ACT = {
     toast('تمت إعادة تفعيل الحالة ورجعت لقوائم الاتصال'); render();
   },
   setQueueAgent: function(v){ S.queueAgent = v; render(); },
-  setPoolTab: function(v){ S.poolTab = v; render(); },
+  setPoolTab: function(v){ S.poolTab = v; S.poolPPReason = ''; render(); },
   togglePoolNotes: function(cid){ S.poolNotesOpen = S.poolNotesOpen===cid ? null : cid; render(); },
   openPool: function(k){ S.poolOpen = k; S.poolTab = 'av'; S.poolSearch = ''; S.poolGov = ''; S.poolLevel = ''; S.poolFund = ''; S.poolPPReason = ''; render(); },
   poolFund: function(v){ S.poolFund = v; render(); },
@@ -4010,7 +4010,34 @@ function renderSubbar(){
 
 var POOL_NAMES = {measurement:'حصالة التقييم الطبي والقياسات', newDelivery:'مخزن الأطراف الجديد', maintEval:'حصالة تقييم صيانة', maintDelivery:'مخزن أطراف الصيانة'};
 // cases available to book in a stage (any governorate)
-function postponedIds(k){ var o = {}; postponedFor(k).forEach(function(x){ o[x.c.id] = true; }); return o; }
+// every case that is not «المتاحة للحجز» (any list of the pool, or rejected by the committee)
+function postponedIds(k){ var o = {}, g = poolGroups(k); Object.keys(g).forEach(function(l){ if (l!=='av') g[l].forEach(function(x){ o[x.c.id] = true; }); }); return o; }
+// the lists of a pool: the medical evaluation pool has 7, the other pools المتاحة للحجز + المؤجلات
+var POOL_LISTS = [['av','المتاحة للحجز'],['ppReg','مؤجل مرحلة أولى'],['ppCom','مؤجل لجنة'],['ppMeas','مؤجل تقييم طبي وقياسات'],['noRes','بدون بحث'],['signing','جاري التوقيع'],['excl','استبعاد']];
+function poolListsOf(k){ return k==='measurement' ? POOL_LISTS : [['av','المتاحة للحجز'],['pp','المؤجلات']]; }
+var POOL_EMPTY = {ppReg:'لا توجد حالات مؤجلة في المرحلة الأولى', ppCom:'لا توجد حالات مؤجلة من اللجنة', ppMeas:'لا توجد حالات مؤجلة في التقييم الطبي والقياسات', noRes:'لا توجد حالات بدون بحث', signing:'لا توجد حالات جاري توقيعها', excl:'لا توجد حالات مستبعدة', pp:'لا توجد حالات مؤجلة'};
+function poolGroups(k){
+  var g = {};
+  if (k!=='measurement'){ g.pp = postponedFor(k); return g; }
+  POOL_LISTS.forEach(function(l){ g[l[0]] = []; }); g.rej = [];
+  var seen = {};
+  postponedFor(k).forEach(function(x){ seen[x.c.id] = true; (x.reg ? g.ppReg : g.ppMeas).push(x); });
+  CASES.forEach(function(c){
+    if (c.stage!=='measurement' || seen[c.id]) return;
+    var pr = profileOf(c.id); if (!pr) return;
+    var ov = pr.statusOverride || '', since = pr.date || isoDate(todayOffset() - (c.waitingDays||0));
+    function put(l, x){ x.c = c; x.tags = x.tags || []; x.reasons = x.reasons || x.tags; x.date = x.date || since; x.untilIso = x.untilIso || ''; g[l].push(x); }
+    var ex = typeof jrExclusion==='function' ? jrExclusion(pr) : null;
+    if (ov==='excluded' || ex) return put('excl', {head:'استبعاد', tags:['لم يحضر أكثر من مرة'], date:ex && ex.dates ? ex.dates[ex.dates.length-1] : '', tail:'الطلب غير نشط'});
+    if (/^reg_(weight|age|6m|stage)/.test(ov)) return put('ppReg', {tags:[{reg_weight:'وزن زائد', reg_age:'السن', reg_6m:'6 شهور من آخر جراحة', reg_stage:'مرحلة أخرى'}[ov.split(':')[0]] || 'التسجيل'], untilIso:pr.postponeUntil || ''});
+    if (ov==='com_rej' || pr.committee==='مرفوض') return put('rej', {});
+    if (ov==='com_pp' || pr.committee==='مؤجل') return put('ppCom', {tags:['قرار اللجنة'], date:pr.committeeDate || '', untilIso:pr.committeeUntil || ''});
+    if (ov==='com_signing' || (jrRealS(pr.sentToCommittee) && (!pr.committee || pr.committee==='-'))) return put('signing', {head:'جاري التوقيع', tags:['أُرسل للجنة'], date:pr.sentToCommittee || '', tail:'في انتظار قرار اللجنة'});
+    if (/^meas_pp/.test(ov)) return put('ppMeas', {tags:[ov.split(':')[1] || 'التقييم الطبي'], untilIso:pr.ppUntilMeas || ''});
+    if (pr.fundedNoResearch) return put('noRes', {head:'ممول بدون بحث', tags:[c.funding && c.funding!=='بدون' ? c.funding : 'بدون ممول'], tail:'لم يتم البحث الاجتماعي'});
+  });
+  return g;
+}
 function poolCases(type){
   var ctx = {id:'__pool', type:type, loc:'org', gov:null, dateOffset:todayOffset()}, pp = postponedIds(type);
   return CASES.map(function(c){ return priorityOf(ctx, c); }).filter(function(p){ return p.eligible && !pp[p.c.id]; })
@@ -4036,7 +4063,7 @@ var NC_SHORT = {weight:'وزن زائد', age:'السن', '6m':'6 شهور من 
 function postponedFor(k){
   var out = [];
   CASES.forEach(function(c){
-    var reasons = [], until = null, tags = [], date = '', untilIso = '';
+    var reasons = [], until = null, tags = [], date = '', untilIso = '', reg = false;
     if (ppActive(c) && (c.postponed.stage || c.stage)===k){
       reasons.push(PP_KINDS[c.postponed.kind] + (c.postponed.reason ? ' – ' + c.postponed.reason : '')); until = c.postponed.until;
       tags.push(PP_SHORT[c.postponed.kind] || PP_KINDS[c.postponed.kind]);
@@ -4046,29 +4073,29 @@ function postponedFor(k){
     if (k==='measurement' && c.stage==='measurement'){
       var pr = profileOf(c.id), r = ncResult({level:pr.level, lastSurgery:pr.lastSurgery, dob:pr.dob, weight:pr.weight});
       if (r.ok===false) r.list.forEach(function(x){
-        reasons.push(x.t + (x.k==='weight' ? ' (' + pr.weight + ' كيلو)' : '')); tags.push(NC_SHORT[x.k] || x.t);
+        reg = true; reasons.push(x.t + (x.k==='weight' ? ' (' + pr.weight + ' كيلو)' : '')); tags.push(NC_SHORT[x.k] || x.t);
         if (!date) date = pr.date || ''; if (x.until && x.until > untilIso) untilIso = x.until;
       });
     }
-    if (reasons.length) out.push({c:c, reasons:reasons, until:until, tags:tags, date:date || isoDate(todayOffset() - (c.waitingDays||0)), untilIso:untilIso});
+    if (reasons.length) out.push({c:c, reasons:reasons, until:until, tags:tags, date:date || isoDate(todayOffset() - (c.waitingDays||0)), untilIso:untilIso, reg:reg});
   });
   if (k==='measurement') POSTPONED.filter(function(c){ return c.stage==='postponed'; }).forEach(function(c){
     var pr = profileOf(c.id);
-    out.push({c:c, reasons:['مؤجل لمرحلة أخرى – ' + c.level], until:null, tags:['مرحلة أخرى'], date:(pr && pr.date) || isoDate(todayOffset() - (c.waitingDays||0)), untilIso:''});
+    out.push({c:c, reasons:['مؤجل لمرحلة أخرى – ' + c.level], until:null, tags:['مرحلة أخرى'], date:(pr && pr.date) || isoDate(todayOffset() - (c.waitingDays||0)), untilIso:'', reg:true});
   });
   return out;
 }
 // the postponement cell: what the evaluation postponed for, its date, and postponed until
 function ppCell(x){
-  return '<div class="pp-card" title="'+esc(x.reasons.join(' + '))+'"><b>مؤجل</b><span>('+esc(x.tags.join('، '))+')</span>'+
-    (x.date ? '<em dir="ltr">'+esc(x.date)+'</em>' : '')+'<i>'+(x.untilIso ? 'مؤجل لتاريخ <span dir="ltr">'+esc(x.untilIso)+'</span>' : 'بدون تاريخ')+'</i></div>';
+  return '<div class="pp-card" title="'+esc(x.reasons.join(' + '))+'"><b>'+esc(x.head || 'مؤجل')+'</b>'+(x.tags.length ? '<span>('+esc(x.tags.join('، '))+')</span>' : '')+
+    (x.date ? '<em dir="ltr">'+esc(String(x.date).slice(0, 10))+'</em>' : '')+'<i>'+(x.tail ? esc(x.tail) : x.untilIso ? 'مؤجل لتاريخ <span dir="ltr">'+esc(x.untilIso)+'</span>' : 'بدون تاريخ')+'</i></div>';
 }
 function renderPools(){
   if (!isAdmin()) return '';
   return '<div class="pools-wrap"><div class="section-cap">'+ic('users',13)+' الحالات المتاحة للحجز</div><div class="pools-row">' + Object.keys(TASK_TYPES).map(function(k){
     var m = TASK_TYPES[k], n = poolCases(k).length;
     return '<button class="pool-btn" style="--edge:'+m.color+';--tint:'+m.tint+';"'+A('openPool', k)+'>'+
-      '<span class="pool-num">'+n+'</span><span class="pool-text"><span class="pool-name">'+POOL_NAMES[k]+'</span>'+(postponedFor(k).length ? '<span class="pool-pp">مؤجلات '+postponedFor(k).length+'</span>' : '')+'</span>'+
+      '<span class="pool-num">'+n+'</span><span class="pool-text"><span class="pool-name">'+POOL_NAMES[k]+'</span>'+(function(){ var n = Object.keys(postponedIds(k)).length; return n ? '<span class="pool-pp">قوائم أخرى '+n+'</span>' : ''; })()+'</span>'+
       '<span class="pool-ic">'+pathIc(m.iconPath,16,m.color)+'</span></button>';
   }).join('') + '</div></div>';
 }
@@ -4125,25 +4152,26 @@ function renderPoolModal(){
   }
   var h = '<div class="scrim"'+A('closePool')+'></div><div class="modal" style="width:1000px;max-width:96vw;"><div class="modal-head"><div><div class="drawer-title" style="color:'+m.color+';">'+POOL_NAMES[k]+'</div>'+
     '<div class="drawer-sub">'+poolCases(k).length+' حالة</div></div><button class="icon-btn"'+A('closePool')+'>'+ic('x',15,null,2)+'</button></div>';
-  var ppR = S.poolPPReason || '', ppAll = postponedFor(k), pp = ppAll.filter(function(x){ return passes(x.c) && (!ppR || x.tags.indexOf(ppR)!==-1); });
-  var both = poolCases(k).concat(ppAll.map(function(x){ return x.c; })), filtOn = q || lv || gv || fundF;
+  var lists = poolListsOf(k), grp = poolGroups(k); if (!lists.some(function(l){ return l[0]===S.poolTab; })) S.poolTab = 'av';
+  var isPP = S.poolTab!=='av', ppR = S.poolPPReason || '', ppAll = isPP ? grp[S.poolTab] : [], pp = ppAll.filter(function(x){ return passes(x.c) && (!ppR || x.tags.indexOf(ppR)!==-1); });
+  var both = poolCases(k).concat([].concat.apply([], lists.slice(1).map(function(l){ return grp[l[0]]; })).map(function(x){ return x.c; })), filtOn = q || lv || gv || fundF;
   var bar = caseFilterBar('pool', fltFields(both, 'gov'), fltFields(both, 'level'),
     '<div class="cff"><label>الممول</label><select class="filter-select" data-change="poolFund"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(f){ return f!=='بدون'; }).map(function(f){ return '<option value="'+esc(f)+'"'+(fundF===f?' selected':'')+'>'+esc(f)+'</option>'; }).join('')+
       '<option value="بدون"'+(fundF==='بدون'?' selected':'')+'>غير ممولة</option></select></div>'+
-    (S.poolTab==='pp' ? ppReasonSelect(ppAll, ppR, 'poolPPReason') : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'));
-  if (S.poolTab==='pp' && ppR) filtOn = true;
+    (isPP ? (/^pp/.test(S.poolTab) ? ppReasonSelect(ppAll, ppR, 'poolPPReason') : '') : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="poolSortBy">'+sorts.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'));
+  if (isPP && ppR) filtOn = true;
   var filtNote = function(n, tot){ return filtOn ? '<div class="field-hint" style="margin:-4px 0 8px;">'+n+' من '+tot+' حالة · <button class="link-btn"'+A('poolClear')+'>مسح الفلاتر</button></div>' : ''; };
-  h += '<div class="pool-tabs"><button class="'+(S.poolTab!=='pp'?'on':'')+'"'+A('setPoolTab','av')+'>المتاحة للحجز <span class="count">'+poolCases(k).length+'</span></button>'+
-    '<button class="'+(S.poolTab==='pp'?'on':'')+'"'+A('setPoolTab','pp')+'>المؤجلات <span class="count">'+ppAll.length+'</span></button></div>';
-  if (S.poolTab==='pp'){
-    h += '<div class="modal-body" data-scroll="poolpp">'+bar+filtNote(pp.length, ppAll.length)+'<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>التأجيل</th></tr></thead><tbody>';
+  h += '<div class="pool-tabs">'+lists.map(function(l){ var n = l[0]==='av' ? poolCases(k).length : grp[l[0]].length;
+    return '<button class="'+(S.poolTab===l[0]?'on':'')+'"'+A('setPoolTab', l[0])+'>'+l[1]+' <span class="count">'+n+'</span></button>'; }).join('')+'</div>';
+  if (isPP){
+    h += '<div class="modal-body" data-scroll="poolpp">'+bar+filtNote(pp.length, ppAll.length)+'<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>'+(/^pp/.test(S.poolTab) ? 'التأجيل' : 'الحالة')+'</th></tr></thead><tbody>';
     pp.forEach(function(x, i){
       var c = x.c;
       h += '<tr><td class="rank-num">'+(i+1)+'</td>'+(hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+
         '<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
-    return h + '</tbody></table>' + (pp.length ? '' : '<div class="table-empty">'+(filtOn ? 'لا توجد حالات مطابقة للفلاتر' : 'لا يوجد حالات مؤجلة')+'</div>') + '</div></div>';
+    return h + '</tbody></table>' + (pp.length ? '' : '<div class="table-empty">'+(filtOn ? 'لا توجد حالات مطابقة للفلاتر' : POOL_EMPTY[S.poolTab])+'</div>') + '</div></div>';
   }
   h += '<div class="modal-body" data-scroll="pool">'+bar+filtNote(list.length, poolCases(k).length);
   h += '<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th>'+th('المحافظة','gov')+th('السن','ageAsc','ageDesc')+'<th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
@@ -4853,22 +4881,24 @@ function renderAddCases(){
   }
   var ids = currentAddCasesIds();
   var SORTS = [['','الأولوية (افتراضي)'],['waitDesc','مدة الانتظار: الأطول أولًا'],['gov','المحافظة'],['ageAsc','السن: الأصغر الأول'],['ageDesc','السن: الأكبر الأول']];
-  var f = S.addCasesFilters, srt = S.addCasesSort || '', hasCode = ctx.type!=='measurement', ppAll = postponedFor(ctx.type);
+  var lists = poolListsOf(ctx.type), grp = poolGroups(ctx.type); if (!S.addCasesPP || !lists.some(function(l){ return l[0]===S.addCasesPP; })) S.addCasesPP = '';
+  var allPP = [].concat.apply([], lists.slice(1).map(function(l){ return grp[l[0]]; }));
+  var f = S.addCasesFilters, srt = S.addCasesSort || '', hasCode = ctx.type!=='measurement', ppAll = S.addCasesPP ? grp[S.addCasesPP] : [];
   var pp = ppAll.filter(function(x){ var c = x.c; return caseMatchQ(c, f.q, hasCode) && (!f.gov || c.gov===f.gov) && (!f.level || c.level===f.level) && (!f.funding || (f.funding==='بدون' ? c.funding==='بدون' || !c.funding : c.funding===f.funding)) && (!f.ppReason || x.tags.indexOf(f.ppReason)!==-1); });
-  var poolAll = CASES.filter(function(c){ return c.stage===ctx.type; }).concat(ppAll.map(function(x){ return x.c; }));
+  var poolAll = CASES.filter(function(c){ return c.stage===ctx.type; }).concat(allPP.map(function(x){ return x.c; }));
   var fOn = f.q || f.funding || f.level || (f.gov && ctx.loc!=='convoy') || (S.addCasesPP && f.ppReason);
   var bar = caseFilterBar('add', fltFields(poolAll, 'gov'), fltFields(poolAll, 'level'),
     '<div class="cff"><label>الممول</label><select class="filter-select" data-change="setFilter" data-a="funding"><option value="">كل الجهات</option>'+FUNDING_OPTIONS.filter(function(x){ return x!=='بدون'; }).map(function(x){ return '<option value="'+esc(x)+'"'+(f.funding===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+
       '<option value="بدون"'+(f.funding==='بدون'?' selected':'')+'>غير ممولة</option></select></div>'+
-    (S.addCasesPP ? ppReasonSelect(ppAll, f.ppReason || '', 'setFilter', 'ppReason') : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>')+
+    (S.addCasesPP ? (/^pp/.test(S.addCasesPP) ? ppReasonSelect(ppAll, f.ppReason || '', 'setFilter', 'ppReason') : '') : '<div class="cff"><label>الترتيب</label><select class="filter-select" data-change="addCasesSortBy">'+SORTS.map(function(o){ return '<option value="'+o[0]+'"'+(srt===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>')+
     (fOn ? '<div class="cff cff-end"><button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>' : ''), ctx.loc==='convoy');
   var list = filteredCases();
-  h += '<div class="pool-tabs" style="padding:0;margin-bottom:12px;"><button class="'+(!S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','0')+'>المتاحة للحجز <span class="count">'+list.length+'</span></button>'+
-    '<button class="'+(S.addCasesPP?'on':'')+'"'+A('setAddCasesPP','1')+'>المؤجلات <span class="count">'+ppAll.length+'</span></button></div>';
+  h += '<div class="pool-tabs" style="padding:0;margin-bottom:12px;">'+lists.map(function(l){ var on = l[0]==='av' ? !S.addCasesPP : S.addCasesPP===l[0];
+    return '<button class="'+(on?'on':'')+'"'+A('setAddCasesPP', l[0])+'>'+l[1]+' <span class="count">'+(l[0]==='av' ? list.length : grp[l[0]].length)+'</span></button>'; }).join('')+'</div>';
   h += bar;
   if (S.addCasesPP){
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="pptbl"><table class="cases-table"><thead><tr><th style="width:34px;"></th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+
-      '<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>التأجيل</th></tr></thead><tbody>';
+      '<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>'+(/^pp/.test(S.addCasesPP) ? 'التأجيل' : 'الحالة')+'</th></tr></thead><tbody>';
     pp.forEach(function(x, i){
       var c = x.c, on = sel.indexOf(c.id)!==-1;
       h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+A('toggleCaseSel', c.id)+' title="استثناء – ضمها للمهمة"/></td><td class="rank-num">'+(i+1)+'</td>'+
@@ -4876,9 +4906,9 @@ function renderAddCases(){
         '<td>'+(c.funding && c.funding!=='بدون' ? esc(c.funding) : '<span class="field-hint" style="margin:0;">غير ممولة</span>')+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
-    h += '</tbody></table>'+(pp.length ? '' : '<div class="table-empty">'+(fOn ? 'لا توجد حالات مطابقة للفلاتر' : 'لا يوجد حالات مؤجلة')+'</div>')+'</div>';
+    h += '</tbody></table>'+(pp.length ? '' : '<div class="table-empty">'+(fOn ? 'لا توجد حالات مطابقة للفلاتر' : POOL_EMPTY[S.addCasesPP])+'</div>')+'</div>';
   } else {
-    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length+(function(){ var n = sel.filter(function(id){ return ppAll.some(function(x){ return x.c.id===id; }); }).length; return n ? ' ('+n+' من المؤجلات)' : ''; })() : 'لا يوجد اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
+    h += '<div class="count-bar"><div class="count-main"><b>'+list.length+'</b> حالة في '+POOL_NAMES[ctx.type]+(f.gov ? ' · '+esc(f.gov) : '')+'</div><div class="count-selected">'+(sel.length ? 'تم تحديد '+sel.length+(function(){ var n = sel.filter(function(id){ return allPP.some(function(x){ return x.c.id===id; }); }).length; return n ? ' ('+n+' من المؤجلات)' : ''; })() : 'لا يوجد اختيار = كل الحالات ('+ids.length+')')+(ctx.target ? ' · مطلوب حجز '+ctx.target : '')+'</div></div>';
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="mantbl"><table class="cases-table"><thead><tr>'+
       '<th style="width:34px;"></th><th>أولوية الاتصال</th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>ملاحظات التمويل</th></tr></thead><tbody>';
     list.forEach(function(c, i){
@@ -9344,6 +9374,25 @@ root = document.getElementById('root');
 loadFunding();
 seedFollowUps();
 loadProfiles(); applyProfiles();
+// sample cases for the lists of the medical evaluation pool (once per browser: a profile saved earlier gets the same fields)
+(function(){
+  var SEED_KEY = 'hih_pool_lists_seed_v1', done = false; try { done = !!localStorage.getItem(SEED_KEY); } catch(e){}
+  var av = poolCases('measurement').slice().reverse(), i = 0;
+  var plan = [
+    {committee:'مؤجل', committeeDate:isoDate(-6), committeeUntil:isoDate(20), sentToCommittee:isoDate(-15)},
+    {committee:'مؤجل', committeeDate:isoDate(-3), committeeUntil:'', sentToCommittee:isoDate(-12)},
+    {committee:'-', sentToCommittee:isoDate(-4)},
+    {committee:'-', sentToCommittee:isoDate(-2)},
+    {fundedNoResearch:true},
+    {fundedNoResearch:true},
+    {statusOverride:'excluded'},
+    {statusOverride:'meas_pp:عملية جراحية', ppUntilMeas:isoDate(25)}
+  ];
+  if (done) return;
+  plan.forEach(function(x){ var c = av[i++]; if (!c) return; c.pf = Object.assign(c.pf || {}, x); Object.assign(profileOf(c.id), x); });
+  saveProfiles();
+  try { localStorage.setItem(SEED_KEY, '1'); } catch(e){}
+})();
 // surveys saved earlier in this browser come back; then publish for the funding page
 (function(){ var saved = readSurveys(); function aid(n){ return (AGENTS.filter(function(a){ return a.name===n; })[0]||{}).id; }
   Object.keys(saved).forEach(function(k){ var r = saved[k]; if (!findTask(k.split('|')[0]) || !r.status) return;
