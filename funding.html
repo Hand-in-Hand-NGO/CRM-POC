@@ -1582,6 +1582,15 @@ label { font-weight: bold; }
   .pf-modal.nc-new{position:static;transform:none;width:auto;max-width:none;max-height:none;margin:0;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #e3e5ea;z-index:auto;}
   .pf-modal.nc-new .prof-body{overflow:visible;max-height:none;}
   .pf-modal.nc-new .prof-foot{position:sticky;bottom:0;background:#fff;border-radius:0 0 14px 14px;z-index:30;}
+  /* the assessment cell of صفحة الزيارات (status box + postponement box) */
+  .assess-label{display:inline-block;padding:2px 6px;border-radius:8px;background:#fff;border:1px solid #ccd;white-space:nowrap;color:#333;font-size:12px;line-height:1.5;text-align:center;}
+  .assess-label small{display:block;color:#777;}
+  .postpone-box{display:inline-block;text-align:right;background:#e3ebf1;border-radius:6px;padding:4px 8px;margin:3px 0;font-size:12px;color:#333;white-space:nowrap;}
+  .postpone-box div{line-height:26px;}
+  .postpone-box b{display:inline-block;background:#fff;border:1px solid #d7dee6;border-radius:4px;padding:0 6px;margin:0 4px;line-height:20px;direction:ltr;}
+  .postpone-box b.ppr{direction:rtl;}
+  .rem-in{width:92px !important;min-width:0;}
+  .vs-cell{display:flex;flex-direction:column;align-items:center;gap:2px;}
     /*__PFCSS_END__*/
   </style>
 </head>
@@ -3837,11 +3846,25 @@ function jrAmpMaintBtn(mts){
   return '<button class="cf-maint-btn'+(on ? ' on' : '')+(mts.some(function(m){ return m.current; }) ? ' live' : '')+'"'+A('ampMaint')+'>'+
     pathIc('M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z', 12, null, 2.2)+' طلبات الصيانة <b>'+mts.length+'</b></button>';
 }
+// ---- the assessment cell of صفحة الزيارات: the status in its box with the date under it, then the postponement box ----
+function vsDmy(iso){ var m = String(iso||'').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '-' + m[2] + '-' + m[1] : String(iso||''); }
+function vsDays(a, b){ var x = String(a||'').slice(0, 10), y = String(b||'').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(x) || !/^\d{4}-\d{2}-\d{2}$/.test(y)) return null;
+  return Math.round((new Date(y + 'T00:00:00') - new Date(x + 'T00:00:00')) / 86400000); }
+function vsLabel(status, date){ return '<span class="assess-label">'+esc(status)+(date && date!=='-' ? '<small dir="ltr">'+esc(String(date).slice(0, 10))+'</small>' : '')+'</span>'; }
+// o = {reason, date (assessment day), until, untilHtml (an editable date instead of the until text)}
+function vsPostponeBox(o){
+  var days = o.until ? vsDays(o.date, o.until) : null, h = '';
+  if (o.reason) h += '<div>سبب التأجيل: <b class="ppr">'+esc(o.reason)+'</b></div>';
+  if (days!=null && days >= 0) h += '<div>عدد ايام التأجيل: <b>'+days+'</b> يوم</div>';
+  if (o.untilHtml) h += '<div>تاريخ التأجيل: '+o.untilHtml+'</div>';
+  else if (o.until) h += '<div>تاريخ التأجيل: <b>'+esc(vsDmy(o.until))+'</b></div>';
+  if (o.rem!=null) h += '<div>المتبقي: <b>'+Math.max(0, o.rem)+'</b> يوم</div>';
+  return h ? '<div class="postpone-box">'+h+'</div>' : '';
+}
 // a visit cell as on صفحة الزيارات: the status in its box with the date under it (+ the postponement box); booked only → the booking; nothing → «-»
 function mtVisitCell(v){
   if (!v) return '-';
-  if (v.status) return '<span class="assess-label">'+esc(v.status)+(v.date ? '<small dir="ltr">'+esc(v.date)+'</small>' : '')+'</span>'+
-    (v.status==='مؤجل' && v.until ? '<div class="postpone-box"><div>مؤجل حتى: <b>'+esc(v.until)+'</b></div></div>' : '');
+  if (v.status) return vsLabel(v.status, v.date)+(v.status==='مؤجل' ? vsPostponeBox({reason:v.reason, date:v.date, until:v.until}) : '');
   if (v.book) return '<span class="mt-booked">تاريخ الحجز<small dir="ltr">'+esc(v.book)+'</small></span>';
   return '-';
 }
@@ -4333,8 +4356,7 @@ function renderProfile(){
     var asm = '-';
     if (a){
       asm = '<span class="assess-label'+(a.cls==='warn' ? ' pp' : '')+'">'+esc(a.name)+(jrReal(a.date) ? '<small dir="ltr">'+d10(a.date)+'</small>' : '')+'</span>';
-      if (a.pp) asm += '<div class="postpone-box">'+(a.pp.reason ? '<div>سبب التأجيل: <b class="ppr">'+esc(a.pp.reason)+'</b></div>' : '')+
-        (a.pp.key ? '<div>مؤجل حتى: '+ppEdit(a.pp.key, a.pp.until)+'</div>' : a.pp.until ? '<div>مؤجل حتى: <b>'+esc(a.pp.until)+'</b></div>' : '')+'</div>';
+      if (a.pp) asm += vsPostponeBox({reason:a.pp.reason, date:a.date, until:a.pp.until, untilHtml:a.pp.key ? ppEdit(a.pp.key, a.pp.until) : ''});
     }
     if (!jrReal(v.book) && !v.att) book = '';   // no booking → nothing on that side
     if (!book && !a) return '<div class="jr-out"><div class="jr-out-r"><span class="jr-val off">في انتظار الحجز</span></div></div>';
