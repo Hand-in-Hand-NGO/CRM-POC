@@ -4228,7 +4228,7 @@ Object.assign(ACT, {
   jrDlAll: function(k){ toast('جاري تحميل ' + jrAttFiles(k).length + ' مرفق'); },
   jrPrint: function(name){
     var w = window.open('', '_blank'); if (!w){ toast('اسمح بالنوافذ المنبثقة لطباعة المرفق'); return; }
-    w.document.write('<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>'+esc(name)+'</title></head><body style="font-family:Tajawal,Tahoma,Arial,sans-serif;padding:30px"><h3 dir="ltr">'+esc(name)+'</h3><p>طباعة المرفق (الملف محفوظ على السيرفر)</p></body></html>');
+    w.document.write('<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>'+esc(name)+'</title></head><body style="font-family:\'Droid Arabic Kufi\',\'Noto Kufi Arabic\',Tahoma,Arial,sans-serif;padding:30px"><h3 dir="ltr">'+esc(name)+'</h3><p>طباعة المرفق (الملف محفوظ على السيرفر)</p></body></html>');
     w.document.close(); w.focus(); w.print();
   },
   // delete: a file uploaded here is removed from the request; a file from another page is hidden from this request (saved with «حفظ»)
