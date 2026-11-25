@@ -1302,6 +1302,11 @@
     .pool-tabs{display:flex;flex-wrap:wrap;gap:0 2px;padding:0 22px;border-bottom:1px solid var(--border);}
     .pool-tabs button{border:0;background:none;border-bottom:2px solid transparent;padding:10px 10px;font:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;}
     .pool-tabs button.on{color:var(--text);border-bottom-color:var(--text);}
+    .list-alarm{display:inline-flex;align-items:center;gap:4px;color:#d9343f;background:#fdecee;border:1px solid #f9c5ca;border-radius:6px;padding:1px 6px;margin-inline-start:6px;font-size:11px;font-weight:800;white-space:nowrap;vertical-align:middle;}
+    .la-blink{display:inline-flex;animation:la-blink 1.2s ease-in-out infinite;}
+    @keyframes la-blink{50%{opacity:.25;}}
+    .tab-alarm{display:inline-flex;align-items:center;gap:2px;color:#fff;background:#f96a74;border-radius:8px;padding:0 6px;font-size:10.5px;font-weight:800;}
+    .tab-alarm svg{stroke:#fff;}
     .pool-tabs .count{background:var(--neutral-tint);border-radius:10px;padding:0 7px;font-size:11px;}
     .pp-reason{display:inline-block;background:var(--warning-tint);color:#8a4b08;border-radius:10px;padding:1px 8px;font-size:11.5px;font-weight:700;margin:2px 0 2px 4px;}
     .pool-pp{display:block;font-size:11px;font-weight:700;color:#b45309;margin-top:2px;}
@@ -3897,6 +3902,7 @@ function capTable(loads){
 var root = null, pendingCaret = null;
 function render(){
   if (!root) return;
+  S._seq = (S._seq||0) + 1;
   sendDueReminders();
   extendSeries();
   var ae = document.activeElement, focusK = null, selS = null, selE = null;
@@ -4015,9 +4021,31 @@ function postponedIds(k){ var o = {}, g = poolGroups(k); Object.keys(g).forEach(
 // the lists of a pool: the medical evaluation pool has 7, the other pools المتاحة للحجز + المؤجلات
 var POOL_LISTS = [['av','المتاحة للحجز'],['ppReg','مؤجل مرحلة أولى'],['ppCom','مؤجل لجنة'],['ppMeas','مؤجل تقييم طبي وقياسات'],['noRes','بدون بحث'],['signing','جاري التوقيع'],['excl','استبعاد']];
 function poolListsOf(k){ return k==='measurement' ? POOL_LISTS : [['av','المتاحة للحجز'],['pp','المؤجلات']]; }
+// the list a case belongs to in a pool (null = المتاحة للحجز)
+function caseListOf(type, cid){
+  var g = poolGroups(type), ls = poolListsOf(type);
+  for (var i=1;i<ls.length;i++) if (g[ls[i][0]].some(function(x){ return x.c.id===cid; })) return {key:ls[i][0], label:ls[i][1]};
+  if (g.rej && g.rej.some(function(x){ return x.c.id===cid; })) return {key:'rej', label:'مرفوض من اللجنة'};
+  return null;
+}
+var ALARM_IC = 'M12 9v4 M12 17h.01 M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z';
+function alarmPill(txt, title){ return '<span class="list-alarm"'+(title ? ' title="'+esc(title)+'"' : '')+'><i class="la-blink">'+pathIc(ALARM_IC, 11, null, 2.6)+'</i> '+esc(txt)+'</span>'; }
+// a case in a task that comes from a list other than المتاحة للحجز
+function listAlarm(t, cid){ var l = caseListOf(t.type, cid); return l ? alarmPill(l.label, 'الحالة في قائمة «'+l.label+'» وتمت إضافتها للمهمة رغم ذلك') : ''; }
+function taskListAlarms(t){ return t.candidateIds.filter(function(cid){ return !!caseListOf(t.type, cid); }); }
+// tasks a case is in (to show it in its list: في مهمة / تم الحجز)
+function caseTaskMark(type, cid){
+  var ts = S.tasks.filter(function(t){ return t.type===type && t.candidateIds.indexOf(cid)!==-1; });
+  if (!ts.length) return '';
+  var bk = ts.filter(function(t){ return caseStatus(t, cid).key==='booked'; })[0], t = bk || ts[0];
+  return alarmPill((bk ? 'تم الحجز' : 'في مهمة') + ' – ' + dayLabel(t.dateOffset), locLabelFor(t));
+}
 var POOL_EMPTY = {ppReg:'لا توجد حالات مؤجلة في المرحلة الأولى', ppCom:'لا توجد حالات مؤجلة من اللجنة', ppMeas:'لا توجد حالات مؤجلة في التقييم الطبي والقياسات', noRes:'لا توجد حالات بدون بحث', signing:'لا توجد حالات جاري توقيعها', excl:'لا توجد حالات مستبعدة', pp:'لا توجد حالات مؤجلة'};
+var _pgMemo = {seq:-1, val:{}};
 function poolGroups(k){
-  var g = {};
+  if (_pgMemo.seq!==S._seq) _pgMemo = {seq:S._seq, val:{}};
+  if (_pgMemo.val[k]) return _pgMemo.val[k];
+  var g = _pgMemo.val[k] = {};
   if (k!=='measurement'){ g.pp = postponedFor(k); return g; }
   POOL_LISTS.forEach(function(l){ g[l[0]] = []; }); g.rej = [];
   var seen = {};
@@ -4034,7 +4062,8 @@ function poolGroups(k){
     if (ov==='com_pp' || pr.committee==='مؤجل') return put('ppCom', {tags:['قرار اللجنة'], date:pr.committeeDate || '', untilIso:pr.committeeUntil || ''});
     if (ov==='com_signing' || (jrRealS(pr.sentToCommittee) && (!pr.committee || pr.committee==='-'))) return put('signing', {head:'جاري التوقيع', tags:['أُرسل للجنة'], date:pr.sentToCommittee || '', tail:'في انتظار قرار اللجنة'});
     if (/^meas_pp/.test(ov)) return put('ppMeas', {tags:[ov.split(':')[1] || 'التقييم الطبي'], untilIso:pr.ppUntilMeas || ''});
-    if (pr.fundedNoResearch) return put('noRes', {head:'ممول بدون بحث', tags:[c.funding && c.funding!=='بدون' ? c.funding : 'بدون ممول'], tail:'لم يتم البحث الاجتماعي'});
+    if (pr.nextStep!=='measurement' && typeof pfResearch==='function'){ var rs = pfResearch(c.id, pr);
+      if (!rs.added) return put('noRes', {head:'بدون بحث', tags:[rs.assigned ? 'تم تعيين الباحث' + (rs.researcher ? ': ' + rs.researcher : '') : 'في انتظار الإسناد'], date:rs.assignDate || '', tail:'لم يُضف البحث الاجتماعي'}); }
   });
   return g;
 }
@@ -4162,13 +4191,14 @@ function renderPoolModal(){
   if (isPP && ppR) filtOn = true;
   var filtNote = function(n, tot){ return filtOn ? '<div class="field-hint" style="margin:-4px 0 8px;">'+n+' من '+tot+' حالة · <button class="link-btn"'+A('poolClear')+'>مسح الفلاتر</button></div>' : ''; };
   h += '<div class="pool-tabs">'+lists.map(function(l){ var n = l[0]==='av' ? poolCases(k).length : grp[l[0]].length;
-    return '<button class="'+(S.poolTab===l[0]?'on':'')+'"'+A('setPoolTab', l[0])+'>'+l[1]+' <span class="count">'+n+'</span></button>'; }).join('')+'</div>';
+    var inT = l[0]==='av' ? 0 : grp[l[0]].filter(function(x){ return caseTaskMark(k, x.c.id); }).length;
+    return '<button class="'+(S.poolTab===l[0]?'on':'')+'"'+A('setPoolTab', l[0])+'>'+l[1]+' <span class="count">'+n+'</span>'+(inT ? '<span class="tab-alarm la-blink" title="'+inT+' في مهام">'+pathIc(ALARM_IC, 12, null, 2.6)+inT+'</span>' : '')+'</button>'; }).join('')+'</div>';
   if (isPP){
     h += '<div class="modal-body" data-scroll="poolpp">'+bar+filtNote(pp.length, ppAll.length)+'<table class="cases-table"><thead><tr><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+'<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>'+(/^pp/.test(S.poolTab) ? 'التأجيل' : 'الحالة')+'</th></tr></thead><tbody>';
     pp.forEach(function(x, i){
       var c = x.c;
       h += '<tr><td class="rank-num">'+(i+1)+'</td>'+(hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+
-        '<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
+        '<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+caseTaskMark(k, c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
     return h + '</tbody></table>' + (pp.length ? '' : '<div class="table-empty">'+(filtOn ? 'لا توجد حالات مطابقة للفلاتر' : POOL_EMPTY[S.poolTab])+'</div>') + '</div></div>';
@@ -4272,6 +4302,7 @@ function renderTaskCard(t){
     (t.status==='draft' ? '<span class="draft-badge">مسودة</span>' : '')+
     (full ? '<span class="full-badge">تم اكتمال الحجز المطلوب</span>' : '')+
     (risky ? '<span class="risk-badge">تحتاج إلى تدخل</span>' : '')+
+    (function(){ var n = taskListAlarms(t).length; return n ? alarmPill(String(n), n + ' حالة من قوائم غير المتاحة للحجز') : ''; })()+
     (t.seriesId ? '<span class="rep-badge" title="تتكرر '+esc(taskSeriesText(t))+'">'+ic('history',11)+'</span>' : '')+'</div></div>'+
     '<div class="loc-badge">'+pathIc(t.loc==='convoy'?CONVOY_ICON_PATH:ORG_ICON_PATH,12)+esc(locLabelFor(t))+'</div>'+
     '<div class="book-nums"><span>حجز <b style="color:'+m.color+';">'+booked+'</b> من <b>'+goal+'</b></span></div>'+
@@ -4436,7 +4467,7 @@ function renderAgentFocus(){
   h += '<div class="focus-top"><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+pathIc(m.iconPath,13,m.color)+m.label+'</span>'+
     (x.prio ? '<span class="prio-badge">★ أولوية اتصال</span>' : '')+(x.group==='other' || x.st.key==='standbyUp' ? statusTag(x.st) : '')+
     (x.group==='full' ? '<span class="standby-tag">اكتملت المهمة – سجّل احتياطيًا</span>' : '')+'</div>';
-  h += '<div class="focus-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span>'+noShowBadge(cid)+profBtn(cid)+'</div>';
+  h += '<div class="focus-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span>'+noShowBadge(cid)+listAlarm(t, cid)+profBtn(cid)+'</div>';
   h += '<div class="focus-phone">'+phoneChip(c)+sendInfoBtns(t, cid)+'</div>';
   h += '<div class="focus-grid">'+
     '<div><span>الموعد</span><b>'+dayLabel(t.dateOffset)+(t.dateOffset===todayOffset() ? ' (اليوم)' : '')+'</b></div>'+
@@ -4894,15 +4925,16 @@ function renderAddCases(){
     (fOn ? '<div class="cff cff-end"><button class="link-btn"'+A('clearFilters')+'>مسح الفلاتر</button></div>' : ''), ctx.loc==='convoy');
   var list = filteredCases();
   h += '<div class="pool-tabs" style="padding:0;margin-bottom:12px;">'+lists.map(function(l){ var on = l[0]==='av' ? !S.addCasesPP : S.addCasesPP===l[0];
-    return '<button class="'+(on?'on':'')+'"'+A('setAddCasesPP', l[0])+'>'+l[1]+' <span class="count">'+(l[0]==='av' ? list.length : grp[l[0]].length)+'</span></button>'; }).join('')+'</div>';
+    var pk = l[0]==='av' ? 0 : grp[l[0]].filter(function(x){ return sel.indexOf(x.c.id)!==-1; }).length;
+    return '<button class="'+(on?'on':'')+'"'+A('setAddCasesPP', l[0])+'>'+l[1]+' <span class="count">'+(l[0]==='av' ? list.length : grp[l[0]].length)+'</span>'+(pk ? '<span class="tab-alarm la-blink" title="'+pk+' محددة للمهمة">'+pathIc(ALARM_IC, 12, null, 2.6)+pk+'</span>' : '')+'</button>'; }).join('')+'</div>';
   h += bar;
   if (S.addCasesPP){
     h += '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:420px;" data-scroll="pptbl"><table class="cases-table"><thead><tr><th style="width:34px;"></th><th>#</th>'+(hasCode ? '<th>الكود</th>' : '')+
       '<th>الاسم</th><th>المحافظة</th><th>السن</th><th>مستوى البتر</th><th>الممول</th><th>'+(/^pp/.test(S.addCasesPP) ? 'التأجيل' : 'الحالة')+'</th></tr></thead><tbody>';
     pp.forEach(function(x, i){
       var c = x.c, on = sel.indexOf(c.id)!==-1;
-      h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+A('toggleCaseSel', c.id)+' title="استثناء – ضمها للمهمة"/></td><td class="rank-num">'+(i+1)+'</td>'+
-        (hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+'<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
+      h += '<tr'+(on?' class="row-on"':'')+'><td><input type="checkbox"'+(on?' checked':'')+A('toggleCaseSel', c.id)+' title="إضافة للمهمة"/></td><td class="rank-num">'+(i+1)+'</td>'+
+        (hasCode ? '<td dir="ltr" style="text-align:right;font-weight:700;">'+(c.code||'—')+'</td>' : '')+'<td style="font-weight:700;">'+esc(c.name)+profBtn(c.id)+(on ? alarmPill('محددة للمهمة') : caseTaskMark(ctx.type, c.id))+'</td><td>'+esc(c.gov)+'</td><td>'+c.age+'</td><td>'+esc(c.level)+'</td>'+
         '<td>'+(c.funding && c.funding!=='بدون' ? esc(c.funding) : '<span class="field-hint" style="margin:0;">غير ممولة</span>')+'</td>'+
         '<td class="pp-td">'+ppCell(x)+'</td></tr>';
     });
@@ -4941,7 +4973,7 @@ function renderCaseRow(t, cid){
   var isPrio = !!(t.priority && t.priority[cid]);
   if (admin && open) h += prioStar(isPrio, 'togglePrioTask', t.id+'|'+cid);
   else if (isPrio) h += '<span class="prio-txt">★</span>';
-  h += '<span class="case-code" dir="ltr">'+c.code+'</span><span class="case-name">'+esc(c.name)+'</span>'+(isPrio ? '<span class="prio-badge">أولوية اتصال</span>' : '')+noShowBadge(cid)+'</div>'+profBtn(cid)+
+  h += '<span class="case-code" dir="ltr">'+c.code+'</span><span class="case-name">'+esc(c.name)+'</span>'+(isPrio ? '<span class="prio-badge">أولوية اتصال</span>' : '')+noShowBadge(cid)+listAlarm(t, cid)+'</div>'+profBtn(cid)+
     '<div class="case-sub">'+c.gov+' · '+c.age+' سنة · '+c.level+'</div></div>'+(caseHoldLabel(cid) ? '<span class="hold-badge big">'+ic('lock',11)+esc(caseHoldLabel(cid))+'</span>' : statusTag(st))+'</div>';
   h += '<div class="case-meta">'+phoneChip(c)+'<span class="meta-sep">|</span>';
   if (isSupervisor() && t.status==='published' && open){
@@ -5006,7 +5038,7 @@ function renderConfirmedCard(key){
 function renderConfirmRow(x){
   var t = x.t, cid = x.cid, c = caseById(cid), m = TASK_TYPES[t.type], key = nextCallKey(t.id, cid);
   return '<div class="q-item'+(x.later?' later':'')+'"><div class="bar" style="background:#15803d;"></div><div class="confirm-row">'+
-    '<div><div class="q-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span>'+noShowBadge(cid)+profBtn(cid)+'</div><div class="q-line">'+phoneChip(c)+'</div></div>'+
+    '<div><div class="q-name">'+esc(c.name)+' <span class="case-code" dir="ltr">'+c.code+'</span>'+noShowBadge(cid)+listAlarm(t, cid)+profBtn(cid)+'</div><div class="q-line">'+phoneChip(c)+'</div></div>'+
     '<div><span class="task-chip" style="background:'+m.tint+';color:'+m.color+';">'+m.short+'</span><div class="q-line">'+dayLabel(t.dateOffset)+' · '+esc(locLabelFor(t))+'</div>'+
     '<div class="q-line">'+ic('user',11)+' '+esc(agentName(confirmOwner(t, cid)))+'</div></div>'+
     '<div>'+(x.cf && x.cf.status==='noAnswer' ? '<span class="next-call">'+ic('clock',12)+' لم يرد · مجددًا '+fmtTime(x.cf.nextAt)+'</span>' : '<span class="status-tag">لم يتم</span>')+'</div>'+
@@ -9383,12 +9415,14 @@ loadProfiles(); applyProfiles();
     {committee:'مؤجل', committeeDate:isoDate(-3), committeeUntil:'', sentToCommittee:isoDate(-12)},
     {committee:'-', sentToCommittee:isoDate(-4)},
     {committee:'-', sentToCommittee:isoDate(-2)},
-    {fundedNoResearch:true},
-    {fundedNoResearch:true},
+    {committee:'-', researchDate:'', assignDate:isoDate(-5)},
+    {committee:'-', researchDate:'', assignDate:''},
     {statusOverride:'excluded'},
     {statusOverride:'meas_pp:عملية جراحية', ppUntilMeas:isoDate(25)}
   ];
-  if (done) return;
+  var D2 = 'hih_pool_lists_seed_v2', done2 = false; try { done2 = !!localStorage.getItem(D2); localStorage.setItem(D2, '1'); } catch(e){}
+  if (done && !done2){ plan = plan.slice(4, 6); }            // a browser seeded before: only the new «بدون بحث» samples
+  else if (done) return;
   plan.forEach(function(x){ var c = av[i++]; if (!c) return; c.pf = Object.assign(c.pf || {}, x); Object.assign(profileOf(c.id), x); });
   saveProfiles();
   try { localStorage.setItem(SEED_KEY, '1'); } catch(e){}
