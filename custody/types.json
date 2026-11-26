@@ -27,6 +27,7 @@
         "plural": "الموبايلات",
         "icon": "fa-mobile",
         "prefix": "MB",
+        "active": false,
         "name": ["brand", "model"],
         "fields": [
             {"key": "brand", "label": "الماركة", "required": true, "suggest": ["Samsung", "Apple", "Xiaomi", "Oppo", "Realme", "Honor", "Huawei", "Infinix", "Vivo", "Nokia"]},
@@ -47,6 +48,7 @@
         "plural": "الشرائح",
         "icon": "fa-signal",
         "prefix": "SM",
+        "active": false,
         "name_prefix": "خط",
         "name": ["brand"],
         "fields": [
@@ -68,6 +70,7 @@
         "plural": "ماكينات POS",
         "icon": "fa-credit-card",
         "prefix": "POS",
+        "active": false,
         "name": ["brand", "model"],
         "fields": [
             {"key": "brand", "label": "الماركة", "required": true, "suggest": ["PAX", "Verifone", "Ingenico", "Sunmi", "Newland", "Castles", "Nexgo", "Telpo", "Urovo"]},

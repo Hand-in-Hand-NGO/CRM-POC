@@ -1,7 +1,7 @@
 /* نسخة تجريبية: بديل api.php يعمل داخل المتصفح ويحفظ البيانات في localStorage */
 (function ($) {
     'use strict';
-    var KEY = 'custody-demo-v3';
+    var KEY = 'custody-demo-v4';
     var SESSION_IDLE = 21600, SESSION_WARN = 300;   // نفس session_minutes و session_warn_minutes
     var SCAN_LIMITS = { file_mb: 15, total_mb: 60, files: 20 };
     var TYPES = window.CUSTODY_TYPES;   // نفس custody/types.json، يضمّنه build.py
@@ -51,51 +51,32 @@
         var L = function (brand, model, sn, cpu, ram, st, size, screen, os, acc, value) {
             return ['laptop', { brand: brand, model: model, serial_no: sn, cpu: cpu, ram: ram, storage_type: st, storage: size, screen: screen, os: os, accessories: acc }, value];
         };
-        var M = function (brand, model, imei, imei2, storage, ram, color, acc, value) {
-            return ['mobile', { brand: brand, model: model, serial_no: imei, imei2: imei2, storage: storage, ram: ram, color: color, accessories: acc }, value];
-        };
-        var SIM = function (num, net, lineType, format, pkg, fee, data) {
-            return ['sim', { serial_no: num, brand: net, line_type: lineType, sim_format: format, package: pkg, monthly_fee: fee, data_quota: data, owner: 'الجمعية' }, 0];
-        };
         [L('Dell', 'Latitude 5420', 'DL5420-778', 'Core i5', '16GB', 'SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة', 'ماوس'], 25000),
          L('Lenovo', 'ThinkPad E14', 'LN-E14-221', 'Core i7', '16GB', 'NVMe SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة'], 27000),
          L('HP', 'ProBook 450 G9', 'HP450-993', 'Core i5', '8GB', 'SSD', '256GB', '15.6 بوصة', 'Windows 10 Pro', ['شاحن'], 21000),
          L('Apple', 'MacBook Air', 'C02XK1ABCD', 'Apple M2', '8GB', 'SSD', '256GB', '13.3 بوصة', 'macOS', ['شاحن'], 48000),
          L('Asus', 'VivoBook 15', 'ASV15-3321', 'Ryzen 5', '8GB', 'SSD', '512GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن', 'ماوس'], 19000),
-         M('Samsung', 'Galaxy A15', '356789012345678', '356789012345679', '128GB', '6GB', 'أسود', ['شاحن', 'كابل', 'جراب', 'اسكرينة'], 9000),
-         M('Samsung', 'Galaxy A25', '356789012399911', '356789012399912', '256GB', '8GB', 'أزرق', ['شاحن', 'جراب'], 11500),
-         M('Xiaomi', 'Redmi 13', '868123456789012', '', '128GB', '8GB', 'أسود', ['شاحن', 'كابل'], 7500),
-         M('Apple', 'iPhone 13', '353912110000001', '', '128GB', '4GB', 'أبيض', ['كابل', 'العلبة'], 32000),
-         M('Oppo', 'A78', '862100000000044', '862100000000045', '256GB', '8GB', 'أخضر', [], 10500),
-         SIM('01099887766', 'فودافون', 'فاتورة', 'شريحة عادية', 'فليكس 100', '100', '10GB'),
-         SIM('01288776655', 'أورانج', 'فاتورة', 'شريحة عادية', 'بريميوم 150', '150', '20GB'),
-         SIM('01155443322', 'اتصالات', 'كارت', 'شريحة عادية', '', '', '5GB'),
-         SIM('01022334455', 'فودافون', 'فاتورة', 'eSIM', 'ريد 300', '300', 'غير محدود'),
-         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB'),
-         SIM('01066778899', 'فودافون', 'فاتورة', 'شريحة عادية', 'بيانات POS', '50', '5GB'),
-         ['pos', { brand: 'PAX', model: 'A920 Pro', serial_no: '1850012345', provider: 'البنك الأهلي المصري', tid: '00012345', mid: '000987654321', connection: ['شريحة SIM', 'Wi-Fi'], accessories: ['شاحن', 'رول ورق'] }, 14500],
-         ['pos', { brand: 'Verifone', model: 'V240m', serial_no: '402-118-907', provider: 'جيديا Geidea', tid: '00067890', mid: '000123456789', connection: ['شريحة SIM'], accessories: ['شاحن', 'جراب'] }, 12000]
+         L('Dell', 'Vostro 3520', 'DV3520-104', 'Core i3', '8GB', 'SSD', '256GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن'], 17500),
+         L('Lenovo', 'IdeaPad 3', 'LN-IP3-558', 'Ryzen 5', '8GB', 'SSD', '512GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن', 'شنطة'], 18500),
+         L('HP', 'EliteBook 840 G8', 'HP840-3310', 'Core i7', '16GB', 'NVMe SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة', 'دوك ستيشن'], 34000),
+         L('Acer', 'Aspire 5', 'AC-A5-7781', 'Core i5', '8GB', 'SSD', '512GB', '15.6 بوصة', 'Windows 11 Home', ['شاحن'], 19500),
+         L('Dell', 'Latitude 7430', 'DL7430-221', 'Core i7', '32GB', 'NVMe SSD', '1TB', '14 بوصة', 'Windows 11 Pro', ['شاحن', 'شنطة', 'ماوس', 'سماعة'], 42000),
+         L('Lenovo', 'ThinkPad T14', 'LN-T14-090', 'Core i5', '16GB', 'NVMe SSD', '512GB', '14 بوصة', 'Windows 11 Pro', ['شاحن'], 31000),
+         L('HP', '250 G9', 'HP250-6621', 'Core i3', '8GB', 'SSD', '256GB', '15.6 بوصة', 'Windows 10 Pro', [], 15000)
         ].forEach(function (x, i) {
             A['items.save']({ type: x[0], specs: x[1], value: x[2] || '', purchase_date: today(-300 + i * 9), item_condition: i % 5 === 0 ? 'جديد' : 'جيد', location: 'المخزن الرئيسي' });
         });
-        // ربط شرائح بماكينات POS (الشريحة الواحدة بجهاز واحد بس)
-        A['items.save']($.extend(editable(17), { specs: $.extend({}, byId('items', 17).specs, rawCols(17), { sim_item_id: 16 }) }));
-        A['items.save']($.extend(editable(18), { specs: $.extend({}, byId('items', 18).specs, rawCols(18), { sim_item_id: 15 }) }));
-        var h1 = assign(1, [{ item_id: 1 }, { item_id: 6 }, { item_id: 11 }], today(-40), 'عهدة بداية العمل');
-        sign(h1, 'أحمد محمد عبد الله');
-        var h2 = assign(5, [{ item_id: 3 }, { item_id: 8 }, { item_id: 12 }], today(-25), '');
-        sign(h2, 'محمود السيد');
-        var h3 = assign(4, [{ item_id: 2 }, { item_id: 7 }, { item_id: 14 }], today(-12), '');
-        sign(h3, 'سارة إبراهيم');
-        var h4 = assign(7, [{ item_id: 4 }], today(-8), '');
-        sign(h4, 'عمرو فتحي');
-        assign(2, [{ item_id: 5 }, { item_id: 13 }], today(-3), '');
+        sign(assign(1, [{ item_id: 1 }], today(-40), 'عهدة بداية العمل'), 'أحمد محمد عبد الله');
+        sign(assign(5, [{ item_id: 3 }], today(-25), ''), 'محمود السيد');
+        sign(assign(4, [{ item_id: 2 }, { item_id: 6 }], today(-12), 'جهاز تاني للتدريب الميداني'), 'سارة إبراهيم');
+        sign(assign(7, [{ item_id: 4 }], today(-8), ''), 'عمرو فتحي');
+        assign(2, [{ item_id: 5 }], today(-3), '');
+        assign(3, [{ item_id: 10 }], today(-1), '');
         // سند عليه إقرار ورقي موقّع (Scan) بدل التوقيع الإلكتروني
-        var h5 = assign(6, [{ item_id: 17 }, { item_id: 16 }], today(-6), 'ماكينة الاستقبال');
+        var h5 = assign(6, [{ item_id: 8 }], today(-6), 'جهاز الاستقبال');
         storeScan(h5, { signed_on: today(-5), notes: 'اتعمل Scan من النسخة الورقية', source: 'images', pages: 1,
             originals: [{ name: 'iqrar-page1.jpg', mime: 'image/jpeg', size: 182000 }] }, samplePdf(byId('handovers', h5)));
-        assign(3, [{ item_id: 10 }], today(-1), '');
-        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 7; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
+        var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 6; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
         sign(r, 'سارة إبراهيم');
         DB.log = [];
         log('إنشاء البيانات التجريبية', null, null, '');
@@ -160,6 +141,12 @@
     function ackText(ackAt, paperOn) {
         if (ackAt && paperOn) return 'موقّع إلكترونيًا وورقيًا';
         return ackAt ? 'موقّع إلكترونيًا' : (paperOn ? 'موقّع ورقيًا' : 'بانتظار التوقيع');
+    }
+    // نفس serial_heading في lib.php
+    function serialHeading(types) {
+        var out = [];
+        types.forEach(function (t) { (TYPES[t] ? TYPES[t].fields : []).forEach(function (f) { if (f.key === 'serial_no' && out.indexOf(f.label) < 0) out.push(f.label); }); });
+        return out.join(' / ') || 'الرقم التسلسلي';
     }
     function userName(id) { return (byId('users', id) || {}).name || null; }
     function docNo(type, id, date) { return (type === 'out' ? 'TS' : 'RT') + '-' + date.slice(0, 4) + '-' + pad(id, 5); }
@@ -311,6 +298,8 @@
 
     // ------------------------------------------------------------ actions
     var A = {};
+    // نفس active_types(): "active": false في types.json بيوقف النوع
+    function activeTypes() { var o = {}; Object.keys(TYPES).forEach(function (t) { if (TYPES[t].active !== false) o[t] = TYPES[t]; }); return o; }
     function sessUser() { var s = DB.sess || {}; var u = s.uid ? byId('users', s.uid) : null; return u && +u.active ? u : null; }
     function sessionInfo() {
         var u = sessUser(), ended = (DB.sess || {}).ended;
@@ -321,7 +310,8 @@
         var u = sessUser(), imp = u && DB.sess.imp ? byId('users', DB.sess.imp) : null;
         return { user: u ? { id: u.id, username: u.username, name: u.name, role: u.role, must_change: 0 } : null,
             impersonator: imp ? { id: imp.id, name: imp.name } : null, csrf: 'demo', session: sessionInfo(),
-            app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand', statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES, scan_limits: SCAN_LIMITS };
+            app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand', statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES, scan_limits: SCAN_LIMITS,
+            active_types: Object.keys(activeTypes()), used_types: Object.keys(TYPES).filter(function (t) { return activeTypes()[t] || DB.items.some(function (i) { return i.type === t; }); }) };
     };
     A['auth.session'] = function () {
         var u = sessUser();
@@ -459,6 +449,7 @@
         if (id && !old) fail('الصنف غير موجود', 404);
         var type = old ? old.type : str(p.type, 16);
         if (!TYPES[type]) fail('اختر نوع الصنف');
+        if (!old && !activeTypes()[type]) fail('نوع «' + TYPES[type].label + '» متوقف حاليًا، ومينفعش تضيف أصناف جديدة منه');
         var tf = readTypeFields(type, p.specs || {});
         var row = $.extend({}, tf.cols, { code: str(p.code, 64), type: type, name: tf.name, specs: tf.specs,
             purchase_date: str(p.purchase_date, 10) || null, value: p.value === '' || p.value === undefined || p.value === null ? null : Math.round(+p.value * 100) / 100,
@@ -550,7 +541,7 @@
 
     A.export = function (p) {
         var def = TYPES[p.type];
-        var specHeads = def ? def.fields.map(function (f) { return f.label; }) : ['النوع', 'الرقم التسلسلي / IMEI / رقم الخط', 'المواصفات', 'الملحقات'];
+        var specHeads = def ? def.fields.map(function (f) { return f.label; }) : ['النوع', serialHeading(A['auth.me']().used_types), 'المواصفات', 'الملحقات'];
         var specCells = function (r) {
             if (!def) return [r.type_label, r.serial_no, r.specs_text, r.accessories_text];
             return def.fields.map(function (f) { var v = r.specs[f.key]; return $.isArray(v) ? v.join('، ') : (v || ''); });
@@ -819,7 +810,7 @@
             else {
                 var v = handoverView(h.id, true), e = esc;
                 body = '<div class="sign-info"><div><span class="info-label">الموظف:</span> <b>' + e(v.employee_name) + '</b></div><div><span class="info-label">القسم:</span> ' + e(v.department || '-') +
-                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead><tbody>' +
+                    '</div><div><span class="info-label">التاريخ:</span> <span class="d">' + v.doc_date + '</span></div></div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>الصنف</th><th>' + e(serialHeading(v.items.map(function (i) { return i.type; }))) + '</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead><tbody>' +
                     v.items.map(function (it, n) { return '<tr><td>' + (n + 1) + '</td><td>' + e(it.name) + '<br><small class="info-label">' + e(it.type_label + ' — ' + it.code) + '</small></td><td>' + e(it.serial_no || '-') + '</td><td class="details-cell">' + detailsHtml(it) + '</td><td>' + e(v.type === 'out' ? it.condition_out : it.condition_in) + '</td></tr>'; }).join('') +
                     '</tbody></table></div><div class="sign-terms">' + (v.type === 'out' ? TERMS_OUT : TERMS_IN) + '</div>';
                 if (v.ack_at) {
@@ -885,7 +876,7 @@
             '</td><td><span class="info-label">الرقم القومي:</span> ' + e(emp.national_id || '-') + '</td></tr><tr><td><span class="info-label">القسم:</span> ' + e(emp.department || '-') + '</td><td colspan="2"><span class="info-label">الوظيفة:</span> ' + e(emp.job_title || '-') + '</td></tr></table>';
         if (items.length) {
             var total = 0;
-            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>القيمة</th>' +
+            html += '<table class="table table-bordered table-condensed sheet-items"><thead><tr><th>#</th><th>كود الأصل</th><th>الصنف</th><th>' + e(serialHeading(items.map(function (i) { return i.type; }))) + '</th><th>المواصفات والملحقات</th><th>القيمة</th>' +
                 (h ? '<th>الحالة</th><th>ملاحظات</th>' : '<th>تاريخ التسليم</th><th>رقم السند</th>') + '</tr></thead><tbody>' +
                 items.map(function (it, n) {
                     total += +it.value || 0;

@@ -80,7 +80,7 @@ page_head($title);
     <table class="table table-bordered table-condensed sheet-items">
         <thead>
         <tr>
-            <th>#</th><th>كود الأصل</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>القيمة</th>
+            <th>#</th><th>كود الأصل</th><th>الصنف</th><th><?= h(serial_heading(array_column($items, 'type'))) ?></th><th>المواصفات والملحقات</th><th>القيمة</th>
             <?php if ($h): ?><th>الحالة</th><th>ملاحظات</th><?php else: ?><th>تاريخ التسليم</th><th>رقم السند</th><?php endif; ?>
         </tr>
         </thead>

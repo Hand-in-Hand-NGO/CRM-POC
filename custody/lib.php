@@ -469,6 +469,41 @@ function asset_types()
     return $types;
 }
 
+// الأنواع المفعّلة. "active": false في types.json بيوقف إضافة أصناف جديدة من النوع ويخفيه من الواجهة
+function active_types()
+{
+    return array_filter(asset_types(), function ($def) {
+        return $def['active'] ?? true;
+    });
+}
+
+// الأنواع المفعّلة + أي نوع متوقف لسه عليه أصناف متسجلة، علشان بياناته ماتختفيش
+function used_types()
+{
+    static $used = null;
+    if ($used === null) {
+        $present = array_column(q_all('SELECT DISTINCT type FROM items'), 'type');
+        $used = array_filter(asset_types(), function ($def, $t) use ($present) {
+            return ($def['active'] ?? true) || in_array($t, $present, true);
+        }, ARRAY_FILTER_USE_BOTH);
+    }
+    return $used;
+}
+
+// عنوان عمود المعرّف حسب الأنواع، مثل "الرقم التسلسلي (S/N)" أو "الرقم التسلسلي (S/N) / IMEI 1"
+function serial_heading(array $typeKeys)
+{
+    $labels = [];
+    foreach (array_unique($typeKeys) as $t) {
+        foreach (asset_types()[$t]['fields'] ?? [] as $f) {
+            if ($f['key'] === 'serial_no') {
+                $labels[$f['label']] = true;
+            }
+        }
+    }
+    return $labels ? implode(' / ', array_keys($labels)) : 'الرقم التسلسلي';
+}
+
 function type_label($type)
 {
     return asset_types()[$type]['label'] ?? $type;

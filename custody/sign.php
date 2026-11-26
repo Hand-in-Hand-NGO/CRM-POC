@@ -66,7 +66,7 @@ page_head('توقيع سند العهدة');
 
             <div class="table-scroll">
             <table class="table table-bordered table-condensed">
-                <thead><tr><th>#</th><th>الصنف</th><th>S/N / IMEI / رقم الخط</th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead>
+                <thead><tr><th>#</th><th>الصنف</th><th><?= h(serial_heading(array_column($items, 'type'))) ?></th><th>المواصفات والملحقات</th><th>الحالة</th></tr></thead>
                 <tbody>
                 <?php foreach ($items as $n => $it): ?>
                     <tr>

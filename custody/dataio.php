@@ -40,7 +40,7 @@ function dx_spec()
         $ro('active_count', 'أصناف في عهدته', 14, 'number'),
         $ro('created_at', 'تاريخ الإضافة', 18),
     ]];
-    foreach (asset_types() as $t => $def) {
+    foreach (used_types() as $t => $def) {
         $cols = [['key' => 'code', 'title' => 'كود الأصل', 'width' => 14, 'ltr' => true, 'max' => 64,
             'help' => 'فاضي = بيتولد تلقائيًا (' . $def['prefix'] . '-00001). لو كتبته لازم مايتكررش. الصنف الموجود بيتعرف بالكود أو بالرقم التسلسلي']];
         foreach ($def['fields'] as $f) {
@@ -130,7 +130,7 @@ function dx_export_rows()
     }, q_all("SELECT e.*, (SELECT COUNT(*) FROM custody c WHERE c.employee_id = e.id AND c.in_handover_id IS NULL) AS active_count
         FROM employees e ORDER BY e.code, e.name"));
     $codes = array_column(q_all('SELECT id, code FROM items'), 'code', 'id');
-    foreach (asset_types() as $t => $def) {
+    foreach (used_types() as $t => $def) {
         $rows = decorate_items(q_all("SELECT i.*, e.name AS holder_name, e.code AS holder_code FROM items i
             LEFT JOIN custody c ON c.item_id = i.id AND c.in_handover_id IS NULL LEFT JOIN employees e ON e.id = c.employee_id
             WHERE i.type = ? ORDER BY i.code", [$t]));
@@ -652,7 +652,7 @@ function dx_plan(array $data, $mode)
     }
     $seenICode = $seenSerial = [];
     $pendingRefs = [];
-    foreach (asset_types() as $t => $def) {
+    foreach (used_types() as $t => $def) {
         $key = 'items:' . $t;
         $C = dx_cols_by_key($key);
         $serialLabel = $C['serial_no']['field']['label'];
@@ -751,6 +751,10 @@ function dx_plan(array $data, $mode)
             }
             $label = [$code !== '' ? $code : ($ex['code'] ?? $serial), item_name($t, $cols + ['brand' => $ex['brand'] ?? '', 'model' => $ex['model'] ?? ''], $specs)];
             if (!$ex) {
+                if (!isset(active_types()[$t])) {
+                    $P->err($key, $n, $code !== '' ? 'code' : 'serial_no', 'نوع «' . $def['label'] . '» متوقف حاليًا، ومينفعش تضيف أصناف جديدة منه. تقدر تعدّل الموجود بس');
+                    continue;
+                }
                 if ($v['status'] === 'مسلمة') {
                     $P->err($key, $n, 'status', 'الوضع «مسلمة» بيتحدد لوحده لما الصنف يتسلّم من ورقة العهد. اكتب «متاحة» أو سيبه فاضي');
                     continue;

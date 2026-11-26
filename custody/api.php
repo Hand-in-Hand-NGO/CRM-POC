@@ -225,6 +225,9 @@ function save_item()
     if (!isset(asset_types()[$type])) {
         fail('اختر نوع الصنف');
     }
+    if (!$old && !isset(active_types()[$type])) {
+        fail('نوع «' . type_label($type) . '» متوقف حاليًا، ومينفعش تضيف أصناف جديدة منه');
+    }
     [$cols, $specs, $name] = read_type_fields($type);
     $value = in('value');
     $row = array_merge($cols, [
@@ -715,6 +718,8 @@ function handle($action)
                 'roles' => ROLES,
                 'today' => today(),
                 'types' => asset_types(),
+                'active_types' => array_keys(active_types()),
+                'used_types' => array_keys(used_types()),
                 'scan_limits' => ['file_mb' => cfg('scan_max_file_mb'), 'total_mb' => cfg('scan_max_total_mb'), 'files' => cfg('scan_max_files')],
             ];
 
@@ -1103,7 +1108,7 @@ function handle($action)
             $what = in('what');
             // عند تحديد نوع (لاب توب / موبايل / شريحة) تُصدَّر كل حقوله في أعمدة منفصلة
             $typeDef = asset_types()[in_str('type', 16)] ?? null;
-            $specHeads = $typeDef ? array_column($typeDef['fields'], 'label') : ['النوع', 'الرقم التسلسلي / IMEI / رقم الخط', 'المواصفات', 'الملحقات'];
+            $specHeads = $typeDef ? array_column($typeDef['fields'], 'label') : ['النوع', serial_heading(array_keys(used_types())), 'المواصفات', 'الملحقات'];
             $specCells = function ($r) use ($typeDef) {
                 if (!$typeDef) {
                     return [$r['type_label'], $r['serial_no'], $r['specs_text'], $r['accessories_text']];

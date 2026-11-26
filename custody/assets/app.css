@@ -234,3 +234,5 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
 .dx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; }
 .dx-agree { flex-basis: 100%; margin: 0; }
 @media (max-width: 900px) { .dx-cards { grid-template-columns: 1fr; } }
+
+.dash-grid.single { grid-template-columns: 1fr; }

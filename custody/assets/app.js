@@ -86,6 +86,12 @@
     // ---------- أنواع الأصناف (types.json): لاب توب / موبايل / شريحة
 
     function typeKeys() { return Object.keys(S.meta.types); }
+    // الأنواع المفعّلة (للإضافة والتسليم)، والمستخدمة = المفعّلة + المتوقفة اللي لسه عليها أصناف
+    function activeKeys() { return S.meta.active_types || typeKeys(); }
+    function usedKeys() { return S.meta.used_types || typeKeys(); }
+    function multiType() { return usedKeys().length > 1; }
+    function typeTh() { return multiType() ? '<th>النوع</th>' : ''; }
+    function typeTd(r) { return multiType() ? '<td>' + typeBadge(r) + '</td>' : ''; }
     function typeDef(t) { return S.meta.types[t]; }
     function fieldOf(t, key) { return typeDef(t).fields.filter(function (f) { return f.key === key; })[0]; }
 
@@ -118,7 +124,10 @@
         return html || '-';
     }
 
-    function keyLabel(t) { return t ? fieldOf(t, 'serial_no').label : 'S/N / IMEI / رقم الخط'; }
+    function keyLabel(t) {
+        if (t) return fieldOf(t, 'serial_no').label;
+        return usedKeys().map(function (k) { return fieldOf(k, 'serial_no').label; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' / ');
+    }
 
     function datalist(id, list) {
         return '<datalist id="' + id + '">' + list.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
@@ -233,14 +242,23 @@
         // تبويبات النوع: تعرض في الجدول أصناف النوع المختار فقط بأعمدته الخاصة
         var tab = cfg.tabs ? (S.tabs[cfg.action] || '') : '';
 
+        // الأنواع الظاهرة: المفعّلة + أي نوع موجود في البيانات. لو نوع واحد بس، مفيش تبويبات والجدول بأعمدته على طول
+        function visibleTypes() {
+            return typeKeys().filter(function (t) { return activeKeys().indexOf(t) >= 0 || all.some(function (r) { return r.type === t; }); });
+        }
+
         function drawTabs() {
             if (!cfg.tabs) return;
+            var vis = visibleTypes();
+            if (vis.length === 1) { tab = vis[0]; $c.find('.type-tabs').hide(); return; }
+            if (tab && vis.indexOf(tab) < 0) tab = '';
+            $c.find('.type-tabs').show();
             var count = function (t) { return all.filter(function (r) { return !t || r.type === t; }).length; };
             var btn = function (t, icon, label) {
                 return '<button type="button" class="btn btn-lg btn-default' + (tab === t ? ' active tab-' + (t || 'all') : '') + '" data-tab="' + t + '"><i class="fa ' + icon + '"></i> ' +
                     esc(label) + ' <span class="badge">' + count(t) + '</span></button>';
             };
-            $c.find('.type-tabs').html(btn('', 'fa-th-large', 'الكل') + typeKeys().map(function (t) { return btn(t, typeDef(t).icon, typeDef(t).plural); }).join(''));
+            $c.find('.type-tabs').html(btn('', 'fa-th-large', 'الكل') + vis.map(function (t) { return btn(t, typeDef(t).icon, typeDef(t).plural); }).join(''));
         }
 
         function draw() {
@@ -322,7 +340,8 @@
             };
             var html = '<div class="page-head"><h3><i class="fa fa-dashboard"></i> لوحة المتابعة</h3><div class="page-actions">' +
                 (canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '') + '</div></div>';
-            html += '<div class="type-kpis">' + typeKeys().map(function (t) {
+            var dashTypes = typeKeys().filter(function (t) { return activeKeys().indexOf(t) >= 0 || d.by_type.some(function (x) { return x.type === t && x.total > 0; }); });
+            if (dashTypes.length > 1) html += '<div class="type-kpis">' + dashTypes.map(function (t) {
                 var r = d.by_type.filter(function (x) { return x.type === t; })[0] || { total: 0, assigned: 0, available: 0 };
                 return '<a class="type-kpi type-' + t + '" href="#custody" data-tab-link="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i><div><b>' + esc(typeDef(t).plural) + '</b>' +
                     '<span>' + r.assigned + ' في العهدة · ' + r.available + ' متاحة · ' + r.total + ' إجمالي</span></div></a>';
@@ -337,8 +356,8 @@
                 kpi(d.employees_with_custody, 'موظفين لديهم عهدة', 'fa-users', '#employees') +
                 kpi(money(d.active_value), 'قيمة العهد القائمة', 'fa-money', '#custody') +
                 '</div>';
-            html += '<div class="dash-grid">';
-            html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب النوع</div>' + barTable(d.by_type.map(function (c) {
+            html += '<div class="dash-grid' + (dashTypes.length > 1 ? '' : ' single') + '">';
+            if (dashTypes.length > 1) html += '<div class="vs-chart-card"><div class="vs-group-label">الأصناف حسب النوع</div>' + barTable(d.by_type.map(function (c) {
                 return { name: c.name, value: +c.total, part: +c.assigned, note: c.assigned + ' في العهدة · ' + c.available + ' متاحة' };
             })) + '</div>';
             html += '<div class="vs-chart-card"><div class="vs-group-label">العهد القائمة حسب القسم</div>' + barTable(d.by_department.map(function (c) {
@@ -371,7 +390,7 @@
             title: 'العهد', icon: 'fa-exchange', action: 'custody.list', tabs: true,
             actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '',
             filters:
-                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / IMEI / رقم خط / TID / MID / سند" style="width:300px"> ' +
+                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / رقم تسلسلي / رقم سند" style="width:300px"> ' +
                 '<select class="form-control" name="state"><option value="active">العهد القائمة</option><option value="returned">تم ارتجاعها</option><option value="all">الكل</option></select> ' +
                 '<select class="form-control" name="department">' + options(S.lookups.departments, '', 'كل الأقسام') + '</select> ' +
                 '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع (أي توقيع)</option><option value="esign">موقّع إلكترونيًا</option><option value="paper">موقّع ورقيًا</option><option value="pending">بانتظار التوقيع</option></select> ' +
@@ -436,11 +455,11 @@
     views.items = function () {
         current = listView({
             title: 'الأصناف والأصول', icon: 'fa-cubes', action: 'items.list', tabs: true,
-            actions: canEdit() ? typeKeys().map(function (t) {
+            actions: canEdit() ? activeKeys().map(function (t) {
                 return '<button class="btn btn-primary btn-action" data-act="item-edit" data-type="' + t + '"><i class="fa fa-plus"></i> إضافة ' + esc(typeDef(t).label) + '</button>';
             }).join(' ') : '',
             filters:
-                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / سيريال / IMEI / رقم خط / TID / MID" style="width:300px"> ' +
+                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / رقم تسلسلي" style="width:300px"> ' +
                 '<select class="form-control" name="status">' + options(S.meta.statuses, '', 'كل الحالات') + '</select>',
             toolbar: '<button class="btn btn-success btn-sm btn-action" data-export="items"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
             head: function (t) {
@@ -651,9 +670,9 @@
         var out = h.type === 'out';
         var body = '<div class="handover-head"><div><span class="info-label">الموظف:</span> <b>' + esc(h.employee_name) + '</b> ' + esc(h.department ? '— ' + h.department : '') +
             '</div><div><span class="info-label">التاريخ:</span> ' + dt(h.doc_date) + '</div><div><span class="info-label">بواسطة:</span> ' + esc(h.created_by_name || '') + '</div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>#</th>' + typeTh() + '<th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>' +
             h.items.map(function (it, n) {
-                return '<tr><td>' + (n + 1) + '</td><td>' + typeBadge(it) + '</td><td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td dir="ltr">' + esc(it.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(it) + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
+                return '<tr><td>' + (n + 1) + '</td>' + typeTd(it) + '<td>' + esc(it.code) + '</td><td>' + esc(it.name) + '</td><td dir="ltr">' + esc(it.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(it) + '</td><td>' + esc(out ? it.condition_out : it.condition_in) +
                     '</td><td>' + esc((out ? it.notes_out : it.notes_in) || '') + '</td></tr>';
             }).join('') + '</tbody></table></div>' +
             (h.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(h.notes) + '</p>' : '');
@@ -857,10 +876,10 @@
             '<div class="row"><div class="col-sm-6 form-group"><label>الموظف المستلم</label><select class="form-control" id="asEmp"></select></div>' +
             '<div class="col-sm-3 form-group"><label>تاريخ التسليم</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
             '<div class="form-group"><label>الأصناف</label><div class="filter-inline as-type">' +
-            '<div class="btn-group" id="asType"><button type="button" class="btn btn-default active" data-type="">الكل</button>' +
-            typeKeys().map(function (t) { return '<button type="button" class="btn btn-default" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>'; }).join('') +
-            '</div><select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو S/N أو IMEI أو رقم الخط أو TID — تظهر الأصناف المتاحة فقط</small></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
+            (activeKeys().length > 1 ? '<div class="btn-group" id="asType"><button type="button" class="btn btn-default active" data-type="">الكل</button>' +
+            activeKeys().map(function (t) { return '<button type="button" class="btn btn-default" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>'; }).join('') +
+            '</div>' : '') + '<select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو ' + esc(keyLabel('')) + ' — تظهر الأصناف المتاحة فقط</small></div>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr>' + typeTh() + '<th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
             '<div class="form-group"><label>ملاحظات السند</label><textarea class="form-control" name="notes" rows="2"></textarea></div></form>';
         var $m = modal('<i class="fa fa-share"></i> تسليم عهدة جديدة', body,
             '<button class="btn btn-success btn-action" id="asSave"><i class="fa fa-check"></i> حفظ وإنشاء سند التسليم</button><button class="btn btn-default btn-action" data-dismiss="modal">إلغاء</button>', 'modal-lg');
@@ -899,7 +918,7 @@
         function addLine(i) {
             if (lines.some(function (l) { return l.id == i.id; })) return;
             lines.push(i);
-            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '"><td>' + typeBadge(i) + '</td><td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>' +
+            $m.find('#asLines tbody').append('<tr data-id="' + i.id + '">' + typeTd(i) + '<td>' + esc(i.code) + '</td><td>' + esc(i.name) + '</td><td dir="ltr">' + esc(i.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(i) + '</td>' +
                 '<td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, i.item_condition) + '</select></td>' +
                 '<td><input class="form-control input-sm l-notes"></td><td><button type="button" class="btn btn-danger btn-xs l-del"><i class="fa fa-times"></i></button></td></tr>');
         }
@@ -934,10 +953,10 @@
         var body = '<form id="retForm"><p><span class="info-label">الموظف:</span> <b>' + esc(rows[0].employee_name) + '</b></p>' +
             '<div class="row">' + (transfer ? '<div class="col-sm-6 form-group"><label>نقل إلى الموظف</label><select class="form-control" id="toEmp"></select></div>' : '') +
             '<div class="col-sm-3 form-group"><label>' + (transfer ? 'تاريخ النقل' : 'تاريخ الارتجاع') + '</label><input class="form-control" type="date" name="date" value="' + S.meta.today + '" required></div></div>' +
-            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>الحالة عند الاستلام</th>' +
+            '<div class="table-scroll"><table class="table table-bordered table-condensed" id="retLines"><thead><tr>' + typeTh() + '<th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>الحالة عند الاستلام</th>' +
             (transfer ? '' : '<th>الوضع بعد الارتجاع</th>') + '<th>ملاحظات</th></tr></thead><tbody>' +
             rows.map(function (r) {
-                return '<tr data-id="' + r.id + '"><td>' + typeBadge(r) + '</td><td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + (r.accessories_text ? '<br><small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>' : '') +
+                return '<tr data-id="' + r.id + '">' + typeTd(r) + '<td>' + esc(r.code) + '</td><td>' + esc(r.item_name) + (r.accessories_text ? '<br><small class="info-label">الملحقات: ' + esc(r.accessories_text) + '</small>' : '') +
                     '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td><select class="form-control input-sm l-cond">' + options(S.meta.conditions, r.condition_out || 'جيد') + '</select></td>' +
                     (transfer ? '' : '<td><select class="form-control input-sm l-status">' + options(S.meta.statuses.filter(function (s) { return s !== 'مسلمة'; }), 'متاحة') + '</select></td>') +
                     '<td><input class="form-control input-sm l-notes"></td></tr>';
@@ -982,11 +1001,11 @@
                 '<div class="vs-kpi-grid"><div class="vs-kpi"><span class="num">' + active.length + '</span><span class="lbl">أصناف في العهدة</span></div>' +
                 '<div class="vs-kpi"><span class="num">' + money(total) + '</span><span class="lbl">قيمة العهدة</span></div>' +
                 '<div class="vs-kpi' + (d.handovers.filter(function (h) { return !h.ack_at && !h.paper_signed_on; }).length ? '' : ' zero') + '"><span class="num">' + d.handovers.filter(function (h) { return !h.ack_at && !h.paper_signed_on; }).length + '</span><span class="lbl">سندات بانتظار التوقيع</span></div></div>' +
-                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
+                '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + typeTh() + '<th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
                 (d.custody.length ? d.custody.map(function (c) {
                     var act = !c.in_handover_id;
                     return '<tr class="' + (act ? '' : 'row-returned') + '">' + (canEdit() ? '<td>' + (act ? '<input type="checkbox" class="emp-check" value="' + c.id + '">' : '') + '</td>' : '') +
-                        '<td>' + typeBadge(c) + '</td><td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td dir="ltr">' + esc(c.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(c) + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
+                        typeTd(c) + '<td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td dir="ltr">' + esc(c.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(c) + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
                         '</td><td><a href="#" data-act="handover" data-id="' + c.out_handover_id + '">' + esc(c.out_doc_no) + '</a></td><td>' + ackLabel(c.out_ack_at, c.out_paper_on) + '</td><td>' +
                         (act ? '<span class="label label-primary">قائمة</span>' : dt(c.returned_at) + ' — ' + esc(c.in_doc_no)) + '</td></tr>';
                 }).join('') : '<tr><td colspan="12" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
@@ -1078,11 +1097,12 @@
 
     function itemForm(id, presetType) {
         var load = id ? api('items.get', { id: id }, 'GET').then(function (d) { return d.item; })
-            : $.Deferred().resolve({ type: presetType || (current && current.tab && current.tab()) || 'laptop', status: 'متاحة', item_condition: 'جديد', specs: {} }).promise();
+            : $.Deferred().resolve({ type: presetType || (current && current.tab && activeKeys().indexOf(current.tab()) >= 0 && current.tab()) || activeKeys()[0], status: 'متاحة', item_condition: 'جديد', specs: {} }).promise();
         load.then(function (i) {
             var type = i.type, assigned = i.status === 'مسلمة';
             var typePicker = id ? '<p class="form-control-static">' + typeBadge(i) + ' <small class="info-label">نوع الصنف لا يتغير بعد إضافته</small></p>'
-                : '<div class="btn-group" id="itType">' + typeKeys().map(function (t) {
+                : activeKeys().length === 1 ? '<p class="form-control-static">' + typeBadge(i) + '</p>'
+                : '<div class="btn-group" id="itType">' + activeKeys().map(function (t) {
                     return '<button type="button" class="btn btn-default' + (t === type ? ' active' : '') + '" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>';
                 }).join('') + '</div>';
             var body = '<form id="itemForm" class="row">' +
