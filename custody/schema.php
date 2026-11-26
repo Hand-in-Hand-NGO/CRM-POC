@@ -56,7 +56,8 @@ return [
         location VARCHAR(190),
         specs TEXT,
         notes TEXT,
-        created_at VARCHAR(19) NOT NULL
+        created_at VARCHAR(19) NOT NULL,
+        linked_sim_id INT
     ){TBL}",
 
     // سند تسليم (out) أو سند ارتجاع (in) — يجمع عدة أصناف ويوقّعه الموظف إلكترونيًا
@@ -74,7 +75,32 @@ return [
         ack_name VARCHAR(190),
         ack_ip VARCHAR(64),
         ack_agent VARCHAR(255),
-        ack_signature MEDIUMTEXT
+        ack_signature MEDIUMTEXT,
+        paper_scan_id INT,
+        paper_signed_on VARCHAR(10)
+    ){TBL}",
+
+    // الإقرار الورقي الموقّع (Scan) لكل سند، بكل إصداراته. الإصدار الحالي هو handovers.paper_scan_id
+    // توثيق ورقي بواسطة المستخدم اللي رفعه، مش توقيع إلكتروني ولا تحقق آلي من التوقيع
+    "CREATE TABLE IF NOT EXISTS handover_scans (
+        id {PK},
+        handover_id INT NOT NULL,
+        employee_id INT NOT NULL,
+        version INT NOT NULL,
+        signed_on VARCHAR(10) NOT NULL,
+        notes TEXT,
+        reason TEXT,
+        dir VARCHAR(255) NOT NULL,
+        source VARCHAR(8) NOT NULL,
+        pages INT,
+        pdf_size INT NOT NULL,
+        pdf_sha256 VARCHAR(64) NOT NULL,
+        originals TEXT NOT NULL,
+        snapshot MEDIUMTEXT NOT NULL,
+        uploaded_by INT NOT NULL,
+        uploaded_at VARCHAR(19) NOT NULL,
+        replaced_by INT,
+        replaced_at VARCHAR(19)
     ){TBL}",
 
     // كل صنف في عهدة موظف: من سند تسليم حتى سند ارتجاع
@@ -99,10 +125,14 @@ return [
         entity VARCHAR(32),
         entity_id INT,
         details TEXT,
-        created_at VARCHAR(19) NOT NULL
+        created_at VARCHAR(19) NOT NULL,
+        impersonator_id INT
     ){TBL}",
 
     "CREATE INDEX idx_custody_emp ON custody (employee_id)",
     "CREATE INDEX idx_custody_item ON custody (item_id)",
     "CREATE INDEX idx_handover_emp ON handovers (employee_id)",
+    "CREATE UNIQUE INDEX idx_scans_version ON handover_scans (handover_id, version)",
+    // الشريحة الواحدة تُربط بماكينة POS واحدة فقط
+    "CREATE UNIQUE INDEX idx_items_linked_sim ON items (linked_sim_id)",
 ];

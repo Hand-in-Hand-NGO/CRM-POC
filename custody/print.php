@@ -5,6 +5,7 @@ if (!current_user()) {
     header('Location: index.php');
     exit;
 }
+mark_activity();
 
 $h = null;
 $emp = null;
@@ -39,6 +40,12 @@ page_head($title);
     <button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button>
     <button class="btn btn-default btn-action" onclick="window.close()"><i class="fa fa-times"></i> إغلاق</button>
 </div>
+<?php if ($h && !empty($h['paper_scan_id'])): ?>
+<div class="alert alert-info no-print paper-note">
+    <i class="fa fa-info-circle"></i> ده <b>نموذج الإقرار الأصلي</b> زي ما اتولّد من النظام، ومن غير توقيع الموظف الورقي.
+    النسخة الموقّعة ورقيًا (بتاريخ <span class="d"><?= h($h['paper_signed_on']) ?></span>) محفوظة على السند: افتحها من تفاصيل السند بزر «عرض الإقرار الموقّع».
+</div>
+<?php endif; ?>
 <div class="sheet">
     <div class="sheet-head">
         <div>

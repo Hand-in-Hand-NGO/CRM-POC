@@ -62,5 +62,25 @@
         ],
         "summary": ["line_type", "package", "data_quota"],
         "columns": ["serial_no", "brand", "line_type", "package", "monthly_fee"]
+    },
+    "pos": {
+        "label": "ماكينة POS",
+        "plural": "ماكينات POS",
+        "icon": "fa-credit-card",
+        "prefix": "POS",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["PAX", "Verifone", "Ingenico", "Sunmi", "Newland", "Castles", "Nexgo", "Telpo", "Urovo"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "A920 Pro"},
+            {"key": "serial_no", "label": "الرقم التسلسلي (S/N)", "required": true, "ltr": true},
+            {"key": "provider", "label": "البنك / الشركة المقدمة للماكينة", "suggest": ["البنك الأهلي المصري", "بنك مصر", "البنك التجاري الدولي CIB", "بنك القاهرة", "بنك QNB", "فوري", "أمان", "مصاري", "جيديا Geidea", "باي موب Paymob", "بي تك B.TECH"]},
+            {"key": "tid", "label": "رقم الجهاز لدى مقدم الخدمة (Terminal ID / TID)", "short": "TID", "ltr": true, "pattern": "^[A-Za-z0-9-]{1,32}$", "pattern_msg": "رقم TID: حروف إنجليزية وأرقام فقط (حتى 32 حرفًا)"},
+            {"key": "mid", "label": "رقم التاجر (MID)", "short": "MID", "ltr": true, "pattern": "^[A-Za-z0-9-]{1,32}$", "pattern_msg": "رقم MID: حروف إنجليزية وأرقام فقط (حتى 32 حرفًا)"},
+            {"key": "connection", "label": "نوع الاتصال", "input": "checks", "options": ["شريحة SIM", "Wi-Fi", "Ethernet"]},
+            {"key": "sim_item_id", "label": "الشريحة المرتبطة بالماكينة", "short": "شريحة", "input": "item_ref", "ref_type": "sim", "column": "linked_sim_id"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الماكينة", "input": "checks", "options": ["شاحن", "بطارية", "جراب", "كابل", "قاعدة شحن", "رول ورق"]}
+        ],
+        "summary": ["provider", "tid", "mid", "connection", "sim_item_id"],
+        "columns": ["serial_no", "provider", "tid", "mid", "connection", "sim_item_id", "accessories"]
     }
 }

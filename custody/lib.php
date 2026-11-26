@@ -56,7 +56,7 @@ function db()
     return $pdo;
 }
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 5;
 
 function install_schema(PDO $pdo, $driver)
 {
@@ -69,10 +69,33 @@ function install_schema(PDO $pdo, $driver)
     if ($v >= SCHEMA_VERSION) {
         return;
     }
-    if ($v === 1) {
-        // الإصدار 2: نوع الصنف (لاب توب / موبايل / شريحة) ومواصفاته
-        $pdo->exec("ALTER TABLE items ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT 'laptop'");
-        $pdo->exec('ALTER TABLE items ADD COLUMN specs TEXT');
+    if ($v >= 1) {
+        if ($v < 2) {
+            // الإصدار 2: نوع الصنف (لاب توب / موبايل / شريحة) ومواصفاته
+            $pdo->exec("ALTER TABLE items ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT 'laptop'");
+            $pdo->exec('ALTER TABLE items ADD COLUMN specs TEXT');
+        }
+        if ($v < 3) {
+            // الإصدار 3: المدير الذي نفّذ العملية بالنيابة عن المستخدم (الدخول كمستخدم)
+            $pdo->exec('ALTER TABLE activity_log ADD COLUMN impersonator_id INT');
+        }
+        if ($v < 4) {
+            // الإصدار 4: ربط ماكينة POS بشريحة. الفهرس الفريد يمنع ربط الشريحة نفسها بأكثر من جهاز
+            $pdo->exec('ALTER TABLE items ADD COLUMN linked_sim_id INT');
+            $pdo->exec('CREATE UNIQUE INDEX idx_items_linked_sim ON items (linked_sim_id)');
+        }
+        if ($v < 5) {
+            // الإصدار 5: الإقرار الورقي الموقّع (Scan) وإصداراته
+            $pk = $driver === 'mysql' ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+            $tbl = $driver === 'mysql' ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4' : '';
+            $pdo->exec('ALTER TABLE handovers ADD COLUMN paper_scan_id INT');
+            $pdo->exec('ALTER TABLE handovers ADD COLUMN paper_signed_on VARCHAR(10)');
+            foreach (require __DIR__ . '/schema.php' as $sql) {
+                if (preg_match('/handover_scans/', $sql)) {
+                    $pdo->exec(str_replace(['{PK}', '{TBL}'], [$pk, $tbl], $sql));
+                }
+            }
+        }
         $pdo->exec("UPDATE meta SET v = '" . SCHEMA_VERSION . "' WHERE k = 'schema_version'");
         return;
     }
@@ -83,7 +106,7 @@ function install_schema(PDO $pdo, $driver)
         try {
             $pdo->exec($sql);
         } catch (PDOException $e) {
-            if (stripos($sql, 'CREATE INDEX') !== 0) {
+            if (!preg_match('/^CREATE (UNIQUE )?INDEX/i', $sql)) {
                 throw $e;
             }
         }
@@ -135,11 +158,45 @@ function update($table, $id, array $row)
     q("UPDATE $table SET $set WHERE id = ?", array_merge(array_values($row), [$id]));
 }
 
+// مهلة الخمول بالثواني (الافتراضي 6 ساعات)
+function session_idle_seconds()
+{
+    return max(60, (int)round(cfg('session_minutes') * 60));
+}
+
+// فولدر ملفات الجلسات الخاص بالنظام. تنظيف PHP العام للجلسات (cron كل 30 دقيقة على Ubuntu
+// بمهلة 24 دقيقة) كان بيمسح ملفات الجلسات الخاملة قبل مهلة النظام فيخرج المستخدم.
+function session_dir()
+{
+    $dir = (string)cfg('session_path');
+    if ($dir === '') {
+        $dir = dirname(cfg('db')['sqlite_path'] ?? (__DIR__ . '/data/custody.sqlite')) . '/sessions';
+    }
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    return is_dir($dir) && is_writable($dir) ? $dir : null;
+}
+
 function start_session()
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
+    $idle = session_idle_seconds();
+    $dir = session_dir();
+    if ($dir) {
+        session_save_path($dir);
+        ini_set('session.gc_probability', '1');
+        ini_set('session.gc_divisor', '100');
+    } else {
+        error_log('[custody] تعذر إنشاء فولدر الجلسات، يتم استخدام فولدر PHP الافتراضي');
+    }
+    // ملف الجلسة يبقى أطول من مهلة الخمول، والتحقق الفعلي من المهلة يتم هنا وليس بالحذف
+    ini_set('session.gc_maxlifetime', (string)($idle + 3600));
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.use_trans_sid', '0');
     session_name('custody_sid');
     session_set_cookie_params([
         'lifetime' => 0,
@@ -149,26 +206,168 @@ function start_session()
         'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
     ]);
     session_start();
-    if (!empty($_SESSION['uid']) && (time() - ($_SESSION['seen'] ?? 0)) > cfg('session_minutes') * 60) {
-        $_SESSION = [];
-        session_regenerate_id(true);
+
+    // معرّف قديم بعد تغييره دوريًا: طلب متزامن خرج قبل وصول الكوكي الجديد ينتقل للمعرّف الجديد،
+    // لكن استخدامه بعد دقيقتين يعتبر غير موثوق وينهي الجلسة القديمة
+    if (!empty($_SESSION['moved_to'])) {
+        if (time() - (int)($_SESSION['moved_at'] ?? 0) <= 120) {
+            switch_session_id($_SESSION['moved_to']);
+        } else {
+            $_SESSION = [];
+            session_regenerate_id(true);
+        }
     }
-    $_SESSION['seen'] = time();
+
+    if (!empty($_SESSION['uid'])) {
+        $last = (int)($_SESSION['last_active'] ?? $_SESSION['seen'] ?? 0);
+        if (time() - $last > $idle) {
+            // انتهاء الجلسة ينهي الدخول كمستخدم أيضًا، ولا تبقى أي وسيلة للعودة بدون تسجيل دخول
+            if (!empty($_SESSION['imp_admin'])) {
+                log_impersonation_end((int)$_SESSION['imp_admin'], (int)$_SESSION['uid'], $_SESSION['imp_started'] ?? '', 'انتهاء الجلسة لعدم النشاط');
+            }
+            end_session('idle');
+        } else {
+            if (!isset($_SESSION['last_active'])) {
+                $_SESSION['last_active'] = $last;
+            }
+            if (time() - (int)($_SESSION['regen_at'] ?? 0) > cfg('session_regen_minutes') * 60) {
+                rotate_session_id();
+            }
+        }
+    }
+    unset($_SESSION['seen']);
     if (empty($_SESSION['csrf'])) {
         $_SESSION['csrf'] = bin2hex(random_bytes(16));
     }
 }
 
-function current_user()
+// تغيير معرّف الجلسة مع الاحتفاظ ببياناتها. الجلسة الجديدة بتتكتب كاملة قبل ما نسيب القديمة،
+// والقديمة بتشاور على الجديدة لفترة قصيرة، علشان الطلبات المتزامنة اللي لسه شايلة الكوكي القديم ماتخرجش المستخدم.
+function rotate_session_id()
+{
+    $data = $_SESSION;
+    $data['regen_at'] = time();
+    $new = session_create_id();
+    $file = rtrim(session_save_path() ?: sys_get_temp_dir(), '/') . '/sess_' . $new;
+    $_SESSION = $data;
+    if (!$new || @file_put_contents($file, session_encode(), LOCK_EX) === false) {
+        return;
+    }
+    @chmod($file, 0600);
+    $_SESSION = ['moved_to' => $new, 'moved_at' => time()];
+    session_write_close();
+    switch_session_id($new);
+}
+
+function switch_session_id($id)
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+    session_id($id);
+    session_start();
+}
+
+// إنهاء تسجيل الدخول مع حفظ السبب لعرضه للمستخدم: idle / logout / disabled
+function end_session($reason)
+{
+    $_SESSION = ['ended' => $reason, 'csrf' => bin2hex(random_bytes(16))];
+    session_regenerate_id(true);
+}
+
+// يسجل نشاطًا فعليًا من المستخدم فيتجدد توقيت الخمول. طلبات الخلفية لا تستدعيه.
+function mark_activity()
+{
+    start_session();
+    if (!empty($_SESSION['uid'])) {
+        $_SESSION['last_active'] = time();
+    }
+}
+
+function session_info()
+{
+    start_session();
+    $idle = session_idle_seconds();
+    $logged = !empty($_SESSION['uid']) && current_user();
+    return [
+        'idle' => $idle,
+        'warn' => (int)round(cfg('session_warn_minutes') * 60),
+        'remaining' => $logged ? max(0, $idle - (time() - (int)$_SESSION['last_active'])) : 0,
+        'ended' => $logged ? null : ($_SESSION['ended'] ?? null),
+        'message' => $logged ? null : session_end_message(),
+    ];
+}
+
+function idle_text()
+{
+    $m = (int)round(cfg('session_minutes'));
+    if ($m >= 60 && $m % 60 === 0) {
+        $h = $m / 60;
+        return $h === 1 ? 'ساعة' : ($h === 2 ? 'ساعتين' : $h . ($h <= 10 ? ' ساعات' : ' ساعة'));
+    }
+    return $m . ($m >= 3 && $m <= 10 ? ' دقائق' : ' دقيقة');
+}
+
+function session_end_message()
+{
+    switch ($_SESSION['ended'] ?? '') {
+        case 'idle':
+            return 'انتهت الجلسة لعدم النشاط لمدة ' . idle_text() . '. سجّل الدخول مرة أخرى';
+        case 'logout':
+            return 'تم تسجيل الخروج. سجّل الدخول مرة أخرى';
+        case 'disabled':
+            return 'تم إيقاف الحساب أو تغيير صلاحياته. سجّل الدخول مرة أخرى أو تواصل مع مدير النظام';
+    }
+    return 'انتهت الجلسة، سجّل الدخول مرة أخرى';
+}
+
+// حالة توقيع الموظف على السند: إلكتروني (من الرابط) و/أو ورقي (إقرار موقّع مرفوع)
+function ack_status_text($ackAt, $paperOn)
+{
+    if ($ackAt && $paperOn) {
+        return 'موقّع إلكترونيًا وورقيًا';
+    }
+    return $ackAt ? 'موقّع إلكترونيًا' : ($paperOn ? 'موقّع ورقيًا' : 'بانتظار التوقيع');
+}
+
+// شرط SQL لفلتر التوقيع: signed (أي توقيع) / esign / paper / pending
+function ack_filter_sql($ack, $alias)
+{
+    switch ($ack) {
+        case 'signed':
+            return "($alias.ack_at IS NOT NULL OR $alias.paper_scan_id IS NOT NULL)";
+        case 'esign':
+            return "$alias.ack_at IS NOT NULL";
+        case 'paper':
+            return "$alias.paper_scan_id IS NOT NULL";
+        case 'pending':
+            return "($alias.ack_at IS NULL AND $alias.paper_scan_id IS NULL)";
+    }
+    return null;
+}
+
+// المستخدم الفعلي للجلسة. أثناء "الدخول كمستخدم" هو المستخدم المستهدف بصلاحياته هو فقط.
+// $reset لإعادة القراءة بعد تبديل هوية الجلسة.
+function current_user($reset = false)
 {
     static $user = false;
-    if ($user !== false) {
+    if ($user !== false && !$reset) {
         return $user;
     }
     start_session();
     $user = null;
+    if (!empty($_SESSION['imp_admin']) && !impersonator()) {
+        return $user = null;
+    }
     if (!empty($_SESSION['uid'])) {
         $user = q_one('SELECT id, username, name, role, must_change FROM users WHERE id = ? AND active = 1', [$_SESSION['uid']]);
+        if (!$user) {
+            // الحساب اتوقف أو اتحذف: الجلسات القائمة تنتهي فورًا
+            if (!empty($_SESSION['imp_admin'])) {
+                log_impersonation_end((int)$_SESSION['imp_admin'], (int)$_SESSION['uid'], $_SESSION['imp_started'] ?? '', 'إيقاف حساب المستخدم');
+            }
+            end_session('disabled');
+        }
     }
     return $user;
 }
@@ -188,6 +387,26 @@ function can($perm)
     return $u['role'] === 'admin';
 }
 
+// المدير الأصلي أثناء "الدخول كمستخدم" (محفوظ في الجلسة على السيرفر فقط)، أو null.
+// لو المدير لم يعد نشطًا أو لم يعد مديرًا تُلغى الجلسة بالكامل.
+function impersonator()
+{
+    static $admin = false;
+    if ($admin !== false) {
+        return $admin;
+    }
+    start_session();
+    $admin = null;
+    if (!empty($_SESSION['imp_admin'])) {
+        $admin = q_one("SELECT id, username, name FROM users WHERE id = ? AND active = 1 AND role = 'admin'", [$_SESSION['imp_admin']]);
+        if (!$admin) {
+            end_session('disabled');
+            current_user(true);
+        }
+    }
+    return $admin;
+}
+
 function log_activity($action, $entity = null, $entityId = null, $details = null)
 {
     $u = current_user();
@@ -198,6 +417,23 @@ function log_activity($action, $entity = null, $entityId = null, $details = null
         'entity_id' => $entityId,
         'details' => is_array($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : $details,
         'created_at' => now(),
+        // العملية تُنسب للمستخدم، مع توضيح المدير الذي نفّذها بالنيابة عنه
+        'impersonator_id' => $u && !empty($_SESSION['imp_admin']) ? (int)$_SESSION['imp_admin'] : null,
+    ]);
+}
+
+// سجل انتهاء "الدخول كمستخدم" باسم المدير الأصلي: عودة للمدير، أو تسجيل خروج، أو انتهاء الجلسة
+function log_impersonation_end($adminId, $targetId, $started, $reason)
+{
+    $t = q_one('SELECT username, name FROM users WHERE id = ?', [$targetId]);
+    insert('activity_log', [
+        'user_id' => $adminId,
+        'action' => 'إنهاء الدخول كمستخدم',
+        'entity' => 'user',
+        'entity_id' => $targetId,
+        'details' => ($t ? $t['name'] . ' (' . $t['username'] . ')' : '#' . $targetId) . ' — بدأت ' . $started . ' — السبب: ' . $reason,
+        'created_at' => now(),
+        'impersonator_id' => null,
     ]);
 }
 
@@ -223,21 +459,6 @@ function doc_no($type, $id, $date)
     return ($type === 'out' ? 'TS' : 'RT') . '-' . substr($date, 0, 4) . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
 }
 
-// نسخة احتياطية متسقة من قاعدة SQLite وهي شغالة (تشمل كل البيانات وصور التوقيعات)
-function backup_sqlite($dest)
-{
-    if (cfg('db')['driver'] !== 'sqlite') {
-        throw new RuntimeException('النسخ الاحتياطي من هنا لقاعدة SQLite فقط، ولقاعدة MySQL استخدم mysqldump');
-    }
-    if (!is_dir(dirname($dest))) {
-        mkdir(dirname($dest), 0775, true);
-    }
-    if (is_file($dest)) {
-        unlink($dest);
-    }
-    db()->exec('VACUUM INTO ' . db()->quote($dest));
-}
-
 // أنواع الأصناف وحقول كل نوع (types.json)
 function asset_types()
 {
@@ -253,6 +474,46 @@ function type_label($type)
     return asset_types()[$type]['label'] ?? $type;
 }
 
+// اسم الصنف من حقول النوع، مثل: "Dell Latitude 5420" أو "خط فودافون"
+function item_name($type, array $cols, array $specs)
+{
+    $def = asset_types()[$type];
+    $nameParts = [];
+    foreach ($def['name'] as $k) {
+        if (($cols[$k] ?? $specs[$k] ?? '') !== '') {
+            $nameParts[] = $cols[$k] ?? $specs[$k];
+        }
+    }
+    $name = trim(($def['name_prefix'] ?? '') . ' ' . implode(' ', $nameParts));
+    return $name ?: $def['label'];
+}
+
+// يتحقق من قيمة حقل نصي / رقم / تاريخ من حقول النوع (types.json). يرجع [القيمة بعد التنظيف, رسالة الخطأ أو null]
+// مشترك بين نموذج الصنف واستيراد Excel علشان القواعد تبقى واحدة
+function type_field_check(array $f, $v)
+{
+    $v = mb_substr(trim((string)$v), 0, 190);
+    if ($v === '') {
+        return ['', !empty($f['required']) ? $f['label'] . ' مطلوب' : null];
+    }
+    $input = $f['input'] ?? 'text';
+    if ($input === 'number') {
+        if (!is_numeric($v) || $v < 0) {
+            return [$v, $f['label'] . ': أدخل رقمًا صحيحًا'];
+        }
+        $v = (string)round((float)$v, 2);
+    } elseif ($input === 'date' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
+        return [$v, $f['label'] . ': صيغة التاريخ غير صحيحة'];
+    }
+    if (!empty($f['options']) && !in_array($v, $f['options'], true)) {
+        return [$v, $f['label'] . ': اختر قيمة من القائمة'];
+    }
+    if (!empty($f['pattern']) && !preg_match('/' . $f['pattern'] . '/u', $v)) {
+        return [$v, $f['pattern_msg'] ?? ($f['label'] . ' غير صحيح')];
+    }
+    return [$v, null];
+}
+
 // يضيف للصف: اسم النوع، المواصفات كمصفوفة، وملخص نصي للمواصفات والملحقات
 function decorate_item(array $row)
 {
@@ -264,12 +525,27 @@ function decorate_item(array $row)
             $specs[$col] = $row[$col];
         }
     }
+    // حقول الربط بصنف آخر (مثل شريحة ماكينة POS): المعرّف في refs، والنص المعروض في specs
+    $row['refs'] = [];
+    foreach ($t ? $t['fields'] : [] as $f) {
+        if (($f['input'] ?? '') === 'item_ref') {
+            $refId = (int)($row[$f['column']] ?? 0);
+            $row['refs'][$f['key']] = $refId ?: null;
+            $text = $refId ? linked_item_text($refId) : '';
+            if ($text !== '') {
+                $specs[$f['key']] = $text;
+            }
+        }
+    }
+    $row['refs'] = (object)$row['refs'];
     $row['type_label'] = $t ? $t['label'] : '';
     $row['specs'] = $specs;
+    $short = $t ? array_column($t['fields'], 'short', 'key') : [];
     $parts = [];
     foreach ($t ? $t['summary'] : [] as $k) {
-        if (($specs[$k] ?? '') !== '') {
-            $parts[] = $specs[$k];
+        $v = is_array($specs[$k] ?? '') ? implode('، ', $specs[$k]) : (string)($specs[$k] ?? '');
+        if ($v !== '') {
+            $parts[] = isset($short[$k]) ? $short[$k] . ': ' . $v : $v;
         }
     }
     $row['specs_text'] = implode(' / ', $parts);
@@ -280,6 +556,17 @@ function decorate_item(array $row)
 function decorate_items(array $rows)
 {
     return array_map('decorate_item', $rows);
+}
+
+// وصف مختصر لصنف مرتبط، مثل: "01012345678 - فودافون (SM-00003)"
+function linked_item_text($id)
+{
+    static $cache = [];
+    if (!array_key_exists($id, $cache)) {
+        $r = q_one('SELECT code, serial_no, brand FROM items WHERE id = ?', [$id]);
+        $cache[$id] = $r ? trim($r['serial_no'] . ($r['brand'] ? ' - ' . $r['brand'] : '')) . ' (' . $r['code'] . ')' : '';
+    }
+    return $cache[$id];
 }
 
 // خلية "المواصفات والملحقات" في السندات المطبوعة وصفحة التوقيع
@@ -297,7 +584,7 @@ function item_details_html(array $it)
 function handover_items($handoverId, $type)
 {
     $col = $type === 'out' ? 'out_handover_id' : 'in_handover_id';
-    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name, i.brand, i.model, i.serial_no, i.value, i.specs
+    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name, i.brand, i.model, i.serial_no, i.value, i.specs, i.linked_sim_id
         FROM custody c JOIN items i ON i.id = c.item_id
         WHERE c.$col = ? ORDER BY c.id", [$handoverId]));
 }
@@ -315,8 +602,15 @@ function page_head($title)
 <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap-rtl.min.css">
 <link rel="stylesheet" href="assets/vendor/font-awesome/css/font-awesome.min.css">
 <link rel="stylesheet" href="assets/vendor/fonts/noto-kufi-arabic.css">
-<link rel="stylesheet" href="assets/theme.css">
-<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="<?= asset('assets/theme.css') ?>">
+<link rel="stylesheet" href="<?= asset('assets/app.css') ?>">
 </head>
 <?php
+}
+
+// رابط ملف ثابت برقم إصدار حسب تاريخ تعديله، حتى لا يستخدم المتصفح نسخة قديمة بعد التحديث
+function asset($path)
+{
+    $f = __DIR__ . '/' . $path;
+    return h($path . (is_file($f) ? '?v=' . filemtime($f) : ''));
 }

@@ -1,5 +1,7 @@
 <?php
 require __DIR__ . '/lib.php';
+require __DIR__ . '/scans.php';
+require __DIR__ . '/dataio.php';
 
 class ApiError extends Exception
 {
@@ -43,7 +45,7 @@ function in_date($key, $default = null)
 function need($perm)
 {
     if (!current_user()) {
-        fail('انتهت الجلسة، سجّل الدخول مرة أخرى', 401);
+        fail(session_end_message(), 401);
     }
     if (!can($perm)) {
         fail('ليست لديك صلاحية لهذا الإجراء', 403);
@@ -63,7 +65,10 @@ function csv_out($filename, array $headers, array $rows)
     fwrite($out, "\xEF\xBB\xBF");
     fputcsv($out, $headers);
     foreach ($rows as $r) {
-        fputcsv($out, array_values($r));
+        // الأرقام التعريفية (TID / MID / IMEI / رقم الخط...) تُكتب كنص في Excel حتى لا تضيع الأصفار في أولها
+        fputcsv($out, array_map(function ($v) {
+            return is_string($v) && preg_match('/^(0\d+|\d{12,})$/', $v) ? '="' . $v . '"' : $v;
+        }, array_values($r)));
     }
     fclose($out);
     exit;
@@ -179,26 +184,24 @@ function read_type_fields($type)
             }
             continue;
         }
-        $v = mb_substr(trim((string)($input[$k] ?? '')), 0, 190);
-        if ($v === '') {
-            if (!empty($f['required'])) {
+        if ($input_type === 'item_ref') {
+            // ربط بصنف آخر من نوع محدد (مثل شريحة ماكينة POS)، يُحفظ في عمود مستقل
+            $refId = (int)($input[$k] ?? 0);
+            if ($refId && q_val('SELECT type FROM items WHERE id = ?', [$refId]) !== $f['ref_type']) {
+                fail($f['label'] . ': اختر ' . type_label($f['ref_type']) . ' موجودة في النظام');
+            }
+            if (!$refId && !empty($f['required'])) {
                 fail($f['label'] . ' مطلوب');
             }
+            $cols[$f['column']] = $refId ?: null;
             continue;
         }
-        if ($input_type === 'number') {
-            if (!is_numeric($v) || $v < 0) {
-                fail($f['label'] . ': أدخل رقمًا صحيحًا');
-            }
-            $v = (string)round((float)$v, 2);
-        } elseif ($input_type === 'date' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
-            fail($f['label'] . ': صيغة التاريخ غير صحيحة');
+        [$v, $err] = type_field_check($f, $input[$k] ?? '');
+        if ($err !== null) {
+            fail($err);
         }
-        if (!empty($f['options']) && !in_array($v, $f['options'], true)) {
-            fail($f['label'] . ': اختر قيمة من القائمة');
-        }
-        if (!empty($f['pattern']) && !preg_match('/' . $f['pattern'] . '/u', $v)) {
-            fail($f['pattern_msg'] ?? ($f['label'] . ' غير صحيح'));
+        if ($v === '') {
+            continue;
         }
         if (array_key_exists($k, $cols)) {
             $cols[$k] = $v;
@@ -206,14 +209,7 @@ function read_type_fields($type)
             $specs[$k] = $v;
         }
     }
-    $nameParts = [];
-    foreach ($def['name'] as $k) {
-        if (($cols[$k] ?? $specs[$k] ?? '') !== '') {
-            $nameParts[] = $cols[$k] ?? $specs[$k];
-        }
-    }
-    $name = trim(($def['name_prefix'] ?? '') . ' ' . implode(' ', $nameParts));
-    return [$cols, $specs, $name ?: $def['label']];
+    return [$cols, $specs, item_name($type, $cols, $specs)];
 }
 
 function save_item()
@@ -265,25 +261,36 @@ function save_item()
     if ($row['serial_no'] !== '' && ($dup = q_val('SELECT code FROM items WHERE serial_no = ? AND id <> ?', [$row['serial_no'], $id ?: 0]))) {
         fail($keyLabel . ' مسجل بالفعل للصنف ' . $dup);
     }
+    if (!empty($row['linked_sim_id']) && ($dup = q_val('SELECT code FROM items WHERE linked_sim_id = ? AND id <> ?', [$row['linked_sim_id'], $id ?: 0]))) {
+        fail('هذه الشريحة مرتبطة بالفعل بالجهاز ' . $dup . '، ولا يمكن ربطها بأكثر من جهاز');
+    }
     db()->beginTransaction();
-    if ($id) {
-        if ($row['code'] === '') {
-            $row['code'] = $old['code'];
+    try {
+        if ($id) {
+            if ($row['code'] === '') {
+                $row['code'] = $old['code'];
+            }
+            update('items', $id, $row);
+            log_activity('تعديل صنف', 'item', $id, $row['code'] . ' ' . $row['name']);
+        } else {
+            $auto = $row['code'] === '';
+            if ($auto) {
+                $row['code'] = 'TMP-' . bin2hex(random_bytes(6));
+            }
+            $row['created_at'] = now();
+            $id = insert('items', $row);
+            if ($auto) {
+                $row['code'] = asset_types()[$type]['prefix'] . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
+                update('items', $id, ['code' => $row['code']]);
+            }
+            log_activity('إضافة صنف', 'item', $id, $row['code'] . ' ' . $row['name']);
         }
-        update('items', $id, $row);
-        log_activity('تعديل صنف', 'item', $id, $row['code'] . ' ' . $row['name']);
-    } else {
-        $auto = $row['code'] === '';
-        if ($auto) {
-            $row['code'] = 'TMP-' . bin2hex(random_bytes(6));
+    } catch (PDOException $e) {
+        // الفهرس الفريد على linked_sim_id (لو حُفظ ربط نفس الشريحة من مكانين في نفس اللحظة)
+        if ((string)$e->getCode() === '23000' && !empty($row['linked_sim_id'])) {
+            fail('هذه الشريحة مرتبطة بالفعل بجهاز آخر، ولا يمكن ربطها بأكثر من جهاز');
         }
-        $row['created_at'] = now();
-        $id = insert('items', $row);
-        if ($auto) {
-            $row['code'] = asset_types()[$type]['prefix'] . '-' . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
-            update('items', $id, ['code' => $row['code']]);
-        }
-        log_activity('إضافة صنف', 'item', $id, $row['code'] . ' ' . $row['name']);
+        throw $e;
     }
     db()->commit();
     return ['id' => $id, 'code' => $row['code']];
@@ -313,11 +320,8 @@ function custody_query()
         $where[] = 'i.type = ?';
         $params[] = $t;
     }
-    $ack = in('ack', '');
-    if ($ack === 'signed') {
-        $where[] = 'ho.ack_at IS NOT NULL';
-    } elseif ($ack === 'pending') {
-        $where[] = 'ho.ack_at IS NULL';
+    if ($w = ack_filter_sql(in('ack', ''), 'ho')) {
+        $where[] = $w;
     }
     if (($s = in_str('q')) !== '') {
         $where[] = "(i.name LIKE ? ESCAPE '!' OR i.code LIKE ? ESCAPE '!' OR i.serial_no LIKE ? ESCAPE '!' OR i.specs LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!' OR e.code LIKE ? ESCAPE '!' OR ho.doc_no LIKE ? ESCAPE '!')";
@@ -332,10 +336,10 @@ function custody_query()
         $params[] = $to;
     }
     $where = implode(' AND ', $where);
-    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name AS item_name, i.serial_no, i.brand, i.model, i.value, i.specs,
+    return decorate_items(q_all("SELECT c.*, i.code, i.type, i.name AS item_name, i.serial_no, i.brand, i.model, i.value, i.specs, i.linked_sim_id,
             e.name AS employee_name, e.code AS employee_code, e.department,
-            ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, ho.token AS out_token,
-            hi.doc_no AS in_doc_no, hi.ack_at AS in_ack_at
+            ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, ho.paper_signed_on AS out_paper_on, ho.token AS out_token,
+            hi.doc_no AS in_doc_no, hi.ack_at AS in_ack_at, hi.paper_signed_on AS in_paper_on
         FROM custody c
         JOIN items i ON i.id = c.item_id
         JOIN employees e ON e.id = c.employee_id
@@ -448,6 +452,42 @@ function do_return(array $lines, $date, $notes)
     return [$hid, $employeeId];
 }
 
+function handovers_query()
+{
+    $params = [];
+    $where = ['1=1'];
+    if (in_array(in('type'), ['out', 'in'], true)) {
+        $where[] = 'h.type = ?';
+        $params[] = in('type');
+    }
+    if ($w = ack_filter_sql(in('ack', ''), 'h')) {
+        $where[] = $w;
+    }
+    if ($e = in_int('employee_id')) {
+        $where[] = 'h.employee_id = ?';
+        $params[] = $e;
+    }
+    if (($s = in_str('q')) !== '') {
+        $where[] = "(h.doc_no LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!')";
+        array_push($params, like($s), like($s));
+    }
+    if ($from = in_date('from')) {
+        $where[] = 'h.doc_date >= ?';
+        $params[] = $from;
+    }
+    if ($to = in_date('to')) {
+        $where[] = 'h.doc_date <= ?';
+        $params[] = $to;
+    }
+    $where = implode(' AND ', $where);
+    return q_all("SELECT h.id, h.doc_no, h.type, h.doc_date, h.notes, h.ack_at, h.ack_name, h.token, h.created_at, h.paper_scan_id, h.paper_signed_on,
+            e.name AS employee_name, e.department, u.name AS created_by_name, s.uploaded_at AS paper_uploaded_at, su.name AS paper_by_name,
+            (SELECT COUNT(*) FROM custody c WHERE c.out_handover_id = h.id OR c.in_handover_id = h.id) AS items_count
+        FROM handovers h JOIN employees e ON e.id = h.employee_id LEFT JOIN users u ON u.id = h.created_by
+        LEFT JOIN handover_scans s ON s.id = h.paper_scan_id LEFT JOIN users su ON su.id = s.uploaded_by
+        WHERE $where ORDER BY h.id DESC LIMIT 1000", $params);
+}
+
 function handover_view($id)
 {
     $h = q_one('SELECT h.*, e.name AS employee_name, e.code AS employee_code, e.department, e.job_title, e.phone, u.name AS created_by_name
@@ -459,7 +499,199 @@ function handover_view($id)
     $h['sign_url'] = sign_url($h['token']);
     $h['has_signature'] = !empty($h['ack_signature']);
     unset($h['ack_signature']);
+    $h['scans'] = handover_scans_view($id);
     return $h;
+}
+
+// ---------------------------------------------------------------- استيراد وتصدير Excel
+
+function dx_need_lib()
+{
+    if (!xlsx_available()) {
+        fail('إضافات PHP المطلوبة لملفات Excel (zip و xml) مش متثبتة على السيرفر', 500);
+    }
+}
+
+function dx_send_xlsx($path, $filename)
+{
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($path));
+    header('Cache-Control: no-store');
+    header('X-Content-Type-Options: nosniff');
+    readfile($path);
+    @unlink($path);
+    exit;
+}
+
+// ملفات الاستيراد المرفوعة وتقاريرها بتتمسح بعد 30 يوم
+function dx_cleanup()
+{
+    foreach (glob(dx_imports_dir() . '/*') ?: [] as $f) {
+        if (is_file($f) && filemtime($f) < time() - 30 * 86400) {
+            @unlink($f);
+        }
+    }
+}
+
+function dx_base($token)
+{
+    if (!preg_match('/^[a-f0-9]{32}$/', (string)$token)) {
+        fail('ملف الاستيراد غير موجود', 404);
+    }
+    return dx_imports_dir() . '/' . $token;
+}
+
+// بيانات عملية الاستيراد: لصاحبها أو لمدير النظام بس
+function dx_meta_load($token)
+{
+    $base = dx_base($token);
+    $meta = is_file($base . '.json') ? json_decode((string)file_get_contents($base . '.json'), true) : null;
+    if (!$meta || ((int)$meta['user_id'] !== (int)current_user()['id'] && !can('admin'))) {
+        fail('ملف الاستيراد غير موجود أو انتهت صلاحيته. ارفع الملف تاني', 404);
+    }
+    return $meta;
+}
+
+function dx_meta_save(array $meta)
+{
+    $f = dx_base($meta['token']) . '.json';
+    file_put_contents($f, json_encode($meta, JSON_UNESCAPED_UNICODE), LOCK_EX);
+    @chmod($f, 0600);
+}
+
+function dx_preview_file($path, $mode)
+{
+    $data = dx_read($path);
+    $P = dx_plan($data, $mode);
+    $P->errors = array_merge($data['errors'], $P->errors);
+    $P->warnings = array_merge($data['warnings'], $P->warnings);
+    return [$P, dx_summary($P)];
+}
+
+function dx_counts_text(array $summary)
+{
+    $parts = [];
+    foreach ($summary['sheets'] as $s) {
+        if ($s['new'] || $s['update']) {
+            $parts[] = $s['name'] . ': ' . $s['new'] . ' جديد' . ($s['update'] ? '، ' . $s['update'] . ' تعديل' : '');
+        }
+    }
+    return $parts ? implode(' — ', $parts) : 'مفيش جديد';
+}
+
+function dx_import_preview()
+{
+    need('edit');
+    dx_need_lib();
+    $mode = in('mode') === 'update' ? 'update' : 'add';
+    if ($mode === 'update') {
+        // تحديث السجلات الموجودة بالجملة لمدير النظام بس
+        need('admin');
+    }
+    $f = $_FILES['file'] ?? null;
+    if (!$f || is_array($f['name'])) {
+        fail('اختر ملف Excel');
+    }
+    if (in_array($f['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) || $f['size'] > DX_MAX_FILE_MB * 1048576) {
+        fail('حجم الملف أكبر من ' . DX_MAX_FILE_MB . ' م.ب');
+    }
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
+        fail('تعذر رفع الملف، حاول تاني');
+    }
+    $name = mb_substr(basename(str_replace('\\', '/', (string)$f['name'])), 0, 150);
+    if (!preg_match('/\.xlsx$/i', $name)) {
+        fail('الملف لازم يكون Excel بصيغة xlsx. لو معاك xls أو csv، افتحه في Excel واحفظه بصيغة xlsx');
+    }
+    dx_cleanup();
+    $token = bin2hex(random_bytes(16));
+    $base = dx_base($token);
+    if (!move_uploaded_file($f['tmp_name'], $base . '.xlsx')) {
+        fail('تعذر حفظ الملف على السيرفر', 500);
+    }
+    @chmod($base . '.xlsx', 0600);
+    try {
+        [$P, $summary] = dx_preview_file($base . '.xlsx', $mode);
+    } catch (DxError $e) {
+        @unlink($base . '.xlsx');
+        log_activity('استيراد Excel مرفوض', 'data', null, $name . ' — ' . $e->getMessage());
+        fail($e->getMessage());
+    }
+    $u = current_user();
+    dx_meta_save([
+        'token' => $token, 'user_id' => (int)$u['id'], 'user_name' => $u['name'], 'file_name' => $name, 'size' => (int)$f['size'],
+        'sha256' => hash_file('sha256', $base . '.xlsx'), 'mode' => $mode, 'created_at' => now(), 'status' => 'preview',
+        'fingerprint' => dx_fingerprint($P), 'summary' => $summary, 'errors_all' => $P->errors,
+    ]);
+    if ($P->errors) {
+        log_activity('استيراد Excel مرفوض', 'data', null, $name . ' — ' . count($P->errors) . ' خطأ، ولم يُحفظ أي شيء');
+    }
+    return ['token' => $token, 'file_name' => $name, 'summary' => $summary];
+}
+
+function dx_import_commit()
+{
+    need('edit');
+    dx_need_lib();
+    $meta = dx_meta_load(in_str('token', 64));
+    $base = dx_base($meta['token']);
+    if ($meta['mode'] === 'update') {
+        need('admin');
+    }
+    // علشان الضغط مرتين أو من تابين مايستوردش الملف مرتين
+    $lock = fopen($base . '.lock', 'c');
+    if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+        fail('الاستيراد ده شغال بالفعل', 409);
+    }
+    $meta = dx_meta_load($meta['token']);
+    if ($meta['status'] === 'done') {
+        fail('الملف ده اتستورد بالفعل', 409);
+    }
+    if (!is_file($base . '.xlsx') || hash_file('sha256', $base . '.xlsx') !== $meta['sha256']) {
+        fail('ملف الاستيراد مش موجود على السيرفر. ارفعه تاني', 409);
+    }
+    db()->beginTransaction();
+    // قفل الكتابة قبل إعادة التحقق: استيرادين في نفس اللحظة مايعدّوش نفس الفحص
+    q("UPDATE meta SET v = v WHERE k = 'schema_version'");
+    try {
+        [$P, $summary] = dx_preview_file($base . '.xlsx', $meta['mode']);
+    } catch (DxError $e) {
+        fail($e->getMessage(), 409);
+    }
+    if ($P->errors) {
+        fail('ظهرت أخطاء في الملف مع البيانات الحالية في النظام. اعمل معاينة تاني', 409);
+    }
+    if (dx_fingerprint($P) !== $meta['fingerprint']) {
+        fail('البيانات في النظام اتغيرت من وقت المعاينة. اعمل معاينة تاني قبل التأكيد', 409);
+    }
+    if (!$summary['can_commit']) {
+        fail('مفيش سجلات جديدة أو تعديلات للاستيراد', 409);
+    }
+    try {
+        $result = dx_apply($P, $meta['file_name']);
+        log_activity('استيراد بيانات Excel', 'data', null, $meta['file_name'] . ' — ' . ($meta['mode'] === 'update' ? 'إضافة وتحديث' : 'إضافة فقط') . ' — ' .
+            dx_counts_text($summary) . ($result['handovers'] ? ' — سندات: ' . implode('، ', $result['handovers']) : ''));
+        db()->commit();
+    } catch (Throwable $e) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+        $msg = $e instanceof ApiError ? $e->getMessage() : 'حدث خطأ غير متوقع في السيرفر';
+        if (!$e instanceof ApiError) {
+            error_log('[custody] import ' . $e);
+        }
+        $meta['status'] = 'failed';
+        $meta['fail_msg'] = $msg;
+        dx_meta_save($meta);
+        log_activity('استيراد Excel فشل', 'data', null, $meta['file_name'] . ' — ' . $msg . ' — لم يُحفظ أي شيء');
+        fail('فشل الاستيراد ولم يُحفظ أي شيء: ' . $msg, 409);
+    }
+    $meta['status'] = 'done';
+    $meta['done_at'] = now();
+    $meta['summary'] = $summary;
+    $meta['result'] = $result;
+    dx_meta_save($meta);
+    return ['token' => $meta['token'], 'summary' => $summary, 'result' => $result];
 }
 
 // ---------------------------------------------------------------- dispatcher
@@ -470,9 +702,12 @@ function handle($action)
         // ---------- auth
         case 'auth.me':
             $u = current_user();
+            $imp = $u ? impersonator() : null;
             return [
                 'user' => $u,
+                'impersonator' => $imp ? ['id' => (int)$imp['id'], 'name' => $imp['name']] : null,
                 'csrf' => $_SESSION['csrf'],
+                'session' => session_info(),
                 'app_name' => cfg('app_name'),
                 'org_name' => cfg('org_name'),
                 'statuses' => ITEM_STATUSES,
@@ -480,33 +715,92 @@ function handle($action)
                 'roles' => ROLES,
                 'today' => today(),
                 'types' => asset_types(),
+                'scan_limits' => ['file_mb' => cfg('scan_max_file_mb'), 'total_mb' => cfg('scan_max_total_mb'), 'files' => cfg('scan_max_files')],
+            ];
+
+        // حالة الجلسة لطلبات الخلفية: لا تُعتبر نشاطًا ولا تمدد المهلة
+        case 'auth.session':
+            $u = current_user();
+            $imp = $u ? impersonator() : null;
+            return [
+                'user' => $u ? ['id' => (int)$u['id'], 'role' => $u['role']] : null,
+                'impersonator' => $imp ? (int)$imp['id'] : null,
+                'csrf' => $_SESSION['csrf'],
+                'session' => session_info(),
             ];
 
         case 'auth.login':
             $u = q_one('SELECT * FROM users WHERE username = ? AND active = 1', [in_str('username', 64)]);
-            $attempts = $_SESSION['login_fail'] ?? [0, 0];
-            if ($attempts[0] >= 5 && time() - $attempts[1] < 300) {
-                fail('محاولات كثيرة، حاول بعد 5 دقائق', 429);
-            }
             if (!$u || !password_verify((string)in('password', ''), $u['password_hash'])) {
-                $_SESSION['login_fail'] = [$attempts[0] + 1, time()];
                 fail('اسم المستخدم أو كلمة المرور غير صحيحة', 401);
             }
-            unset($_SESSION['login_fail']);
             session_regenerate_id(true);
+            unset($_SESSION['imp_admin'], $_SESSION['imp_started'], $_SESSION['ended']);
             $_SESSION['uid'] = $u['id'];
             $_SESSION['csrf'] = bin2hex(random_bytes(16));
+            $_SESSION['last_active'] = $_SESSION['regen_at'] = time();
+            current_user(true);
             update('users', $u['id'], ['last_login' => now()]);
             log_activity('تسجيل دخول', 'user', $u['id']);
             return ['ok' => true];
 
         case 'auth.logout':
-            $_SESSION = [];
+            // الخروج ينهي الجلسة بالكامل، ومعها هوية المدير الأصلية
+            if (!empty($_SESSION['imp_admin']) && !empty($_SESSION['uid'])) {
+                log_impersonation_end((int)$_SESSION['imp_admin'], (int)$_SESSION['uid'], $_SESSION['imp_started'] ?? '', 'تسجيل خروج');
+            }
+            end_session('logout');
+            return ['ok' => true];
+
+        // ---------- الدخول كمستخدم (لمدير النظام فقط)
+        case 'auth.impersonate':
+            need('admin');
+            if (!empty($_SESSION['imp_admin'])) {
+                fail('أنت تستخدم النظام باسم مستخدم آخر بالفعل. عُد لحساب المدير أولًا', 409);
+            }
+            $admin = current_user();
+            $target = q_one('SELECT id, username, name, role, active FROM users WHERE id = ?', [in_int('id')]);
+            if (!$target) {
+                fail('المستخدم غير موجود', 404);
+            }
+            if ((int)$target['id'] === (int)$admin['id']) {
+                fail('لا يمكنك الدخول بحسابك أنت');
+            }
+            if (!(int)$target['active']) {
+                fail('هذا المستخدم موقوف');
+            }
+            log_activity('بدء الدخول كمستخدم', 'user', $target['id'], $target['name'] . ' (' . $target['username'] . ') — ' . (ROLES[$target['role']] ?? $target['role']));
             session_regenerate_id(true);
+            $_SESSION['imp_admin'] = (int)$admin['id'];
+            $_SESSION['imp_started'] = now();
+            $_SESSION['uid'] = (int)$target['id'];
+            $_SESSION['csrf'] = bin2hex(random_bytes(16));
+            $_SESSION['regen_at'] = time();
+            current_user(true);
+            return ['ok' => true];
+
+        case 'auth.stop_impersonation':
+            if (empty($_SESSION['imp_admin']) || empty($_SESSION['uid'])) {
+                fail('لا توجد جلسة دخول كمستخدم', 409);
+            }
+            $admin = impersonator();
+            if (!$admin) {
+                fail('انتهت الجلسة، سجّل الدخول مرة أخرى', 401);
+            }
+            log_impersonation_end((int)$admin['id'], (int)$_SESSION['uid'], $_SESSION['imp_started'] ?? '', 'العودة لحساب المدير');
+            session_regenerate_id(true);
+            unset($_SESSION['imp_admin'], $_SESSION['imp_started']);
+            $_SESSION['uid'] = (int)$admin['id'];
+            $_SESSION['csrf'] = bin2hex(random_bytes(16));
+            $_SESSION['regen_at'] = time();
+            current_user(true);
             return ['ok' => true];
 
         case 'auth.change_password':
             need('view');
+            if (!empty($_SESSION['imp_admin'])) {
+                fail('لا يمكن تغيير كلمة مرور المستخدم أثناء الدخول باسمه', 403);
+            }
             $u = q_one('SELECT * FROM users WHERE id = ?', [current_user()['id']]);
             if (!password_verify((string)in('old_password', ''), $u['password_hash'])) {
                 fail('كلمة المرور الحالية غير صحيحة');
@@ -531,7 +825,7 @@ function handle($action)
                 'by_status' => $byStatus,
                 'active_value' => (float)q_val('SELECT COALESCE(SUM(i.value),0) FROM custody c JOIN items i ON i.id = c.item_id WHERE c.in_handover_id IS NULL'),
                 'employees_with_custody' => (int)q_val('SELECT COUNT(DISTINCT employee_id) FROM custody WHERE in_handover_id IS NULL'),
-                'pending_ack' => (int)q_val("SELECT COUNT(*) FROM handovers WHERE type = 'out' AND ack_at IS NULL"),
+                'pending_ack' => (int)q_val("SELECT COUNT(*) FROM handovers h WHERE h.type = 'out' AND " . ack_filter_sql('pending', 'h')),
                 'by_type' => array_map(function ($r) {
                     return ['type' => $r['type'], 'name' => type_label($r['type']), 'total' => (int)$r['total'], 'assigned' => (int)$r['assigned'], 'available' => (int)$r['available']];
                 }, q_all("SELECT type, COUNT(*) AS total,
@@ -541,7 +835,7 @@ function handle($action)
                 'by_department' => q_all("SELECT COALESCE(NULLIF(e.department, ''), 'بدون قسم') AS name, COUNT(*) AS n, COALESCE(SUM(i.value),0) AS value
                     FROM custody c JOIN employees e ON e.id = c.employee_id JOIN items i ON i.id = c.item_id
                     WHERE c.in_handover_id IS NULL GROUP BY e.department ORDER BY n DESC"),
-                'recent' => q_all("SELECT h.id, h.doc_no, h.type, h.doc_date, h.ack_at, e.name AS employee_name,
+                'recent' => q_all("SELECT h.id, h.doc_no, h.type, h.doc_date, h.ack_at, h.paper_signed_on, e.name AS employee_name,
                         (SELECT COUNT(*) FROM custody c WHERE c.out_handover_id = h.id OR c.in_handover_id = h.id) AS items_count
                     FROM handovers h JOIN employees e ON e.id = h.employee_id ORDER BY h.id DESC LIMIT 10"),
             ];
@@ -570,11 +864,11 @@ function handle($action)
             return [
                 'employee' => $e,
                 'custody' => decorate_items(q_all("SELECT c.*, i.code, i.type, i.name AS item_name, i.brand, i.model, i.serial_no, i.value, i.specs,
-                        ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, hi.doc_no AS in_doc_no
+                        ho.doc_no AS out_doc_no, ho.ack_at AS out_ack_at, ho.paper_signed_on AS out_paper_on, hi.doc_no AS in_doc_no
                     FROM custody c JOIN items i ON i.id = c.item_id
                     JOIN handovers ho ON ho.id = c.out_handover_id LEFT JOIN handovers hi ON hi.id = c.in_handover_id
                     WHERE c.employee_id = ? ORDER BY (c.in_handover_id IS NULL) DESC, c.id DESC", [$id])),
-                'handovers' => q_all('SELECT id, doc_no, type, doc_date, ack_at FROM handovers WHERE employee_id = ? ORDER BY id DESC', [$id]),
+                'handovers' => q_all('SELECT id, doc_no, type, doc_date, ack_at, paper_signed_on FROM handovers WHERE employee_id = ? ORDER BY id DESC', [$id]),
             ];
 
         case 'employees.save':
@@ -605,6 +899,8 @@ function handle($action)
             }
             return [
                 'item' => decorate_item($item),
+                // للشريحة: الجهاز المرتبطة به
+                'linked_by' => q_one('SELECT id, code, name, type FROM items WHERE linked_sim_id = ?', [$id]),
                 'history' => q_all('SELECT c.*, e.name AS employee_name, e.department, ho.doc_no AS out_doc_no, hi.doc_no AS in_doc_no
                     FROM custody c JOIN employees e ON e.id = c.employee_id JOIN handovers ho ON ho.id = c.out_handover_id
                     LEFT JOIN handovers hi ON hi.id = c.in_handover_id WHERE c.item_id = ? ORDER BY c.id DESC', [$id]),
@@ -613,11 +909,24 @@ function handle($action)
         case 'items.save':
             return save_item();
 
+        // الأصناف المتاحة للربط في حقل item_ref (مثل الشرائح لماكينات POS)، مع الجهاز المرتبطة به حاليًا
+        case 'items.ref_options':
+            need('view');
+            $refType = in_str('type', 16);
+            if (!isset(asset_types()[$refType])) {
+                fail('نوع غير صحيح');
+            }
+            return q_all('SELECT s.id, s.code, s.serial_no, s.brand, s.status, d.id AS linked_id, d.code AS linked_code
+                FROM items s LEFT JOIN items d ON d.linked_sim_id = s.id WHERE s.type = ? ORDER BY s.code', [$refType]);
+
         case 'items.delete':
             need('admin');
             $id = in_int('id');
             if (q_val('SELECT COUNT(*) FROM custody WHERE item_id = ?', [$id])) {
                 fail('لا يمكن حذف صنف له سجل تسليم، يمكنك تغيير حالته إلى مكهنة');
+            }
+            if ($dev = q_val('SELECT code FROM items WHERE linked_sim_id = ?', [$id])) {
+                fail('هذه الشريحة مرتبطة بالجهاز ' . $dev . '، ألغِ الربط من بيانات الجهاز أولًا');
             }
             $code = q_val('SELECT code FROM items WHERE id = ?', [$id]);
             q('DELETE FROM items WHERE id = ?', [$id]);
@@ -666,39 +975,26 @@ function handle($action)
         // ---------- handovers
         case 'handovers.list':
             need('view');
-            $params = [];
-            $where = ['1=1'];
-            if (in_array(in('type'), ['out', 'in'], true)) {
-                $where[] = 'h.type = ?';
-                $params[] = in('type');
-            }
-            if (in('ack') === 'signed') {
-                $where[] = 'h.ack_at IS NOT NULL';
-            } elseif (in('ack') === 'pending') {
-                $where[] = 'h.ack_at IS NULL';
-            }
-            if ($e = in_int('employee_id')) {
-                $where[] = 'h.employee_id = ?';
-                $params[] = $e;
-            }
-            if (($s = in_str('q')) !== '') {
-                $where[] = "(h.doc_no LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!')";
-                array_push($params, like($s), like($s));
-            }
-            if ($from = in_date('from')) {
-                $where[] = 'h.doc_date >= ?';
-                $params[] = $from;
-            }
-            if ($to = in_date('to')) {
-                $where[] = 'h.doc_date <= ?';
-                $params[] = $to;
-            }
-            $where = implode(' AND ', $where);
-            return q_all("SELECT h.id, h.doc_no, h.type, h.doc_date, h.notes, h.ack_at, h.ack_name, h.token, h.created_at,
-                    e.name AS employee_name, e.department, u.name AS created_by_name,
-                    (SELECT COUNT(*) FROM custody c WHERE c.out_handover_id = h.id OR c.in_handover_id = h.id) AS items_count
-                FROM handovers h JOIN employees e ON e.id = h.employee_id LEFT JOIN users u ON u.id = h.created_by
-                WHERE $where ORDER BY h.id DESC LIMIT 1000", $params);
+            return handovers_query();
+
+        // ---------- الإقرار الورقي الموقّع (Scan)
+        case 'handovers.paper_upload':
+            need('edit');
+            return save_paper_scan();
+
+        case 'handovers.scan_file':
+            need('view');
+            send_scan_file();
+            break;
+
+        // رقم يتغير مع أي تعديل في البيانات، علشان الصفحات المفتوحة تتحدث لوحدها (طلب خلفية خفيف)
+        case 'sync.version':
+            need('view');
+            return ['v' => implode('-', [
+                (int)q_val('SELECT COALESCE(MAX(id), 0) FROM activity_log'),
+                (int)q_val('SELECT COALESCE(MAX(id), 0) FROM handover_scans'),
+                (int)q_val('SELECT COUNT(ack_at) FROM handovers'),
+            ])];
 
         case 'handovers.get':
             need('view');
@@ -767,25 +1063,39 @@ function handle($action)
             return ['id' => $id];
 
         // ---------- activity log
-        case 'backup.download':
-            need('admin');
-            $file = cfg('backup_dir') . '/download-' . bin2hex(random_bytes(8)) . '.sqlite';
-            try {
-                backup_sqlite($file);
-            } catch (RuntimeException $e) {
-                fail($e->getMessage());
-            }
-            log_activity('تحميل نسخة احتياطية', null, null, round(filesize($file) / 1024) . ' KB');
-            header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="custody-backup-' . date('Y-m-d_His') . '.sqlite"');
-            header('Content-Length: ' . filesize($file));
-            readfile($file);
-            unlink($file);
-            exit;
-
         case 'log.list':
             need('admin');
-            return q_all('SELECT l.*, u.name AS user_name FROM activity_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 500');
+            return q_all('SELECT l.*, u.name AS user_name, a.name AS impersonator_name FROM activity_log l
+                LEFT JOIN users u ON u.id = l.user_id LEFT JOIN users a ON a.id = l.impersonator_id ORDER BY l.id DESC LIMIT 500');
+
+        // ---------- ملف Excel موحّد لكل البيانات (تصدير / قالب / استيراد)
+        case 'data.export':
+        case 'data.template':
+            need('edit');
+            dx_need_lib();
+            $tpl = $action === 'data.template';
+            $tmp = tempnam(dx_imports_dir(), 'x');
+            $counts = dx_write_workbook($tmp, $tpl ? 'template' : 'export');
+            log_activity($tpl ? 'تحميل قالب الاستيراد' : 'تصدير بيانات Excel', 'data', null, $tpl ? DX_VERSION : implode('، ', array_map(function ($k, $n) {
+                return dx_spec()[$k]['name'] . ' ' . $n;
+            }, array_keys($counts), $counts)));
+            dx_send_xlsx($tmp, $tpl ? 'custody-import-template.xlsx' : 'custody-data-' . date('Y-m-d-His') . '.xlsx');
+            break;
+
+        case 'data.import_preview':
+            return dx_import_preview();
+
+        case 'data.import_commit':
+            return dx_import_commit();
+
+        case 'data.import_report':
+            need('edit');
+            dx_need_lib();
+            $meta = dx_meta_load(in('token'));
+            $tmp = tempnam(dx_imports_dir(), 'x');
+            xlsx_write($tmp, dx_report_workbook($meta), ['title' => 'تقرير استيراد']);
+            dx_send_xlsx($tmp, 'custody-import-report-' . date('Y-m-d-His') . '.xlsx');
+            break;
 
         // ---------- excel (csv)
         case 'export':
@@ -803,10 +1113,19 @@ function handle($action)
                     return is_array($v) ? implode('، ', $v) : $v;
                 }, $typeDef['fields']);
             };
+            if ($what === 'handovers') {
+                $rows = array_map(function ($h) {
+                    return [$h['doc_no'], $h['type'] === 'out' ? 'تسليم' : 'ارتجاع', $h['doc_date'], $h['employee_name'], $h['department'], $h['items_count'],
+                        ack_status_text($h['ack_at'], $h['paper_signed_on']), $h['ack_at'], $h['ack_name'], $h['paper_signed_on'], $h['paper_by_name'], $h['paper_uploaded_at'],
+                        $h['created_by_name']];
+                }, handovers_query());
+                csv_out('handovers-' . today() . '.csv', ['رقم السند', 'النوع', 'التاريخ', 'الموظف', 'القسم', 'عدد الأصناف', 'حالة التوقيع',
+                    'وقت التوقيع الإلكتروني', 'الاسم في التوقيع الإلكتروني', 'تاريخ التوقيع الورقي', 'رفع الإقرار', 'وقت رفع الإقرار', 'بواسطة'], $rows);
+            }
             if ($what === 'custody') {
                 $rows = array_map(function ($r) use ($specCells) {
                     return array_merge([$r['out_doc_no'], $r['employee_code'], $r['employee_name'], $r['department'], $r['code'], $r['item_name']], $specCells($r),
-                        [$r['value'], $r['assigned_at'], $r['condition_out'], $r['out_ack_at'] ? 'موقّع' : 'بانتظار التوقيع', $r['returned_at'], $r['condition_in'], $r['in_doc_no']]);
+                        [$r['value'], $r['assigned_at'], $r['condition_out'], ack_status_text($r['out_ack_at'], $r['out_paper_on']), $r['returned_at'], $r['condition_in'], $r['in_doc_no']]);
                 }, custody_query());
                 csv_out('custody-' . today() . '.csv', array_merge(['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'], $specHeads,
                     ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']), $rows);
@@ -835,25 +1154,41 @@ function handle($action)
 // ---------------------------------------------------------------- bootstrap
 
 start_session();
+// الطلبات اللي بيعملها المستخدم بنفسه بتبعت X-Activity، أما فحص الجلسة في الخلفية فلا
+if (($_SERVER['HTTP_X_ACTIVITY'] ?? '') === '1') {
+    mark_activity();
+}
 $INPUT = $_GET;
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $action = (string)($_GET['action'] ?? '');
 
 try {
     if ($method === 'POST') {
-        $body = json_decode(file_get_contents('php://input') ?: '[]', true);
-        $INPUT = array_merge($_GET, is_array($body) ? $body : []);
+        if (stripos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') === 0) {
+            // رفع ملفات (الإقرار الموقّع). لو الطلب أكبر من post_max_size بيوصل فاضي
+            $INPUT = array_merge($_GET, $_POST);
+            if (!$_POST && !$_FILES && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+                fail('إجمالي حجم الملفات أكبر من المسموح على السيرفر (' . cfg('scan_max_total_mb') . ' م.ب)', 413);
+            }
+        } else {
+            $body = json_decode(file_get_contents('php://input') ?: '[]', true);
+            $INPUT = array_merge($_GET, is_array($body) ? $body : []);
+        }
         if (!hash_equals($_SESSION['csrf'], (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) {
+            if (empty($_SESSION['uid']) && $action !== 'auth.login') {
+                fail(session_end_message(), 401);
+            }
             fail('انتهت صلاحية الصفحة، أعد تحميلها', 419);
         }
-    } elseif (!in_array($action, ['auth.me', 'dashboard', 'lookups', 'employees.list', 'employees.get', 'items.list', 'items.get',
-        'custody.list', 'handovers.list', 'handovers.get', 'users.list', 'log.list', 'export', 'backup.download'], true)) {
+    } elseif (!in_array($action, ['auth.me', 'auth.session', 'dashboard', 'lookups', 'employees.list', 'employees.get', 'items.list', 'items.get',
+        'custody.list', 'handovers.list', 'handovers.get', 'users.list', 'log.list', 'export', 'items.ref_options', 'handovers.scan_file', 'sync.version',
+        'data.export', 'data.template', 'data.import_report'], true)) {
         fail('طريقة الطلب غير مسموحة', 405);
     }
     $result = handle($action);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['ok' => true, 'data' => $result], JSON_UNESCAPED_UNICODE);
-} catch (ApiError $e) {
+} catch (ApiError | DxError $e) {
     if (db()->inTransaction()) {
         db()->rollBack();
     }
