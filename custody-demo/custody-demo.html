@@ -338,6 +338,10 @@ a { color: var(--hih-primary); }
 .login-box { background: #fff; width: 100%; max-width: 360px; padding: 24px; border: 1px solid var(--hih-box-border); border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
 .login-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; color: var(--hih-header-text); font-size: 16px; }
 .login-head .info-label { font-size: 12px; }
+/* انتهاء الجلسة أثناء العمل: شاشة الدخول فوق الصفحة الحالية بدون مسح المكتوب فيها */
+.relogin #loginView { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1500; min-height: 0; background: rgba(20, 30, 40, .6); overflow-y: auto; }
+.session-warn { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1600; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; width: max-content; max-width: calc(100% - 32px); padding: 10px 14px; border-radius: 8px; background: var(--hih-warning); color: #fff; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.session-warn .btn { font-weight: 600; }
 
 /* ---------- shell ---------- */
 .main-header { position: fixed; top: 0; right: 0; left: 0; height: 50px; z-index: 1030; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-bottom: 1px solid var(--hih-box-border); }
@@ -353,6 +357,12 @@ a { color: var(--hih-primary); }
 .sidebar-menu > li.active > a { border-right-color: var(--hih-primary); }
 .sidebar-menu > li > a .fa { width: 18px; text-align: center; margin-left: 12px; font-size: 15px; }
 .content-wrapper { margin: 50px 50px 0 0; padding: 15px; min-height: calc(100vh - 50px); }
+
+/* الدخول كمستخدم: شريط دائم أسفل الهيدر */
+.imp-bar { position: fixed; top: 50px; right: 0; left: 0; z-index: 1025; min-height: 38px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 5px 15px; background: var(--hih-warning); color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.imp-bar .btn { font-weight: 600; }
+.impersonating .main-sidebar { top: 88px; }
+.impersonating .content-wrapper { margin-top: 88px; }
 
 .page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .page-head h3 { margin: 0; font-size: 18px; font-weight: 700; color: #444; }
@@ -459,11 +469,12 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
 }
 
 /* ---------- أنواع الأصناف: لاب توب / موبايل / شريحة ---------- */
-:root { --type-laptop: var(--hih-primary); --type-mobile: var(--hih-success); --type-sim: var(--hih-warning); }
+:root { --type-laptop: var(--hih-primary); --type-mobile: var(--hih-success); --type-sim: var(--hih-warning); --type-pos: #7b5ea7; }
 .type-badge { display: inline-block; white-space: nowrap; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; color: #fff; background: #888; }
 .type-badge.type-laptop { background: var(--type-laptop); }
 .type-badge.type-mobile { background: var(--type-mobile); }
 .type-badge.type-sim { background: var(--type-sim); }
+.type-badge.type-pos { background: var(--type-pos); }
 
 .type-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .type-tabs .btn { border-radius: 10px !important; font-weight: 600; }
@@ -473,6 +484,7 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
 .type-tabs .btn.tab-laptop { background: var(--type-laptop); border-color: var(--type-laptop); }
 .type-tabs .btn.tab-mobile { background: var(--type-mobile); border-color: var(--type-mobile); }
 .type-tabs .btn.tab-sim { background: var(--type-sim); border-color: var(--type-sim); }
+.type-tabs .btn.tab-pos { background: var(--type-pos); border-color: var(--type-pos); }
 
 .details-cell { text-align: right !important; font-size: 12px; min-width: 160px; }
 .spec-checks .checkbox-inline { margin: 0 0 4px 14px; padding-right: 20px; }
@@ -482,7 +494,7 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
 .as-type .select2-container { flex: 1 1 260px; }
 .spec-info { background: var(--hih-box-bg); border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 8px 12px; }
 
-.type-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.type-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px; }
 .type-kpi { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--vs-border); border-right: 4px solid #888; border-radius: 10px; padding: 12px 14px; color: var(--vs-text); text-decoration: none !important; }
 .type-kpi:hover { border-color: var(--vs-accent); color: var(--vs-text); }
 .type-kpi .fa { font-size: 26px; width: 30px; text-align: center; }
@@ -491,8 +503,57 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
 .type-kpi.type-laptop { border-right-color: var(--type-laptop); } .type-kpi.type-laptop .fa { color: var(--type-laptop); }
 .type-kpi.type-mobile { border-right-color: var(--type-mobile); } .type-kpi.type-mobile .fa { color: var(--type-mobile); }
 .type-kpi.type-sim { border-right-color: var(--type-sim); } .type-kpi.type-sim .fa { color: var(--type-sim); }
+.type-kpi.type-pos { border-right-color: var(--type-pos); } .type-kpi.type-pos .fa { color: var(--type-pos); }
 .print-page .details-cell, .sign-page .details-cell { min-width: 0; font-size: 11px; }
 @media (max-width: 900px) { .type-kpis { grid-template-columns: 1fr; } }
+
+/* ---------- الإقرار الورقي الموقّع (Scan) ---------- */
+.label-paper { background: #0e7c86; }
+.paper-box { margin-top: 12px; padding: 12px; border: 1px solid var(--hih-box-border); border-radius: 8px; background: #fbfdfd; }
+.alert-paper { background: #e6f4f5; border-color: #b5dfe2; color: #0b5d64; margin-bottom: 10px; }
+.paper-meta { font-size: 12px; margin-top: 4px; }
+.paper-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.scan-history { margin-top: 10px; }
+.scan-history summary { cursor: pointer; font-weight: 600; color: var(--hih-header-text); }
+.scan-history .table { margin: 8px 0 0; font-size: 12px; }
+.scan-history .btn-xs { margin: 1px; }
+.scan-target { padding: 8px 12px; margin-bottom: 10px; border-radius: 6px; background: #f3f6f9; border: 1px solid var(--hih-box-border); }
+.scan-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.scan-limits { font-size: 12px; color: #555; margin-bottom: 10px; }
+.scan-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.scan-item { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 6px; border: 1px solid var(--hih-box-border); border-radius: 6px; background: #fff; }
+.scan-thumb { width: 100%; height: 160px; object-fit: contain; background: #f4f4f4; border-radius: 4px; }
+.scan-thumb.pdf { display: flex; align-items: center; justify-content: center; font-size: 56px; color: #c9302c; }
+.scan-info { display: flex; flex-direction: column; min-width: 0; }
+.scan-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #666; }
+.scan-tools { display: flex; gap: 4px; flex-wrap: wrap; }
+.scan-sum, .scan-empty { grid-column: 1 / -1; font-size: 12px; color: #666; }
+.scan-empty { padding: 18px; text-align: center; border: 1px dashed #ccc; border-radius: 6px; }
+.scan-confirm label { font-weight: 600; }
+.print-frame { position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+.paper-note { max-width: 210mm; margin: 0 auto 10px; }
+
+/* ---------- استيراد وتصدير Excel ---------- */
+.dx-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.dx-card { display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #fff; border: 1px solid var(--hih-box-border); border-radius: 10px; }
+.dx-card h4 { margin: 0; font-size: 15px; font-weight: 700; color: #444; }
+.dx-card h4 .fa { color: var(--hih-primary); }
+.dx-card p { margin: 0; color: #555; flex: 1; }
+.dx-card > .btn { align-self: flex-start; }
+.dx-card .radio { margin: 6px 0; }
+.dx-note { display: block; margin-top: 6px; }
+.dx-box { background: #fff; border: 1px solid var(--hih-box-border); border-radius: 10px; padding: 12px; }
+.dx-box h4 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; }
+.dx-box details { margin-top: 10px; }
+.dx-box summary { cursor: pointer; font-weight: 700; color: var(--hih-header-text); padding: 4px 0; }
+.dx-table { font-size: 12px; margin-bottom: 6px; }
+.dx-table td.num { text-align: center; }
+.dx-table .num-bad { color: var(--hih-danger); font-weight: 700; }
+.dx-old { color: #a94442; text-decoration: line-through; }
+.dx-new { color: #2b7a3b; font-weight: 600; }
+.dx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; }
+.dx-agree { flex-basis: 100%; margin: 0; }
+@media (max-width: 900px) { .dx-cards { grid-template-columns: 1fr; } }
 
 .demo-badge{background:#ff6a00;color:#fff;border-radius:10px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:6px}
 </style>
@@ -505,6 +566,7 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
             <i class="fa fa-briefcase fa-2x"></i>
             <div><b>العهد الإلكترونية</b><div class="info-label">Hand in Hand</div></div>
         </div>
+        <div class="alert alert-warning" id="loginNotice" role="alert" style="display:none"></div>
         <div class="form-group">
             <label>اسم المستخدم</label>
             <input class="form-control" name="username" autocomplete="username" required autofocus dir="ltr">
@@ -528,6 +590,10 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
             <button class="btn btn-link btn-sm" id="btnLogout" title="خروج"><i class="fa fa-sign-out"></i></button>
         </div>
     </header>
+    <div class="imp-bar" id="impBar" style="display:none">
+        <span><i class="fa fa-user-secret"></i> أنت تستخدم النظام باسم: <b id="impName"></b></span>
+        <button class="btn btn-default btn-xs btn-action" id="btnStopImp"><i class="fa fa-arrow-right"></i> العودة لحساب المدير</button>
+    </div>
     <aside class="main-sidebar">
         <ul class="sidebar-menu" id="menu">
             <li data-view="dashboard"><a href="#dashboard"><i class="fa fa-dashboard"></i> <span>لوحة المتابعة</span></a></li>
@@ -535,6 +601,7 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
             <li data-view="handovers"><a href="#handovers"><i class="fa fa-file-text-o"></i> <span>السندات والتوقيعات</span></a></li>
             <li data-view="items"><a href="#items"><i class="fa fa-cubes"></i> <span>الأصناف والأصول</span></a></li>
             <li data-view="employees"><a href="#employees"><i class="fa fa-users"></i> <span>الموظفين</span></a></li>
+            <li data-view="data" class="edit-only"><a href="#data"><i class="fa fa-file-excel-o"></i> <span>استيراد وتصدير Excel</span></a></li>
             <li data-view="users" class="admin-only"><a href="#users"><i class="fa fa-user-secret"></i> <span>المستخدمين</span></a></li>
             <li data-view="log" class="admin-only"><a href="#log"><i class="fa fa-history"></i> <span>سجل العمليات</span></a></li>
         </ul>
@@ -553,6 +620,11 @@ a.vs-kpi:hover { border-color: var(--vs-accent); }
             <div class="modal-footer"></div>
         </div>
     </div>
+</div>
+
+<div class="session-warn" id="sessionWarn" role="alertdialog" aria-live="assertive" style="display:none">
+    <span><i class="fa fa-clock-o"></i> ستنتهي جلستك خلال <b id="sessionWarnLeft" dir="ltr"></b> بسبب عدم النشاط.</span>
+    <button class="btn btn-default btn-sm btn-action" id="btnKeepSession"><i class="fa fa-refresh"></i> استمرار الجلسة</button>
 </div>
 
 <div id="toast"></div>
@@ -639,6 +711,26 @@ window.CUSTODY_TYPES = {
         ],
         "summary": ["line_type", "package", "data_quota"],
         "columns": ["serial_no", "brand", "line_type", "package", "monthly_fee"]
+    },
+    "pos": {
+        "label": "ماكينة POS",
+        "plural": "ماكينات POS",
+        "icon": "fa-credit-card",
+        "prefix": "POS",
+        "name": ["brand", "model"],
+        "fields": [
+            {"key": "brand", "label": "الماركة", "required": true, "suggest": ["PAX", "Verifone", "Ingenico", "Sunmi", "Newland", "Castles", "Nexgo", "Telpo", "Urovo"]},
+            {"key": "model", "label": "الموديل", "required": true, "placeholder": "A920 Pro"},
+            {"key": "serial_no", "label": "الرقم التسلسلي (S/N)", "required": true, "ltr": true},
+            {"key": "provider", "label": "البنك / الشركة المقدمة للماكينة", "suggest": ["البنك الأهلي المصري", "بنك مصر", "البنك التجاري الدولي CIB", "بنك القاهرة", "بنك QNB", "فوري", "أمان", "مصاري", "جيديا Geidea", "باي موب Paymob", "بي تك B.TECH"]},
+            {"key": "tid", "label": "رقم الجهاز لدى مقدم الخدمة (Terminal ID / TID)", "short": "TID", "ltr": true, "pattern": "^[A-Za-z0-9-]{1,32}$", "pattern_msg": "رقم TID: حروف إنجليزية وأرقام فقط (حتى 32 حرفًا)"},
+            {"key": "mid", "label": "رقم التاجر (MID)", "short": "MID", "ltr": true, "pattern": "^[A-Za-z0-9-]{1,32}$", "pattern_msg": "رقم MID: حروف إنجليزية وأرقام فقط (حتى 32 حرفًا)"},
+            {"key": "connection", "label": "نوع الاتصال", "input": "checks", "options": ["شريحة SIM", "Wi-Fi", "Ethernet"]},
+            {"key": "sim_item_id", "label": "الشريحة المرتبطة بالماكينة", "short": "شريحة", "input": "item_ref", "ref_type": "sim", "column": "linked_sim_id"},
+            {"key": "accessories", "label": "الملحقات المسلّمة مع الماكينة", "input": "checks", "options": ["شاحن", "بطارية", "جراب", "كابل", "قاعدة شحن", "رول ورق"]}
+        ],
+        "summary": ["provider", "tid", "mid", "connection", "sim_item_id"],
+        "columns": ["serial_no", "provider", "tid", "mid", "connection", "sim_item_id", "accessories"]
     }
 }
 ;
@@ -646,7 +738,9 @@ window.CUSTODY_TYPES = {
 /* نسخة تجريبية: بديل api.php يعمل داخل المتصفح ويحفظ البيانات في localStorage */
 (function ($) {
     'use strict';
-    var KEY = 'custody-demo-v2';
+    var KEY = 'custody-demo-v3';
+    var SESSION_IDLE = 21600, SESSION_WARN = 300;   // نفس session_minutes و session_warn_minutes
+    var SCAN_LIMITS = { file_mb: 15, total_mb: 60, files: 20 };
     var TYPES = window.CUSTODY_TYPES;   // نفس custody/types.json، يضمّنه build.py
     var STATUSES = ['متاحة', 'مسلمة', 'صيانة', 'تالفة', 'مفقودة', 'مكهنة'];
     var CONDITIONS = ['جديد', 'جيد', 'مستعمل', 'يحتاج صيانة', 'تالف'];
@@ -674,7 +768,10 @@ window.CUSTODY_TYPES = {
         var db = { seq: {}, users: [], employees: [], items: [], handovers: [], custody: [], log: [] };
         db.users.push({ id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', active: 1, must_change: 0, last_login: now(), created_at: now(), password: 'admin123' });
         db.users.push({ id: 2, username: 'store', name: 'مسؤول المخزن', role: 'editor', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'store1234' });
-        db.seq.users = 2;
+        db.users.push({ id: 3, username: 'viewer', name: 'مراجع الحسابات', role: 'viewer', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'viewer1234' });
+        db.seq.users = 3;
+        db.sess = { uid: 1, imp: null, imp_started: null, ended: null };
+        db.scans = []; db.seq.scans = 0;
         [['E001', 'أحمد محمد عبد الله', 'الهندسة', 'مهندس تركيب', 'القاهرة', '01012345678'],
          ['E002', 'منى علي حسن', 'المصنع', 'فني تصنيع', 'القاهرة', '01123456789'],
          ['E003', 'كريم حسن مصطفى', 'خدمة العملاء', 'مسؤول كول سنتر', 'القاهرة', '01234567890'],
@@ -711,10 +808,16 @@ window.CUSTODY_TYPES = {
          SIM('01288776655', 'أورانج', 'فاتورة', 'شريحة عادية', 'بريميوم 150', '150', '20GB'),
          SIM('01155443322', 'اتصالات', 'كارت', 'شريحة عادية', '', '', '5GB'),
          SIM('01022334455', 'فودافون', 'فاتورة', 'eSIM', 'ريد 300', '300', 'غير محدود'),
-         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB')
+         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB'),
+         SIM('01066778899', 'فودافون', 'فاتورة', 'شريحة عادية', 'بيانات POS', '50', '5GB'),
+         ['pos', { brand: 'PAX', model: 'A920 Pro', serial_no: '1850012345', provider: 'البنك الأهلي المصري', tid: '00012345', mid: '000987654321', connection: ['شريحة SIM', 'Wi-Fi'], accessories: ['شاحن', 'رول ورق'] }, 14500],
+         ['pos', { brand: 'Verifone', model: 'V240m', serial_no: '402-118-907', provider: 'جيديا Geidea', tid: '00067890', mid: '000123456789', connection: ['شريحة SIM'], accessories: ['شاحن', 'جراب'] }, 12000]
         ].forEach(function (x, i) {
             A['items.save']({ type: x[0], specs: x[1], value: x[2] || '', purchase_date: today(-300 + i * 9), item_condition: i % 5 === 0 ? 'جديد' : 'جيد', location: 'المخزن الرئيسي' });
         });
+        // ربط شرائح بماكينات POS (الشريحة الواحدة بجهاز واحد بس)
+        A['items.save']($.extend(editable(17), { specs: $.extend({}, byId('items', 17).specs, rawCols(17), { sim_item_id: 16 }) }));
+        A['items.save']($.extend(editable(18), { specs: $.extend({}, byId('items', 18).specs, rawCols(18), { sim_item_id: 15 }) }));
         var h1 = assign(1, [{ item_id: 1 }, { item_id: 6 }, { item_id: 11 }], today(-40), 'عهدة بداية العمل');
         sign(h1, 'أحمد محمد عبد الله');
         var h2 = assign(5, [{ item_id: 3 }, { item_id: 8 }, { item_id: 12 }], today(-25), '');
@@ -724,6 +827,10 @@ window.CUSTODY_TYPES = {
         var h4 = assign(7, [{ item_id: 4 }], today(-8), '');
         sign(h4, 'عمرو فتحي');
         assign(2, [{ item_id: 5 }, { item_id: 13 }], today(-3), '');
+        // سند عليه إقرار ورقي موقّع (Scan) بدل التوقيع الإلكتروني
+        var h5 = assign(6, [{ item_id: 17 }, { item_id: 16 }], today(-6), 'ماكينة الاستقبال');
+        storeScan(h5, { signed_on: today(-5), notes: 'اتعمل Scan من النسخة الورقية', source: 'images', pages: 1,
+            originals: [{ name: 'iqrar-page1.jpg', mime: 'image/jpeg', size: 182000 }] }, samplePdf(byId('handovers', h5)));
         assign(3, [{ item_id: 10 }], today(-1), '');
         var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 7; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
         sign(r, 'سارة إبراهيم');
@@ -737,30 +844,69 @@ window.CUSTODY_TYPES = {
     function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { /* التخزين غير متاح: تبقى البيانات في الذاكرة */ } }
     function nextId(t) { DB.seq[t] = (DB.seq[t] || 0) + 1; return DB.seq[t]; }
     function byId(t, id) { id = +id; for (var i = 0; i < DB[t].length; i++) if (DB[t][i].id === id) return DB[t][i]; return null; }
-    function log(action, entity, id, details) { DB.log.unshift({ id: nextId('log'), user_id: 1, action: action, entity: entity, entity_id: id, details: details, created_at: now() }); }
+    function log(action, entity, id, details, anon) {
+        var s = DB.sess || {};
+        DB.log.unshift({ id: nextId('log'), user_id: anon ? null : (s.uid || null), impersonator_id: anon ? null : (s.imp || null), action: action, entity: entity, entity_id: id, details: details, created_at: now() });
+    }
     function fail(msg, code) { var e = new Error(msg); e.code = code || 400; throw e; }
     function str(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max || 190); }
     function has(s, q) { return String(s || '').toLowerCase().indexOf(q.toLowerCase()) >= 0; }
     function copy(o) { return JSON.parse(JSON.stringify(o)); }
     // نفس decorate_item في lib.php
     function decorate(row) {
-        var t = TYPES[row.type], specs = $.extend({}, row.specs || {});
+        var t = TYPES[row.type], specs = $.extend({}, row.specs || {}), refs = {}, short = {};
         ['brand', 'model', 'serial_no'].forEach(function (k) { if (row[k] !== undefined) specs[k] = row[k]; });
+        (t ? t.fields : []).forEach(function (f) {
+            if (f.short) short[f.key] = f.short;
+            if (f.input === 'item_ref') {
+                var refId = +(row[f.column] || 0);
+                refs[f.key] = refId || null;
+                var txt = refId ? linkedText(refId) : '';
+                if (txt) specs[f.key] = txt;
+            }
+        });
         return $.extend({}, row, {
-            type_label: t ? t.label : '', specs: specs,
-            specs_text: (t ? t.summary : []).filter(function (k) { return specs[k]; }).map(function (k) { return specs[k]; }).join(' / '),
+            type_label: t ? t.label : '', specs: specs, refs: refs,
+            specs_text: (t ? t.summary : []).map(function (k) {
+                var v = $.isArray(specs[k]) ? specs[k].join('، ') : String(specs[k] || '');
+                return v ? (short[k] ? short[k] + ': ' + v : v) : '';
+            }).filter(Boolean).join(' / '),
             accessories_text: (specs.accessories || []).join('، ')
         });
     }
-    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs }; }
+    // نفس linked_item_text في lib.php: "01012345678 - فودافون (SM-00003)"
+    function linkedText(id) {
+        var r = byId('items', id);
+        return r ? ((r.serial_no || '') + (r.brand ? ' - ' + r.brand : '')).trim() + ' (' + r.code + ')' : '';
+    }
+    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs, linked_sim_id: it.linked_sim_id || null }; }
+    // لتعديل صنف موجود من البيانات التجريبية
+    function rawCols(id) { var it = byId('items', id); return { brand: it.brand, model: it.model, serial_no: it.serial_no }; }
+    function editable(id) {
+        var it = byId('items', id);
+        return { id: id, code: it.code, purchase_date: it.purchase_date, value: it.value, item_condition: it.item_condition, status: it.status, location: it.location, notes: it.notes };
+    }
+    // نفس ack_filter_sql: signed (أي توقيع) / esign / paper / pending
+    function ackOk(ackAt, paperScan, ack) {
+        if (ack === 'signed') return !!(ackAt || paperScan);
+        if (ack === 'esign') return !!ackAt;
+        if (ack === 'paper') return !!paperScan;
+        if (ack === 'pending') return !ackAt && !paperScan;
+        return true;
+    }
+    function ackText(ackAt, paperOn) {
+        if (ackAt && paperOn) return 'موقّع إلكترونيًا وورقيًا';
+        return ackAt ? 'موقّع إلكترونيًا' : (paperOn ? 'موقّع ورقيًا' : 'بانتظار التوقيع');
+    }
+    function userName(id) { return (byId('users', id) || {}).name || null; }
     function docNo(type, id, date) { return (type === 'out' ? 'TS' : 'RT') + '-' + date.slice(0, 4) + '-' + pad(id, 5); }
     function signUrl(t) { return 'sign.php?t=' + t; }
 
     // ------------------------------------------------------------ operations
     function createHandover(type, empId, date, notes) {
         var id = nextId('handovers');
-        DB.handovers.push({ id: id, doc_no: docNo(type, id, date), type: type, employee_id: +empId, doc_date: date, notes: notes || '', created_by: 1, created_at: now(), token: token(),
-            ack_at: null, ack_name: null, ack_ip: null, ack_agent: null, ack_signature: null });
+        DB.handovers.push({ id: id, doc_no: docNo(type, id, date), type: type, employee_id: +empId, doc_date: date, notes: notes || '', created_by: (DB.sess || {}).uid || 1, created_at: now(), token: token(),
+            ack_at: null, ack_name: null, ack_ip: null, ack_agent: null, ack_signature: null, paper_scan_id: null, paper_signed_on: null });
         return id;
     }
 
@@ -812,7 +958,7 @@ window.CUSTODY_TYPES = {
     function sign(hid, name, sig) {
         var h = byId('handovers', hid);
         h.ack_at = now(); h.ack_name = name; h.ack_ip = '192.168.1.' + (20 + hid); h.ack_signature = sig || fakeSignature(name);
-        log('توقيع الموظف', 'handover', hid, h.doc_no + ' - ' + name);
+        log('توقيع الموظف', 'handover', hid, h.doc_no + ' - ' + name, true);
     }
 
     function handoverItems(h) {
@@ -826,9 +972,16 @@ window.CUSTODY_TYPES = {
         var h = byId('handovers', id); if (!h) fail('السند غير موجود', 404);
         var e = byId('employees', h.employee_id);
         var v = $.extend({}, h, { employee_name: e.name, employee_code: e.code, department: e.department, job_title: e.job_title, phone: e.phone, national_id: e.national_id,
-            created_by_name: (byId('users', h.created_by) || {}).name, items: handoverItems(h), sign_url: signUrl(h.token), has_signature: !!h.ack_signature });
+            created_by_name: userName(h.created_by), items: handoverItems(h), sign_url: signUrl(h.token), has_signature: !!h.ack_signature, scans: scansView(h.id) });
         if (!withSig) delete v.ack_signature;
         return v;
+    }
+
+    // نفس handover_scans_view في scans.php
+    function scansView(hid) {
+        return DB.scans.filter(function (x) { return x.handover_id === hid; }).sort(function (a, b) { return b.version - a.version; }).map(function (x) {
+            return $.extend({}, x, { uploaded_by_name: userName(x.uploaded_by) });
+        });
     }
 
     function custodyRows(p) {
@@ -837,15 +990,14 @@ window.CUSTODY_TYPES = {
             var it = byId('items', c.item_id), e = byId('employees', c.employee_id), ho = byId('handovers', c.out_handover_id), hi = c.in_handover_id ? byId('handovers', c.in_handover_id) : null;
             return decorate($.extend({}, c, itemFields(it), { item_name: it.name,
                 employee_name: e.name, employee_code: e.code, department: e.department, out_doc_no: ho.doc_no, out_ack_at: ho.ack_at, out_token: ho.token,
-                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null }));
+                out_paper_on: ho.paper_signed_on, _out_paper: ho.paper_scan_id, in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null, in_paper_on: hi ? hi.paper_signed_on : null }));
         }).filter(function (r) {
             if (state === 'active' && r.in_handover_id) return false;
             if (state === 'returned' && !r.in_handover_id) return false;
             if (p.employee_id && r.employee_id !== +p.employee_id) return false;
             if (p.department && r.department !== p.department) return false;
             if (TYPES[p.type] && r.type !== p.type) return false;
-            if (p.ack === 'signed' && !r.out_ack_at) return false;
-            if (p.ack === 'pending' && r.out_ack_at) return false;
+            if (!ackOk(r.out_ack_at, r._out_paper, p.ack)) return false;
             if (p.from && r.assigned_at < p.from) return false;
             if (p.to && r.assigned_at > p.to) return false;
             if (q && ![r.item_name, r.code, r.serial_no, JSON.stringify(r.specs), r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
@@ -896,13 +1048,60 @@ window.CUSTODY_TYPES = {
 
     // ------------------------------------------------------------ actions
     var A = {};
+    function sessUser() { var s = DB.sess || {}; var u = s.uid ? byId('users', s.uid) : null; return u && +u.active ? u : null; }
+    function sessionInfo() {
+        var u = sessUser(), ended = (DB.sess || {}).ended;
+        return { idle: SESSION_IDLE, warn: SESSION_WARN, remaining: u ? SESSION_IDLE : 0, ended: u ? null : ended,
+            message: u ? null : (ended === 'logout' ? 'تم تسجيل الخروج. سجّل الدخول مرة أخرى' : 'انتهت الجلسة، سجّل الدخول مرة أخرى') };
+    }
     A['auth.me'] = function () {
-        return { user: { id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', must_change: 0 }, csrf: 'demo', app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand',
-            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES };
+        var u = sessUser(), imp = u && DB.sess.imp ? byId('users', DB.sess.imp) : null;
+        return { user: u ? { id: u.id, username: u.username, name: u.name, role: u.role, must_change: 0 } : null,
+            impersonator: imp ? { id: imp.id, name: imp.name } : null, csrf: 'demo', session: sessionInfo(),
+            app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand', statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES, scan_limits: SCAN_LIMITS };
     };
-    A['auth.login'] = function () { return { ok: true }; };
-    A['auth.logout'] = function () { return { ok: true }; };
-    A['auth.change_password'] = function (p) { if (String(p.new_password || '').length < 8) fail('كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف'); return { ok: true }; };
+    A['auth.session'] = function () {
+        var u = sessUser();
+        return { user: u ? { id: u.id, role: u.role } : null, impersonator: u ? (DB.sess.imp || null) : null, csrf: 'demo', session: sessionInfo() };
+    };
+    A['auth.login'] = function (p) {
+        var u = DB.users.filter(function (x) { return x.username === str(p.username, 64) && +x.active; })[0];
+        if (!u || u.password !== String(p.password || '')) fail('اسم المستخدم أو كلمة المرور غير صحيحة', 401);
+        DB.sess = { uid: u.id, imp: null, imp_started: null, ended: null };
+        u.last_login = now();
+        log('تسجيل دخول', 'user', u.id);
+        return { ok: true };
+    };
+    A['auth.logout'] = function () {
+        if (DB.sess.imp) log('انتهاء الدخول كمستخدم', 'user', DB.sess.uid, 'تسجيل خروج');
+        DB.sess = { uid: null, imp: null, imp_started: null, ended: 'logout' };
+        return { ok: true };
+    };
+    A['auth.impersonate'] = function (p) {
+        if (DB.sess.imp) fail('أنت تستخدم النظام باسم مستخدم آخر بالفعل. عُد لحساب المدير أولًا', 409);
+        var t = byId('users', p.id);
+        if (!t) fail('المستخدم غير موجود', 404);
+        if (t.id === DB.sess.uid) fail('لا يمكنك الدخول بحسابك أنت');
+        if (!+t.active) fail('هذا المستخدم موقوف');
+        log('بدء الدخول كمستخدم', 'user', t.id, t.name + ' (' + t.username + ') — ' + (ROLES[t.role] || t.role));
+        DB.sess = { uid: t.id, imp: DB.sess.uid, imp_started: now(), ended: null };
+        return { ok: true };
+    };
+    A['auth.stop_impersonation'] = function () {
+        if (!DB.sess.imp) fail('لا توجد جلسة دخول كمستخدم', 409);
+        log('انتهاء الدخول كمستخدم', 'user', DB.sess.uid, 'العودة لحساب المدير — من ' + DB.sess.imp_started);
+        DB.sess = { uid: DB.sess.imp, imp: null, imp_started: null, ended: null };
+        return { ok: true };
+    };
+    A['auth.change_password'] = function (p) {
+        if (DB.sess.imp) fail('لا يمكن تغيير كلمة مرور المستخدم أثناء الدخول باسمه', 403);
+        var u = sessUser();
+        if (u.password !== String(p.old_password || '')) fail('كلمة المرور الحالية غير صحيحة');
+        if (String(p.new_password || '').length < 8) fail('كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف');
+        u.password = String(p.new_password); log('تغيير كلمة المرور', 'user', u.id);
+        return { ok: true };
+    };
+    A['sync.version'] = function () { return { v: DB.seq.log + '-' + DB.scans.length + '-' + DB.handovers.filter(function (h) { return h.ack_at; }).length }; };
 
     A.dashboard = function () {
         var by = {}; DB.items.forEach(function (i) { by[i.status] = (by[i.status] || 0) + 1; });
@@ -917,11 +1116,11 @@ window.CUSTODY_TYPES = {
             items_total: DB.items.length, by_status: by,
             active_value: active.reduce(function (s, c) { return s + (+byId('items', c.item_id).value || 0); }, 0),
             employees_with_custody: distinct(active, 'employee_id').length,
-            pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && !h.ack_at; }).length,
+            pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && ackOk(h.ack_at, h.paper_scan_id, 'pending'); }).length,
             by_type: Object.keys(types).map(function (k) { return types[k]; }).sort(srt('total')),
             by_department: Object.keys(deps).map(function (k) { return deps[k]; }).sort(srt('n')),
             recent: DB.handovers.slice().reverse().slice(0, 10).map(function (h) {
-                return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
+                return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, paper_signed_on: h.paper_signed_on, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
             })
         };
     };
@@ -934,7 +1133,7 @@ window.CUSTODY_TYPES = {
     A['employees.get'] = function (p) {
         var e = byId('employees', p.id); if (!e) fail('الموظف غير موجود', 404);
         var rows = custodyRows({ employee_id: e.id, state: 'all' }).sort(function (a, b) { return (!!a.in_handover_id - !!b.in_handover_id) || b.id - a.id; });
-        return { employee: copy(e), custody: rows, handovers: DB.handovers.filter(function (h) { return h.employee_id === e.id; }).reverse().map(function (h) { return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at }; }) };
+        return { employee: copy(e), custody: rows, handovers: DB.handovers.filter(function (h) { return h.employee_id === e.id; }).reverse().map(function (h) { return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, paper_signed_on: h.paper_signed_on }; }) };
     };
     A['employees.save'] = function (p) {
         var id = +p.id || 0;
@@ -957,6 +1156,7 @@ window.CUSTODY_TYPES = {
         var i = byId('items', p.id); if (!i) fail('الصنف غير موجود', 404);
         return {
             item: decorate(i),
+            linked_by: (function () { var d = DB.items.filter(function (x) { return x.linked_sim_id === i.id; })[0]; return d ? { id: d.id, code: d.code, name: d.name, type: d.type } : null; })(),
             history: DB.custody.filter(function (c) { return c.item_id === i.id; }).reverse().map(function (c) {
                 var e = byId('employees', c.employee_id);
                 return $.extend({}, c, { employee_name: e.name, department: e.department, out_doc_no: byId('handovers', c.out_handover_id).doc_no, in_doc_no: c.in_handover_id ? byId('handovers', c.in_handover_id).doc_no : null });
@@ -971,6 +1171,13 @@ window.CUSTODY_TYPES = {
             if (kind === 'checks') {
                 v = f.options.filter(function (o) { return (input[k] || []).indexOf(o) >= 0; });
                 if (v.length) specs[k] = v;
+                return;
+            }
+            if (kind === 'item_ref') {
+                var refId = +(input[k] || 0), ref = refId ? byId('items', refId) : null;
+                if (refId && (!ref || ref.type !== f.ref_type)) fail(f.label + ': اختر ' + TYPES[f.ref_type].label + ' موجودة في النظام');
+                if (!refId && f.required) fail(f.label + ' مطلوب');
+                cols[f.column] = refId || null;
                 return;
             }
             v = str(input[k]);
@@ -1000,12 +1207,23 @@ window.CUSTODY_TYPES = {
         if (row.code && DB.items.some(function (i) { return i.code === row.code && i.id !== id; })) fail('كود الأصل مستخدم لصنف آخر');
         var dup = row.serial_no && DB.items.filter(function (i) { return i.serial_no === row.serial_no && i.id !== id; })[0];
         if (dup) fail(TYPES[type].fields.filter(function (f) { return f.key === 'serial_no'; })[0].label + ' مسجل بالفعل للصنف ' + dup.code);
+        var simDup = row.linked_sim_id && DB.items.filter(function (i) { return i.linked_sim_id === row.linked_sim_id && i.id !== id; })[0];
+        if (simDup) fail('هذه الشريحة مرتبطة بالفعل بالجهاز ' + simDup.code + '، ولا يمكن ربطها بأكثر من جهاز');
         if (id) { if (!row.code) row.code = old.code; $.extend(old, row); log('تعديل صنف', 'item', id, row.code + ' ' + row.name); }
         else { id = nextId('items'); if (!row.code) row.code = TYPES[type].prefix + '-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
         return { id: id, code: row.code };
     };
+    A['items.ref_options'] = function (p) {
+        if (!TYPES[p.type]) fail('نوع غير صحيح');
+        return DB.items.filter(function (s) { return s.type === p.type; }).sort(function (a, b) { return a.code < b.code ? -1 : 1; }).map(function (s) {
+            var d = DB.items.filter(function (x) { return x.linked_sim_id === s.id; })[0];
+            return { id: s.id, code: s.code, serial_no: s.serial_no, brand: s.brand, status: s.status, linked_id: d ? d.id : null, linked_code: d ? d.code : null };
+        });
+    };
     A['items.delete'] = function (p) {
         if (DB.custody.some(function (c) { return c.item_id === +p.id; })) fail('لا يمكن حذف صنف له سجل تسليم، يمكنك تغيير حالته إلى مكهنة');
+        var dev = DB.items.filter(function (x) { return x.linked_sim_id === +p.id; })[0];
+        if (dev) fail('هذه الشريحة مرتبطة بالجهاز ' + dev.code + '، ألغِ الربط من بيانات الجهاز أولًا');
         DB.items = DB.items.filter(function (i) { return i.id !== +p.id; }); log('حذف صنف', 'item', +p.id); return { ok: true };
     };
 
@@ -1028,16 +1246,18 @@ window.CUSTODY_TYPES = {
         return DB.handovers.slice().reverse().filter(function (h) {
             var e = byId('employees', h.employee_id);
             if ((p.type === 'out' || p.type === 'in') && h.type !== p.type) return false;
-            if (p.ack === 'signed' && !h.ack_at) return false;
-            if (p.ack === 'pending' && h.ack_at) return false;
+            if (!ackOk(h.ack_at, h.paper_scan_id, p.ack)) return false;
+            if (p.employee_id && h.employee_id !== +p.employee_id) return false;
             if (p.from && h.doc_date < p.from) return false;
             if (p.to && h.doc_date > p.to) return false;
             if (q && !has(h.doc_no, q) && !has(e.name, q)) return false;
             return true;
         }).map(function (h) {
             var e = byId('employees', h.employee_id);
+            var sc = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null;
             return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, notes: h.notes, ack_at: h.ack_at, ack_name: h.ack_name, token: h.token, created_at: h.created_at,
-                employee_name: e.name, department: e.department, created_by_name: (byId('users', h.created_by) || {}).name, items_count: handoverItems(h).length };
+                paper_scan_id: h.paper_scan_id, paper_signed_on: h.paper_signed_on, paper_uploaded_at: sc ? sc.uploaded_at : null, paper_by_name: sc ? userName(sc.uploaded_by) : null,
+                employee_name: e.name, department: e.department, created_by_name: userName(h.created_by), items_count: handoverItems(h).length };
         });
     };
     A['handovers.get'] = function (p) { return handoverView(+p.id); };
@@ -1054,13 +1274,16 @@ window.CUSTODY_TYPES = {
         if (!/^[A-Za-z0-9._-]{3,64}$/.test(row.username)) fail('اسم المستخدم بالإنجليزية فقط (حروف وأرقام . _ -)');
         if (!ROLES[row.role]) fail('الصلاحية غير صحيحة');
         if (DB.users.some(function (u) { return u.username === row.username && u.id !== id; })) fail('اسم المستخدم مستخدم بالفعل');
-        if (id === 1 && (row.role !== 'admin' || !row.active)) fail('لا يمكنك إيقاف حسابك أو تغيير صلاحيتك');
+        if (id === DB.sess.uid && (row.role !== 'admin' || !row.active)) fail('لا يمكنك إيقاف حسابك أو تغيير صلاحيتك');
         if (p.password) { if (String(p.password).length < 8) fail('كلمة المرور يجب ألا تقل عن 8 أحرف'); row.must_change = 1; }
         else if (!id) fail('كلمة المرور مطلوبة للمستخدم الجديد');
+        if (p.password) row.password = String(p.password);
         if (id) $.extend(byId('users', id), row); else { id = nextId('users'); DB.users.push($.extend({ id: id, created_at: now(), last_login: null }, row)); }
         log('حفظ مستخدم', 'user', id, row.username); return { id: id };
     };
-    A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: l.user_id ? 'مدير النظام' : null }); }); };
+    A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: userName(l.user_id), impersonator_name: userName(l.impersonator_id) }); }); };
+    A['data.import_preview'] = function () { fail('استيراد Excel شغال على السيرفر بس. في النسخة التجريبية تقدر تشوف شكل الصفحة والخطوات.'); };
+    A['data.import_commit'] = A['data.import_preview'];
 
     A.export = function (p) {
         var def = TYPES[p.type];
@@ -1069,9 +1292,12 @@ window.CUSTODY_TYPES = {
             if (!def) return [r.type_label, r.serial_no, r.specs_text, r.accessories_text];
             return def.fields.map(function (f) { var v = r.specs[f.key]; return $.isArray(v) ? v.join('، ') : (v || ''); });
         };
-        if (p.what === 'custody') {
+        if (p.what === 'handovers') {
+            csv('handovers-' + today() + '.csv', ['رقم السند', 'النوع', 'التاريخ', 'الموظف', 'القسم', 'عدد الأصناف', 'حالة التوقيع', 'وقت التوقيع الإلكتروني', 'الاسم في التوقيع الإلكتروني', 'تاريخ التوقيع الورقي', 'رفع الإقرار', 'وقت رفع الإقرار', 'بواسطة'],
+                A['handovers.list'](p).map(function (h) { return [h.doc_no, h.type === 'out' ? 'تسليم' : 'ارتجاع', h.doc_date, h.employee_name, h.department, h.items_count, ackText(h.ack_at, h.paper_signed_on), h.ack_at, h.ack_name, h.paper_signed_on, h.paper_by_name, h.paper_uploaded_at, h.created_by_name]; }));
+        } else if (p.what === 'custody') {
             csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'].concat(specHeads, ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']),
-                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]); }));
+                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, ackText(r.out_ack_at, r.out_paper_on), r.returned_at, r.condition_in, r.in_doc_no]); }));
         } else if (p.what === 'items') {
             csv('items-' + today() + '.csv', ['كود الأصل', 'الصنف'].concat(specHeads, ['تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات']),
                 itemRows(p).map(function (r) { return [r.code, r.name].concat(specCells(r), [r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]); }));
@@ -1080,6 +1306,174 @@ window.CUSTODY_TYPES = {
                 employeeRows(p).map(function (r) { return [r.code, r.name, r.national_id, r.department, r.job_title, r.branch, r.phone, r.email, +r.active ? 'نشط' : 'موقوف', r.active_count, r.active_value]; }));
         }
     };
+
+    // ------------------------------------------------------------ الإقرار الورقي الموقّع (نفس scans.php)
+    // ملف الـ PDF بيتحفظ في المتصفح (localStorage)، ولو المساحة مش كفاية بيفضل في الذاكرة لحد ما الصفحة تتقفل
+    var SCAN_MEM = {}, SCAN_URLS = {};
+    function scanKey(id) { return KEY + '-scan-' + id; }
+    function putScanFile(id, dataUrl) { try { localStorage.setItem(scanKey(id), dataUrl); } catch (e) { SCAN_MEM[id] = dataUrl; } }
+    function getScanFile(id) { var v = null; try { v = localStorage.getItem(scanKey(id)); } catch (e) { } return v || SCAN_MEM[id] || null; }
+
+    function bytesToDataUrl(bytes, mime) {
+        var bin = '', CH = 0x8000;
+        for (var i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+        return 'data:' + mime + ';base64,' + btoa(bin);
+    }
+    function dataUrlToBytes(u) {
+        var bin = atob(u.split(',')[1]), out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+    }
+
+    // PDF بسيط: صفحة A4 لكل صورة JPEG (نفس فكرة scan_build_pdf)
+    function jpegsToPdf(pages) {
+        var chunks = [], offsets = [], len = 0, n = 2 + pages.length * 3;
+        var push = function (x) { if (typeof x === 'string') { var b = new Uint8Array(x.length); for (var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i) & 255; x = b; } chunks.push(x); len += x.length; };
+        var obj = function (num, body, stream) {
+            offsets[num] = len;
+            push(num + ' 0 obj\n' + body + (stream ? '\nstream\n' : '\nendobj\n'));
+            if (stream) { push(stream); push('\nendstream\nendobj\n'); }
+        };
+        push('%PDF-1.4\n%âãÏÓ\n');
+        obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+        obj(2, '<< /Type /Pages /Kids [' + pages.map(function (_, i) { return (3 + i * 3) + ' 0 R'; }).join(' ') + '] /Count ' + pages.length + ' >>');
+        pages.forEach(function (pg, i) {
+            var W = 595, H = 842, m = 20, sc = Math.min((W - 2 * m) / pg.w, (H - 2 * m) / pg.h), dw = pg.w * sc, dh = pg.h * sc;
+            var content = 'q ' + dw.toFixed(2) + ' 0 0 ' + dh.toFixed(2) + ' ' + ((W - dw) / 2).toFixed(2) + ' ' + ((H - dh) / 2).toFixed(2) + ' cm /Im0 Do Q';
+            obj(3 + i * 3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 ' + (4 + i * 3) + ' 0 R >> >> /Contents ' + (5 + i * 3) + ' 0 R >>');
+            obj(4 + i * 3, '<< /Type /XObject /Subtype /Image /Width ' + pg.w + ' /Height ' + pg.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + pg.bytes.length + ' >>', pg.bytes);
+            obj(5 + i * 3, '<< /Length ' + content.length + ' >>', content);
+        });
+        var xref = len, x = 'xref\n0 ' + (n + 1) + '\n0000000000 65535 f \n';
+        for (var k = 1; k <= n; k++) x += ('0000000000' + offsets[k]).slice(-10) + ' 00000 n \n';
+        push(x + 'trailer\n<< /Size ' + (n + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+        var out = new Uint8Array(len), at = 0;
+        chunks.forEach(function (c) { out.set(c, at); at += c.length; });
+        return out;
+    }
+
+    function canvasPage(canvas) {
+        var u = canvas.toDataURL('image/jpeg', 0.85);
+        return { bytes: dataUrlToBytes(u), w: canvas.width, h: canvas.height };
+    }
+
+    function fileToPage(file) {
+        var d = $.Deferred(), url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+            var max = 2000, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+            var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url); d.resolve(canvasPage(c));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); d.reject(apiError('الملف "' + file.name + '" صورة تالفة أو غير مدعومة')); };
+        img.src = url;
+        return d.promise();
+    }
+
+    function readBytes(file) {
+        var d = $.Deferred(), r = new FileReader();
+        r.onload = function () { d.resolve(new Uint8Array(r.result)); };
+        r.onerror = function () { d.reject(apiError('تعذر قراءة الملف "' + file.name + '"')); };
+        r.readAsArrayBuffer(file);
+        return d.promise();
+    }
+
+    function apiError(msg, code) { var e = new Error(msg); e.code = code || 400; return e; }
+
+    // صفحة إقرار تجريبية "مصوّرة" للبيانات التجريبية
+    function samplePdf(h) {
+        var c = document.createElement('canvas'); c.width = 900; c.height = 1270;
+        var x = c.getContext('2d'), e = byId('employees', h.employee_id);
+        x.fillStyle = '#fbfaf6'; x.fillRect(0, 0, c.width, c.height);
+        x.fillStyle = '#222'; x.direction = 'rtl'; x.textAlign = 'right';
+        x.font = 'bold 40px Tahoma, Arial'; x.fillText('سند تسليم عهدة ' + h.doc_no, 840, 110);
+        x.font = '28px Tahoma, Arial';
+        x.fillText('الموظف: ' + e.name, 840, 190); x.fillText('التاريخ: ' + h.doc_date, 840, 240);
+        handoverItems(h).forEach(function (it, i) { x.fillText((i + 1) + '- ' + it.name + '  (' + it.code + ')', 840, 320 + i * 50); });
+        x.font = '24px Tahoma, Arial'; x.fillStyle = '#555';
+        x.fillText('أقر أنا الموقع أدناه بأنني استلمت العهدة الموضحة بهذا السند...', 840, 560);
+        x.fillText('توقيع المستلم:', 840, 760);
+        x.strokeStyle = '#1a3d8f'; x.lineWidth = 4; x.beginPath(); x.moveTo(560, 790);
+        for (var i = 0; i < 24; i++) x.lineTo(560 - i * 14, 780 + Math.sin(i * 0.9) * 30);
+        x.stroke();
+        x.fillStyle = '#999'; x.font = '20px Tahoma, Arial'; x.fillText('(نسخة تجريبية — صورة إقرار ورقي بعد الـ Scan)', 840, 1200);
+        return bytesToDataUrl(jpegsToPdf([canvasPage(c)]), 'application/pdf');
+    }
+
+    function snapshotOf(h) {
+        var v = handoverView(h.id);
+        return { doc_no: v.doc_no, type: v.type, doc_date: v.doc_date, created_by: v.created_by_name, notes: v.notes,
+            employee: { id: v.employee_id, name: v.employee_name, code: v.employee_code, department: v.department, job_title: v.job_title },
+            electronic_ack: v.ack_at ? { at: v.ack_at, name: v.ack_name } : null,
+            items: v.items.map(function (it) { return { code: it.code, type: it.type_label, name: it.name, serial_no: it.serial_no, specs: it.specs_text, accessories: it.accessories_text, value: it.value, condition: v.type === 'out' ? it.condition_out : it.condition_in }; }) };
+    }
+
+    function storeScan(hid, meta, pdfDataUrl) {
+        var h = byId('handovers', hid), cur = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null;
+        var id = nextId('scans'), at = now();
+        DB.scans.push($.extend({ id: id, handover_id: hid, employee_id: h.employee_id, version: cur ? cur.version + 1 : 1, reason: null, replaced_by: null, replaced_at: null,
+            pdf_size: Math.round((pdfDataUrl.length - pdfDataUrl.indexOf(',') - 1) * 3 / 4), snapshot: snapshotOf(h), uploaded_by: (DB.sess || {}).uid || 1, uploaded_at: at }, meta));
+        if (cur) { cur.replaced_by = id; cur.replaced_at = at; }
+        h.paper_scan_id = id; h.paper_signed_on = meta.signed_on;
+        putScanFile(id, pdfDataUrl);
+        log(cur ? 'تصحيح الإقرار الموقّع' : 'رفع الإقرار الموقّع', 'handover', hid, h.doc_no + ' — الإصدار ' + (cur ? cur.version + 1 : 1) + ' — توقيع ' + meta.signed_on + (meta.reason ? ' — السبب: ' + meta.reason : ''));
+        return id;
+    }
+
+    A['handovers.paper_upload'] = function (p) {
+        var h = byId('handovers', p.handover_id); if (!h) fail('السند غير موجود', 404);
+        var cur = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null, replace = +p.replace === 1, reason = str(p.reason, 500);
+        if (cur && !replace) fail('السند عليه إقرار موقّع بالفعل. استخدم "تصحيح / استبدال المرفق"', 409);
+        if (cur && !reason) fail('اكتب سبب تصحيح أو استبدال الإقرار');
+        if (cur && +cur.id !== +p.current_scan_id) fail('الإقرار اتغير من مستخدم تاني. افتح السند من جديد', 409);
+        var signedOn = str(p.signed_on, 10);
+        if (!signedOn) fail('حدد تاريخ التوقيع الورقي');
+        if (signedOn < h.doc_date || signedOn > today()) fail('تاريخ التوقيع لازم يكون من تاريخ السند (' + h.doc_date + ') لحد النهارده');
+        if (!p.confirm) fail('أكّد إن الملف يخص هذا السند ويحتوي على توقيع الموظف');
+        var files = p._files || [], total = 0, MB = 1048576;
+        if (!files.length) fail('اختر ملف الإقرار الموقّع (PDF أو صور)');
+        var kinds = files.map(function (f) {
+            var n = (f.name || '').toLowerCase();
+            if (!f.size) fail('الملف "' + f.name + '" فارغ');
+            if (f.size > SCAN_LIMITS.file_mb * MB) fail('الملف "' + f.name + '" أكبر من الحد المسموح (' + SCAN_LIMITS.file_mb + ' م.ب)');
+            total += f.size;
+            if (f.type === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+            if (/^image\/(jpeg|png)$/.test(f.type) || /\.(jpe?g|png)$/.test(n)) return 'img';
+            fail('الملف "' + f.name + '" ليس PDF أو صورة JPG/PNG');
+        });
+        if (files.length > SCAN_LIMITS.files) fail('أقصى عدد للصور ' + SCAN_LIMITS.files + ' صورة');
+        if (total > SCAN_LIMITS.total_mb * MB) fail('إجمالي حجم الملفات أكبر من ' + SCAN_LIMITS.total_mb + ' م.ب');
+        if (kinds.indexOf('pdf') >= 0 && files.length > 1) fail('ارفع ملف PDF واحد فيه كل الصفحات، أو صور فقط. مينفعش الجمع بين PDF وصور');
+        var isPdf = kinds[0] === 'pdf';
+        var build = isPdf ? readBytes(files[0]).then(function (b) {
+            var head = String.fromCharCode.apply(null, b.subarray(0, 5));
+            if (head !== '%PDF-') return $.Deferred().reject(apiError('الملف "' + files[0].name + '" مش ملف PDF سليم')).promise();
+            var txt = String.fromCharCode.apply(null, b.subarray(0, Math.min(b.length, 4000000)));
+            return { bytes: b, pages: (txt.match(/\/Type\s*\/Page(?!s)/g) || []).length || null };
+        }) : $.when.apply($, files.map(fileToPage)).then(function () {
+            var pages = Array.prototype.slice.call(arguments);
+            return { bytes: jpegsToPdf(pages), pages: pages.length };
+        });
+        return build.then(function (pdf) {
+            load();
+            storeScan(+p.handover_id, { signed_on: signedOn, notes: str(p.notes, 1000), reason: cur ? reason : null, source: isPdf ? 'pdf' : 'images', pages: pdf.pages,
+                originals: files.map(function (f) { return { name: f.name, mime: f.type || (isPdf ? 'application/pdf' : 'image/jpeg'), size: f.size }; }) },
+                bytesToDataUrl(pdf.bytes, 'application/pdf'));
+            return handoverView(+p.handover_id);
+        });
+    };
+
+    // صلاحيات نفس need() في api.php
+    var PUBLIC = { 'auth.me': 1, 'auth.session': 1, 'auth.login': 1, 'auth.logout': 1 };
+    var ADMIN = { 'users.list': 1, 'users.save': 1, 'log.list': 1, 'employees.delete': 1, 'items.delete': 1, 'auth.impersonate': 1 };
+    var EDIT = { 'employees.save': 1, 'items.save': 1, 'custody.assign': 1, 'custody.return': 1, 'custody.transfer': 1, 'handovers.renew_link': 1, 'handovers.paper_upload': 1, 'data.import_preview': 1, 'data.import_commit': 1 };
+    function need(action) {
+        if (PUBLIC[action] || action === 'auth.stop_impersonation') return;
+        var u = sessUser();
+        if (!u) fail('انتهت الجلسة، سجّل الدخول مرة أخرى', 401);
+        if (ADMIN[action] && u.role !== 'admin') fail('ليست لديك صلاحية لهذا الإجراء', 403);
+        if (EDIT[action] && u.role === 'viewer') fail('ليست لديك صلاحية لهذا الإجراء', 403);
+    }
 
     // ------------------------------------------------------------ ajax transport for api.php
     function params(url, data) {
@@ -1092,6 +1486,7 @@ window.CUSTODY_TYPES = {
     function call(action, p) {
         load();
         var fn = A[action]; if (!fn) fail('إجراء غير معروف', 404);
+        need(action);
         var r = fn(p);
         save();
         return copy(r === undefined ? null : r);
@@ -1102,14 +1497,23 @@ window.CUSTODY_TYPES = {
         return {
             send: function (headers, complete) {
                 setTimeout(function () {
-                    var p = params(opts.url, opts.data);
+                    var p;
+                    if (window.FormData && opts.data instanceof FormData) {
+                        p = params(opts.url); p._files = [];
+                        opts.data.forEach(function (v, k) { if (window.File && v instanceof File) p._files.push(v); else p[k] = v; });
+                    } else p = params(opts.url, opts.data);
+                    var ok = function (data) { save(); complete(200, 'OK', { text: JSON.stringify({ ok: true, data: copy(data === undefined ? null : data) }) }); };
+                    var bad = function (e) {
+                        if (!e || !e.code) console.error(e);
+                        complete((e && e.code) || 500, 'error', { text: JSON.stringify({ ok: false, error: e && e.code ? e.message : 'خطأ غير متوقع' }) });
+                    };
                     try {
-                        var data = call(p.action, p);
-                        complete(200, 'OK', { text: JSON.stringify({ ok: true, data: data }) });
-                    } catch (e) {
-                        if (!e.code) console.error(e);
-                        complete(e.code || 500, 'error', { text: JSON.stringify({ ok: false, error: e.code ? e.message : 'خطأ غير متوقع' }) });
-                    }
+                        load();
+                        var fn = A[p.action]; if (!fn) fail('إجراء غير معروف', 404);
+                        need(p.action);
+                        var r = fn(p);
+                        if (r && typeof r.then === 'function') r.then(ok, bad); else ok(r);
+                    } catch (e) { bad(e); }
                 }, 60);
             },
             abort: function () { }
@@ -1126,6 +1530,14 @@ window.CUSTODY_TYPES = {
 
     window.DEMO = {
         exportCsv: function (url) { var p = params(url); call('export', p); },
+        // بديل رابط handovers.scan_file: ملف الـ PDF المحفوظ في المتصفح
+        scanUrl: function (sc) {
+            if (SCAN_URLS[sc.id]) return SCAN_URLS[sc.id];
+            var d = getScanFile(sc.id), blob;
+            if (d) blob = new Blob([dataUrlToBytes(d)], { type: 'application/pdf' });
+            else blob = new Blob(['<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Tahoma;padding:30px">ملف الإقرار ده مش محفوظ في المتصفح ده (كان أكبر من مساحة التخزين أو اتمسح). ارفعه تاني من تفاصيل السند.</body>'], { type: 'text/html' });
+            return (SCAN_URLS[sc.id] = URL.createObjectURL(blob));
+        },
         print: function (url) {
             load();
             var p = params(url), w = window.open('', '_blank');
@@ -1200,7 +1612,10 @@ window.CUSTODY_TYPES = {
             items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return decorate($.extend({}, c, itemFields(it), { doc_no: ho.doc_no })); });
             title = items.length ? 'بيان عهدة موظف' : 'شهادة إخلاء طرف من العهد';
         }
-        var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div><div class="sheet">' +
+        var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div>' +
+            (h && h.paper_scan_id ? '<div class="alert alert-info no-print paper-note"><i class="fa fa-info-circle"></i> ده <b>نموذج الإقرار الأصلي</b> زي ما اتولّد من النظام، ومن غير توقيع الموظف الورقي. ' +
+                'النسخة الموقّعة ورقيًا (بتاريخ <span class="d">' + h.paper_signed_on + '</span>) محفوظة على السند: افتحها من تفاصيل السند بزر «عرض الإقرار الموقّع».</div>' : '') +
+            '<div class="sheet">' +
             '<div class="sheet-head"><div><div class="sheet-org">Hand in Hand</div><div class="info-label">العهد الإلكترونية</div></div><h2>' + title + '</h2><div class="sheet-meta">' +
             (h ? '<div><span class="info-label">رقم السند:</span> <b>' + h.doc_no + '</b></div><div><span class="info-label">التاريخ:</span> <span class="d">' + h.doc_date + '</span></div>' : '<div><span class="info-label">تاريخ الطباعة:</span> <span class="d">' + today() + '</span></div>') +
             '</div></div><table class="table table-bordered sheet-info"><tr><td><span class="info-label">اسم الموظف:</span> <b>' + e(emp.name) + '</b></td><td><span class="info-label">الكود:</span> ' + e(emp.code || '-') +
@@ -1235,6 +1650,11 @@ window.CUSTODY_TYPES = {
 // روابط صفحة التوقيع تفتح نسخة الديمو بدل sign.php، والتصدير يمر عبر DEMO.go
 (function ($) {
     $(document).on('click', 'a[href^="sign.php"]', function (e) { e.preventDefault(); DEMO.sign($(this).attr('href')); });
+    // ملفات Excel الموحّدة (تصدير / قالب / تقرير) بتتعمل على السيرفر بس
+    $(document).on('click', 'a[href^="api.php?action=data."]', function (e) {
+        e.preventDefault();
+        alert('ملفات Excel (التصدير الموحّد وقالب الاستيراد وتقرير الاستيراد) بتتعمل على السيرفر بس، ومش متاحة في النسخة التجريبية.');
+    });
     Object.defineProperty(window.DEMO, 'go', {
         set: function (url) {
             if (url.indexOf('backup.download') >= 0) { alert('النسخة الاحتياطية متاحة على السيرفر فقط، والنسخة التجريبية محفوظة في المتصفح.'); return; }
@@ -1265,19 +1685,48 @@ window.CUSTODY_TYPES = {
         return Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     }
 
-    function api(action, data, method) {
+    // background: طلب خلفية (فحص الجلسة) لا يُعتبر نشاطًا من المستخدم ولا يمدد الجلسة
+    function api(action, data, method, background, retried) {
         method = method || (data && action.indexOf('.list') < 0 && action.indexOf('.get') < 0 ? 'POST' : 'GET');
-        var opts = { url: 'api.php?action=' + encodeURIComponent(action), method: method, dataType: 'json', headers: { 'X-CSRF-Token': S.csrf } };
-        if (method === 'POST') {
+        var headers = { 'X-CSRF-Token': S.csrf };
+        if (!background) headers['X-Activity'] = '1';
+        var opts = { url: 'api.php?action=' + encodeURIComponent(action), method: method, dataType: 'json', headers: headers };
+        if (window.FormData && data instanceof FormData) {
+            opts.data = data;
+            opts.processData = false;
+            opts.contentType = false;
+            var onProgress = api.onProgress;
+            if (onProgress) {
+                opts.xhr = function () {
+                    var x = $.ajaxSettings.xhr();
+                    if (x.upload) x.upload.addEventListener('progress', function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total); });
+                    return x;
+                };
+            }
+        } else if (method === 'POST') {
             opts.data = JSON.stringify(data || {});
             opts.contentType = 'application/json';
         } else if (data) {
             opts.url += '&' + $.param(data);
         }
-        return $.ajax(opts).then(function (r) { return r.data; }, function (xhr) {
+        return $.ajax(opts).then(function (r) {
+            if (!background && S.user && !SESS.expired) sessionTouched();
+            return r.data;
+        }, function (xhr) {
             var msg = (xhr.responseJSON && xhr.responseJSON.error) || 'تعذر الاتصال بالسيرفر';
+            // رمز الحماية اتغير (دخول من نافذة تانية مثلًا): نجيب الرمز الحالي ونعيد الطلب مرة واحدة لنفس المستخدم بس
+            if (xhr.status === 419 && !retried) {
+                return refreshCsrf().then(function (same) {
+                    if (same) return api(action, data, method, background, true);
+                    return $.Deferred().reject(msg).promise();
+                });
+            }
             if (action === 'auth.login') return $.Deferred().reject(msg).promise();
-            if (xhr.status === 401) { showLogin(); }
+            if (xhr.status === 401) {
+                sessionExpired(msg);
+                return $.Deferred().reject(msg).promise();
+            }
+            if (background) return $.Deferred().reject(msg).promise();
             toast(msg, 'danger');
             return $.Deferred().reject(msg).promise();
         });
@@ -1346,9 +1795,15 @@ window.CUSTODY_TYPES = {
         return '<span class="label label-' + cls + '">' + esc(s) + '</span>';
     }
 
-    function ackLabel(at) {
-        return at ? '<span class="label label-success" title="' + esc(at) + '"><i class="fa fa-check"></i> موقّع</span>'
-            : '<span class="label label-warning"><i class="fa fa-clock-o"></i> بانتظار التوقيع</span>';
+    function ackLabel(at, paper) {
+        var html = at ? '<span class="label label-success" title="' + esc(at) + '"><i class="fa fa-check"></i> موقّع إلكترونيًا</span>' : '';
+        if (paper) html += (html ? ' ' : '') + '<span class="label label-paper" title="تاريخ التوقيع الورقي ' + esc(paper) + '"><i class="fa fa-file-pdf-o"></i> موقّع ورقيًا</span>';
+        return html || '<span class="label label-warning"><i class="fa fa-clock-o"></i> بانتظار التوقيع</span>';
+    }
+
+    function fmtSize(b) {
+        b = +b || 0;
+        return b >= 1048576 ? (b / 1048576).toFixed(1) + ' م.ب' : Math.max(1, Math.round(b / 1024)) + ' ك.ب';
     }
 
     function copyText(text, $btn) {
@@ -1386,6 +1841,7 @@ window.CUSTODY_TYPES = {
 
     function modal(title, body, footer, size) {
         var $m = $('#modal');
+        $m.removeData('handover hfp');
         $m.find('.select2-hidden-accessible').select2('destroy');
         var bs = $m.data('bs.modal');
         if (bs) { bs.options.backdrop = true; bs.options.keyboard = true; }
@@ -1474,10 +1930,28 @@ window.CUSTODY_TYPES = {
             if (cfg.drawn) cfg.drawn($c, slice);
         }
 
+        var applied = {};
         function load() {
-            var f = cfg.filters ? formData($c.find('form.filters')) : {};
+            var f = applied = cfg.filters ? formData($c.find('form.filters')) : {};
             $c.find('tbody').html('<tr><td colspan="20" class="empty"><i class="fa fa-spinner fa-spin"></i></td></tr>');
             return api(cfg.action, $.extend({}, cfg.params || {}, f), 'GET').then(function (data) { all = cfg.transform ? cfg.transform(data) : data; page = 0; drawTabs(); draw(); });
+        }
+
+        // تحديث في الخلفية: بالفلاتر اللي اتطبقت فعلًا (مش اللي لسه بتتكتب)، من غير ما يمدد الجلسة
+        function sync() {
+            return api(cfg.action, $.extend({}, cfg.params || {}, applied), 'GET', true).then(function (data) {
+                if (!$.contains(document, $c[0])) return;
+                var y = window.pageYOffset, x = $c.find('.table-scroll').scrollLeft();
+                var checked = $c.find('tbody input[type=checkbox]:checked').map(function () { return this.value; }).get();
+                all = cfg.transform ? cfg.transform(data) : data;
+                drawTabs();
+                draw();
+                if (checked.length) {
+                    $c.find('tbody input[type=checkbox]').filter(function () { return checked.indexOf(this.value) >= 0; }).prop('checked', true).trigger('change');
+                }
+                $c.find('.table-scroll').scrollLeft(x);
+                window.scrollTo(window.pageXOffset, y);
+            });
         }
 
         $c.on('click', '.type-tabs [data-tab]', function () {
@@ -1496,7 +1970,7 @@ window.CUSTODY_TYPES = {
         });
         if (cfg.init) cfg.init($c);
         load();
-        return { reload: load, rows: function () { return rows; }, tab: function () { return tab; }, $c: $c };
+        return { reload: load, sync: sync, rows: function () { return rows; }, tab: function () { return tab; }, $c: $c };
     }
 
     // ------------------------------------------------------------ views
@@ -1504,9 +1978,10 @@ window.CUSTODY_TYPES = {
     var current = null;
     var views = {};
 
-    views.dashboard = function () {
-        $('#content').html('<div class="empty"><i class="fa fa-spinner fa-spin"></i></div>');
-        api('dashboard', null, 'GET').then(function (d) {
+    views.dashboard = function (background) {
+        if (!background) $('#content').html('<div class="empty"><i class="fa fa-spinner fa-spin"></i></div>');
+        return api('dashboard', null, 'GET', !!background).then(function (d) {
+            if (background && current) return;
             var st = d.by_status;
             var kpi = function (num, lbl, icon, href) {
                 return '<a class="vs-kpi' + (num ? '' : ' zero') + '" href="' + (href || '#') + '"><span class="num">' + esc(num) + '</span><span class="lbl"><i class="fa ' + icon + '"></i> ' + esc(lbl) + '</span></a>';
@@ -1540,7 +2015,7 @@ window.CUSTODY_TYPES = {
                 '<thead><tr><th>رقم السند</th><th>النوع</th><th>الموظف</th><th>التاريخ</th><th>عدد الأصناف</th><th>التوقيع</th><th></th></tr></thead><tbody>' +
                 (d.recent.length ? d.recent.map(function (h) {
                     return '<tr class="' + (h.type === 'out' ? 'row-new' : 'row-maint') + '"><td class="key">' + esc(h.doc_no) + '</td><td>' + (h.type === 'out' ? 'تسليم' : 'ارتجاع') + '</td><td>' + esc(h.employee_name) +
-                        '</td><td>' + esc(h.doc_date) + '</td><td>' + h.items_count + '</td><td>' + ackLabel(h.ack_at) + '</td><td><button class="btn btn-default btn-xs" data-act="handover" data-id="' + h.id + '"><i class="fa fa-eye"></i> عرض</button></td></tr>';
+                        '</td><td>' + esc(h.doc_date) + '</td><td>' + h.items_count + '</td><td>' + ackLabel(h.ack_at, h.paper_signed_on) + '</td><td><button class="btn btn-default btn-xs" data-act="handover" data-id="' + h.id + '"><i class="fa fa-eye"></i> عرض</button></td></tr>';
                 }).join('') : '<tr><td colspan="7" class="empty">لا توجد سندات بعد</td></tr>') + '</tbody></table></div></div>';
             $('#content').html(html);
         });
@@ -1562,10 +2037,10 @@ window.CUSTODY_TYPES = {
             title: 'العهد', icon: 'fa-exchange', action: 'custody.list', tabs: true,
             actions: canEdit() ? '<button class="btn btn-primary btn-action" data-act="assign"><i class="fa fa-plus"></i> تسليم عهدة جديدة</button>' : '',
             filters:
-                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / IMEI / رقم خط / سند" style="width:300px"> ' +
+                '<input class="form-control" name="q" placeholder="موظف / صنف / كود / سيريال / IMEI / رقم خط / TID / MID / سند" style="width:300px"> ' +
                 '<select class="form-control" name="state"><option value="active">العهد القائمة</option><option value="returned">تم ارتجاعها</option><option value="all">الكل</option></select> ' +
                 '<select class="form-control" name="department">' + options(S.lookups.departments, '', 'كل الأقسام') + '</select> ' +
-                '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع</option><option value="pending">بانتظار التوقيع</option></select> ' +
+                '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع (أي توقيع)</option><option value="esign">موقّع إلكترونيًا</option><option value="paper">موقّع ورقيًا</option><option value="pending">بانتظار التوقيع</option></select> ' +
                 '<label class="inline-label">من</label><input class="form-control" type="date" name="from"> <label class="inline-label">إلى</label><input class="form-control" type="date" name="to">',
             toolbar: (canEdit() ? '<button class="btn btn-warning btn-sm btn-action" data-act="return-selected"><i class="fa fa-undo"></i> ارتجاع المحدد</button> ' +
                 '<button class="btn btn-primary btn-sm btn-action" data-act="transfer-selected"><i class="fa fa-random"></i> نقل المحدد لموظف آخر</button> ' : '') +
@@ -1583,7 +2058,7 @@ window.CUSTODY_TYPES = {
                     (t ? '<td>' + esc(r.item_name) + '</td>' + typeCells(r, t)
                         : '<td>' + typeBadge(r) + '</td><td>' + esc(r.item_name) + '</td><td dir="ltr">' + esc(r.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(r) + '</td>') +
                     '<td>' + esc(r.assigned_at) + '</td>' +
-                    '<td><a href="#" data-act="handover" data-id="' + r.out_handover_id + '">' + esc(r.out_doc_no) + '</a></td><td>' + ackLabel(r.out_ack_at) + '</td>' +
+                    '<td><a href="#" data-act="handover" data-id="' + r.out_handover_id + '">' + esc(r.out_doc_no) + '</a></td><td>' + ackLabel(r.out_ack_at, r.out_paper_on) + '</td>' +
                     '<td>' + (active ? '<span class="label label-primary">قائمة</span>' : dt(r.returned_at) + ' <a href="#" data-act="handover" data-id="' + r.in_handover_id + '">' + esc(r.in_doc_no) + '</a>') + '</td></tr>';
             },
             init: function ($c) {
@@ -1611,12 +2086,13 @@ window.CUSTODY_TYPES = {
             filters:
                 '<input class="form-control" name="q" placeholder="رقم السند / اسم الموظف" style="width:220px"> ' +
                 '<select class="form-control" name="type"><option value="">كل الأنواع</option><option value="out">سندات تسليم</option><option value="in">سندات ارتجاع</option></select> ' +
-                '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع</option><option value="pending">بانتظار التوقيع</option></select> ' +
+                '<select class="form-control" name="ack"><option value="">التوقيع: الكل</option><option value="signed">موقّع (أي توقيع)</option><option value="esign">موقّع إلكترونيًا</option><option value="paper">موقّع ورقيًا</option><option value="pending">بانتظار التوقيع</option></select> ' +
                 '<label class="inline-label">من</label><input class="form-control" type="date" name="from"> <label class="inline-label">إلى</label><input class="form-control" type="date" name="to">',
+            toolbar: '<button class="btn btn-success btn-sm btn-action" data-export="handovers"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
             head: '<th>رقم السند</th><th>النوع</th><th>الموظف</th><th>القسم</th><th>التاريخ</th><th>عدد الأصناف</th><th>التوقيع</th><th>بواسطة</th><th>إجراءات</th>',
             row: function (h) {
                 return '<tr class="' + (h.type === 'out' ? 'row-new' : 'row-maint') + '"><td class="key">' + esc(h.doc_no) + '</td><td>' + (h.type === 'out' ? 'تسليم' : 'ارتجاع') + '</td><td>' + esc(h.employee_name) +
-                    '</td><td>' + esc(h.department || '-') + '</td><td>' + esc(h.doc_date) + '</td><td>' + h.items_count + '</td><td>' + ackLabel(h.ack_at) + (h.ack_name ? '<br><small>' + esc(h.ack_name) + '</small>' : '') + '</td><td>' + esc(h.created_by_name || '') +
+                    '</td><td>' + esc(h.department || '-') + '</td><td>' + esc(h.doc_date) + '</td><td>' + h.items_count + '</td><td>' + ackLabel(h.ack_at, h.paper_signed_on) + (h.ack_name ? '<br><small>' + esc(h.ack_name) + '</small>' : '') + '</td><td>' + esc(h.created_by_name || '') +
                     '</td><td class="nowrap"><button class="btn btn-default btn-xs" data-act="handover" data-id="' + h.id + '"><i class="fa fa-eye"></i> عرض</button> ' +
                     '<button class="btn btn-default btn-xs" data-act="print-h" data-id="' + h.id + '"><i class="fa fa-print"></i> طباعة</button></td></tr>';
             }
@@ -1630,7 +2106,7 @@ window.CUSTODY_TYPES = {
                 return '<button class="btn btn-primary btn-action" data-act="item-edit" data-type="' + t + '"><i class="fa fa-plus"></i> إضافة ' + esc(typeDef(t).label) + '</button>';
             }).join(' ') : '',
             filters:
-                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / سيريال / IMEI / رقم خط" style="width:300px"> ' +
+                '<input class="form-control" name="q" placeholder="كود / ماركة / موديل / سيريال / IMEI / رقم خط / TID / MID" style="width:300px"> ' +
                 '<select class="form-control" name="status">' + options(S.meta.statuses, '', 'كل الحالات') + '</select>',
             toolbar: '<button class="btn btn-success btn-sm btn-action" data-export="items"><i class="fa fa-file-excel-o"></i> اكسيل</button>',
             head: function (t) {
@@ -1676,13 +2152,15 @@ window.CUSTODY_TYPES = {
     views.users = function () {
         current = listView({
             title: 'المستخدمين', icon: 'fa-user-secret', action: 'users.list',
-            actions: '<button class="btn btn-success btn-action" data-act="backup"><i class="fa fa-download"></i> تحميل نسخة احتياطية</button> ' +
-                '<button class="btn btn-primary btn-action" data-act="user-edit"><i class="fa fa-plus"></i> إضافة مستخدم</button>',
+            actions: '<button class="btn btn-primary btn-action" data-act="user-edit"><i class="fa fa-plus"></i> إضافة مستخدم</button>',
             head: '<th>اسم المستخدم</th><th>الاسم</th><th>الصلاحية</th><th>الحالة</th><th>آخر دخول</th><th>إجراءات</th>',
             row: function (u) {
                 return '<tr><td dir="ltr">' + esc(u.username) + '</td><td>' + esc(u.name) + '</td><td>' + esc(S.meta.roles[u.role] || u.role) + '</td><td>' +
                     (+u.active ? '<span class="label label-success">نشط</span>' : '<span class="label label-default">موقوف</span>') + '</td><td>' + esc(u.last_login || '-') +
-                    '</td><td><button class="btn btn-primary btn-xs" data-act="user-edit" data-id="' + u.id + '"><i class="fa fa-pencil"></i> تعديل</button></td></tr>';
+                    '</td><td class="nowrap"><button class="btn btn-primary btn-xs" data-act="user-edit" data-id="' + u.id + '"><i class="fa fa-pencil"></i> تعديل</button>' +
+                    // الدخول كمستخدم: ليس لحسابي الحالي، ومعطّل للحسابات الموقوفة (والسيرفر يتحقق من كل ذلك)
+                    (+u.id !== +S.user.id && !S.impersonator ? ' <button class="btn btn-warning btn-xs" data-act="user-impersonate" data-id="' + u.id + '" data-name="' + esc(u.name) + '"' +
+                        (+u.active ? '' : ' disabled title="الحساب موقوف"') + '><i class="fa fa-sign-in"></i> الدخول كمستخدم</button>' : '') + '</td></tr>';
             }
         });
     };
@@ -1692,10 +2170,146 @@ window.CUSTODY_TYPES = {
             title: 'سجل العمليات', icon: 'fa-history', action: 'log.list',
             head: '<th>التاريخ</th><th>المستخدم</th><th>العملية</th><th>التفاصيل</th>',
             row: function (l) {
-                return '<tr><td class="nowrap">' + esc(l.created_at) + '</td><td>' + esc(l.user_name || 'الموظف (رابط التوقيع)') + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.details || '') + '</td></tr>';
+                return '<tr><td class="nowrap">' + esc(l.created_at) + '</td><td>' + esc(l.user_name || 'الموظف (رابط التوقيع)') +
+                    (l.impersonator_name ? '<div class="text-muted small"><i class="fa fa-user-secret"></i> بالنيابة بواسطة: ' + esc(l.impersonator_name) + '</div>' : '') +
+                    '</td><td>' + esc(l.action) + '</td><td>' + esc(l.details || '') + '</td></tr>';
             }
         });
     };
+
+    // ------------------------------------------------------------ استيراد وتصدير Excel
+    // التصدير والقالب بنفس الأوراق والأعمدة. الاستيراد: معاينة على السيرفر الأول، ومفيش حفظ غير بعد التأكيد
+
+    views.data = function () {
+        current = null;
+        var admin = isAdmin();
+        var html = '<div class="page-head"><h3><i class="fa fa-file-excel-o"></i> استيراد وتصدير Excel</h3></div><div class="dx-cards">' +
+            '<div class="dx-card"><h4><i class="fa fa-download"></i> تصدير البيانات Excel</h4>' +
+            '<p>ملف واحد فيه كل بيانات النظام في أوراق منفصلة: الموظفين، والأصناف بأنواعها (' + esc(typeKeys().map(function (t) { return typeDef(t).label; }).join('، ')) +
+            ')، والعهد، والسندات وحالة توقيعها للمراجعة.</p>' +
+            '<a class="btn btn-success btn-action" href="api.php?action=data.export"><i class="fa fa-file-excel-o"></i> تصدير البيانات Excel</a></div>' +
+            '<div class="dx-card"><h4><i class="fa fa-table"></i> تحميل قالب الاستيراد</h4>' +
+            '<p>نفس أوراق وأعمدة التصدير بالظبط من غير بيانات، ومعاه ورقة «تعليمات» فيها الحقول المطلوبة وصيغ التواريخ والقيم المسموحة. ممكن كمان تضيف على ملف التصدير نفسه وترفعه.</p>' +
+            '<a class="btn btn-primary btn-action" href="api.php?action=data.template"><i class="fa fa-download"></i> تحميل قالب الاستيراد</a></div>' +
+            '<div class="dx-card"><h4><i class="fa fa-upload"></i> استيراد بيانات Excel</h4><form id="dxForm">' +
+            '<div class="form-group"><input type="file" class="form-control" id="dxFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>' +
+            '<div class="radio"><label><input type="radio" name="mode" value="add" checked> <b>إضافة سجلات جديدة فقط</b> — الموجود مابيتغيرش</label></div>' +
+            '<div class="radio' + (admin ? '' : ' disabled') + '"><label><input type="radio" name="mode" value="update"' + (admin ? '' : ' disabled') + '> إضافة وتحديث السجلات الموجودة' +
+            (admin ? '' : ' <small class="text-muted">(لمدير النظام)</small>') + '</label></div>' +
+            '<button type="submit" class="btn btn-warning btn-action" id="dxPreviewBtn"><i class="fa fa-search"></i> معاينة الملف</button>' +
+            '<small class="info-label dx-note">مفيش أي حاجة بتتحفظ قبل ما تراجع المعاينة وتضغط «تأكيد الاستيراد».</small></form></div></div>' +
+            '<div class="progress" id="dxProgress" style="display:none"><div class="progress-bar progress-bar-success progress-bar-striped active" style="width:0%"></div></div>' +
+            '<div id="dxResult"></div>';
+        var $c = $('#content').html(html), $res = $c.find('#dxResult');
+
+        // تغيير الملف أو الوضع بيلغي المعاينة القديمة، علشان مايتأكدش ملف أو وضع غير اللي اتعاينوا
+        $c.on('change', '#dxFile, [name=mode]', function () { $res.empty(); });
+        $c.on('submit', '#dxForm', function (e) {
+            e.preventDefault();
+            var f = $c.find('#dxFile')[0].files[0];
+            if (!f) return toast('اختر ملف Excel الأول', 'danger');
+            if (!/\.xlsx$/i.test(f.name)) return toast('الملف لازم يكون Excel بصيغة xlsx', 'danger');
+            if (f.size > 10 * 1048576) return toast('حجم الملف أكبر من 10 م.ب', 'danger');
+            var fd = new FormData();
+            fd.append('file', f, f.name);
+            fd.append('mode', $c.find('[name=mode]:checked').val());
+            $res.empty();
+            var $btn = $c.find('#dxPreviewBtn').prop('disabled', true);
+            var $bar = $c.find('#dxProgress').show().find('.progress-bar').css('width', '0%').text('');
+            api.onProgress = function (r) { $bar.css('width', Math.round(r * 100) + '%').text(r < 1 ? 'جاري الرفع ' + Math.round(r * 100) + '%' : 'جاري فحص الملف…'); };
+            var req = api('data.import_preview', fd);
+            api.onProgress = null;
+            req.then(function (d) { dxRender($res, d, false); }, function (msg) {
+                $res.html('<div class="alert alert-danger"><i class="fa fa-times-circle"></i> ' + esc(msg) + '<br>مفيش أي حاجة اتحفظت.</div>');
+            }).always(function () { $c.find('#dxProgress').hide(); $btn.prop('disabled', false); });
+        });
+    };
+
+    function dxTable(heads, rows) {
+        return '<div class="table-scroll"><table class="table table-bordered table-condensed dx-table"><thead><tr>' +
+            heads.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+    }
+
+    function dxDiffRows(list) {
+        var rows = [];
+        list.forEach(function (e) {
+            e.changes.forEach(function (c) {
+                rows.push('<tr><td>' + esc(e.sheet) + '</td><td class="num">' + esc(e.row) + '</td><td dir="auto">' + esc(e.key) + '</td><td>' + esc(c.col) +
+                    '</td><td dir="auto"><span class="dx-old">' + esc(c.old || '(فاضي)') + '</span></td><td dir="auto"><span class="dx-new">' + esc(c['new']) + '</span></td></tr>');
+            });
+        });
+        return rows;
+    }
+
+    function dxRender($box, d, done) {
+        var s = d.summary, t = s.totals, upd = s.mode === 'update';
+        var status;
+        if (done) {
+            status = '<div class="alert alert-success"><i class="fa fa-check-circle"></i> <b>تم الاستيراد بنجاح.</b> اتضاف ' + t['new'] + ' سجل جديد' + (t.update ? ' واتعدّل ' + t.update + ' سجل' : '') + '.' +
+                (d.result && d.result.handovers.length ? '<br>سندات التسليم الجديدة (بانتظار التوقيع): <b dir="ltr">' + esc(d.result.handovers.join('، ')) + '</b>' : '') + '</div>';
+        } else if (t.errors) {
+            status = '<div class="alert alert-danger"><i class="fa fa-times-circle"></i> <b>الملف فيه ' + t.errors + ' خطأ.</b> صلّح الأخطاء دي في الملف وارفعه تاني. مفيش أي حاجة اتحفظت.</div>';
+        } else if (!s.can_commit) {
+            status = '<div class="alert alert-info"><i class="fa fa-info-circle"></i> مفيش سجلات جديدة' + (upd ? ' ولا تعديلات' : '') + ' في الملف. كل البيانات موجودة بالفعل في النظام.' +
+                (t.ignored ? ' فيه ' + t.ignored + ' سجل موجود بقيم مختلفة، وده مابيتغيرش في وضع «إضافة سجلات جديدة فقط».' : '') + '</div>';
+        } else {
+            status = '<div class="alert alert-warning"><i class="fa fa-eye"></i> <b>معاينة بس، لسه مفيش حاجة اتحفظت.</b> راجع الجديد' + (upd ? ' والتعديلات' : '') + ' وبعدين اضغط «تأكيد الاستيراد».</div>';
+        }
+        var html = '<div class="dx-box"><div class="info-label"><i class="fa fa-file-excel-o"></i> ' + esc(d.file_name) + ' — ' + (upd ? 'إضافة وتحديث السجلات الموجودة' : 'إضافة سجلات جديدة فقط') + '</div>' + status;
+        var cell = function (n, bad) { return '<td class="num' + (bad && n ? ' num-bad' : '') + '">' + n + '</td>'; };
+        html += dxTable(['الورقة', 'جديد', 'موجود بدون تغيير', upd ? 'تعديلات' : 'تعديلات هتتجاهل', 'أخطاء'], s.sheets.map(function (x) {
+            return '<tr><td>' + esc(x.name) + '</td>' + cell(x['new']) + cell(x.same) + cell(upd ? x.update : x.ignored) + cell(x.errors, true) + '</tr>';
+        }));
+        if (s.handovers && !done) html += '<p><i class="fa fa-file-text-o"></i> هيتعمل <b>' + s.handovers + '</b> سند تسليم جديد «بانتظار التوقيع» (سند لكل موظف وتاريخ).</p>';
+        if (s.errors.length) {
+            html += '<h4 class="text-danger"><i class="fa fa-exclamation-triangle"></i> الأخطاء</h4>' + dxTable(['الورقة', 'الصف', 'العمود', 'السبب'], s.errors.map(function (e) {
+                return '<tr><td>' + esc(e.sheet) + '</td><td class="num">' + esc(e.row) + '</td><td>' + esc(e.col) + '</td><td>' + esc(e.msg) + '</td></tr>';
+            }));
+        }
+        if (s.warnings.length) {
+            html += '<h4><i class="fa fa-info-circle"></i> ملاحظات</h4><ul>' + s.warnings.map(function (w) { return '<li>' + esc(w.sheet) + ': ' + esc(w.msg) + '</li>'; }).join('') + '</ul>';
+        }
+        if (s.updates.length) {
+            html += '<details open><summary>التعديلات على السجلات الموجودة (' + t.update + ')</summary>' +
+                dxTable(['الورقة', 'الصف', 'الكود', 'العمود', 'القيمة الحالية', 'القيمة الجديدة'], dxDiffRows(s.updates)) + '</details>';
+        }
+        if (s['new'].length) {
+            html += '<details' + (s['new'].length <= 30 ? ' open' : '') + '><summary>السجلات الجديدة (' + t['new'] + ')</summary>' + dxTable(['الورقة', 'الصف', 'الكود', 'البيان'], s['new'].map(function (e) {
+                return '<tr><td>' + esc(e.sheet) + '</td><td class="num">' + esc(e.row) + '</td><td dir="auto">' + esc(e.key) + '</td><td>' + esc(e.label) + '</td></tr>';
+            })) + '</details>';
+        }
+        if (s.ignored.length) {
+            html += '<details><summary>سجلات موجودة بقيم مختلفة ومش هتتغير (' + t.ignored + ')</summary><p class="info-label">' +
+                (upd ? 'سطور العهد المحفوظة جزء من سندات، فمابتتعدلش من الملف.' : 'في وضع «إضافة سجلات جديدة فقط» السجلات الموجودة مابتتغيرش. لو عايز تحدّثها، مدير النظام يختار «إضافة وتحديث السجلات الموجودة».') +
+                '</p>' + dxTable(['الورقة', 'الصف', 'الكود', 'العمود', 'القيمة في النظام', 'القيمة في الملف'], dxDiffRows(s.ignored)) + '</details>';
+        }
+        if (s.truncated) html += '<p class="info-label">القوايم هنا معروضة لحد 300 سجل. التفاصيل كاملة في ملف التقرير.</p>';
+        html += '<div class="dx-actions">';
+        if (!done && s.can_commit) {
+            if (upd) html += '<div class="checkbox dx-agree"><label><input type="checkbox" id="dxAgree"> راجعت التعديلات اللي فوق، وموافق إن القيم الحالية تتغير للقيم الجديدة.</label></div>';
+            html += '<button class="btn btn-success btn-action" id="dxCommit"><i class="fa fa-check"></i> تأكيد الاستيراد</button>';
+        }
+        html += '<a class="btn btn-default btn-action" href="api.php?action=data.import_report&token=' + encodeURIComponent(d.token) + '"><i class="fa fa-download"></i> ' +
+            (done ? 'تنزيل تقرير النتيجة' : 'تنزيل تقرير المعاينة') + '</a></div></div>';
+        $box.html(html);
+        $box.find('#dxCommit').on('click', function () {
+            if (upd && !$box.find('#dxAgree').prop('checked')) return toast('علّم إنك راجعت التعديلات الأول', 'danger');
+            var what = t['new'] + ' سجل جديد' + (t.update ? ' و' + t.update + ' تعديل' : '') + (s.handovers ? ' و' + s.handovers + ' سند تسليم' : '');
+            confirmBox('هيتم حفظ ' + what + ' في النظام. متابعة؟').then(function () {
+                $('#modal').modal('hide');
+                var $b = $box.find('#dxCommit').prop('disabled', true);
+                api('data.import_commit', { token: d.token }).then(function (r) {
+                    toast('تم الاستيراد بنجاح');
+                    loadLookups();
+                    dxRender($box, { token: r.token, file_name: d.file_name, summary: r.summary, result: r.result }, true);
+                    $('#dxFile').val('');
+                }, function (msg) {
+                    $b.prop('disabled', false);
+                    $box.find('.dx-actions').before('<div class="alert alert-danger"><i class="fa fa-times-circle"></i> ' + esc(msg) + '</div>');
+                });
+            });
+        });
+    }
 
     // ------------------------------------------------------------ dialogs
 
@@ -1709,24 +2323,198 @@ window.CUSTODY_TYPES = {
                     '</td><td>' + esc((out ? it.notes_out : it.notes_in) || '') + '</td></tr>';
             }).join('') + '</tbody></table></div>' +
             (h.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(h.notes) + '</p>' : '');
+        var cur = currentScan(h);
         if (h.ack_at) {
-            body += '<div class="alert alert-success"><i class="fa fa-check-circle"></i> وقّع الموظف <b>' + esc(h.ack_name) + '</b> بتاريخ ' + dt(h.ack_at) + ' من ' + dt(h.ack_ip || '') + '</div>';
-        } else {
-            var phone = String(h.phone || '').replace(/\D/g, '').replace(/^0(1\d{9})$/, '20$1');
-            body += '<div class="sign-link-box"><div class="vs-group-label">رابط توقيع الموظف</div>' +
-                '<div class="filter-inline"><input class="form-control" readonly dir="ltr" value="' + esc(h.sign_url) + '">' +
-                '<button class="btn btn-primary btn-action" data-copy="' + esc(h.sign_url) + '"><i class="fa fa-copy"></i> نسخ</button>' +
-                '<a class="btn btn-success btn-action" target="_blank" href="https://wa.me/' + phone + '?text=' + encodeURIComponent('برجاء مراجعة وتوقيع ' + (out ? 'سند تسليم العهدة' : 'سند ارتجاع العهدة') + ' رقم ' + h.doc_no + ':\n' + h.sign_url) + '"><i class="fa fa-whatsapp"></i> واتساب</a>' +
-                '<a class="btn btn-warning btn-action" target="_blank" href="' + esc(h.sign_url) + '"><i class="fa fa-pencil"></i> التوقيع الآن</a></div>' +
-                '<small class="info-label">أرسل الرابط للموظف ليوقّع من موبايله، أو افتح "التوقيع الآن" على جهاز/تابلت أمامه.</small></div>';
+            body += '<div class="alert alert-success"><i class="fa fa-check-circle"></i> وقّع الموظف إلكترونيًا <b>' + esc(h.ack_name) + '</b> بتاريخ ' + dt(h.ack_at) + ' من ' + dt(h.ack_ip || '') + '</div>';
         }
-        var footer = '<button class="btn btn-primary btn-action" data-act="print-h" data-id="' + h.id + '"><i class="fa fa-print"></i> طباعة السند</button>' +
-            (!h.ack_at && canEdit() ? '<button class="btn btn-default btn-action" data-act="renew-link" data-id="' + h.id + '"><i class="fa fa-refresh"></i> تجديد الرابط</button>' : '') +
+        body += paperBox(h, cur);
+        var footer = '<button class="btn btn-default btn-action" data-act="print-h" data-id="' + h.id + '" title="النموذج الأصلي للطباعة والتوقيع، وليس النسخة الموقّعة"><i class="fa fa-print"></i> طباعة نموذج الإقرار</button>' +
             '<button class="btn btn-default btn-action" data-dismiss="modal">إغلاق</button>';
-        modal('<i class="fa fa-file-text-o"></i> ' + (out ? 'سند تسليم عهدة' : 'سند ارتجاع عهدة') + ' ' + esc(h.doc_no), body, footer, 'modal-lg');
+        var $m = modal('<i class="fa fa-file-text-o"></i> ' + (out ? 'سند تسليم عهدة' : 'سند ارتجاع عهدة') + ' ' + esc(h.doc_no), body, footer, 'modal-lg');
+        // علشان التحديث التلقائي يعرف إن تفاصيل السند ده مفتوحة
+        $m.data('handover', h.id).data('hfp', handoverPrint(h));
+    }
+
+    // بصمة حالة السند: لو اتغيرت على السيرفر نعيد رسم التفاصيل المفتوحة
+    function handoverPrint(h) {
+        return JSON.stringify([h.ack_at, h.paper_scan_id, h.paper_signed_on, (h.scans || []).map(function (x) { return [x.id, x.replaced_at]; })]);
     }
 
     function showHandover(id) { api('handovers.get', { id: id }, 'GET').then(handoverDialog); }
+
+    // ------------------------------------------------------------ الإقرار الورقي الموقّع (Scan)
+
+    function currentScan(h) {
+        return (h.scans || []).filter(function (x) { return +x.id === +h.paper_scan_id; })[0] || null;
+    }
+
+    function scanUrl(sc, extra) { return DEMO.scanUrl(sc, extra); }
+
+    function scanButtons(sc, small) {
+        var c = small ? ' btn-xs' : ' btn-action';
+        return '<a class="btn btn-primary' + c + '" target="_blank" href="' + scanUrl(sc) + '"><i class="fa fa-eye"></i> عرض' + (small ? '' : ' الإقرار الموقّع') + '</a>' +
+            '<a class="btn btn-default' + c + '" href="' + scanUrl(sc, '&download=1') + '"><i class="fa fa-download"></i> تنزيل' + (small ? ' PDF' : ' الإقرار الموقّع PDF') + '</a>' +
+            '<button type="button" class="btn btn-default' + c + '" data-act="scan-print" data-url="' + scanUrl(sc) + '"><i class="fa fa-print"></i> طباعة' + (small ? '' : ' الإقرار الموقّع') + '</button>';
+    }
+
+    function paperBox(h, cur) {
+        var html = '<div class="paper-box"><div class="vs-group-label"><i class="fa fa-file-pdf-o"></i> الإقرار الورقي الموقّع</div>';
+        if (cur) {
+            html += '<div class="alert alert-paper"><b><i class="fa fa-check-circle"></i> موقّع ورقيًا</b> — تاريخ التوقيع: ' + dt(cur.signed_on) +
+                '<div class="paper-meta">رفعه <b>' + esc(cur.uploaded_by_name || '') + '</b> في ' + dt(cur.uploaded_at) + ' · ' + (cur.pages ? cur.pages + ' صفحة · ' : '') + fmtSize(cur.pdf_size) +
+                (+cur.version > 1 ? ' · الإصدار ' + cur.version : '') + '</div>' +
+                (cur.notes ? '<div class="paper-meta">ملاحظات: ' + esc(cur.notes) + '</div>' : '') + '</div>' +
+                '<div class="paper-actions">' + scanButtons(cur, false) +
+                (canEdit() ? '<button type="button" class="btn btn-warning btn-action" data-act="scan-upload" data-id="' + h.id + '" data-replace="1"><i class="fa fa-pencil-square-o"></i> تصحيح / استبدال المرفق</button>' : '') +
+                '</div><small class="info-label">توقيع ورقي موثّق بواسطة المستخدم اللي رفع الملف، وليس توقيعًا إلكترونيًا أو تحققًا آليًا من صحة التوقيع.</small>';
+        } else {
+            html += '<p class="info-label">لو الموظف وقّع على الإقرار المطبوع، اعمل له Scan أو صوّره وارفعه هنا على السند نفسه.</p>' +
+                (canEdit() ? '<button type="button" class="btn btn-success btn-action" data-act="scan-upload" data-id="' + h.id + '"><i class="fa fa-upload"></i> رفع الإقرار الموقّع</button>'
+                    : '<small class="info-label">رفع الإقرار متاح لمدير النظام ومسؤول العهد.</small>');
+        }
+        var old = (h.scans || []).filter(function (x) { return !cur || +x.id !== +cur.id; });
+        if (old.length) {
+            html += '<details class="scan-history"><summary>سجل الإصدارات (' + h.scans.length + ')</summary><div class="table-scroll"><table class="table table-bordered table-condensed">' +
+                '<thead><tr><th>الإصدار</th><th>تاريخ التوقيع</th><th>الرفع</th><th>سبب التصحيح</th><th>بيانات السند وقت التوثيق</th><th>الملفات</th></tr></thead><tbody>' +
+                h.scans.map(function (x) {
+                    var snap = x.snapshot || {}, items = snap.items || [];
+                    return '<tr' + (cur && +x.id === +cur.id ? ' class="success"' : '') + '><td>' + x.version + (cur && +x.id === +cur.id ? ' <span class="label label-paper">الحالي</span>' : '<br><small class="info-label">استُبدل ' + esc(x.replaced_at || '') + '</small>') +
+                        '</td><td>' + dt(x.signed_on) + '</td><td>' + esc(x.uploaded_by_name || '') + '<br><small>' + dt(x.uploaded_at) + '</small></td><td>' + esc(x.reason || '-') +
+                        '</td><td><small>' + esc(snap.employee ? snap.employee.name : '') + ' — ' + items.length + ' صنف: ' + esc(items.map(function (i) { return i.code + (i.serial_no ? ' (' + i.serial_no + ')' : ''); }).join('، ')) +
+                        '</small></td><td class="nowrap">' + scanButtons(x, true) +
+                        (x.originals || []).map(function (o, n) { return '<br><a href="' + scanUrl(x, '&original=' + (n + 1)) + '" target="_blank"><small><i class="fa fa-paperclip"></i> ' + esc(o.name) + ' (' + fmtSize(o.size) + ')</small></a>'; }).join('') +
+                        '</td></tr>';
+                }).join('') + '</tbody></table></div></details>';
+        }
+        return html + '</div>';
+    }
+
+    // طباعة الـ PDF الموقّع نفسه. على الموبايل بيتفتح في تاب جديدة ويتطبع من عارض الـ PDF
+    function printPdf(url) {
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) { window.open(url, '_blank'); return; }
+        var $f = $('<iframe class="print-frame" aria-hidden="true" tabindex="-1"></iframe>').attr('src', url).appendTo('body'), done = false;
+        $f.on('load', function () {
+            if (done) return;
+            done = true;
+            try { this.contentWindow.focus(); this.contentWindow.print(); } catch (e) { window.open(url, '_blank'); }
+            setTimeout(function () { $f.remove(); }, 120000);
+        });
+    }
+
+    function scanDialog(h, replace) {
+        var L = S.meta.scan_limits, cur = currentScan(h), files = [], seq = 0;
+        var kind = function (f) {
+            var n = (f.name || '').toLowerCase();
+            if (f.type === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+            if (f.type === 'image/jpeg' || /\.(jpe?g)$/.test(n)) return 'jpg';
+            if (f.type === 'image/png' || /\.png$/.test(n)) return 'png';
+            return '';
+        };
+        var who = (h.type === 'out' ? 'سند تسليم' : 'سند ارتجاع') + ' رقم ' + h.doc_no + ' للموظف ' + h.employee_name;
+        var body = '<form id="scanForm" novalidate>' +
+            '<div class="scan-target"><i class="fa fa-file-text-o"></i> ' + esc(h.type === 'out' ? 'سند تسليم' : 'سند ارتجاع') + ' <b>' + esc(h.doc_no) + '</b> — الموظف: <b>' + esc(h.employee_name) + '</b>' +
+            (h.employee_code ? ' (' + esc(h.employee_code) + ')' : '') + ' — تاريخ السند ' + dt(h.doc_date) + '</div>' +
+            (replace && cur ? '<div class="alert alert-warning"><i class="fa fa-history"></i> الإصدار الحالي (' + cur.version + ') هيفضل محفوظ في سجل الإصدارات، والملف الجديد هيبقى هو الإقرار المعتمد.</div>' : '') +
+            '<div class="scan-pick">' +
+            '<button type="button" class="btn btn-primary btn-action" id="scanPick"><i class="fa fa-folder-open"></i> اختيار ملفات من الجهاز</button>' +
+            '<button type="button" class="btn btn-default btn-action" id="scanCam"><i class="fa fa-camera"></i> تصوير بالكاميرا</button>' +
+            '<input type="file" id="scanFiles" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" multiple style="display:none">' +
+            '<input type="file" id="scanCamInput" accept="image/*" capture="environment" style="display:none">' +
+            '</div>' +
+            '<div class="scan-limits"><i class="fa fa-info-circle"></i> المسموح: <b>ملف PDF واحد</b> فيه كل الصفحات (حتى ' + L.file_mb + ' م.ب)، أو <b>صور JPG / PNG</b> حتى ' + L.files + ' صورة (حتى ' + L.file_mb + ' م.ب للصورة و' + L.total_mb + ' م.ب إجمالًا). ' +
+            'الصور بتتحول بنفس الترتيب لملف PDF واحد. لو بتستخدم سكانر، احفظ الناتج PDF أو صور وارفعه. التصوير بالكاميرا متاح على الموبايل والأجهزة اللي بتدعمه.</div>' +
+            '<div id="scanList" class="scan-list"></div>' +
+            '<div class="row"><div class="col-sm-6 form-group"><label>تاريخ التوقيع الورقي *</label><input class="form-control" type="date" name="signed_on" required min="' + esc(h.doc_date) + '" max="' + esc(S.meta.today) + '" value="' + esc(S.meta.today) + '">' +
+            '<small class="info-label">اليوم اللي الموظف وقّع فيه على الورقة، مش وقت الرفع.</small></div></div>' +
+            (replace ? '<div class="form-group"><label>سبب التصحيح أو الاستبدال *</label><textarea class="form-control" name="reason" rows="2" maxlength="500" required placeholder="مثال: الملف الأول ناقص صفحة / الصورة مش واضحة"></textarea></div>' : '') +
+            '<div class="form-group"><label>ملاحظات</label><textarea class="form-control" name="notes" rows="2" maxlength="1000"></textarea></div>' +
+            '<div class="checkbox scan-confirm"><label><input type="checkbox" name="confirm" value="1" required> أؤكد إن الملف ده يخص ' + esc(who) + '، وفيه توقيع الموظف الفعلي على الإقرار.</label></div>' +
+            '<div class="progress" id="scanProgress" style="display:none"><div class="progress-bar progress-bar-success progress-bar-striped active" style="width:0%"></div></div>' +
+            '<div class="alert alert-danger" id="scanError" style="display:none"></div></form>';
+        var footer = '<button type="button" class="btn btn-success btn-action" id="scanSave"><i class="fa fa-save"></i> ' + (replace ? 'حفظ الإصدار الجديد' : 'حفظ الإقرار الموقّع') + '</button>' +
+            '<button type="button" class="btn btn-default btn-action" id="scanBack">رجوع للسند</button>';
+        var $m = modal('<i class="fa fa-upload"></i> ' + (replace ? 'تصحيح / استبدال الإقرار الموقّع' : 'رفع الإقرار الموقّع'), body, footer, 'modal-lg');
+        var showErr = function (msg) { $m.find('#scanError').text(msg).toggle(!!msg); };
+
+        function render() {
+            var total = files.reduce(function (a, f) { return a + f.file.size; }, 0);
+            $m.find('#scanList').html(files.length ? files.map(function (f, i) {
+                return '<div class="scan-item" data-i="' + i + '">' +
+                    (f.kind === 'pdf' ? '<div class="scan-thumb pdf"><i class="fa fa-file-pdf-o"></i></div>' : '<img class="scan-thumb" src="' + f.url + '" alt="">') +
+                    '<div class="scan-info"><b>' + (f.kind === 'pdf' ? 'ملف PDF' : 'صفحة ' + (i + 1)) + '</b><small dir="auto">' + esc(f.file.name) + '</small><small>' + fmtSize(f.file.size) + '</small></div>' +
+                    '<div class="scan-tools">' +
+                    '<button type="button" class="btn btn-default btn-xs" data-scan="view" title="معاينة"><i class="fa fa-search-plus"></i></button>' +
+                    (files.length > 1 ? '<button type="button" class="btn btn-default btn-xs" data-scan="up" title="لأعلى"' + (i ? '' : ' disabled') + '><i class="fa fa-arrow-up"></i></button>' +
+                        '<button type="button" class="btn btn-default btn-xs" data-scan="down" title="لأسفل"' + (i < files.length - 1 ? '' : ' disabled') + '><i class="fa fa-arrow-down"></i></button>' : '') +
+                    '<button type="button" class="btn btn-danger btn-xs" data-scan="del" title="إزالة"><i class="fa fa-times"></i></button></div></div>';
+            }).join('') + '<div class="scan-sum">' + (files[0].kind === 'pdf' ? 'ملف PDF واحد' : files.length + ' صفحة') + ' · ' + fmtSize(total) + '</div>'
+                : '<div class="scan-empty"><i class="fa fa-file-image-o"></i> لم يتم اختيار ملفات بعد</div>');
+        }
+
+        function add(list) {
+            showErr('');
+            var errs = [];
+            Array.prototype.forEach.call(list, function (file) {
+                var k = kind(file), total = files.reduce(function (a, f) { return a + f.file.size; }, 0);
+                if (!k) return errs.push('"' + file.name + '" ليس PDF أو صورة JPG/PNG');
+                if (file.size > L.file_mb * 1048576) return errs.push('"' + file.name + '" أكبر من ' + L.file_mb + ' م.ب');
+                if (k === 'pdf' && files.length) return errs.push('ملف الـ PDF لازم يترفع لوحده. شيل الملفات التانية الأول');
+                if (k !== 'pdf' && files.length && files[0].kind === 'pdf') return errs.push('مينفعش تضيف صور مع ملف PDF');
+                if (files.length >= L.files) return errs.push('أقصى عدد ' + L.files + ' صورة');
+                if (total + file.size > L.total_mb * 1048576) return errs.push('إجمالي الحجم هيعدّي ' + L.total_mb + ' م.ب');
+                files.push({ id: ++seq, file: file, kind: k, url: URL.createObjectURL(file) });
+            });
+            if (errs.length) showErr(errs.join(' — '));
+            render();
+        }
+
+        function cleanup() { files.forEach(function (f) { URL.revokeObjectURL(f.url); }); }
+
+        render();
+        $m.find('#scanPick').on('click', function () { $m.find('#scanFiles').val('').trigger('click'); });
+        $m.find('#scanCam').on('click', function () { $m.find('#scanCamInput').val('').trigger('click'); });
+        $m.find('#scanFiles, #scanCamInput').on('change', function () { add(this.files); });
+        $m.find('#scanList').on('click', '[data-scan]', function () {
+            var i = +$(this).closest('.scan-item').data('i'), a = $(this).data('scan'), t;
+            if (a === 'view') window.open(files[i].url, '_blank');
+            if (a === 'up' && i > 0) { t = files[i - 1]; files[i - 1] = files[i]; files[i] = t; }
+            if (a === 'down' && i < files.length - 1) { t = files[i + 1]; files[i + 1] = files[i]; files[i] = t; }
+            if (a === 'del') { URL.revokeObjectURL(files[i].url); files.splice(i, 1); }
+            render();
+        });
+        $m.find('#scanBack').on('click', function () { cleanup(); handoverDialog(h); });
+        $m.find('#scanSave').on('click', function () {
+            var $f = $m.find('#scanForm'), v = formData($f);
+            showErr('');
+            if (!files.length) return showErr('اختر ملف الإقرار الموقّع أو صوّره الأول');
+            if (!v.signed_on) return showErr('حدد تاريخ التوقيع الورقي');
+            if (v.signed_on < h.doc_date || v.signed_on > S.meta.today) return showErr('تاريخ التوقيع لازم يكون من تاريخ السند لحد النهارده');
+            if (replace && !$.trim(v.reason || '')) return showErr('اكتب سبب التصحيح أو الاستبدال');
+            if (!+v.confirm) return showErr('أكّد إن الملف يخص هذا السند وفيه توقيع الموظف');
+            var fd = new FormData();
+            fd.append('handover_id', h.id);
+            fd.append('signed_on', v.signed_on);
+            fd.append('notes', v.notes || '');
+            fd.append('confirm', '1');
+            if (replace) { fd.append('replace', '1'); fd.append('reason', v.reason); fd.append('current_scan_id', cur ? cur.id : ''); }
+            files.forEach(function (f) { fd.append('files[]', f.file, f.file.name); });
+            var $btns = $m.find('.modal-footer .btn, #scanPick, #scanCam').prop('disabled', true);
+            var $bar = $m.find('#scanProgress').show().find('.progress-bar').css('width', '0%').text('');
+            api.onProgress = function (r) { $bar.css('width', Math.round(r * 100) + '%').text(r < 1 ? 'جاري الرفع ' + Math.round(r * 100) + '%' : 'جاري تجهيز الملف…'); };
+            var req = api('handovers.paper_upload', fd);
+            api.onProgress = null;
+            req.then(function (nh) {
+                cleanup();
+                toast(replace ? 'تم حفظ الإصدار الجديد من الإقرار الموقّع' : 'تم حفظ الإقرار الموقّع، والسند بقى موقّع ورقيًا');
+                handoverDialog(nh);
+                refresh();
+            }, function (msg) {
+                $m.find('#scanProgress').hide();
+                $btns.prop('disabled', false);
+                showErr(msg + ' — لم يتم تغيير حالة السند.');
+            });
+        });
+    }
 
     function assignDialog(preset) {
         preset = preset || {};
@@ -1737,7 +2525,7 @@ window.CUSTODY_TYPES = {
             '<div class="form-group"><label>الأصناف</label><div class="filter-inline as-type">' +
             '<div class="btn-group" id="asType"><button type="button" class="btn btn-default active" data-type="">الكل</button>' +
             typeKeys().map(function (t) { return '<button type="button" class="btn btn-default" data-type="' + t + '"><i class="fa ' + typeDef(t).icon + '"></i> ' + esc(typeDef(t).label) + '</button>'; }).join('') +
-            '</div><select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو S/N أو IMEI أو رقم الخط — تظهر الأصناف المتاحة فقط</small></div>' +
+            '</div><select class="form-control" id="asItem"></select></div><small class="info-label">ابحث بالكود أو الماركة أو الموديل أو S/N أو IMEI أو رقم الخط أو TID — تظهر الأصناف المتاحة فقط</small></div>' +
             '<div class="table-scroll"><table class="table table-bordered table-condensed" id="asLines"><thead><tr><th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>الحالة عند التسليم</th><th>ملاحظات</th><th></th></tr></thead><tbody></tbody></table></div>' +
             '<div class="form-group"><label>ملاحظات السند</label><textarea class="form-control" name="notes" rows="2"></textarea></div></form>';
         var $m = modal('<i class="fa fa-share"></i> تسليم عهدة جديدة', body,
@@ -1859,13 +2647,13 @@ window.CUSTODY_TYPES = {
             var body = '<div class="emp-info">' + info + (+e.active ? '' : ' <span class="label label-default">موقوف</span>') + '</div>' +
                 '<div class="vs-kpi-grid"><div class="vs-kpi"><span class="num">' + active.length + '</span><span class="lbl">أصناف في العهدة</span></div>' +
                 '<div class="vs-kpi"><span class="num">' + money(total) + '</span><span class="lbl">قيمة العهدة</span></div>' +
-                '<div class="vs-kpi' + (d.handovers.filter(function (h) { return !h.ack_at; }).length ? '' : ' zero') + '"><span class="num">' + d.handovers.filter(function (h) { return !h.ack_at; }).length + '</span><span class="lbl">سندات بانتظار التوقيع</span></div></div>' +
+                '<div class="vs-kpi' + (d.handovers.filter(function (h) { return !h.ack_at && !h.paper_signed_on; }).length ? '' : ' zero') + '"><span class="num">' + d.handovers.filter(function (h) { return !h.ack_at && !h.paper_signed_on; }).length + '</span><span class="lbl">سندات بانتظار التوقيع</span></div></div>' +
                 '<div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr>' + (canEdit() ? '<th></th>' : '') + '<th>النوع</th><th>كود الأصل</th><th>الصنف</th><th>' + keyLabel('') + '</th><th>المواصفات والملحقات</th><th>القيمة</th><th>تاريخ التسليم</th><th>السند</th><th>التوقيع</th><th>الارتجاع</th></tr></thead><tbody>' +
                 (d.custody.length ? d.custody.map(function (c) {
                     var act = !c.in_handover_id;
                     return '<tr class="' + (act ? '' : 'row-returned') + '">' + (canEdit() ? '<td>' + (act ? '<input type="checkbox" class="emp-check" value="' + c.id + '">' : '') + '</td>' : '') +
                         '<td>' + typeBadge(c) + '</td><td>' + esc(c.code) + '</td><td>' + esc(c.item_name) + '</td><td dir="ltr">' + esc(c.serial_no || '-') + '</td><td class="details-cell">' + itemDetails(c) + '</td><td>' + money(c.value) + '</td><td>' + esc(c.assigned_at) +
-                        '</td><td><a href="#" data-act="handover" data-id="' + c.out_handover_id + '">' + esc(c.out_doc_no) + '</a></td><td>' + ackLabel(c.out_ack_at) + '</td><td>' +
+                        '</td><td><a href="#" data-act="handover" data-id="' + c.out_handover_id + '">' + esc(c.out_doc_no) + '</a></td><td>' + ackLabel(c.out_ack_at, c.out_paper_on) + '</td><td>' +
                         (act ? '<span class="label label-primary">قائمة</span>' : dt(c.returned_at) + ' — ' + esc(c.in_doc_no)) + '</td></tr>';
                 }).join('') : '<tr><td colspan="12" class="empty">لا يوجد سجل عهد لهذا الموظف</td></tr>') + '</tbody></table></div>';
             var footer = (canEdit() && +e.active ? '<button class="btn btn-success btn-action" data-act="assign" data-emp="' + e.id + '" data-emp-name="' + esc(e.name) + '"><i class="fa fa-share"></i> تسليم عهدة</button>' : '') +
@@ -1892,7 +2680,9 @@ window.CUSTODY_TYPES = {
             }).join('');
             var info = [['الكود', i.code], ['تاريخ الشراء', i.purchase_date], ['القيمة', i.value !== null ? money(i.value) : ''], ['المكان', i.location], ['الحالة الفنية', i.item_condition]]
                 .filter(function (x) { return x[1]; }).map(function (x) { return '<span><span class="info-label">' + x[0] + ':</span> ' + esc(x[1]) + '</span>'; }).join('');
-            var body = '<div class="emp-info">' + typeBadge(i) + ' ' + info + ' ' + statusLabel(i.status) + '</div><div class="emp-info spec-info">' + spec + '</div>' + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
+            var linked = d.linked_by ? '<p><span class="info-label"><i class="fa ' + typeDef(d.linked_by.type).icon + '"></i> مرتبطة بالجهاز:</span> <a href="#" data-act="item" data-id="' + d.linked_by.id + '">' +
+                esc(d.linked_by.code + ' — ' + d.linked_by.name) + '</a></p>' : '';
+            var body = '<div class="emp-info">' + typeBadge(i) + ' ' + info + ' ' + statusLabel(i.status) + '</div><div class="emp-info spec-info">' + spec + '</div>' + linked + (i.notes ? '<p><span class="info-label">ملاحظات:</span> ' + esc(i.notes) + '</p>' : '') +
                 '<div class="vs-group-label">سجل التداول</div><div class="table-scroll"><table class="table table-bordered table-condensed"><thead><tr><th>الموظف</th><th>القسم</th><th>تاريخ التسليم</th><th>الحالة</th><th>سند التسليم</th><th>تاريخ الارتجاع</th><th>الحالة</th><th>سند الارتجاع</th></tr></thead><tbody>' +
                 (d.history.length ? d.history.map(function (c) {
                     return '<tr><td>' + esc(c.employee_name) + '</td><td>' + esc(c.department || '-') + '</td><td>' + esc(c.assigned_at) + '</td><td>' + esc(c.condition_out || '') +
@@ -1905,6 +2695,12 @@ window.CUSTODY_TYPES = {
 
     // حقل من حقول نوع الصنف حسب تعريفه في types.json
     function typeFieldInput(t, f, v) {
+        // ربط بصنف آخر (مثل شريحة ماكينة POS): القائمة تُملأ من السيرفر بعد فتح النموذج
+        if (f.input === 'item_ref') {
+            return '<select class="form-control spec item-ref" data-key="' + f.key + '" data-ref-type="' + esc(f.ref_type) + '" data-value="' + esc(v || '') + '">' +
+                '<option value="' + esc(v || '') + '">جاري التحميل...</option></select>' +
+                '<small class="info-label">اختياري — الشريحة الواحدة تُربط بجهاز واحد فقط</small>';
+        }
         if (f.input === 'checks') {
             return '<div class="spec-checks">' + f.options.map(function (o) {
                 return '<label class="checkbox-inline"><input type="checkbox" class="spec-check" data-key="' + f.key + '" value="' + esc(o) + '"' + ($.isArray(v) && v.indexOf(o) >= 0 ? ' checked' : '') + '> ' + esc(o) + '</label>';
@@ -1917,11 +2713,26 @@ window.CUSTODY_TYPES = {
             (f.suggest ? datalist(dl, f.suggest) : '');
     }
 
-    function typeFieldsHtml(t, specs) {
+    function typeFieldsHtml(t, specs, refs) {
         return '<div class="col-xs-12"><div class="vs-group-label"><i class="fa ' + typeDef(t).icon + '"></i> بيانات ' + esc(typeDef(t).label) + '</div></div>' +
             typeDef(t).fields.map(function (f) {
-                return fg(f.input === 'checks' ? 12 : 4, esc(f.label) + (f.required ? ' *' : ''), typeFieldInput(t, f, specs[f.key]));
+                var v = f.input === 'item_ref' ? (refs || {})[f.key] : specs[f.key];
+                return fg(f.input === 'checks' ? 12 : 4, esc(f.label) + (f.required ? ' *' : ''), typeFieldInput(t, f, v));
             }).join('');
+    }
+
+    // يملأ قوائم الربط (الشرائح) ويعطّل المرتبط منها بجهاز آخر
+    function loadRefOptions($scope, selfId) {
+        $scope.find('select.item-ref').each(function () {
+            var $s = $(this), cur = String($s.data('value') || '');
+            api('items.ref_options', { type: $s.data('ref-type') }, 'GET').then(function (list) {
+                $s.html('<option value="">-- بدون --</option>' + list.map(function (o) {
+                    var busy = o.linked_id && String(o.linked_id) !== String(selfId || '');
+                    return '<option value="' + o.id + '"' + (String(o.id) === cur ? ' selected' : '') + (busy ? ' disabled' : '') + '>' +
+                        esc(o.serial_no + (o.brand ? ' - ' + o.brand : '') + ' (' + o.code + ')' + (busy ? ' — مرتبطة بـ ' + o.linked_code : '')) + '</option>';
+                }).join(''));
+            });
+        });
     }
 
     function collectSpecs($form) {
@@ -1943,7 +2754,7 @@ window.CUSTODY_TYPES = {
             var body = '<form id="itemForm" class="row">' +
                 '<input type="hidden" name="id" value="' + esc(i.id || '') + '">' +
                 fg(12, 'نوع الصنف', typePicker) +
-                '<div id="itFields" class="clearfix">' + typeFieldsHtml(type, i.specs || {}) + '</div>' +
+                '<div id="itFields" class="clearfix">' + typeFieldsHtml(type, i.specs || {}, i.refs) + '</div>' +
                 '<div class="col-xs-12"><div class="vs-group-label"><i class="fa fa-archive"></i> بيانات الأصل</div></div>' +
                 fg(4, 'كود الأصل', '<input class="form-control" name="code" value="' + esc(i.code || '') + '" placeholder="يُولَّد تلقائيًا إن تُرك فارغًا">') +
                 fg(4, 'تاريخ الشراء', '<input class="form-control" type="date" name="purchase_date" value="' + esc(i.purchase_date || '') + '">') +
@@ -1955,11 +2766,13 @@ window.CUSTODY_TYPES = {
                 fg(12, 'ملاحظات', '<textarea class="form-control" name="notes" rows="2">' + esc(i.notes || '') + '</textarea>') + '</form>';
             var title = function () { return '<i class="fa ' + typeDef(type).icon + '"></i> ' + (id ? 'تعديل ' : 'إضافة ') + esc(typeDef(type).label); };
             var $m = modal(title(), body, saveFooter(), 'modal-lg');
+            loadRefOptions($m, id);
             $m.find('#itType').on('click', '[data-type]', function () {
                 type = String($(this).data('type'));
                 $(this).addClass('active').siblings().removeClass('active');
                 $m.find('#itFields').html(typeFieldsHtml(type, {}));
                 $m.find('.modal-title').html(title());
+                loadRefOptions($m, id);
             });
             $m.find('#btnSave').on('click', function () {
                 var $form = $m.find('#itemForm');
@@ -2062,16 +2875,21 @@ window.CUSTODY_TYPES = {
             case 'assign': assignDialog({ emp: $t.data('emp'), empName: $t.data('emp-name'), item: $t.data('item') }); break;
             case 'handover': showHandover(id); break;
             case 'print-h': openPrint('print.php?h=' + id); break;
-            case 'print-emp': openPrint('print.php?emp=' + id); break;
-            case 'renew-link':
-                confirmBox('سيتوقف الرابط القديم عن العمل. متابعة؟').then(function () { api('handovers.renew_link', { id: id }).then(handoverDialog); });
+            case 'scan-print': printPdf($t.data('url')); break;
+            case 'scan-upload':
+                api('handovers.get', { id: id }, 'GET').then(function (h) { scanDialog(h, !!$t.data('replace')); });
                 break;
+            case 'print-emp': openPrint('print.php?emp=' + id); break;
             case 'employee': employeeCard(id); break;
             case 'item': itemCard(id); break;
             case 'item-edit': itemForm(id, $t.data('type')); break;
-            case 'backup': DEMO.go = 'api.php?action=backup.download'; break;
             case 'employee-edit': employeeForm(id); break;
             case 'user-edit': userForm(id); break;
+            case 'user-impersonate':
+                confirmBox('ستدخل النظام باسم "' + $t.data('name') + '" وبصلاحياته فقط. متابعة؟').then(function () {
+                    api('auth.impersonate', { id: id }).then(function () { location.hash = 'dashboard'; location.reload(); });
+                });
+                break;
             case 'item-delete':
                 confirmBox('حذف الصنف نهائيًا؟').then(function () { api('items.delete', { id: id }).then(function () { $('#modal').modal('hide'); toast('تم الحذف'); refresh(); }); });
                 break;
@@ -2092,7 +2910,7 @@ window.CUSTODY_TYPES = {
 
     function route() {
         var name = (location.hash || '#dashboard').slice(1);
-        if (!views[name] || ((name === 'users' || name === 'log') && !isAdmin())) name = 'dashboard';
+        if (!views[name] || ((name === 'users' || name === 'log') && !isAdmin()) || (name === 'data' && !canEdit())) name = 'dashboard';
         current = null;
         $('#menu li').removeClass('active').filter('[data-view="' + name + '"]').addClass('active');
         $('#modal').modal('hide');
@@ -2105,23 +2923,205 @@ window.CUSTODY_TYPES = {
     }
 
     function showLogin() {
+        $('body').removeClass('relogin');
         $('#appView').hide();
         $('#loginView').show();
     }
+
+    // ------------------------------------------------------------ مهلة الجلسة
+    // السيرفر هو المرجع: الجلسة تنتهي بعد مهلة خمول، وتتجدد بأي طلب يعمله المستخدم بنفسه أو بتفاعله مع الصفحة.
+    // فحص الحالة الدوري في الخلفية لا يمددها. مفيش أي بيانات دخول بتتحفظ في المتصفح.
+    var SESS = { idle: 0, warn: 300, deadline: 0, lastPing: 0, lastInput: 0, lastCheck: 0, checking: false, expired: false };
+
+    // أقصى معدل لإبلاغ السيرفر بالتفاعل: دقيقة (أو عُشر المهلة لو أقصر)
+    function pingEvery() { return Math.min(60000, SESS.idle * 100); }
+
+    function sessionSync(info) {
+        if (!info) return;
+        SESS.idle = info.idle;
+        SESS.warn = info.warn;
+        SESS.deadline = Date.now() + info.remaining * 1000;
+        SESS.lastCheck = Date.now();
+    }
+
+    function sessionTouched() {
+        SESS.deadline = Date.now() + SESS.idle * 1000;
+        SESS.lastPing = Date.now();
+    }
+
+    function sameIdentity(d) {
+        return !!d.user && !!S.user && +d.user.id === +S.user.id && (d.impersonator || null) === (S.impersonator ? +S.impersonator.id : null);
+    }
+
+    // يجيب رمز الحماية الحالي، ويرجع true لو الجلسة لسه لنفس المستخدم
+    function refreshCsrf() {
+        return api('auth.session', null, 'GET', true).then(function (d) {
+            S.csrf = d.csrf;
+            return !S.user || sameIdentity(d);
+        });
+    }
+
+    function checkSession(activity) {
+        if (SESS.checking) return;
+        SESS.checking = true;
+        api('auth.session', null, 'GET', !activity).then(function (d) {
+            SESS.lastCheck = Date.now();
+            S.csrf = d.csrf;
+            if (!S.user || SESS.expired) return;
+            if (!d.user) { sessionExpired(d.session.message); return; }
+            if (!sameIdentity(d)) { location.reload(); return; }
+            sessionSync(d.session);
+            if (d.user.role !== S.user.role) {
+                toast('تم تغيير صلاحيات حسابك، وتم تحديث الصفحة على الصلاحيات الجديدة', 'warning');
+                $('#modal').modal('hide');
+                boot();
+            }
+        }).always(function () { SESS.checking = false; });
+    }
+
+    function fmtLeft(ms) {
+        var s = Math.max(0, Math.ceil(ms / 1000));
+        return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2);
+    }
+
+    function sessionTick() {
+        if (!S.user || SESS.expired || !SESS.idle) return;
+        var now = Date.now(), left = SESS.deadline - now;
+        // قبل التنبيه أو بعد المهلة نتأكد من السيرفر، يمكن المستخدم شغال في نافذة تانية
+        if (SESS.lastInput > SESS.lastPing && now - SESS.lastPing > pingEvery()) {
+            // تفاعل لسه ماوصلش للسيرفر
+            SESS.lastPing = now;
+            checkSession(true);
+        } else if ((left <= SESS.warn * 1000 && now - SESS.lastCheck > (left <= 0 ? 3000 : 20000)) || now - SESS.lastCheck > 60000) {
+            checkSession(false);
+        }
+        if (left > 0 && left <= SESS.warn * 1000) {
+            $('#sessionWarnLeft').text(fmtLeft(left));
+            $('#sessionWarn').show();
+        } else {
+            $('#sessionWarn').hide();
+        }
+    }
+
+    function sessionExpired(msg) {
+        $('#sessionWarn').hide();
+        $('#loginNotice').text(msg || 'انتهت الجلسة، سجّل الدخول مرة أخرى').show();
+        $('#loginError').hide();
+        refreshCsrf();
+        if (!S.user) { showLogin(); return; }
+        if (SESS.expired) return;
+        SESS.expired = true;
+        // شاشة الدخول فوق الصفحة الحالية، فالنماذج المفتوحة والبيانات اللي اتكتبت فيها بتفضل زي ما هي
+        $(document).off('focusin.bs.modal');
+        $('body').addClass('relogin');
+        var $v = $('#loginView').show();
+        $v.find('[name=username]').val(S.user.username);
+        $v.find('[name=password]').val('').trigger('focus');
+    }
+
+    function afterRelogin() {
+        var prev = S.user;
+        return api('auth.me', null, 'GET').then(function (d) {
+            SESS.expired = false;
+            $('body').removeClass('relogin');
+            if (d.user && +d.user.id === +prev.id && d.user.role === prev.role && !S.impersonator && !d.impersonator) {
+                S.csrf = d.csrf;
+                S.user = d.user;
+                sessionSync(d.session);
+                SESS.lastPing = Date.now();
+                $('#loginView, #loginNotice').hide();
+                toast('تم تسجيل الدخول. البيانات اللي كنت بتكتبها لسه موجودة، ولو كنت ضغطت حفظ قبل كده اضغطه تاني', 'success');
+                return;
+            }
+            $('#modal').modal('hide');
+            return boot();
+        });
+    }
+
+    $('#btnKeepSession').on('click', function () { checkSession(true); });
+    // التفاعل الفعلي مع الصفحة (ضغط، كتابة، لمس، تمرير) نشاط يمدد الجلسة، بحد أقصى طلب كل دقيقة
+    $(document).on('mousedown keydown touchstart wheel', function () {
+        if (!S.user || SESS.expired) return;
+        SESS.lastInput = Date.now();
+        if (Date.now() - SESS.lastPing > pingEvery() || $('#sessionWarn').is(':visible')) {
+            SESS.lastPing = Date.now();
+            checkSession(true);
+        }
+    });
+    $(document).on('visibilitychange', function () { if (!document.hidden && S.user && !SESS.expired) checkSession(false); });
+
+    // ------------------------------------------------------------ تحديث تلقائي بين الأجهزة والتبويبات
+    // كل 5 ثواني والصفحة ظاهرة: طلب خفيف بيرجع رقم إصدار البيانات بس. لو اتغير، نحدّث الجدول أو لوحة المتابعة
+    // وتفاصيل السند المفتوحة من السيرفر. طلبات خلفية مابتمددش الجلسة، ومفيش طلبين في نفس الوقت.
+    var SYNC = { v: null, busy: false };
+
+    function syncVersion() {
+        return api('sync.version', null, 'GET', true).then(function (d) { return d.v; });
+    }
+
+    function syncOpenHandover() {
+        var $m = $('#modal'), hid = $m.data('handover');
+        if (!hid || !$m.hasClass('in')) return $.when();
+        return api('handovers.get', { id: hid }, 'GET', true).then(function (h) {
+            if ($m.data('handover') !== hid || !$m.hasClass('in') || $m.data('hfp') === handoverPrint(h)) return;
+            var top = $m.scrollTop(), open = $m.find('.scan-history').prop('open');
+            handoverDialog(h);
+            $m.find('.scan-history').prop('open', !!open);
+            $m.scrollTop(top);
+        });
+    }
+
+    function syncApply() {
+        var y = window.pageYOffset;
+        var page = current && current.sync ? current.sync()
+            : (!current && (location.hash || '#dashboard') === '#dashboard' ? views.dashboard(true).then(function () { window.scrollTo(window.pageXOffset, y); }) : $.when());
+        return $.when(page, syncOpenHandover());
+    }
+
+    function syncCheck() {
+        if (!S.user || SESS.expired || SYNC.busy || document.hidden || navigator.onLine === false) return;
+        SYNC.busy = true;
+        syncVersion().then(function (v) {
+            if (SYNC.v === null || v === SYNC.v) { SYNC.v = v; return; }
+            return syncApply().then(function () { SYNC.v = v; });
+        }).always(function () { SYNC.busy = false; });
+    }
+
+    setInterval(syncCheck, 5000);
+    $(document).on('visibilitychange', function () { if (!document.hidden) syncCheck(); });
+    $(window).on('online focus', syncCheck);
+    setInterval(sessionTick, 1000);
 
     function boot() {
         return api('auth.me', null, 'GET').then(function (d) {
             S.csrf = d.csrf;
             S.meta = d;
             S.user = d.user;
-            if (!S.user) { showLogin(); return; }
+            S.impersonator = d.impersonator;
+            SESS.expired = false;
+            if (!S.user) {
+                $('#loginNotice').text(d.session.message || '').toggle(!!d.session.ended);
+                showLogin();
+                return;
+            }
+            sessionSync(d.session);
+            SESS.lastPing = Date.now();
+            $('body').removeClass('relogin');
+            $('#loginNotice, #loginError, #sessionWarn').hide();
             $('#loginView').hide();
             $('#appView').show();
             $('#userName').text(S.user.name + ' — ' + (d.roles[S.user.role] || ''));
             $('.admin-only').toggle(isAdmin());
-            return loadLookups().then(function () {
+            $('.edit-only').toggle(!!canEdit());
+            // الدخول كمستخدم: شريط دائم بزر العودة، ولا يُطلب تغيير كلمة مرور المستخدم
+            $('body').toggleClass('impersonating', !!S.impersonator);
+            $('#impBar').toggle(!!S.impersonator);
+            $('#impName').text(S.user.name + ' (' + S.user.username + ')');
+            $('#btnChangePw').toggle(!S.impersonator);
+            SYNC.v = null;
+            return $.when(loadLookups(), syncVersion().then(function (v) { SYNC.v = v; }, function () { return $.when(); })).then(function () {
                 route();
-                if (+S.user.must_change) passwordDialog(true);
+                if (+S.user.must_change && !S.impersonator) passwordDialog(true);
             });
         });
     }
@@ -2129,10 +3129,18 @@ window.CUSTODY_TYPES = {
     $('#loginForm').on('submit', function (e) {
         e.preventDefault();
         $('#loginError').hide();
-        api('auth.login', formData($(this))).then(boot, function (msg) { $('#loginError').text(msg).show(); });
+        var $f = $(this);
+        api('auth.login', formData($f)).then(function () {
+            $f.find('[name=password]').val('');
+            return SESS.expired && S.user ? afterRelogin() : boot();
+        }, function (msg) { $('#loginError').text(msg).show(); });
     });
 
     $('#btnLogout').on('click', function () { api('auth.logout', {}).then(function () { location.hash = ''; location.reload(); }); });
+    $('#btnStopImp').on('click', function () {
+        $(this).prop('disabled', true);
+        api('auth.stop_impersonation', {}).then(function () { location.hash = 'users'; location.reload(); }, function () { $('#btnStopImp').prop('disabled', false); });
+    });
     $('#btnChangePw').on('click', function () { passwordDialog(false); });
     $('#sidebarToggle').on('click', function () { $('body').toggleClass('sidebar-open'); });
     $(window).on('hashchange', function () { if (S.user) { $('body').removeClass('sidebar-open'); route(); } });

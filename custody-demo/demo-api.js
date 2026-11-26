@@ -1,7 +1,9 @@
 /* نسخة تجريبية: بديل api.php يعمل داخل المتصفح ويحفظ البيانات في localStorage */
 (function ($) {
     'use strict';
-    var KEY = 'custody-demo-v2';
+    var KEY = 'custody-demo-v3';
+    var SESSION_IDLE = 21600, SESSION_WARN = 300;   // نفس session_minutes و session_warn_minutes
+    var SCAN_LIMITS = { file_mb: 15, total_mb: 60, files: 20 };
     var TYPES = window.CUSTODY_TYPES;   // نفس custody/types.json، يضمّنه build.py
     var STATUSES = ['متاحة', 'مسلمة', 'صيانة', 'تالفة', 'مفقودة', 'مكهنة'];
     var CONDITIONS = ['جديد', 'جيد', 'مستعمل', 'يحتاج صيانة', 'تالف'];
@@ -29,7 +31,10 @@
         var db = { seq: {}, users: [], employees: [], items: [], handovers: [], custody: [], log: [] };
         db.users.push({ id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', active: 1, must_change: 0, last_login: now(), created_at: now(), password: 'admin123' });
         db.users.push({ id: 2, username: 'store', name: 'مسؤول المخزن', role: 'editor', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'store1234' });
-        db.seq.users = 2;
+        db.users.push({ id: 3, username: 'viewer', name: 'مراجع الحسابات', role: 'viewer', active: 1, must_change: 0, last_login: null, created_at: now(), password: 'viewer1234' });
+        db.seq.users = 3;
+        db.sess = { uid: 1, imp: null, imp_started: null, ended: null };
+        db.scans = []; db.seq.scans = 0;
         [['E001', 'أحمد محمد عبد الله', 'الهندسة', 'مهندس تركيب', 'القاهرة', '01012345678'],
          ['E002', 'منى علي حسن', 'المصنع', 'فني تصنيع', 'القاهرة', '01123456789'],
          ['E003', 'كريم حسن مصطفى', 'خدمة العملاء', 'مسؤول كول سنتر', 'القاهرة', '01234567890'],
@@ -66,10 +71,16 @@
          SIM('01288776655', 'أورانج', 'فاتورة', 'شريحة عادية', 'بريميوم 150', '150', '20GB'),
          SIM('01155443322', 'اتصالات', 'كارت', 'شريحة عادية', '', '', '5GB'),
          SIM('01022334455', 'فودافون', 'فاتورة', 'eSIM', 'ريد 300', '300', 'غير محدود'),
-         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB')
+         SIM('01511223344', 'WE', 'فاتورة', 'شريحة عادية', 'باقة 100', '100', '10GB'),
+         SIM('01066778899', 'فودافون', 'فاتورة', 'شريحة عادية', 'بيانات POS', '50', '5GB'),
+         ['pos', { brand: 'PAX', model: 'A920 Pro', serial_no: '1850012345', provider: 'البنك الأهلي المصري', tid: '00012345', mid: '000987654321', connection: ['شريحة SIM', 'Wi-Fi'], accessories: ['شاحن', 'رول ورق'] }, 14500],
+         ['pos', { brand: 'Verifone', model: 'V240m', serial_no: '402-118-907', provider: 'جيديا Geidea', tid: '00067890', mid: '000123456789', connection: ['شريحة SIM'], accessories: ['شاحن', 'جراب'] }, 12000]
         ].forEach(function (x, i) {
             A['items.save']({ type: x[0], specs: x[1], value: x[2] || '', purchase_date: today(-300 + i * 9), item_condition: i % 5 === 0 ? 'جديد' : 'جيد', location: 'المخزن الرئيسي' });
         });
+        // ربط شرائح بماكينات POS (الشريحة الواحدة بجهاز واحد بس)
+        A['items.save']($.extend(editable(17), { specs: $.extend({}, byId('items', 17).specs, rawCols(17), { sim_item_id: 16 }) }));
+        A['items.save']($.extend(editable(18), { specs: $.extend({}, byId('items', 18).specs, rawCols(18), { sim_item_id: 15 }) }));
         var h1 = assign(1, [{ item_id: 1 }, { item_id: 6 }, { item_id: 11 }], today(-40), 'عهدة بداية العمل');
         sign(h1, 'أحمد محمد عبد الله');
         var h2 = assign(5, [{ item_id: 3 }, { item_id: 8 }, { item_id: 12 }], today(-25), '');
@@ -79,6 +90,10 @@
         var h4 = assign(7, [{ item_id: 4 }], today(-8), '');
         sign(h4, 'عمرو فتحي');
         assign(2, [{ item_id: 5 }, { item_id: 13 }], today(-3), '');
+        // سند عليه إقرار ورقي موقّع (Scan) بدل التوقيع الإلكتروني
+        var h5 = assign(6, [{ item_id: 17 }, { item_id: 16 }], today(-6), 'ماكينة الاستقبال');
+        storeScan(h5, { signed_on: today(-5), notes: 'اتعمل Scan من النسخة الورقية', source: 'images', pages: 1,
+            originals: [{ name: 'iqrar-page1.jpg', mime: 'image/jpeg', size: 182000 }] }, samplePdf(byId('handovers', h5)));
         assign(3, [{ item_id: 10 }], today(-1), '');
         var r = doReturn([{ custody_id: DB.custody.filter(function (c) { return c.item_id === 7; })[0].id, condition: 'يحتاج صيانة', status: 'صيانة', notes: 'الشاشة مكسورة' }], today(-2), '');
         sign(r, 'سارة إبراهيم');
@@ -92,30 +107,69 @@
     function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { /* التخزين غير متاح: تبقى البيانات في الذاكرة */ } }
     function nextId(t) { DB.seq[t] = (DB.seq[t] || 0) + 1; return DB.seq[t]; }
     function byId(t, id) { id = +id; for (var i = 0; i < DB[t].length; i++) if (DB[t][i].id === id) return DB[t][i]; return null; }
-    function log(action, entity, id, details) { DB.log.unshift({ id: nextId('log'), user_id: 1, action: action, entity: entity, entity_id: id, details: details, created_at: now() }); }
+    function log(action, entity, id, details, anon) {
+        var s = DB.sess || {};
+        DB.log.unshift({ id: nextId('log'), user_id: anon ? null : (s.uid || null), impersonator_id: anon ? null : (s.imp || null), action: action, entity: entity, entity_id: id, details: details, created_at: now() });
+    }
     function fail(msg, code) { var e = new Error(msg); e.code = code || 400; throw e; }
     function str(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max || 190); }
     function has(s, q) { return String(s || '').toLowerCase().indexOf(q.toLowerCase()) >= 0; }
     function copy(o) { return JSON.parse(JSON.stringify(o)); }
     // نفس decorate_item في lib.php
     function decorate(row) {
-        var t = TYPES[row.type], specs = $.extend({}, row.specs || {});
+        var t = TYPES[row.type], specs = $.extend({}, row.specs || {}), refs = {}, short = {};
         ['brand', 'model', 'serial_no'].forEach(function (k) { if (row[k] !== undefined) specs[k] = row[k]; });
+        (t ? t.fields : []).forEach(function (f) {
+            if (f.short) short[f.key] = f.short;
+            if (f.input === 'item_ref') {
+                var refId = +(row[f.column] || 0);
+                refs[f.key] = refId || null;
+                var txt = refId ? linkedText(refId) : '';
+                if (txt) specs[f.key] = txt;
+            }
+        });
         return $.extend({}, row, {
-            type_label: t ? t.label : '', specs: specs,
-            specs_text: (t ? t.summary : []).filter(function (k) { return specs[k]; }).map(function (k) { return specs[k]; }).join(' / '),
+            type_label: t ? t.label : '', specs: specs, refs: refs,
+            specs_text: (t ? t.summary : []).map(function (k) {
+                var v = $.isArray(specs[k]) ? specs[k].join('، ') : String(specs[k] || '');
+                return v ? (short[k] ? short[k] + ': ' + v : v) : '';
+            }).filter(Boolean).join(' / '),
             accessories_text: (specs.accessories || []).join('، ')
         });
     }
-    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs }; }
+    // نفس linked_item_text في lib.php: "01012345678 - فودافون (SM-00003)"
+    function linkedText(id) {
+        var r = byId('items', id);
+        return r ? ((r.serial_no || '') + (r.brand ? ' - ' + r.brand : '')).trim() + ' (' + r.code + ')' : '';
+    }
+    function itemFields(it) { return { code: it.code, type: it.type, name: it.name, brand: it.brand, model: it.model, serial_no: it.serial_no, value: it.value, specs: it.specs, linked_sim_id: it.linked_sim_id || null }; }
+    // لتعديل صنف موجود من البيانات التجريبية
+    function rawCols(id) { var it = byId('items', id); return { brand: it.brand, model: it.model, serial_no: it.serial_no }; }
+    function editable(id) {
+        var it = byId('items', id);
+        return { id: id, code: it.code, purchase_date: it.purchase_date, value: it.value, item_condition: it.item_condition, status: it.status, location: it.location, notes: it.notes };
+    }
+    // نفس ack_filter_sql: signed (أي توقيع) / esign / paper / pending
+    function ackOk(ackAt, paperScan, ack) {
+        if (ack === 'signed') return !!(ackAt || paperScan);
+        if (ack === 'esign') return !!ackAt;
+        if (ack === 'paper') return !!paperScan;
+        if (ack === 'pending') return !ackAt && !paperScan;
+        return true;
+    }
+    function ackText(ackAt, paperOn) {
+        if (ackAt && paperOn) return 'موقّع إلكترونيًا وورقيًا';
+        return ackAt ? 'موقّع إلكترونيًا' : (paperOn ? 'موقّع ورقيًا' : 'بانتظار التوقيع');
+    }
+    function userName(id) { return (byId('users', id) || {}).name || null; }
     function docNo(type, id, date) { return (type === 'out' ? 'TS' : 'RT') + '-' + date.slice(0, 4) + '-' + pad(id, 5); }
     function signUrl(t) { return 'sign.php?t=' + t; }
 
     // ------------------------------------------------------------ operations
     function createHandover(type, empId, date, notes) {
         var id = nextId('handovers');
-        DB.handovers.push({ id: id, doc_no: docNo(type, id, date), type: type, employee_id: +empId, doc_date: date, notes: notes || '', created_by: 1, created_at: now(), token: token(),
-            ack_at: null, ack_name: null, ack_ip: null, ack_agent: null, ack_signature: null });
+        DB.handovers.push({ id: id, doc_no: docNo(type, id, date), type: type, employee_id: +empId, doc_date: date, notes: notes || '', created_by: (DB.sess || {}).uid || 1, created_at: now(), token: token(),
+            ack_at: null, ack_name: null, ack_ip: null, ack_agent: null, ack_signature: null, paper_scan_id: null, paper_signed_on: null });
         return id;
     }
 
@@ -167,7 +221,7 @@
     function sign(hid, name, sig) {
         var h = byId('handovers', hid);
         h.ack_at = now(); h.ack_name = name; h.ack_ip = '192.168.1.' + (20 + hid); h.ack_signature = sig || fakeSignature(name);
-        log('توقيع الموظف', 'handover', hid, h.doc_no + ' - ' + name);
+        log('توقيع الموظف', 'handover', hid, h.doc_no + ' - ' + name, true);
     }
 
     function handoverItems(h) {
@@ -181,9 +235,16 @@
         var h = byId('handovers', id); if (!h) fail('السند غير موجود', 404);
         var e = byId('employees', h.employee_id);
         var v = $.extend({}, h, { employee_name: e.name, employee_code: e.code, department: e.department, job_title: e.job_title, phone: e.phone, national_id: e.national_id,
-            created_by_name: (byId('users', h.created_by) || {}).name, items: handoverItems(h), sign_url: signUrl(h.token), has_signature: !!h.ack_signature });
+            created_by_name: userName(h.created_by), items: handoverItems(h), sign_url: signUrl(h.token), has_signature: !!h.ack_signature, scans: scansView(h.id) });
         if (!withSig) delete v.ack_signature;
         return v;
+    }
+
+    // نفس handover_scans_view في scans.php
+    function scansView(hid) {
+        return DB.scans.filter(function (x) { return x.handover_id === hid; }).sort(function (a, b) { return b.version - a.version; }).map(function (x) {
+            return $.extend({}, x, { uploaded_by_name: userName(x.uploaded_by) });
+        });
     }
 
     function custodyRows(p) {
@@ -192,15 +253,14 @@
             var it = byId('items', c.item_id), e = byId('employees', c.employee_id), ho = byId('handovers', c.out_handover_id), hi = c.in_handover_id ? byId('handovers', c.in_handover_id) : null;
             return decorate($.extend({}, c, itemFields(it), { item_name: it.name,
                 employee_name: e.name, employee_code: e.code, department: e.department, out_doc_no: ho.doc_no, out_ack_at: ho.ack_at, out_token: ho.token,
-                in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null }));
+                out_paper_on: ho.paper_signed_on, _out_paper: ho.paper_scan_id, in_doc_no: hi ? hi.doc_no : null, in_ack_at: hi ? hi.ack_at : null, in_paper_on: hi ? hi.paper_signed_on : null }));
         }).filter(function (r) {
             if (state === 'active' && r.in_handover_id) return false;
             if (state === 'returned' && !r.in_handover_id) return false;
             if (p.employee_id && r.employee_id !== +p.employee_id) return false;
             if (p.department && r.department !== p.department) return false;
             if (TYPES[p.type] && r.type !== p.type) return false;
-            if (p.ack === 'signed' && !r.out_ack_at) return false;
-            if (p.ack === 'pending' && r.out_ack_at) return false;
+            if (!ackOk(r.out_ack_at, r._out_paper, p.ack)) return false;
             if (p.from && r.assigned_at < p.from) return false;
             if (p.to && r.assigned_at > p.to) return false;
             if (q && ![r.item_name, r.code, r.serial_no, JSON.stringify(r.specs), r.employee_name, r.employee_code, r.out_doc_no].some(function (v) { return has(v, q); })) return false;
@@ -251,13 +311,60 @@
 
     // ------------------------------------------------------------ actions
     var A = {};
+    function sessUser() { var s = DB.sess || {}; var u = s.uid ? byId('users', s.uid) : null; return u && +u.active ? u : null; }
+    function sessionInfo() {
+        var u = sessUser(), ended = (DB.sess || {}).ended;
+        return { idle: SESSION_IDLE, warn: SESSION_WARN, remaining: u ? SESSION_IDLE : 0, ended: u ? null : ended,
+            message: u ? null : (ended === 'logout' ? 'تم تسجيل الخروج. سجّل الدخول مرة أخرى' : 'انتهت الجلسة، سجّل الدخول مرة أخرى') };
+    }
     A['auth.me'] = function () {
-        return { user: { id: 1, username: 'admin', name: 'مدير النظام', role: 'admin', must_change: 0 }, csrf: 'demo', app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand',
-            statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES };
+        var u = sessUser(), imp = u && DB.sess.imp ? byId('users', DB.sess.imp) : null;
+        return { user: u ? { id: u.id, username: u.username, name: u.name, role: u.role, must_change: 0 } : null,
+            impersonator: imp ? { id: imp.id, name: imp.name } : null, csrf: 'demo', session: sessionInfo(),
+            app_name: 'العهد الإلكترونية', org_name: 'Hand in Hand', statuses: STATUSES, conditions: CONDITIONS, roles: ROLES, today: today(), types: TYPES, scan_limits: SCAN_LIMITS };
     };
-    A['auth.login'] = function () { return { ok: true }; };
-    A['auth.logout'] = function () { return { ok: true }; };
-    A['auth.change_password'] = function (p) { if (String(p.new_password || '').length < 8) fail('كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف'); return { ok: true }; };
+    A['auth.session'] = function () {
+        var u = sessUser();
+        return { user: u ? { id: u.id, role: u.role } : null, impersonator: u ? (DB.sess.imp || null) : null, csrf: 'demo', session: sessionInfo() };
+    };
+    A['auth.login'] = function (p) {
+        var u = DB.users.filter(function (x) { return x.username === str(p.username, 64) && +x.active; })[0];
+        if (!u || u.password !== String(p.password || '')) fail('اسم المستخدم أو كلمة المرور غير صحيحة', 401);
+        DB.sess = { uid: u.id, imp: null, imp_started: null, ended: null };
+        u.last_login = now();
+        log('تسجيل دخول', 'user', u.id);
+        return { ok: true };
+    };
+    A['auth.logout'] = function () {
+        if (DB.sess.imp) log('انتهاء الدخول كمستخدم', 'user', DB.sess.uid, 'تسجيل خروج');
+        DB.sess = { uid: null, imp: null, imp_started: null, ended: 'logout' };
+        return { ok: true };
+    };
+    A['auth.impersonate'] = function (p) {
+        if (DB.sess.imp) fail('أنت تستخدم النظام باسم مستخدم آخر بالفعل. عُد لحساب المدير أولًا', 409);
+        var t = byId('users', p.id);
+        if (!t) fail('المستخدم غير موجود', 404);
+        if (t.id === DB.sess.uid) fail('لا يمكنك الدخول بحسابك أنت');
+        if (!+t.active) fail('هذا المستخدم موقوف');
+        log('بدء الدخول كمستخدم', 'user', t.id, t.name + ' (' + t.username + ') — ' + (ROLES[t.role] || t.role));
+        DB.sess = { uid: t.id, imp: DB.sess.uid, imp_started: now(), ended: null };
+        return { ok: true };
+    };
+    A['auth.stop_impersonation'] = function () {
+        if (!DB.sess.imp) fail('لا توجد جلسة دخول كمستخدم', 409);
+        log('انتهاء الدخول كمستخدم', 'user', DB.sess.uid, 'العودة لحساب المدير — من ' + DB.sess.imp_started);
+        DB.sess = { uid: DB.sess.imp, imp: null, imp_started: null, ended: null };
+        return { ok: true };
+    };
+    A['auth.change_password'] = function (p) {
+        if (DB.sess.imp) fail('لا يمكن تغيير كلمة مرور المستخدم أثناء الدخول باسمه', 403);
+        var u = sessUser();
+        if (u.password !== String(p.old_password || '')) fail('كلمة المرور الحالية غير صحيحة');
+        if (String(p.new_password || '').length < 8) fail('كلمة المرور الجديدة يجب ألا تقل عن 8 أحرف');
+        u.password = String(p.new_password); log('تغيير كلمة المرور', 'user', u.id);
+        return { ok: true };
+    };
+    A['sync.version'] = function () { return { v: DB.seq.log + '-' + DB.scans.length + '-' + DB.handovers.filter(function (h) { return h.ack_at; }).length }; };
 
     A.dashboard = function () {
         var by = {}; DB.items.forEach(function (i) { by[i.status] = (by[i.status] || 0) + 1; });
@@ -272,11 +379,11 @@
             items_total: DB.items.length, by_status: by,
             active_value: active.reduce(function (s, c) { return s + (+byId('items', c.item_id).value || 0); }, 0),
             employees_with_custody: distinct(active, 'employee_id').length,
-            pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && !h.ack_at; }).length,
+            pending_ack: DB.handovers.filter(function (h) { return h.type === 'out' && ackOk(h.ack_at, h.paper_scan_id, 'pending'); }).length,
             by_type: Object.keys(types).map(function (k) { return types[k]; }).sort(srt('total')),
             by_department: Object.keys(deps).map(function (k) { return deps[k]; }).sort(srt('n')),
             recent: DB.handovers.slice().reverse().slice(0, 10).map(function (h) {
-                return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
+                return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, paper_signed_on: h.paper_signed_on, employee_name: byId('employees', h.employee_id).name, items_count: handoverItems(h).length };
             })
         };
     };
@@ -289,7 +396,7 @@
     A['employees.get'] = function (p) {
         var e = byId('employees', p.id); if (!e) fail('الموظف غير موجود', 404);
         var rows = custodyRows({ employee_id: e.id, state: 'all' }).sort(function (a, b) { return (!!a.in_handover_id - !!b.in_handover_id) || b.id - a.id; });
-        return { employee: copy(e), custody: rows, handovers: DB.handovers.filter(function (h) { return h.employee_id === e.id; }).reverse().map(function (h) { return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at }; }) };
+        return { employee: copy(e), custody: rows, handovers: DB.handovers.filter(function (h) { return h.employee_id === e.id; }).reverse().map(function (h) { return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, ack_at: h.ack_at, paper_signed_on: h.paper_signed_on }; }) };
     };
     A['employees.save'] = function (p) {
         var id = +p.id || 0;
@@ -312,6 +419,7 @@
         var i = byId('items', p.id); if (!i) fail('الصنف غير موجود', 404);
         return {
             item: decorate(i),
+            linked_by: (function () { var d = DB.items.filter(function (x) { return x.linked_sim_id === i.id; })[0]; return d ? { id: d.id, code: d.code, name: d.name, type: d.type } : null; })(),
             history: DB.custody.filter(function (c) { return c.item_id === i.id; }).reverse().map(function (c) {
                 var e = byId('employees', c.employee_id);
                 return $.extend({}, c, { employee_name: e.name, department: e.department, out_doc_no: byId('handovers', c.out_handover_id).doc_no, in_doc_no: c.in_handover_id ? byId('handovers', c.in_handover_id).doc_no : null });
@@ -326,6 +434,13 @@
             if (kind === 'checks') {
                 v = f.options.filter(function (o) { return (input[k] || []).indexOf(o) >= 0; });
                 if (v.length) specs[k] = v;
+                return;
+            }
+            if (kind === 'item_ref') {
+                var refId = +(input[k] || 0), ref = refId ? byId('items', refId) : null;
+                if (refId && (!ref || ref.type !== f.ref_type)) fail(f.label + ': اختر ' + TYPES[f.ref_type].label + ' موجودة في النظام');
+                if (!refId && f.required) fail(f.label + ' مطلوب');
+                cols[f.column] = refId || null;
                 return;
             }
             v = str(input[k]);
@@ -355,12 +470,23 @@
         if (row.code && DB.items.some(function (i) { return i.code === row.code && i.id !== id; })) fail('كود الأصل مستخدم لصنف آخر');
         var dup = row.serial_no && DB.items.filter(function (i) { return i.serial_no === row.serial_no && i.id !== id; })[0];
         if (dup) fail(TYPES[type].fields.filter(function (f) { return f.key === 'serial_no'; })[0].label + ' مسجل بالفعل للصنف ' + dup.code);
+        var simDup = row.linked_sim_id && DB.items.filter(function (i) { return i.linked_sim_id === row.linked_sim_id && i.id !== id; })[0];
+        if (simDup) fail('هذه الشريحة مرتبطة بالفعل بالجهاز ' + simDup.code + '، ولا يمكن ربطها بأكثر من جهاز');
         if (id) { if (!row.code) row.code = old.code; $.extend(old, row); log('تعديل صنف', 'item', id, row.code + ' ' + row.name); }
         else { id = nextId('items'); if (!row.code) row.code = TYPES[type].prefix + '-' + pad(id, 5); DB.items.push($.extend({ id: id, created_at: now() }, row)); log('إضافة صنف', 'item', id, row.code + ' ' + row.name); }
         return { id: id, code: row.code };
     };
+    A['items.ref_options'] = function (p) {
+        if (!TYPES[p.type]) fail('نوع غير صحيح');
+        return DB.items.filter(function (s) { return s.type === p.type; }).sort(function (a, b) { return a.code < b.code ? -1 : 1; }).map(function (s) {
+            var d = DB.items.filter(function (x) { return x.linked_sim_id === s.id; })[0];
+            return { id: s.id, code: s.code, serial_no: s.serial_no, brand: s.brand, status: s.status, linked_id: d ? d.id : null, linked_code: d ? d.code : null };
+        });
+    };
     A['items.delete'] = function (p) {
         if (DB.custody.some(function (c) { return c.item_id === +p.id; })) fail('لا يمكن حذف صنف له سجل تسليم، يمكنك تغيير حالته إلى مكهنة');
+        var dev = DB.items.filter(function (x) { return x.linked_sim_id === +p.id; })[0];
+        if (dev) fail('هذه الشريحة مرتبطة بالجهاز ' + dev.code + '، ألغِ الربط من بيانات الجهاز أولًا');
         DB.items = DB.items.filter(function (i) { return i.id !== +p.id; }); log('حذف صنف', 'item', +p.id); return { ok: true };
     };
 
@@ -383,16 +509,18 @@
         return DB.handovers.slice().reverse().filter(function (h) {
             var e = byId('employees', h.employee_id);
             if ((p.type === 'out' || p.type === 'in') && h.type !== p.type) return false;
-            if (p.ack === 'signed' && !h.ack_at) return false;
-            if (p.ack === 'pending' && h.ack_at) return false;
+            if (!ackOk(h.ack_at, h.paper_scan_id, p.ack)) return false;
+            if (p.employee_id && h.employee_id !== +p.employee_id) return false;
             if (p.from && h.doc_date < p.from) return false;
             if (p.to && h.doc_date > p.to) return false;
             if (q && !has(h.doc_no, q) && !has(e.name, q)) return false;
             return true;
         }).map(function (h) {
             var e = byId('employees', h.employee_id);
+            var sc = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null;
             return { id: h.id, doc_no: h.doc_no, type: h.type, doc_date: h.doc_date, notes: h.notes, ack_at: h.ack_at, ack_name: h.ack_name, token: h.token, created_at: h.created_at,
-                employee_name: e.name, department: e.department, created_by_name: (byId('users', h.created_by) || {}).name, items_count: handoverItems(h).length };
+                paper_scan_id: h.paper_scan_id, paper_signed_on: h.paper_signed_on, paper_uploaded_at: sc ? sc.uploaded_at : null, paper_by_name: sc ? userName(sc.uploaded_by) : null,
+                employee_name: e.name, department: e.department, created_by_name: userName(h.created_by), items_count: handoverItems(h).length };
         });
     };
     A['handovers.get'] = function (p) { return handoverView(+p.id); };
@@ -409,13 +537,16 @@
         if (!/^[A-Za-z0-9._-]{3,64}$/.test(row.username)) fail('اسم المستخدم بالإنجليزية فقط (حروف وأرقام . _ -)');
         if (!ROLES[row.role]) fail('الصلاحية غير صحيحة');
         if (DB.users.some(function (u) { return u.username === row.username && u.id !== id; })) fail('اسم المستخدم مستخدم بالفعل');
-        if (id === 1 && (row.role !== 'admin' || !row.active)) fail('لا يمكنك إيقاف حسابك أو تغيير صلاحيتك');
+        if (id === DB.sess.uid && (row.role !== 'admin' || !row.active)) fail('لا يمكنك إيقاف حسابك أو تغيير صلاحيتك');
         if (p.password) { if (String(p.password).length < 8) fail('كلمة المرور يجب ألا تقل عن 8 أحرف'); row.must_change = 1; }
         else if (!id) fail('كلمة المرور مطلوبة للمستخدم الجديد');
+        if (p.password) row.password = String(p.password);
         if (id) $.extend(byId('users', id), row); else { id = nextId('users'); DB.users.push($.extend({ id: id, created_at: now(), last_login: null }, row)); }
         log('حفظ مستخدم', 'user', id, row.username); return { id: id };
     };
-    A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: l.user_id ? 'مدير النظام' : null }); }); };
+    A['log.list'] = function () { return DB.log.slice(0, 500).map(function (l) { return $.extend({}, l, { user_name: userName(l.user_id), impersonator_name: userName(l.impersonator_id) }); }); };
+    A['data.import_preview'] = function () { fail('استيراد Excel شغال على السيرفر بس. في النسخة التجريبية تقدر تشوف شكل الصفحة والخطوات.'); };
+    A['data.import_commit'] = A['data.import_preview'];
 
     A.export = function (p) {
         var def = TYPES[p.type];
@@ -424,9 +555,12 @@
             if (!def) return [r.type_label, r.serial_no, r.specs_text, r.accessories_text];
             return def.fields.map(function (f) { var v = r.specs[f.key]; return $.isArray(v) ? v.join('، ') : (v || ''); });
         };
-        if (p.what === 'custody') {
+        if (p.what === 'handovers') {
+            csv('handovers-' + today() + '.csv', ['رقم السند', 'النوع', 'التاريخ', 'الموظف', 'القسم', 'عدد الأصناف', 'حالة التوقيع', 'وقت التوقيع الإلكتروني', 'الاسم في التوقيع الإلكتروني', 'تاريخ التوقيع الورقي', 'رفع الإقرار', 'وقت رفع الإقرار', 'بواسطة'],
+                A['handovers.list'](p).map(function (h) { return [h.doc_no, h.type === 'out' ? 'تسليم' : 'ارتجاع', h.doc_date, h.employee_name, h.department, h.items_count, ackText(h.ack_at, h.paper_signed_on), h.ack_at, h.ack_name, h.paper_signed_on, h.paper_by_name, h.paper_uploaded_at, h.created_by_name]; }));
+        } else if (p.what === 'custody') {
             csv('custody-' + today() + '.csv', ['رقم سند التسليم', 'كود الموظف', 'الموظف', 'القسم', 'كود الأصل', 'الصنف'].concat(specHeads, ['القيمة', 'تاريخ التسليم', 'الحالة عند التسليم', 'توقيع الموظف', 'تاريخ الارتجاع', 'الحالة عند الارتجاع', 'رقم سند الارتجاع']),
-                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, r.out_ack_at ? 'موقّع' : 'بانتظار التوقيع', r.returned_at, r.condition_in, r.in_doc_no]); }));
+                custodyRows(p).map(function (r) { return [r.out_doc_no, r.employee_code, r.employee_name, r.department, r.code, r.item_name].concat(specCells(r), [r.value, r.assigned_at, r.condition_out, ackText(r.out_ack_at, r.out_paper_on), r.returned_at, r.condition_in, r.in_doc_no]); }));
         } else if (p.what === 'items') {
             csv('items-' + today() + '.csv', ['كود الأصل', 'الصنف'].concat(specHeads, ['تاريخ الشراء', 'القيمة', 'الحالة الفنية', 'الوضع', 'في عهدة', 'المكان', 'ملاحظات']),
                 itemRows(p).map(function (r) { return [r.code, r.name].concat(specCells(r), [r.purchase_date, r.value, r.item_condition, r.status, r.holder_name, r.location, r.notes]); }));
@@ -435,6 +569,174 @@
                 employeeRows(p).map(function (r) { return [r.code, r.name, r.national_id, r.department, r.job_title, r.branch, r.phone, r.email, +r.active ? 'نشط' : 'موقوف', r.active_count, r.active_value]; }));
         }
     };
+
+    // ------------------------------------------------------------ الإقرار الورقي الموقّع (نفس scans.php)
+    // ملف الـ PDF بيتحفظ في المتصفح (localStorage)، ولو المساحة مش كفاية بيفضل في الذاكرة لحد ما الصفحة تتقفل
+    var SCAN_MEM = {}, SCAN_URLS = {};
+    function scanKey(id) { return KEY + '-scan-' + id; }
+    function putScanFile(id, dataUrl) { try { localStorage.setItem(scanKey(id), dataUrl); } catch (e) { SCAN_MEM[id] = dataUrl; } }
+    function getScanFile(id) { var v = null; try { v = localStorage.getItem(scanKey(id)); } catch (e) { } return v || SCAN_MEM[id] || null; }
+
+    function bytesToDataUrl(bytes, mime) {
+        var bin = '', CH = 0x8000;
+        for (var i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+        return 'data:' + mime + ';base64,' + btoa(bin);
+    }
+    function dataUrlToBytes(u) {
+        var bin = atob(u.split(',')[1]), out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+    }
+
+    // PDF بسيط: صفحة A4 لكل صورة JPEG (نفس فكرة scan_build_pdf)
+    function jpegsToPdf(pages) {
+        var chunks = [], offsets = [], len = 0, n = 2 + pages.length * 3;
+        var push = function (x) { if (typeof x === 'string') { var b = new Uint8Array(x.length); for (var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i) & 255; x = b; } chunks.push(x); len += x.length; };
+        var obj = function (num, body, stream) {
+            offsets[num] = len;
+            push(num + ' 0 obj\n' + body + (stream ? '\nstream\n' : '\nendobj\n'));
+            if (stream) { push(stream); push('\nendstream\nendobj\n'); }
+        };
+        push('%PDF-1.4\n%âãÏÓ\n');
+        obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+        obj(2, '<< /Type /Pages /Kids [' + pages.map(function (_, i) { return (3 + i * 3) + ' 0 R'; }).join(' ') + '] /Count ' + pages.length + ' >>');
+        pages.forEach(function (pg, i) {
+            var W = 595, H = 842, m = 20, sc = Math.min((W - 2 * m) / pg.w, (H - 2 * m) / pg.h), dw = pg.w * sc, dh = pg.h * sc;
+            var content = 'q ' + dw.toFixed(2) + ' 0 0 ' + dh.toFixed(2) + ' ' + ((W - dw) / 2).toFixed(2) + ' ' + ((H - dh) / 2).toFixed(2) + ' cm /Im0 Do Q';
+            obj(3 + i * 3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 ' + (4 + i * 3) + ' 0 R >> >> /Contents ' + (5 + i * 3) + ' 0 R >>');
+            obj(4 + i * 3, '<< /Type /XObject /Subtype /Image /Width ' + pg.w + ' /Height ' + pg.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + pg.bytes.length + ' >>', pg.bytes);
+            obj(5 + i * 3, '<< /Length ' + content.length + ' >>', content);
+        });
+        var xref = len, x = 'xref\n0 ' + (n + 1) + '\n0000000000 65535 f \n';
+        for (var k = 1; k <= n; k++) x += ('0000000000' + offsets[k]).slice(-10) + ' 00000 n \n';
+        push(x + 'trailer\n<< /Size ' + (n + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+        var out = new Uint8Array(len), at = 0;
+        chunks.forEach(function (c) { out.set(c, at); at += c.length; });
+        return out;
+    }
+
+    function canvasPage(canvas) {
+        var u = canvas.toDataURL('image/jpeg', 0.85);
+        return { bytes: dataUrlToBytes(u), w: canvas.width, h: canvas.height };
+    }
+
+    function fileToPage(file) {
+        var d = $.Deferred(), url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+            var max = 2000, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+            var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url); d.resolve(canvasPage(c));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); d.reject(apiError('الملف "' + file.name + '" صورة تالفة أو غير مدعومة')); };
+        img.src = url;
+        return d.promise();
+    }
+
+    function readBytes(file) {
+        var d = $.Deferred(), r = new FileReader();
+        r.onload = function () { d.resolve(new Uint8Array(r.result)); };
+        r.onerror = function () { d.reject(apiError('تعذر قراءة الملف "' + file.name + '"')); };
+        r.readAsArrayBuffer(file);
+        return d.promise();
+    }
+
+    function apiError(msg, code) { var e = new Error(msg); e.code = code || 400; return e; }
+
+    // صفحة إقرار تجريبية "مصوّرة" للبيانات التجريبية
+    function samplePdf(h) {
+        var c = document.createElement('canvas'); c.width = 900; c.height = 1270;
+        var x = c.getContext('2d'), e = byId('employees', h.employee_id);
+        x.fillStyle = '#fbfaf6'; x.fillRect(0, 0, c.width, c.height);
+        x.fillStyle = '#222'; x.direction = 'rtl'; x.textAlign = 'right';
+        x.font = 'bold 40px Tahoma, Arial'; x.fillText('سند تسليم عهدة ' + h.doc_no, 840, 110);
+        x.font = '28px Tahoma, Arial';
+        x.fillText('الموظف: ' + e.name, 840, 190); x.fillText('التاريخ: ' + h.doc_date, 840, 240);
+        handoverItems(h).forEach(function (it, i) { x.fillText((i + 1) + '- ' + it.name + '  (' + it.code + ')', 840, 320 + i * 50); });
+        x.font = '24px Tahoma, Arial'; x.fillStyle = '#555';
+        x.fillText('أقر أنا الموقع أدناه بأنني استلمت العهدة الموضحة بهذا السند...', 840, 560);
+        x.fillText('توقيع المستلم:', 840, 760);
+        x.strokeStyle = '#1a3d8f'; x.lineWidth = 4; x.beginPath(); x.moveTo(560, 790);
+        for (var i = 0; i < 24; i++) x.lineTo(560 - i * 14, 780 + Math.sin(i * 0.9) * 30);
+        x.stroke();
+        x.fillStyle = '#999'; x.font = '20px Tahoma, Arial'; x.fillText('(نسخة تجريبية — صورة إقرار ورقي بعد الـ Scan)', 840, 1200);
+        return bytesToDataUrl(jpegsToPdf([canvasPage(c)]), 'application/pdf');
+    }
+
+    function snapshotOf(h) {
+        var v = handoverView(h.id);
+        return { doc_no: v.doc_no, type: v.type, doc_date: v.doc_date, created_by: v.created_by_name, notes: v.notes,
+            employee: { id: v.employee_id, name: v.employee_name, code: v.employee_code, department: v.department, job_title: v.job_title },
+            electronic_ack: v.ack_at ? { at: v.ack_at, name: v.ack_name } : null,
+            items: v.items.map(function (it) { return { code: it.code, type: it.type_label, name: it.name, serial_no: it.serial_no, specs: it.specs_text, accessories: it.accessories_text, value: it.value, condition: v.type === 'out' ? it.condition_out : it.condition_in }; }) };
+    }
+
+    function storeScan(hid, meta, pdfDataUrl) {
+        var h = byId('handovers', hid), cur = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null;
+        var id = nextId('scans'), at = now();
+        DB.scans.push($.extend({ id: id, handover_id: hid, employee_id: h.employee_id, version: cur ? cur.version + 1 : 1, reason: null, replaced_by: null, replaced_at: null,
+            pdf_size: Math.round((pdfDataUrl.length - pdfDataUrl.indexOf(',') - 1) * 3 / 4), snapshot: snapshotOf(h), uploaded_by: (DB.sess || {}).uid || 1, uploaded_at: at }, meta));
+        if (cur) { cur.replaced_by = id; cur.replaced_at = at; }
+        h.paper_scan_id = id; h.paper_signed_on = meta.signed_on;
+        putScanFile(id, pdfDataUrl);
+        log(cur ? 'تصحيح الإقرار الموقّع' : 'رفع الإقرار الموقّع', 'handover', hid, h.doc_no + ' — الإصدار ' + (cur ? cur.version + 1 : 1) + ' — توقيع ' + meta.signed_on + (meta.reason ? ' — السبب: ' + meta.reason : ''));
+        return id;
+    }
+
+    A['handovers.paper_upload'] = function (p) {
+        var h = byId('handovers', p.handover_id); if (!h) fail('السند غير موجود', 404);
+        var cur = h.paper_scan_id ? byId('scans', h.paper_scan_id) : null, replace = +p.replace === 1, reason = str(p.reason, 500);
+        if (cur && !replace) fail('السند عليه إقرار موقّع بالفعل. استخدم "تصحيح / استبدال المرفق"', 409);
+        if (cur && !reason) fail('اكتب سبب تصحيح أو استبدال الإقرار');
+        if (cur && +cur.id !== +p.current_scan_id) fail('الإقرار اتغير من مستخدم تاني. افتح السند من جديد', 409);
+        var signedOn = str(p.signed_on, 10);
+        if (!signedOn) fail('حدد تاريخ التوقيع الورقي');
+        if (signedOn < h.doc_date || signedOn > today()) fail('تاريخ التوقيع لازم يكون من تاريخ السند (' + h.doc_date + ') لحد النهارده');
+        if (!p.confirm) fail('أكّد إن الملف يخص هذا السند ويحتوي على توقيع الموظف');
+        var files = p._files || [], total = 0, MB = 1048576;
+        if (!files.length) fail('اختر ملف الإقرار الموقّع (PDF أو صور)');
+        var kinds = files.map(function (f) {
+            var n = (f.name || '').toLowerCase();
+            if (!f.size) fail('الملف "' + f.name + '" فارغ');
+            if (f.size > SCAN_LIMITS.file_mb * MB) fail('الملف "' + f.name + '" أكبر من الحد المسموح (' + SCAN_LIMITS.file_mb + ' م.ب)');
+            total += f.size;
+            if (f.type === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+            if (/^image\/(jpeg|png)$/.test(f.type) || /\.(jpe?g|png)$/.test(n)) return 'img';
+            fail('الملف "' + f.name + '" ليس PDF أو صورة JPG/PNG');
+        });
+        if (files.length > SCAN_LIMITS.files) fail('أقصى عدد للصور ' + SCAN_LIMITS.files + ' صورة');
+        if (total > SCAN_LIMITS.total_mb * MB) fail('إجمالي حجم الملفات أكبر من ' + SCAN_LIMITS.total_mb + ' م.ب');
+        if (kinds.indexOf('pdf') >= 0 && files.length > 1) fail('ارفع ملف PDF واحد فيه كل الصفحات، أو صور فقط. مينفعش الجمع بين PDF وصور');
+        var isPdf = kinds[0] === 'pdf';
+        var build = isPdf ? readBytes(files[0]).then(function (b) {
+            var head = String.fromCharCode.apply(null, b.subarray(0, 5));
+            if (head !== '%PDF-') return $.Deferred().reject(apiError('الملف "' + files[0].name + '" مش ملف PDF سليم')).promise();
+            var txt = String.fromCharCode.apply(null, b.subarray(0, Math.min(b.length, 4000000)));
+            return { bytes: b, pages: (txt.match(/\/Type\s*\/Page(?!s)/g) || []).length || null };
+        }) : $.when.apply($, files.map(fileToPage)).then(function () {
+            var pages = Array.prototype.slice.call(arguments);
+            return { bytes: jpegsToPdf(pages), pages: pages.length };
+        });
+        return build.then(function (pdf) {
+            load();
+            storeScan(+p.handover_id, { signed_on: signedOn, notes: str(p.notes, 1000), reason: cur ? reason : null, source: isPdf ? 'pdf' : 'images', pages: pdf.pages,
+                originals: files.map(function (f) { return { name: f.name, mime: f.type || (isPdf ? 'application/pdf' : 'image/jpeg'), size: f.size }; }) },
+                bytesToDataUrl(pdf.bytes, 'application/pdf'));
+            return handoverView(+p.handover_id);
+        });
+    };
+
+    // صلاحيات نفس need() في api.php
+    var PUBLIC = { 'auth.me': 1, 'auth.session': 1, 'auth.login': 1, 'auth.logout': 1 };
+    var ADMIN = { 'users.list': 1, 'users.save': 1, 'log.list': 1, 'employees.delete': 1, 'items.delete': 1, 'auth.impersonate': 1 };
+    var EDIT = { 'employees.save': 1, 'items.save': 1, 'custody.assign': 1, 'custody.return': 1, 'custody.transfer': 1, 'handovers.renew_link': 1, 'handovers.paper_upload': 1, 'data.import_preview': 1, 'data.import_commit': 1 };
+    function need(action) {
+        if (PUBLIC[action] || action === 'auth.stop_impersonation') return;
+        var u = sessUser();
+        if (!u) fail('انتهت الجلسة، سجّل الدخول مرة أخرى', 401);
+        if (ADMIN[action] && u.role !== 'admin') fail('ليست لديك صلاحية لهذا الإجراء', 403);
+        if (EDIT[action] && u.role === 'viewer') fail('ليست لديك صلاحية لهذا الإجراء', 403);
+    }
 
     // ------------------------------------------------------------ ajax transport for api.php
     function params(url, data) {
@@ -447,6 +749,7 @@
     function call(action, p) {
         load();
         var fn = A[action]; if (!fn) fail('إجراء غير معروف', 404);
+        need(action);
         var r = fn(p);
         save();
         return copy(r === undefined ? null : r);
@@ -457,14 +760,23 @@
         return {
             send: function (headers, complete) {
                 setTimeout(function () {
-                    var p = params(opts.url, opts.data);
+                    var p;
+                    if (window.FormData && opts.data instanceof FormData) {
+                        p = params(opts.url); p._files = [];
+                        opts.data.forEach(function (v, k) { if (window.File && v instanceof File) p._files.push(v); else p[k] = v; });
+                    } else p = params(opts.url, opts.data);
+                    var ok = function (data) { save(); complete(200, 'OK', { text: JSON.stringify({ ok: true, data: copy(data === undefined ? null : data) }) }); };
+                    var bad = function (e) {
+                        if (!e || !e.code) console.error(e);
+                        complete((e && e.code) || 500, 'error', { text: JSON.stringify({ ok: false, error: e && e.code ? e.message : 'خطأ غير متوقع' }) });
+                    };
                     try {
-                        var data = call(p.action, p);
-                        complete(200, 'OK', { text: JSON.stringify({ ok: true, data: data }) });
-                    } catch (e) {
-                        if (!e.code) console.error(e);
-                        complete(e.code || 500, 'error', { text: JSON.stringify({ ok: false, error: e.code ? e.message : 'خطأ غير متوقع' }) });
-                    }
+                        load();
+                        var fn = A[p.action]; if (!fn) fail('إجراء غير معروف', 404);
+                        need(p.action);
+                        var r = fn(p);
+                        if (r && typeof r.then === 'function') r.then(ok, bad); else ok(r);
+                    } catch (e) { bad(e); }
                 }, 60);
             },
             abort: function () { }
@@ -481,6 +793,14 @@
 
     window.DEMO = {
         exportCsv: function (url) { var p = params(url); call('export', p); },
+        // بديل رابط handovers.scan_file: ملف الـ PDF المحفوظ في المتصفح
+        scanUrl: function (sc) {
+            if (SCAN_URLS[sc.id]) return SCAN_URLS[sc.id];
+            var d = getScanFile(sc.id), blob;
+            if (d) blob = new Blob([dataUrlToBytes(d)], { type: 'application/pdf' });
+            else blob = new Blob(['<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Tahoma;padding:30px">ملف الإقرار ده مش محفوظ في المتصفح ده (كان أكبر من مساحة التخزين أو اتمسح). ارفعه تاني من تفاصيل السند.</body>'], { type: 'text/html' });
+            return (SCAN_URLS[sc.id] = URL.createObjectURL(blob));
+        },
         print: function (url) {
             load();
             var p = params(url), w = window.open('', '_blank');
@@ -555,7 +875,10 @@
             items = activeOf(emp.id).map(function (c) { var it = byId('items', c.item_id), ho = byId('handovers', c.out_handover_id); return decorate($.extend({}, c, itemFields(it), { doc_no: ho.doc_no })); });
             title = items.length ? 'بيان عهدة موظف' : 'شهادة إخلاء طرف من العهد';
         }
-        var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div><div class="sheet">' +
+        var html = '<div class="print-actions no-print"><button class="btn btn-primary btn-action" onclick="window.print()"><i class="fa fa-print"></i> طباعة</button> <button class="btn btn-default btn-action" onclick="window.close()">إغلاق</button></div>' +
+            (h && h.paper_scan_id ? '<div class="alert alert-info no-print paper-note"><i class="fa fa-info-circle"></i> ده <b>نموذج الإقرار الأصلي</b> زي ما اتولّد من النظام، ومن غير توقيع الموظف الورقي. ' +
+                'النسخة الموقّعة ورقيًا (بتاريخ <span class="d">' + h.paper_signed_on + '</span>) محفوظة على السند: افتحها من تفاصيل السند بزر «عرض الإقرار الموقّع».</div>' : '') +
+            '<div class="sheet">' +
             '<div class="sheet-head"><div><div class="sheet-org">Hand in Hand</div><div class="info-label">العهد الإلكترونية</div></div><h2>' + title + '</h2><div class="sheet-meta">' +
             (h ? '<div><span class="info-label">رقم السند:</span> <b>' + h.doc_no + '</b></div><div><span class="info-label">التاريخ:</span> <span class="d">' + h.doc_date + '</span></div>' : '<div><span class="info-label">تاريخ الطباعة:</span> <span class="d">' + today() + '</span></div>') +
             '</div></div><table class="table table-bordered sheet-info"><tr><td><span class="info-label">اسم الموظف:</span> <b>' + e(emp.name) + '</b></td><td><span class="info-label">الكود:</span> ' + e(emp.code || '-') +
@@ -590,6 +913,11 @@
 // روابط صفحة التوقيع تفتح نسخة الديمو بدل sign.php، والتصدير يمر عبر DEMO.go
 (function ($) {
     $(document).on('click', 'a[href^="sign.php"]', function (e) { e.preventDefault(); DEMO.sign($(this).attr('href')); });
+    // ملفات Excel الموحّدة (تصدير / قالب / تقرير) بتتعمل على السيرفر بس
+    $(document).on('click', 'a[href^="api.php?action=data."]', function (e) {
+        e.preventDefault();
+        alert('ملفات Excel (التصدير الموحّد وقالب الاستيراد وتقرير الاستيراد) بتتعمل على السيرفر بس، ومش متاحة في النسخة التجريبية.');
+    });
     Object.defineProperty(window.DEMO, 'go', {
         set: function (url) {
             if (url.indexOf('backup.download') >= 0) { alert('النسخة الاحتياطية متاحة على السيرفر فقط، والنسخة التجريبية محفوظة في المتصفح.'); return; }
